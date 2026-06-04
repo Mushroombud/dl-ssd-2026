@@ -1,0 +1,22 @@
+{
+  "added_blocks": 3,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/4.1.1.2.md",
+  "existing_chars": 1349,
+  "existing_path": "artifacts/documents/opal/4.1.1.2.txt",
+  "extracted_chars": 1359,
+  "family": "opal",
+  "pages": [
+    34
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 2,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/4.1.1.2.jsonl",
+  "section": "4.1.1.2",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/4.1.1.2.jsonl",
+  "title": "StartSession (M)"
+}

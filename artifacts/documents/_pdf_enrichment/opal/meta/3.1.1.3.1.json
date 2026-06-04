@@ -1,0 +1,23 @@
+{
+  "added_blocks": 2,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/3.1.1.3.1.md",
+  "existing_chars": 321,
+  "existing_path": "artifacts/documents/opal/3.1.1.3.1.txt",
+  "extracted_chars": 810,
+  "family": "opal",
+  "pages": [
+    21,
+    22
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 1,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/3.1.1.3.1.jsonl",
+  "section": "3.1.1.3.1",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/3.1.1.3.1.jsonl",
+  "title": "LockingEnabled Definition"
+}

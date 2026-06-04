@@ -1,0 +1,23 @@
+{
+  "added_blocks": 6,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/UCT-06.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 1714,
+  "family": "testcases",
+  "pages": [
+    35,
+    36
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 3,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/UCT-06.jsonl",
+  "section": "UCT-06",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/UCT-06.jsonl",
+  "title": "Configuring Locking Objects (Locking Ranges)"
+}

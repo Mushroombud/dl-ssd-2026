@@ -1,0 +1,22 @@
+{
+  "added_blocks": 0,
+  "detail_path": "",
+  "existing_chars": 672,
+  "existing_path": "artifacts/documents/opal/3.1.1.6.2.txt",
+  "extracted_chars": 679,
+  "family": "opal",
+  "pages": [
+    26
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "existing shard already contains the extracted detail",
+  "rules": 0,
+  "rules_path": "",
+  "section": "3.1.1.6.2",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "skipped",
+  "tables": 0,
+  "tables_path": "",
+  "title": "Data Removal Operation Interrupted"
+}

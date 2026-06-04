@@ -1,0 +1,5588 @@
+# Official Document Coverage Report
+
+Generated: 2026-06-05T03:43:43
+
+## Summary
+
+- Official document files: 1380
+- Sourced edge cases: 3997
+- Documents referenced by sourced tests: 811
+- Untriaged normative documents: 142
+- Untriaged A/B priority documents: 0
+- Triage file: `analysis/doc_coverage_triage.json`
+
+## By Category
+
+| Category | Total | Covered | Triaged | Untriaged A/B |
+|---|---:|---:|---:|---:|
+| acl-ace | 104 | 61 | 43 | 0 |
+| auth-cpin-session | 108 | 102 | 6 | 0 |
+| genkey-reencrypt | 36 | 36 | 0 | 0 |
+| host-io-locking-mbr | 25 | 24 | 1 | 0 |
+| lifecycle-revert | 171 | 165 | 6 | 0 |
+| opal-ssc | 93 | 36 | 14 | 0 |
+| other | 446 | 157 | 63 | 0 |
+| package-crypto | 197 | 81 | 53 | 0 |
+| protocol-session | 94 | 43 | 30 | 0 |
+| table-methods | 106 | 106 | 0 | 0 |
+
+## By Priority
+
+- A: 169
+- B: 393
+- C: 409
+- D: 409
+
+## Highest Priority Uncovered Documents
+
+These should either get sourced tests or be manually triaged with a reason.
+
+No untriaged A/B priority documents.
+
+## Currently Covered Documents
+
+- `core/2.2.4.txt`: 6 case(s)
+  - Admin-created table GetACL association is not visible in Locking SP: impossible success
+  - Admin-created table direct Get is not visible in Locking SP: impossible success
+  - Admin-created table direct Set is not visible in Locking SP: impossible success
+  - Locking-created table GetACL association is not visible in Admin SP: impossible success
+  - Locking-created table direct Get is not visible in Admin SP: impossible success
+  - ... 1 more
+- `core/2.3.1.txt`: 12 case(s)
+  - Evidence tight read-only ACE Set does not persist BooleanExpr: correct return value
+  - Evidence tight read-only ACE Set does not persist BooleanExpr: impossible return value
+  - Evidence tight read-only Authority Uses Set does not persist: correct return value
+  - Evidence tight read-only Authority Uses Set does not persist: impossible return value
+  - Read-only ACE Set cannot persist DataStore User1 read grant
+  - ... 7 more
+- `core/3.2.1.1.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/3.2.1.2.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/3.2.1.4.txt`: 12 case(s)
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: correct return value
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: impossible return value
+  - C_RSA Format Get rejects boolean padding_type coercion: correct return value
+  - C_RSA Format Get rejects boolean padding_type coercion: impossible return value
+  - K_AES Mode Get rejects boolean symmetric_mode_media coercion: correct return value
+  - ... 7 more
+- `core/3.2.4.1.txt`: 46 case(s)
+  - Admin SP Authority Admin1 Set GetACL normalizes singleton wrappers: correct return value
+  - Admin SP Authority Admin1 Set GetACL normalizes singleton wrappers: impossible return value
+  - Admin SP C_PIN SID GetACL normalizes object/method UID dictionaries: correct return value
+  - Admin SP C_PIN SID GetACL normalizes object/method UID dictionaries: impossible return value
+  - Admin SP C_PIN SID GetACL normalizes snake-case UID args: correct return value
+  - ... 41 more
+- `core/3.2.5.txt`: 3 case(s)
+  - CreateTable CommonName longer than 32 bytes: impossible success
+  - CreateTable NewTableName longer than 32 bytes: impossible success
+  - CreateTable accepts 32-byte NewTableName and CommonName
+- `core/3.2.5.1.txt`: 124 case(s)
+  - Byte CreateTable with HintSize returns INVALID_PARAMETER
+  - Byte CreateTable with MaxSize returns INVALID_PARAMETER
+  - Byte CreateTable with empty Columns may return Rows MinSize
+  - Byte CreateTable with non-empty Columns cannot succeed
+  - CreateTable Byte kind success returns UID and Rows
+  - ... 119 more
+- `core/3.2.5.3.txt`: 18 case(s)
+  - Created table descriptor MaxSize above MinSize may be set successfully
+  - Created table descriptor MaxSize below current CreateRow count fails: correct status
+  - Created table descriptor MaxSize below current CreateRow count fails: impossible success
+  - Created table descriptor MaxSize below recorded MinSize fails: correct status
+  - Created table descriptor MaxSize below recorded MinSize fails: impossible success
+  - ... 13 more
+- `core/3.2.5.4.txt`: 15 case(s)
+  - CreateRow duplicate multi-column unique combination cannot succeed
+  - CreateRow duplicate non-unique value with different unique value may succeed
+  - CreateRow duplicate single unique column cannot succeed
+  - CreateRow extra undeclared column cannot succeed
+  - CreateRow first row in single-unique-column table succeeds
+  - ... 10 more
+- `core/3.3.4.7.5.txt`: 58 case(s)
+  - Different ComID omitted HostProperties start from that ComID initial assumptions: correct return value
+  - Different ComID omitted HostProperties start from that ComID initial assumptions: impossible return value
+  - Fresh Admin SP session after TCGReset can Set ProgrammaticResetEnable: correct success
+  - Fresh Admin SP session after TCGReset can Set ProgrammaticResetEnable: impossible error
+  - Fresh Locking session after TCGReset can mutate preserved row state: correct success
+  - ... 53 more
+- `core/3.3.5.txt`: 8 case(s)
+  - Geometry descriptor mirrors aligned LockingInfo fields: correct return value
+  - Geometry descriptor mirrors aligned LockingInfo fields: impossible return value
+  - Geometry descriptor mirrors unlocked alignment flag: correct return value
+  - Geometry descriptor mirrors unlocked alignment flag: impossible return value
+  - Geometry descriptor rejects stale AlignmentGranularity: correct return value
+  - ... 3 more
+- `core/3.3.6.3.txt`: 8 case(s)
+  - Geometry descriptor mirrors aligned LockingInfo fields: correct return value
+  - Geometry descriptor mirrors aligned LockingInfo fields: impossible return value
+  - Geometry descriptor mirrors unlocked alignment flag: correct return value
+  - Geometry descriptor mirrors unlocked alignment flag: impossible return value
+  - Geometry descriptor rejects stale AlignmentGranularity: correct return value
+  - ... 3 more
+- `core/3.3.6.4.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/3.3.6.4.1.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/3.3.6.4.2.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/3.3.6.4.3.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/3.3.6.4.4.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/3.3.6.4.5.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/3.3.6.4.6.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/3.3.6.5.txt`: 142 case(s)
+  - Clearing both stored locks after read re-enable clears Level0 Locked: correct return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: impossible return value
+  - Clearing both stored locks after read re-enable makes reads allowed: correct success
+  - Clearing both stored locks after read re-enable makes reads allowed: impossible error
+  - Clearing both stored locks after read re-enable makes writes allowed: correct success
+  - ... 137 more
+- `core/3.3.6.5.1.txt`: 10 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Disabled write locking keeps Locking Feature Locked bit clear: correct return value
+  - Disabled write locking keeps Locking Feature Locked bit clear: impossible return value
+  - Fresh Locking Feature descriptor reports Manufactured-Inactive Locking disabled: correct return value
+  - ... 5 more
+- `core/3.3.6.5.2.txt`: 123 case(s)
+  - Clearing both stored locks after read re-enable clears Level0 Locked: correct return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: impossible return value
+  - Clearing both stored locks after read re-enable makes reads allowed: correct success
+  - Clearing both stored locks after read re-enable makes reads allowed: impossible error
+  - Clearing both stored locks after read re-enable makes writes allowed: correct success
+  - ... 118 more
+- `core/3.3.6.5.3.txt`: 218 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: correct return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: impossible return value
+  - Clearing both stored locks after read re-enable makes reads allowed: correct success
+  - ... 213 more
+- `core/3.3.6.5.4.txt`: 10 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Disabled write locking keeps Locking Feature Locked bit clear: correct return value
+  - Disabled write locking keeps Locking Feature Locked bit clear: impossible return value
+  - Fresh Locking Feature descriptor reports Manufactured-Inactive Locking disabled: correct return value
+  - ... 5 more
+- `core/3.3.6.5.5.txt`: 24 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Disabled write locking keeps Locking Feature Locked bit clear: correct return value
+  - Disabled write locking keeps Locking Feature Locked bit clear: impossible return value
+  - Empty DoneOnReset preserves Locking Feature MBRDone bit: correct return value
+  - ... 19 more
+- `core/3.3.6.5.6.txt`: 24 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Disabled write locking keeps Locking Feature Locked bit clear: correct return value
+  - Disabled write locking keeps Locking Feature Locked bit clear: impossible return value
+  - Empty DoneOnReset preserves Locking Feature MBRDone bit: correct return value
+  - ... 19 more
+- `core/3.3.7.1.txt`: 22 case(s)
+  - Evidence tight read-only ACE Set does not persist BooleanExpr: correct return value
+  - Evidence tight read-only ACE Set does not persist BooleanExpr: impossible return value
+  - Evidence tight read-only Authority Uses Set does not persist: correct return value
+  - Evidence tight read-only Authority Uses Set does not persist: impossible return value
+  - Password StartSession still echoes HostSessionID: correct return value
+  - ... 17 more
+- `core/3.3.7.1.2.txt`: 9 case(s)
+  - Authenticate MethodID on SMUID is not a supported control-session method: impossible success
+  - Get MethodID on SMUID is not a supported control-session method: impossible success
+  - Properties on SMUID is a valid control-session method
+  - Properties on a C_PIN InvokingID is ignored or discarded: impossible success
+  - Properties on an AdminSP InvokingID is ignored or discarded: impossible success
+  - ... 4 more
+- `core/3.3.7.1.3.txt`: 9 case(s)
+  - Authenticate MethodID on SMUID is not a supported control-session method: impossible success
+  - Get MethodID on SMUID is not a supported control-session method: impossible success
+  - Properties on SMUID is a valid control-session method
+  - Properties on a C_PIN InvokingID is ignored or discarded: impossible success
+  - Properties on an AdminSP InvokingID is ignored or discarded: impossible success
+  - ... 4 more
+- `core/3.3.7.1.4.txt`: 25 case(s)
+  - AdminSP StartSession HostSigningAuthority class Admins is INVALID_PARAMETER: correct status
+  - AdminSP StartSession HostSigningAuthority class Admins is INVALID_PARAMETER: impossible success
+  - AdminSP StartSession HostSigningAuthority class Makers is INVALID_PARAMETER: correct status
+  - AdminSP StartSession HostSigningAuthority class Makers is INVALID_PARAMETER: impossible success
+  - HostResponse does not rescue a mismatched HostSessionID: impossible success
+  - ... 20 more
+- `core/3.3.7.1.5.txt`: 244 case(s)
+  - Clearing both stored locks after read re-enable clears Level0 Locked: correct return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: impossible return value
+  - Clearing both stored locks after read re-enable makes reads allowed: correct success
+  - Clearing both stored locks after read re-enable makes reads allowed: impossible error
+  - Clearing both stored locks after read re-enable makes writes allowed: correct success
+  - ... 239 more
+- `core/3.3.7.1.6.txt`: 12 case(s)
+  - SessionTimeout above MaxSessionTimeout fails: correct status
+  - SessionTimeout above MaxSessionTimeout fails: impossible success
+  - SessionTimeout above SPInfo SPSessionTimeout cap fails: correct status
+  - SessionTimeout above SPInfo SPSessionTimeout cap fails: impossible success
+  - SessionTimeout below MinSessionTimeout fails: correct status
+  - ... 7 more
+- `core/3.3.7.2.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/3.3.8.2.txt`: 23 case(s)
+  - StartSession InitialCredit 'banana' is not a uinteger: impossible success
+  - StartSession InitialCredit -1 is not a uinteger: impossible success
+  - StartSession InitialCredit True is not a uinteger: impossible success
+  - StartSession InitialCredit ['4096'] is not a uinteger: impossible success
+  - StartSession SessionTimeout True is not a uinteger: impossible success
+  - ... 18 more
+- `core/3.3.9.4.txt`: 29 case(s)
+  - MaxTransTimeout zero means no upper transmission-timeout limit: correct success
+  - MaxTransTimeout zero means no upper transmission-timeout limit: impossible error
+  - StartSession InitialCredit 'banana' is not a uinteger: impossible success
+  - StartSession InitialCredit -1 is not a uinteger: impossible success
+  - StartSession InitialCredit True is not a uinteger: impossible success
+  - ... 24 more
+- `core/3.3.9.5.txt`: 14 case(s)
+  - Open AdminSP read-write session cannot be combined with LockingSP read-only session: impossible success
+  - Open AdminSP read-write session cannot be combined with LockingSP read-write session: impossible success
+  - Read-write AdminSP StartSession can succeed after LockingSP session closes: correct success
+  - Read-write AdminSP StartSession can succeed after LockingSP session closes: impossible error
+  - Read-write AdminSP StartSession cannot succeed while LockingSP read-only session is open: impossible success
+  - ... 9 more
+- `core/3.3.10.txt`: 30 case(s)
+  - Fresh Admin SP session after TCGReset can Set ProgrammaticResetEnable: correct success
+  - Fresh Admin SP session after TCGReset can Set ProgrammaticResetEnable: impossible error
+  - Fresh Locking session after TCGReset can mutate preserved row state: correct success
+  - Fresh Locking session after TCGReset can mutate preserved row state: impossible error
+  - Fresh session after TCGReset reads committed DataStore payload: correct return value
+  - ... 25 more
+- `core/3.4.1.1.txt`: 5 case(s)
+  - Admin SP cannot be deleted with DeleteSP
+  - DeleteSP success must not include return payload
+  - DeleteSP success returns an empty list
+  - Deleted Locking SP must not accept new sessions after DeleteSP close
+  - Disabled Locking SP DeleteSP removes the SP only after session close
+- `core/3.4.2.1.txt`: 169 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - Admins OR User1 ACE lets User1 rotate C_PIN and authenticate with new PIN: correct success
+  - Admins OR User1 ACE lets User1 rotate C_PIN and authenticate with new PIN: impossible error
+  - Admins OR User1 ACE rotation invalidates prior User1 PIN: impossible success
+  - ... 164 more
+- `core/3.4.2.2.txt`: 27 case(s)
+  - Admin SP Authority_Makers Set follows personalized ACE_Set_Enabled Anybody: correct success
+  - Admin SP Authority_Makers Set follows personalized ACE_Set_Enabled Anybody: impossible error
+  - Admin SP Authority_Makers Set with Makers ACE rejects Anybody-only session: correct status
+  - Admin SP Authority_Makers Set with Makers ACE rejects Anybody-only session: impossible success
+  - Authority Limit reached blocks User1 Authenticate SUCCESS True
+  - ... 22 more
+- `core/3.4.2.3.txt`: 67 case(s)
+  - Admins OR User1 ACE lets User1 rotate C_PIN and authenticate with new PIN: correct success
+  - Admins OR User1 ACE lets User1 rotate C_PIN and authenticate with new PIN: impossible error
+  - Admins OR User1 ACE rotation invalidates prior User1 PIN: impossible success
+  - Admins-only ACE blocks later User1 C_PIN rotation after prior OR grant: correct status
+  - Admins-only ACE blocks later User1 C_PIN rotation after prior OR grant: impossible success
+  - ... 62 more
+- `core/3.4.3.1.txt`: 4 case(s)
+  - Opal Admin SP IssueSP GetACL association does not exist: correct status
+  - Opal Admin SP IssueSP GetACL association does not exist: impossible success
+  - Opal Admin SP IssueSP unsupported despite Core Admin Template method: correct status
+  - Opal Admin SP IssueSP unsupported despite Core Admin Template method: impossible success
+- `core/4.1.txt`: 6 case(s)
+  - Failed KeepGlobalRangeKey RevertSP preserves Locking Feature locked state: correct return value
+  - Failed KeepGlobalRangeKey RevertSP preserves Locking Feature locked state: impossible return value
+  - KeepGlobalRangeKey success still disables Locking Feature descriptor: correct return value
+  - KeepGlobalRangeKey success still disables Locking Feature descriptor: impossible return value
+  - Successful RevertSP disables Locking Feature descriptor: correct return value
+  - ... 1 more
+- `core/4.2.txt`: 5 case(s)
+  - Admin SP cannot be deleted with DeleteSP
+  - DeleteSP success must not include return payload
+  - DeleteSP success returns an empty list
+  - Deleted Locking SP must not accept new sessions after DeleteSP close
+  - Disabled Locking SP DeleteSP removes the SP only after session close
+- `core/4.3.txt`: 5 case(s)
+  - Admin SP cannot be deleted with DeleteSP
+  - DeleteSP success must not include return payload
+  - DeleteSP success returns an empty list
+  - Deleted Locking SP must not accept new sessions after DeleteSP close
+  - Disabled Locking SP DeleteSP removes the SP only after session close
+- `core/4.4.txt`: 20 case(s)
+  - Authority AdminExch Get reports Admins class and Exchange operation: correct return value
+  - Authority AdminExch Get reports Admins class and Exchange operation: impossible return value
+  - Authority Admins Get reports class authority without parent class: correct return value
+  - Authority Admins Get reports class authority without parent class: impossible return value
+  - Authority Anybody Get reports individual Sign authority: correct return value
+  - ... 15 more
+- `core/4.5.2.txt`: 55 case(s)
+  - Admin SP cannot be deleted with DeleteSP
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - ... 50 more
+- `core/4.5.3.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/4.5.4.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.1.1.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.2.txt`: 6 case(s)
+  - Set RowValues columns may be sent out of order: correct success
+  - Set RowValues columns may be sent out of order: impossible error
+  - Set RowValues duplicate named column fails: correct status
+  - Set RowValues duplicate named column fails: impossible success
+  - Set RowValues duplicate numeric column fails: correct status
+  - ... 1 more
+- `core/5.1.3.txt`: 10 case(s)
+  - TPerInfo Bytes Get accepts uinteger_8 and rejects boolean coercion: correct return value
+  - TPerInfo Bytes Get accepts uinteger_8 and rejects boolean coercion: impossible return value
+  - TPerInfo GUDID Get accepts bytes_12 and rejects short bytes: correct return value
+  - TPerInfo GUDID Get accepts bytes_12 and rejects short bytes: impossible return value
+  - TPerInfo ProgrammaticResetEnable Get accepts boolean and rejects text: correct return value
+  - ... 5 more
+- `core/5.1.3.1.txt`: 12 case(s)
+  - Rejected unauthenticated Set under twenty-three-entry OR does not mutate bytes: correct return value
+  - Rejected unauthenticated Set under twenty-three-entry OR does not mutate bytes: impossible return value
+  - Twenty-three-entry DataStore Get OR expression authorizes listed Admin1: correct return value
+  - Twenty-three-entry DataStore Get OR expression authorizes listed Admin1: impossible return value
+  - Twenty-three-entry DataStore Get OR expression authorizes listed User8: correct return value
+  - ... 7 more
+- `core/5.1.3.2.txt`: 24 case(s)
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: correct return value
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: impossible return value
+  - ACE_DataStore_Get_All Get follows personalized BooleanExpr: correct return value
+  - ACE_DataStore_Get_All Get follows personalized BooleanExpr: impossible return value
+  - ACE_K_AES_128_Range2_GenKey cannot report Anybody expression: impossible success
+  - ... 19 more
+- `core/5.1.3.3.txt`: 24 case(s)
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: correct return value
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: impossible return value
+  - ACE_DataStore_Get_All Get follows personalized BooleanExpr: correct return value
+  - ACE_DataStore_Get_All Get follows personalized BooleanExpr: impossible return value
+  - ACE_K_AES_128_Range2_GenKey cannot report Anybody expression: impossible success
+  - ... 19 more
+- `core/5.1.3.4.txt`: 72 case(s)
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: correct return value
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: impossible return value
+  - Admin SP Authority Admin1 GetACL returns Anybody ACE for Get: correct return value
+  - Admin SP Authority Admin1 GetACL returns Anybody ACE for Get: impossible return value
+  - Admin SP Authority Admin1 Set GetACL returns Set Enabled ACE: correct return value
+  - ... 67 more
+- `core/5.1.3.5.txt`: 51 case(s)
+  - Admins OR User1 ACE lets User1 rotate C_PIN and authenticate with new PIN: correct success
+  - Admins OR User1 ACE lets User1 rotate C_PIN and authenticate with new PIN: impossible error
+  - Admins OR User1 ACE rotation invalidates prior User1 PIN: impossible success
+  - Admins-only ACE blocks later User1 C_PIN rotation after prior OR grant: correct status
+  - Admins-only ACE blocks later User1 C_PIN rotation after prior OR grant: impossible success
+  - ... 46 more
+- `core/5.1.3.6.txt`: 15 case(s)
+  - AdvKeyMode reserved value two cannot be set successfully: impossible success
+  - Locking AdvKeyMode numeric auto-advance enum succeeds: correct success
+  - Locking AdvKeyMode numeric auto-advance enum succeeds: impossible error
+  - Locking AdvKeyMode rejects boolean false enum coercion: correct status
+  - Locking AdvKeyMode rejects boolean false enum coercion: impossible success
+  - ... 10 more
+- `core/5.1.3.7.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.8.txt`: 8 case(s)
+  - Admin SP Authority Admin1 Get rejects boolean operation coercion: correct return value
+  - Admin SP Authority Admin1 Get rejects boolean operation coercion: impossible return value
+  - Admin SP Authority Admin1 Get rejects reserved auth_method operation: correct return value
+  - Admin SP Authority Admin1 Get rejects reserved auth_method operation: impossible return value
+  - Admin SP Authority Admin1 Get reports Password operation: correct return value
+  - ... 3 more
+- `core/5.1.3.9.txt`: 26 case(s)
+  - Admin SP Authority Makers Set GetACL returns Set Enabled ACE: correct return value
+  - Admin SP Authority Makers Set GetACL returns Set Enabled ACE: impossible return value
+  - Admin SP C PIN Admin1 Get GetACL reuses SID Get NOPIN ACE: correct return value
+  - Admin SP C PIN Admin1 Get GetACL reuses SID Get NOPIN ACE: impossible return value
+  - Admin SP C PIN Admin1 Set GetACL returns Admins Set PIN ACE: correct return value
+  - ... 21 more
+- `core/5.1.3.10.txt`: 23 case(s)
+  - SP Bytes Get accepts uinteger_8 and rejects boolean coercion: correct return value
+  - SP Bytes Get accepts uinteger_8 and rejects boolean coercion: impossible return value
+  - SP Frozen Get accepts boolean and rejects arbitrary text: correct return value
+  - SP Frozen Get accepts boolean and rejects arbitrary text: impossible return value
+  - SP UID Get accepts uid bytes_8 and rejects short bytes: correct return value
+  - ... 18 more
+- `core/5.1.3.11.txt`: 12 case(s)
+  - Rejected unauthenticated Set under twenty-three-entry OR does not mutate bytes: correct return value
+  - Rejected unauthenticated Set under twenty-three-entry OR does not mutate bytes: impossible return value
+  - Twenty-three-entry DataStore Get OR expression authorizes listed Admin1: correct return value
+  - Twenty-three-entry DataStore Get OR expression authorizes listed Admin1: impossible return value
+  - Twenty-three-entry DataStore Get OR expression authorizes listed User8: correct return value
+  - ... 7 more
+- `core/5.1.3.12.txt`: 8 case(s)
+  - DataStore Get returns bytes written by prior Set: correct return value
+  - DataStore Get returns bytes written by prior Set: impossible return value
+  - DataStore Get returns most recent bytes after overwrite: correct return value
+  - DataStore Get returns most recent bytes after overwrite: impossible return value
+  - DataStore byte-table Get returns Bytes rather than RowValues: correct return value
+  - ... 3 more
+- `core/5.1.3.13.txt`: 1 case(s)
+  - C_PIN CharSet numeric column cannot reference C_PIN object: impossible success
+- `core/5.1.3.14.txt`: 8 case(s)
+  - DataStore Get returns bytes written by prior Set: correct return value
+  - DataStore Get returns bytes written by prior Set: impossible return value
+  - DataStore Get returns most recent bytes after overwrite: correct return value
+  - DataStore Get returns most recent bytes after overwrite: impossible return value
+  - DataStore byte-table Get returns Bytes rather than RowValues: correct return value
+  - ... 3 more
+- `core/5.1.3.15.txt`: 14 case(s)
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: correct return value
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: impossible return value
+  - C_AES ResidualData rejects boolean bytes_16 coercion: correct status
+  - C_AES ResidualData rejects boolean bytes_16 coercion: impossible success
+  - C_AES_128 Key accepts bytes_16: correct success
+  - ... 9 more
+- `core/5.1.3.16.txt`: 10 case(s)
+  - TPerInfo Bytes Get accepts uinteger_8 and rejects boolean coercion: correct return value
+  - TPerInfo Bytes Get accepts uinteger_8 and rejects boolean coercion: impossible return value
+  - TPerInfo GUDID Get accepts bytes_12 and rejects short bytes: correct return value
+  - TPerInfo GUDID Get accepts bytes_12 and rejects short bytes: impossible return value
+  - TPerInfo ProgrammaticResetEnable Get accepts boolean and rejects text: correct return value
+  - ... 5 more
+- `core/5.1.3.17.txt`: 14 case(s)
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: correct return value
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: impossible return value
+  - C_AES ResidualData rejects boolean bytes_16 coercion: correct status
+  - C_AES ResidualData rejects boolean bytes_16 coercion: impossible success
+  - C_AES_128 Key accepts bytes_16: correct success
+  - ... 9 more
+- `core/5.1.3.18.txt`: 40 case(s)
+  - C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: correct return value
+  - C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: impossible return value
+  - C_HMAC_160 Key accepts fixed bytes_20: correct success
+  - C_HMAC_160 Key accepts fixed bytes_20: impossible error
+  - C_HMAC_160 Key rejects short fixed bytes_20: correct status
+  - ... 35 more
+- `core/5.1.3.19.txt`: 54 case(s)
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: correct return value
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: impossible return value
+  - C_AES ResidualData rejects boolean bytes_16 coercion: correct status
+  - C_AES ResidualData rejects boolean bytes_16 coercion: impossible success
+  - C_AES_128 Key accepts bytes_16: correct success
+  - ... 49 more
+- `core/5.1.3.20.txt`: 40 case(s)
+  - C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: correct return value
+  - C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: impossible return value
+  - C_HMAC_160 Key accepts fixed bytes_20: correct success
+  - C_HMAC_160 Key accepts fixed bytes_20: impossible error
+  - C_HMAC_160 Key rejects short fixed bytes_20: correct status
+  - ... 35 more
+- `core/5.1.3.21.txt`: 40 case(s)
+  - C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: correct return value
+  - C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: impossible return value
+  - C_HMAC_160 Key accepts fixed bytes_20: correct success
+  - C_HMAC_160 Key accepts fixed bytes_20: impossible error
+  - C_HMAC_160 Key rejects short fixed bytes_20: correct status
+  - ... 35 more
+- `core/5.1.3.22.txt`: 8 case(s)
+  - Admin SP Authority Admin1 PresentCertificate defaults false: correct return value
+  - Admin SP Authority Admin1 PresentCertificate defaults false: impossible return value
+  - Admin SP Authority Admins PresentCertificate defaults false: correct return value
+  - Admin SP Authority Admins PresentCertificate defaults false: impossible return value
+  - Admin SP Authority SID PresentCertificate defaults false: correct return value
+  - ... 3 more
+- `core/5.1.3.23.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.24.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.25.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.26.txt`: 10 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 5 more
+- `core/5.1.3.27.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.28.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.29.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.30.txt`: 4 case(s)
+  - LockingInfo EncryptSupport Get accepts Media Encryption and rejects boolean coercion: correct return value
+  - LockingInfo EncryptSupport Get accepts Media Encryption and rejects boolean coercion: impossible return value
+  - LockingInfo EncryptSupport Get accepts None and rejects reserved enc_supported: correct return value
+  - LockingInfo EncryptSupport Get accepts None and rejects reserved enc_supported: impossible return value
+- `core/5.1.3.31.txt`: 18 case(s)
+  - C_AES CFB FeedbackSize rejects value above AES block length: correct status
+  - C_AES CFB FeedbackSize rejects value above AES block length: impossible success
+  - C_AES CFB FeedbackSize rejects zero: correct status
+  - C_AES CFB FeedbackSize rejects zero: impossible success
+  - C_AES FeedbackSize Get rejects boolean uinteger: correct return value
+  - ... 13 more
+- `core/5.1.3.32.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.33.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.34.txt`: 30 case(s)
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: correct return value
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: impossible return value
+  - C_RSA Format Get rejects boolean padding_type coercion: correct return value
+  - C_RSA Format Get rejects boolean padding_type coercion: impossible return value
+  - GeneralStatus Get accepts active pause status and rejects reserved value: correct return value
+  - ... 25 more
+- `core/5.1.3.35.txt`: 32 case(s)
+  - C_AES Hash accepts SHA-512 hash_protocol: correct success
+  - C_AES Hash accepts SHA-512 hash_protocol: impossible error
+  - C_AES Hash rejects boolean hash_protocol coercion: correct status
+  - C_AES Hash rejects boolean hash_protocol coercion: impossible success
+  - C_AES Hash rejects reserved hash_protocol: correct status
+  - ... 27 more
+- `core/5.1.3.36.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.37.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.38.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.39.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.40.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.41.txt`: 14 case(s)
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: correct return value
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: impossible return value
+  - C_AES ResidualData rejects boolean bytes_16 coercion: correct status
+  - C_AES ResidualData rejects boolean bytes_16 coercion: impossible success
+  - C_AES_128 Key accepts bytes_16: correct success
+  - ... 9 more
+- `core/5.1.3.42.txt`: 14 case(s)
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: correct return value
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: impossible return value
+  - C_AES ResidualData rejects boolean bytes_16 coercion: correct status
+  - C_AES ResidualData rejects boolean bytes_16 coercion: impossible success
+  - C_AES_128 Key accepts bytes_16: correct success
+  - ... 9 more
+- `core/5.1.3.43.txt`: 7 case(s)
+  - Host cannot modify LockingInfo EncryptSupport: impossible success
+  - Host cannot modify LockingInfo KeysAvailableCfg: impossible success
+  - Host cannot modify LockingInfo MaxRanges: impossible success
+  - Host cannot modify LockingInfo MaxReEncryptions: impossible success
+  - Host cannot modify LockingInfo Name: impossible success
+  - ... 2 more
+- `core/5.1.3.44.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.45.txt`: 20 case(s)
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: correct return value
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: impossible return value
+  - C_RSA Format Get rejects boolean padding_type coercion: correct return value
+  - C_RSA Format Get rejects boolean padding_type coercion: impossible return value
+  - GeneralStatus Get accepts active pause status and rejects reserved value: correct return value
+  - ... 15 more
+- `core/5.1.3.46.txt`: 6 case(s)
+  - SP LifeCycleState Get accepts Issued and rejects reserved Core gap: correct return value
+  - SP LifeCycleState Get accepts Issued and rejects reserved Core gap: impossible return value
+  - SP LifeCycleState Get accepts Manufactured and rejects reserved Opal top value: correct return value
+  - SP LifeCycleState Get accepts Manufactured and rejects reserved Opal top value: impossible return value
+  - SP LifeCycleState Get rejects boolean lifecycle coercion: correct return value
+  - ... 1 more
+- `core/5.1.3.47.txt`: 10 case(s)
+  - Direct AccessControl Get reports empty issued C_PIN_User1 Set LogTo: correct return value
+  - Direct AccessControl Get reports empty issued C_PIN_User1 Set LogTo: impossible return value
+  - Direct AccessControl Get reports empty issued DataStore Get LogTo: correct return value
+  - Direct AccessControl Get reports empty issued DataStore Get LogTo: impossible return value
+  - Direct AccessControl Get reports empty issued DataStore Set LogTo: correct return value
+  - ... 5 more
+- `core/5.1.3.48.txt`: 2 case(s)
+  - Log entry Data numeric column cannot be host-modified: impossible success
+  - Log entry MonotonicTime numeric column cannot be host-modified: impossible success
+- `core/5.1.3.49.txt`: 56 case(s)
+  - Direct AccessControl Get reports LogAlways for Locking_GlobalRange Set: correct return value
+  - Direct AccessControl Get reports LogAlways for Locking_GlobalRange Set: impossible return value
+  - Direct AccessControl Get reports LogAlways for Locking_Range1 Set: correct return value
+  - Direct AccessControl Get reports LogAlways for Locking_Range1 Set: impossible return value
+  - Direct AccessControl Get reports LogAlways for Locking_Range2 Set: correct return value
+  - ... 51 more
+- `core/5.1.3.50.txt`: 7 case(s)
+  - C_PIN MSID PIN Get accepts password length 32 and rejects length 33: correct return value
+  - C_PIN MSID PIN Get accepts password length 32 and rejects length 33: impossible return value
+  - C_PIN PIN Get rejects boolean password coercion: correct return value
+  - C_PIN PIN Get rejects boolean password coercion: impossible return value
+  - CreateTable CommonName longer than 32 bytes: impossible success
+  - ... 2 more
+- `core/5.1.3.51.txt`: 7 case(s)
+  - C_PIN MSID PIN Get accepts password length 32 and rejects length 33: correct return value
+  - C_PIN MSID PIN Get accepts password length 32 and rejects length 33: impossible return value
+  - C_PIN PIN Get rejects boolean password coercion: correct return value
+  - C_PIN PIN Get rejects boolean password coercion: impossible return value
+  - CreateTable CommonName longer than 32 bytes: impossible success
+  - ... 2 more
+- `core/5.1.3.52.txt`: 4 case(s)
+  - C_PIN MSID PIN Get accepts password length 32 and rejects length 33: correct return value
+  - C_PIN MSID PIN Get accepts password length 32 and rejects length 33: impossible return value
+  - C_PIN PIN Get rejects boolean password coercion: correct return value
+  - C_PIN PIN Get rejects boolean password coercion: impossible return value
+- `core/5.1.3.53.txt`: 14 case(s)
+  - ACTIVE ReEncryptState blocks direct NextKey Set: impossible success
+  - ActiveKey cannot reference a C_PIN credential: impossible success
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: correct return value
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: impossible return value
+  - COMPLETED ADVKEY_req preserves K AES 128 NextKey family in ActiveKey: correct return value
+  - ... 9 more
+- `core/5.1.3.54.txt`: 54 case(s)
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: correct return value
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: impossible return value
+  - Admin SP Authority Admin1 GetACL returns Anybody ACE for Get: correct return value
+  - Admin SP Authority Admin1 GetACL returns Anybody ACE for Get: impossible return value
+  - Admin SP Authority Admin1 Set GetACL normalizes singleton wrappers: correct return value
+  - ... 49 more
+- `core/5.1.3.55.txt`: 8 case(s)
+  - Authority Secure rejects boolean false as messaging_type: correct status
+  - Authority Secure rejects boolean false as messaging_type: impossible success
+  - Authority Secure rejects boolean true as messaging_type: correct status
+  - Authority Secure rejects boolean true as messaging_type: impossible success
+  - SPInfo SPSessionTimeout rejects boolean false as uinteger timeout: correct status
+  - ... 3 more
+- `core/5.1.3.56.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.57.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.58.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.59.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.60.txt`: 3 case(s)
+  - CreateTable CommonName longer than 32 bytes: impossible success
+  - CreateTable NewTableName longer than 32 bytes: impossible success
+  - CreateTable accepts 32-byte NewTableName and CommonName
+- `core/5.1.3.61.txt`: 76 case(s)
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: correct return value
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: impossible return value
+  - Admin SP ACE table Next GetACL returns Anybody ACE: correct return value
+  - Admin SP ACE table Next GetACL returns Anybody ACE: impossible return value
+  - Admin SP Authority Admin1 GetACL returns Anybody ACE for Get: correct return value
+  - ... 71 more
+- `core/5.1.3.62.txt`: 20 case(s)
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: correct return value
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: impossible return value
+  - C_RSA Format Get accepts defined padding and rejects reserved value: correct return value
+  - C_RSA Format Get accepts defined padding and rejects reserved value: impossible return value
+  - C_RSA Format Get rejects boolean padding_type coercion: correct return value
+  - ... 15 more
+- `core/5.1.3.63.txt`: 4 case(s)
+  - C_PIN MSID PIN Get accepts password length 32 and rejects length 33: correct return value
+  - C_PIN MSID PIN Get accepts password length 32 and rejects length 33: impossible return value
+  - C_PIN PIN Get rejects boolean password coercion: correct return value
+  - C_PIN PIN Get rejects boolean password coercion: impossible return value
+- `core/5.1.3.64.txt`: 8 case(s)
+  - SecretProtect K_AES_128 row success cannot identify Mode as protected column
+  - SecretProtect K_AES_128 row success cannot point at K_AES_256 table
+  - SecretProtect K_AES_256 row success cannot identify Mode as protected column
+  - SecretProtect K_AES_256 row success cannot point at C_PIN table
+  - SecretProtect ProtectMechanisms Get rejects boolean protect_types coercion: correct return value
+  - ... 3 more
+- `core/5.1.3.65.txt`: 16 case(s)
+  - ActiveKey cannot reference a C_PIN credential: impossible success
+  - Locking AdvKeyMode numeric auto-advance enum succeeds: correct success
+  - Locking AdvKeyMode numeric auto-advance enum succeeds: impossible error
+  - Locking AdvKeyMode rejects boolean false enum coercion: correct status
+  - Locking AdvKeyMode rejects boolean false enum coercion: impossible success
+  - ... 11 more
+- `core/5.1.3.66.txt`: 12 case(s)
+  - ADVKEY_req from COMPLETED must not leave ReEncryptState COMPLETED
+  - CONT_req from PAUSED updates ReEncryptState to PENDING: correct return value
+  - CONT_req from PAUSED updates ReEncryptState to PENDING: impossible return value
+  - PAUSE_req from ACTIVE updates ReEncryptState to PAUSED: correct return value
+  - PAUSE_req from ACTIVE updates ReEncryptState to PAUSED: impossible return value
+  - ... 7 more
+- `core/5.1.3.67.txt`: 46 case(s)
+  - Composite Cellblock preserves disabled WriteLockEnabled with stored WriteLocked true: correct return value
+  - Composite Cellblock preserves disabled WriteLockEnabled with stored WriteLocked true: impossible return value
+  - Composite Cellblock reflects empty LockOnReset without changing lock cells: correct return value
+  - Composite Cellblock reflects empty LockOnReset without changing lock cells: impossible return value
+  - Composite Cellblock reflects geometry enable lock and LockOnReset Set: correct return value
+  - ... 41 more
+- `core/5.1.3.68.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.69.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.70.txt`: 6 case(s)
+  - Locking SP MethodID object ordinary Get association does not exist: impossible success
+  - Locking SP MethodID object special method GetACL returns Anybody ACE: correct return value
+  - Locking SP MethodID object special method GetACL returns Anybody ACE: impossible return value
+  - Locking SP SPTemplates object ordinary Get association does not exist: impossible success
+  - Locking SP SPTemplates object special method GetACL returns Anybody ACE: correct return value
+  - ... 1 more
+- `core/5.1.3.71.txt`: 8 case(s)
+  - Admin SP TPerInfo Bytes is host read-only: impossible success
+  - Admin SP TPerInfo FirmwareVersion is host read-only: impossible success
+  - Admin SP TPerInfo GUDID is host read-only: impossible success
+  - Admin SP TPerInfo Generation is host read-only: impossible success
+  - Admin SP TPerInfo ProtocolVersion is host read-only: impossible success
+  - ... 3 more
+- `core/5.1.3.72.txt`: 18 case(s)
+  - C_AES CFB FeedbackSize rejects value above AES block length: correct status
+  - C_AES CFB FeedbackSize rejects value above AES block length: impossible success
+  - C_AES CFB FeedbackSize rejects zero: correct status
+  - C_AES CFB FeedbackSize rejects zero: impossible success
+  - C_AES FeedbackSize Get rejects boolean uinteger: correct return value
+  - ... 13 more
+- `core/5.1.3.73.txt`: 20 case(s)
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: correct return value
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: impossible return value
+  - C_RSA Format Get rejects boolean padding_type coercion: correct return value
+  - C_RSA Format Get rejects boolean padding_type coercion: impossible return value
+  - K_AES Key column Get cannot succeed
+  - ... 15 more
+- `core/5.1.3.74.txt`: 8 case(s)
+  - CreateTable Byte kind success returns UID and Rows
+  - CreateTable Object kind success returns UID and Rows
+  - CreateTable reserved table_kind 3 cannot succeed
+  - CreateTable success cannot omit Rows result
+  - CreateTable success cannot return an empty result
+  - ... 3 more
+- `core/5.1.3.75.txt`: 30 case(s)
+  - Admin SP ACE table Next GetACL returns Anybody ACE: correct return value
+  - Admin SP ACE table Next GetACL returns Anybody ACE: impossible return value
+  - Admin SP Authority table Next GetACL returns Anybody ACE: correct return value
+  - Admin SP Authority table Next GetACL returns Anybody ACE: impossible return value
+  - Admin SP C PIN table Next GetACL returns Anybody ACE: correct return value
+  - ... 25 more
+- `core/5.1.3.76.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.77.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.78.txt`: 4 case(s)
+  - Admin SP Template table Get GetACL returns Anybody ACE: correct return value
+  - Admin SP Template table Get GetACL returns Anybody ACE: impossible return value
+  - Admin SP Template table UID Get GetACL returns Anybody ACE: correct return value
+  - Admin SP Template table UID Get GetACL returns Anybody ACE: impossible return value
+- `core/5.1.3.79.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.80.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.81.txt`: 22 case(s)
+  - LockingInfo MaxRanges Get accepts uinteger_4 and rejects boolean coercion: correct return value
+  - LockingInfo MaxRanges Get accepts uinteger_4 and rejects boolean coercion: impossible return value
+  - LockingInfo MaxReEncryptions Get accepts uinteger_4 and rejects negative value: correct return value
+  - LockingInfo MaxReEncryptions Get accepts uinteger_4 and rejects negative value: impossible return value
+  - LockingInfo UID Get accepts uid bytes_8 and rejects short bytes: correct return value
+  - ... 17 more
+- `core/5.1.3.82.txt`: 88 case(s)
+  - Authority Limit rejects boolean false as unsigned counter: correct status
+  - Authority Limit rejects boolean false as unsigned counter: impossible success
+  - Authority Limit rejects boolean true as unsigned counter: correct status
+  - Authority Limit rejects boolean true as unsigned counter: impossible success
+  - Authority Secure rejects boolean false as messaging_type: correct status
+  - ... 83 more
+- `core/5.1.3.83.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.84.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.85.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.86.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.87.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.88.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.89.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.90.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.91.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.92.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.93.txt`: 68 case(s)
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - Authority Limit rejects boolean false as unsigned counter: correct status
+  - Authority Limit rejects boolean false as unsigned counter: impossible success
+  - Authority Limit rejects boolean true as unsigned counter: correct status
+  - ... 63 more
+- `core/5.1.3.94.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.95.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.96.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.1.3.97.txt`: 24 case(s)
+  - Locking CreateRow rejects boolean RangeLength uinteger: correct status
+  - Locking CreateRow rejects boolean RangeLength uinteger: impossible success
+  - Locking CreateRow rejects boolean RangeStart uinteger: correct status
+  - Locking CreateRow rejects boolean RangeStart uinteger: impossible success
+  - Locking RangeLength Set rejects boolean uinteger: correct status
+  - ... 19 more
+- `core/5.1.3.98.txt`: 18 case(s)
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: correct return value
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: impossible return value
+  - C_RSA Format Get rejects boolean padding_type coercion: correct return value
+  - C_RSA Format Get rejects boolean padding_type coercion: impossible return value
+  - K_AES Mode Get rejects boolean symmetric_mode_media coercion: correct return value
+  - ... 13 more
+- `core/5.1.3.99.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.3.100.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.4.2.1.txt`: 32 case(s)
+  - K AES 128 Range2 GenKey GetACL cannot alias Range1 GenKey ACE
+  - K AES 128 Range2 Get GetACL cannot return its GenKey ACE
+  - K AES 128 Range8 GenKey GetACL cannot alias K AES 256 Range8 GenKey ACE
+  - K AES 256 Range2 GenKey GetACL cannot alias Range1 GenKey ACE
+  - K AES 256 Range8 GenKey GetACL cannot alias K AES 128 Range8 GenKey ACE
+  - ... 27 more
+- `core/5.1.4.2.2.txt`: 7 case(s)
+  - C_PIN Persistence numeric column cannot be boolean value two: impossible success
+  - C_PIN TryLimit numeric column cannot be negative: impossible success
+  - CreateLog HighSecurity true is a valid boolean
+  - CreateLog HighSecurity value outside boolean range cannot succeed
+  - CreateLog missing HighSecurity cannot succeed
+  - ... 2 more
+- `core/5.1.4.2.3.txt`: 311 case(s)
+  - Active MBR shadow read reflects omitted-Where prefix rewrite
+  - Active MBR shadow read reflects partial byte-table overwrite
+  - Active MBR shadow read rejects payload before prefix rewrite
+  - Active MBR shadow read rejects prior user media after partial overwrite
+  - Active MBR shadow read rejects stale pre-overwrite MBR payload
+  - ... 306 more
+- `core/5.1.4.2.4.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.1.4.2.12.txt`: 10 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 5 more
+- `core/5.1.4.2.16.txt`: 8 case(s)
+  - CreateTable Byte kind success returns UID and Rows
+  - CreateTable Object kind success returns UID and Rows
+  - CreateTable reserved table_kind 3 cannot succeed
+  - CreateTable success cannot omit Rows result
+  - CreateTable success cannot return an empty result
+  - ... 3 more
+- `core/5.1.5.2.txt`: 188 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - Admins OR User1 ACE lets User1 rotate C_PIN and authenticate with new PIN: correct success
+  - Admins OR User1 ACE lets User1 rotate C_PIN and authenticate with new PIN: impossible error
+  - Admins OR User1 ACE rotation invalidates prior User1 PIN: impossible success
+  - ... 183 more
+- `core/5.1.5.3.txt`: 8 case(s)
+  - Same-SP read-only StartSession while read-write session is open returns SP_BUSY: correct status
+  - Same-SP read-only StartSession while read-write session is open returns SP_BUSY: impossible success
+  - Same-SP read-write StartSession after EndSession can succeed: correct success
+  - Same-SP read-write StartSession after EndSession can succeed: impossible error
+  - Same-SP read-write StartSession while read-only session is open returns SP_BUSY: correct status
+  - ... 3 more
+- `core/5.1.5.5.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.1.5.6.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.1.5.8.txt`: 31 case(s)
+  - CreateRow duplicate multi-column unique combination cannot succeed
+  - CreateRow duplicate non-unique value with different unique value may succeed
+  - CreateRow duplicate single unique column cannot succeed
+  - CreateRow extra undeclared column cannot succeed
+  - CreateRow first row in single-unique-column table succeeds
+  - ... 26 more
+- `core/5.1.5.11.txt`: 81 case(s)
+  - AdminSP StartSession HostSigningAuthority class Admins is INVALID_PARAMETER: correct status
+  - AdminSP StartSession HostSigningAuthority class Admins is INVALID_PARAMETER: impossible success
+  - AdminSP StartSession HostSigningAuthority class Makers is INVALID_PARAMETER: correct status
+  - AdminSP StartSession HostSigningAuthority class Makers is INVALID_PARAMETER: impossible success
+  - ContOnReset rejects ProtocolStackReset as a reset condition: impossible success
+  - ... 76 more
+- `core/5.1.5.15.txt`: 96 case(s)
+  - Authority Limit reached makes correct Proof unable to return true: correct return value
+  - Authority Limit reached makes correct Proof unable to return true: impossible return value
+  - Authority Limit-only Set is observable without Enabled companion: correct return value
+  - Authority Limit-only Set is observable without Enabled companion: impossible return value
+  - Authority Limit-only Set with Uses reached blocks User1 StartSession: correct status
+  - ... 91 more
+- `core/5.2.2.1.txt`: 58 case(s)
+  - AckNak true with SequenceNumbers false is returned as both false: correct return value
+  - AckNak true with SequenceNumbers false is returned as both false: impossible return value
+  - Authenticate MethodID on SMUID is not a supported control-session method: impossible success
+  - Get MethodID on SMUID is not a supported control-session method: impossible success
+  - HardwareReset resets HostProperties knowledge to initial assumptions: correct return value
+  - ... 53 more
+- `core/5.2.2.2.txt`: 67 case(s)
+  - AckNak true with SequenceNumbers false is returned as both false: correct return value
+  - AckNak true with SequenceNumbers false is returned as both false: impossible return value
+  - HardwareReset resets HostProperties knowledge to initial assumptions: correct return value
+  - HardwareReset resets HostProperties knowledge to initial assumptions: impossible return value
+  - HostProperties below initial communications minimums are reported as initial values: correct return value
+  - ... 62 more
+- `core/5.2.2.3.txt`: 34 case(s)
+  - AckNak true with SequenceNumbers false is returned as both false: correct return value
+  - AckNak true with SequenceNumbers false is returned as both false: impossible return value
+  - Different ComID omitted HostProperties start from that ComID initial assumptions: correct return value
+  - Different ComID omitted HostProperties start from that ComID initial assumptions: impossible return value
+  - HardwareReset resets HostProperties knowledge for every tracked ComID: correct return value
+  - ... 29 more
+- `core/5.2.2.4.txt`: 34 case(s)
+  - AckNak true with SequenceNumbers false is returned as both false: correct return value
+  - AckNak true with SequenceNumbers false is returned as both false: impossible return value
+  - HardwareReset resets HostProperties knowledge to initial assumptions: correct return value
+  - HardwareReset resets HostProperties knowledge to initial assumptions: impossible return value
+  - HostProperties below initial communications minimums are reported as initial values: correct return value
+  - ... 29 more
+- `core/5.2.2.4.1.txt`: 16 case(s)
+  - Different ComID omitted HostProperties start from that ComID initial assumptions: correct return value
+  - Different ComID omitted HostProperties start from that ComID initial assumptions: impossible return value
+  - HardwareReset resets HostProperties knowledge for every tracked ComID: correct return value
+  - HardwareReset resets HostProperties knowledge for every tracked ComID: impossible return value
+  - HostProperties omitted values preserve previous values only on the same ComID: correct return value
+  - ... 11 more
+- `core/5.2.2.4.1.3.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/5.2.2.4.1.5.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/5.2.2.4.1.6.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/5.2.2.4.1.7.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/5.2.2.4.1.8.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/5.2.2.4.1.9.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/5.2.2.4.1.10.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `core/5.2.2.4.1.11.txt`: 15 case(s)
+  - SyncSession InitialCredit is a nonnegative byte count: correct return value
+  - SyncSession InitialCredit is a nonnegative byte count: impossible return value
+  - SyncSession MaxTransTimeout zero permits large returned timeout: correct return value
+  - SyncSession MaxTransTimeout zero permits large returned timeout: impossible return value
+  - SyncSession TransTimeout exceeds host requested value: correct return value
+  - ... 10 more
+- `core/5.2.2.4.2.txt`: 34 case(s)
+  - AckNak true with SequenceNumbers false is returned as both false: correct return value
+  - AckNak true with SequenceNumbers false is returned as both false: impossible return value
+  - HardwareReset resets HostProperties knowledge to initial assumptions: correct return value
+  - HardwareReset resets HostProperties knowledge to initial assumptions: impossible return value
+  - HostProperties below initial communications minimums are reported as initial values: correct return value
+  - ... 29 more
+- `core/5.2.2.4.4.txt`: 34 case(s)
+  - AckNak true with SequenceNumbers false is returned as both false: correct return value
+  - AckNak true with SequenceNumbers false is returned as both false: impossible return value
+  - Different ComID omitted HostProperties start from that ComID initial assumptions: correct return value
+  - Different ComID omitted HostProperties start from that ComID initial assumptions: impossible return value
+  - HardwareReset resets HostProperties knowledge for every tracked ComID: correct return value
+  - ... 29 more
+- `core/5.2.2.4.5.txt`: 76 case(s)
+  - AckNak true with SequenceNumbers false is returned as both false: correct return value
+  - AckNak true with SequenceNumbers false is returned as both false: impossible return value
+  - Different ComID omitted HostProperties start from that ComID initial assumptions: correct return value
+  - Different ComID omitted HostProperties start from that ComID initial assumptions: impossible return value
+  - Fresh Admin SP session after TCGReset can Set ProgrammaticResetEnable: correct success
+  - ... 71 more
+- `core/5.2.3.1.txt`: 144 case(s)
+  - Authenticate MethodID on SMUID is not a supported control-session method: impossible success
+  - EC-DH startup cannot omit both SP exchange fields: correct return value
+  - EC-DH startup cannot omit both SP exchange fields: impossible return value
+  - EC-DH startup requires the SP static public key field: correct return value
+  - EC-DH startup requires the SP static public key field: impossible return value
+  - ... 139 more
+- `core/5.2.3.1.1.txt`: 20 case(s)
+  - Password StartSession still echoes HostSessionID: correct return value
+  - Password StartSession still echoes HostSessionID: impossible return value
+  - StartSession HostSessionID 'session-one' is not a uinteger: impossible success
+  - StartSession HostSessionID -1 is not a uinteger: impossible success
+  - StartSession HostSessionID True is not a uinteger: impossible success
+  - ... 15 more
+- `core/5.2.3.1.2.txt`: 12 case(s)
+  - StartSession SPID cannot be an Authority object UID: correct status
+  - StartSession SPID cannot be an Authority object UID: impossible success
+  - StartSession SPID cannot be an unissued SP-like UID: correct status
+  - StartSession SPID cannot be an unissued SP-like UID: impossible success
+  - StartSession SPID cannot be the SP table UID: correct status
+  - ... 7 more
+- `core/5.2.3.1.3.txt`: 49 case(s)
+  - Evidence tight read-only ACE Set does not persist BooleanExpr: correct return value
+  - Evidence tight read-only ACE Set does not persist BooleanExpr: impossible return value
+  - Evidence tight read-only Authority Uses Set does not persist: correct return value
+  - Evidence tight read-only Authority Uses Set does not persist: impossible return value
+  - Open AdminSP read-write session cannot be combined with LockingSP read-only session: impossible success
+  - ... 44 more
+- `core/5.2.3.1.4.txt`: 40 case(s)
+  - AdminExch remains invalid as HostSigningAuthority even with a credential: impossible success
+  - Credentialless HostExchange fallback cannot satisfy secure SID startup: impossible success
+  - Credentialless SP ResponseExch rejects secure SID startup even with SignedHash: impossible success
+  - Credentialless SP and Host exchange authorities both reject secure SID startup: impossible success
+  - EC-DH startup cannot omit both SP exchange fields: correct return value
+  - ... 35 more
+- `core/5.2.3.1.5.txt`: 6 case(s)
+  - EC-DH startup cannot omit both SP exchange fields: correct return value
+  - EC-DH startup cannot omit both SP exchange fields: impossible return value
+  - EC-DH startup requires the SP static public key field: correct return value
+  - EC-DH startup requires the SP static public key field: impossible return value
+  - EC-DH startup returns SP nonce and static public key: correct return value
+  - ... 1 more
+- `core/5.2.3.1.6.txt`: 6 case(s)
+  - EC-DH startup cannot omit both SP exchange fields: correct return value
+  - EC-DH startup cannot omit both SP exchange fields: impossible return value
+  - EC-DH startup requires the SP static public key field: correct return value
+  - EC-DH startup requires the SP static public key field: impossible return value
+  - EC-DH startup returns SP nonce and static public key: correct return value
+  - ... 1 more
+- `core/5.2.3.1.7.txt`: 2 case(s)
+  - SID Password HostSigningAuthority accepts current C_PIN PIN in HostChallenge
+  - SID Password HostSigningAuthority must not accept previous C_PIN PIN: impossible success
+- `core/5.2.3.1.9.txt`: 20 case(s)
+  - SessionTimeout above MaxSessionTimeout fails: correct status
+  - SessionTimeout above MaxSessionTimeout fails: impossible success
+  - SessionTimeout above SPInfo SPSessionTimeout cap fails: correct status
+  - SessionTimeout above SPInfo SPSessionTimeout cap fails: impossible success
+  - SessionTimeout below MinSessionTimeout fails: correct status
+  - ... 15 more
+- `core/5.2.3.1.10.txt`: 14 case(s)
+  - MaxTransTimeout zero means no upper transmission-timeout limit: correct success
+  - MaxTransTimeout zero means no upper transmission-timeout limit: impossible error
+  - StartSession InitialCredit 'banana' is not a uinteger: impossible success
+  - StartSession InitialCredit -1 is not a uinteger: impossible success
+  - StartSession InitialCredit True is not a uinteger: impossible success
+  - ... 9 more
+- `core/5.2.3.1.11.txt`: 8 case(s)
+  - StartSession InitialCredit 'banana' is not a uinteger: impossible success
+  - StartSession InitialCredit -1 is not a uinteger: impossible success
+  - StartSession InitialCredit True is not a uinteger: impossible success
+  - StartSession InitialCredit ['4096'] is not a uinteger: impossible success
+  - StartSession SessionTimeout True is not a uinteger: impossible success
+  - ... 3 more
+- `core/5.2.3.1.12.txt`: 6 case(s)
+  - HashAndSign does not make correct Authenticate return false
+  - HashAndSign is ignored by explicit Authenticate with correct PIN
+  - StartSession missing SignedHash fails when SID HashAndSign was observed required: impossible success
+  - StartSession missing SignedHash fails when SID HashAndSign was set required: impossible success
+  - StartSession omits SignedHash when SID HashAndSign is None: correct success
+  - ... 1 more
+- `core/5.2.3.2.txt`: 61 case(s)
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: correct return value
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: impossible return value
+  - Admin SP SID password SyncSession omits SignedHash when ResponseSign is Null: correct return value
+  - Admin SP SID password SyncSession omits SignedHash when ResponseSign is Null: impossible return value
+  - EC-DH startup cannot omit both SP exchange fields: correct return value
+  - ... 56 more
+- `core/5.2.3.2.1.txt`: 46 case(s)
+  - HostResponse does not rescue a mismatched HostSessionID: impossible success
+  - Password HostSigningAuthority StartSession omits SPChallenge: correct return value
+  - Password HostSigningAuthority StartSession omits SPChallenge: impossible return value
+  - Password StartSession still echoes HostSessionID: correct return value
+  - Password StartSession still echoes HostSessionID: impossible return value
+  - ... 41 more
+- `core/5.2.3.2.2.txt`: 36 case(s)
+  - HostResponse does not rescue a mismatched HostSessionID: impossible success
+  - Password HostSigningAuthority StartSession omits SPChallenge: correct return value
+  - Password HostSigningAuthority StartSession omits SPChallenge: impossible return value
+  - StartSession HostSessionID 'session-one' is not a uinteger: impossible success
+  - StartSession HostSessionID -1 is not a uinteger: impossible success
+  - ... 31 more
+- `core/5.2.3.2.3.txt`: 16 case(s)
+  - EC-DH startup cannot omit both SP exchange fields: correct return value
+  - EC-DH startup cannot omit both SP exchange fields: impossible return value
+  - EC-DH startup requires the SP static public key field: correct return value
+  - EC-DH startup requires the SP static public key field: impossible return value
+  - EC-DH startup returns SP nonce and static public key: correct return value
+  - ... 11 more
+- `core/5.2.3.2.4.txt`: 6 case(s)
+  - EC-DH startup cannot omit both SP exchange fields: correct return value
+  - EC-DH startup cannot omit both SP exchange fields: impossible return value
+  - EC-DH startup requires the SP static public key field: correct return value
+  - EC-DH startup requires the SP static public key field: impossible return value
+  - EC-DH startup returns SP nonce and static public key: correct return value
+  - ... 1 more
+- `core/5.2.3.2.6.txt`: 21 case(s)
+  - MaxTransTimeout zero means no upper transmission-timeout limit: correct success
+  - MaxTransTimeout zero means no upper transmission-timeout limit: impossible error
+  - StartSession TransTimeout above MaxTransTimeout fails: impossible success
+  - StartSession TransTimeout below MinTransTimeout fails: impossible success
+  - StartSession TransTimeout inside observed bounds succeeds: correct success
+  - ... 16 more
+- `core/5.2.3.2.7.txt`: 15 case(s)
+  - SyncSession InitialCredit is a nonnegative byte count: correct return value
+  - SyncSession InitialCredit is a nonnegative byte count: impossible return value
+  - SyncSession MaxTransTimeout zero permits large returned timeout: correct return value
+  - SyncSession MaxTransTimeout zero permits large returned timeout: impossible return value
+  - SyncSession TransTimeout exceeds host requested value: correct return value
+  - ... 10 more
+- `core/5.2.3.2.8.txt`: 6 case(s)
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: correct return value
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: impossible return value
+  - Admin SP SID password SyncSession omits SignedHash when ResponseSign is Null: correct return value
+  - Admin SP SID password SyncSession omits SignedHash when ResponseSign is Null: impossible return value
+  - Observed SID ResponseSign Null still forbids SyncSession SignedHash: correct return value
+  - ... 1 more
+- `core/5.2.3.3.txt`: 39 case(s)
+  - HostResponse does not rescue a mismatched HostSessionID: impossible success
+  - Password HostSigningAuthority StartSession omits SPChallenge: correct return value
+  - Password HostSigningAuthority StartSession omits SPChallenge: impossible return value
+  - StartSession HostSessionID 'session-one' is not a uinteger: impossible success
+  - StartSession HostSessionID -1 is not a uinteger: impossible success
+  - ... 34 more
+- `core/5.2.3.3.1.txt`: 29 case(s)
+  - HostResponse does not rescue a mismatched HostSessionID: impossible success
+  - StartSession HostSessionID 'session-one' is not a uinteger: impossible success
+  - StartSession HostSessionID -1 is not a uinteger: impossible success
+  - StartSession HostSessionID True is not a uinteger: impossible success
+  - StartSession accepts hexadecimal HostSessionID uinteger
+  - ... 24 more
+- `core/5.2.3.3.2.txt`: 29 case(s)
+  - HostResponse does not rescue a mismatched HostSessionID: impossible success
+  - StartSession HostSessionID 'session-one' is not a uinteger: impossible success
+  - StartSession HostSessionID -1 is not a uinteger: impossible success
+  - StartSession HostSessionID True is not a uinteger: impossible success
+  - StartSession accepts hexadecimal HostSessionID uinteger
+  - ... 24 more
+- `core/5.2.3.3.3.txt`: 26 case(s)
+  - HostResponse does not rescue a mismatched HostSessionID: impossible success
+  - Password HostSigningAuthority StartSession omits SPChallenge: correct return value
+  - Password HostSigningAuthority StartSession omits SPChallenge: impossible return value
+  - StartTrustedSession accepts the HostSessionID and SPSessionID from the preceding startup exchange: correct success
+  - StartTrustedSession accepts the HostSessionID and SPSessionID from the preceding startup exchange: impossible error
+  - ... 21 more
+- `core/5.2.3.3.6.txt`: 32 case(s)
+  - AdminExch remains invalid as HostSigningAuthority even with a credential: impossible success
+  - Credentialless HostExchange fallback cannot satisfy secure SID startup: impossible success
+  - Credentialless SP ResponseExch rejects secure SID startup even with SignedHash: impossible success
+  - Credentialless SP and Host exchange authorities both reject secure SID startup: impossible success
+  - HashAndSign false after true permits omitted SignedHash: correct success
+  - ... 27 more
+- `core/5.2.3.4.txt`: 26 case(s)
+  - HostResponse does not rescue a mismatched HostSessionID: impossible success
+  - Password HostSigningAuthority StartSession omits SPChallenge: correct return value
+  - Password HostSigningAuthority StartSession omits SPChallenge: impossible return value
+  - StartTrustedSession accepts the HostSessionID and SPSessionID from the preceding startup exchange: correct success
+  - StartTrustedSession accepts the HostSessionID and SPSessionID from the preceding startup exchange: impossible error
+  - ... 21 more
+- `core/5.2.3.4.1.txt`: 36 case(s)
+  - HostResponse does not rescue a mismatched HostSessionID: impossible success
+  - Password HostSigningAuthority StartSession omits SPChallenge: correct return value
+  - Password HostSigningAuthority StartSession omits SPChallenge: impossible return value
+  - StartSession HostSessionID 'session-one' is not a uinteger: impossible success
+  - StartSession HostSessionID -1 is not a uinteger: impossible success
+  - ... 31 more
+- `core/5.2.3.4.2.txt`: 36 case(s)
+  - HostResponse does not rescue a mismatched HostSessionID: impossible success
+  - Password HostSigningAuthority StartSession omits SPChallenge: correct return value
+  - Password HostSigningAuthority StartSession omits SPChallenge: impossible return value
+  - StartSession HostSessionID 'session-one' is not a uinteger: impossible success
+  - StartSession HostSessionID -1 is not a uinteger: impossible success
+  - ... 31 more
+- `core/5.2.3.4.3.txt`: 10 case(s)
+  - Password HostSigningAuthority StartSession omits SPChallenge: correct return value
+  - Password HostSigningAuthority StartSession omits SPChallenge: impossible return value
+  - SyncSession success includes HostSessionID and SPSessionID: correct return value
+  - SyncSession success includes HostSessionID and SPSessionID: impossible return value
+  - SyncSession success missing SPSessionID is impossible
+  - ... 5 more
+- `core/5.2.3.4.6.txt`: 32 case(s)
+  - AdminExch remains invalid as HostSigningAuthority even with a credential: impossible success
+  - Credentialless HostExchange fallback cannot satisfy secure SID startup: impossible success
+  - Credentialless SP ResponseExch rejects secure SID startup even with SignedHash: impossible success
+  - Credentialless SP and Host exchange authorities both reject secure SID startup: impossible success
+  - HashAndSign false after true permits omitted SignedHash: correct success
+  - ... 27 more
+- `core/5.3.2.1.txt`: 68 case(s)
+  - Admin SP SPInfo Name is host read-only: impossible success
+  - Admin SP SPInfo SPID is host read-only: impossible success
+  - Admin SP SPInfo Size is host read-only: impossible success
+  - Admin SP SPInfo SizeInUse is host read-only: impossible success
+  - Admin SP SPInfo UID is host read-only: impossible success
+  - ... 63 more
+- `core/5.3.2.1.1.txt`: 10 case(s)
+  - Admin SP SPInfo Name is host read-only: impossible success
+  - Admin SP SPInfo SPID is host read-only: impossible success
+  - Admin SP SPInfo Size is host read-only: impossible success
+  - Admin SP SPInfo SizeInUse is host read-only: impossible success
+  - Admin SP SPInfo UID is host read-only: impossible success
+  - ... 5 more
+- `core/5.3.2.1.2.txt`: 10 case(s)
+  - Admin SP SPInfo Name is host read-only: impossible success
+  - Admin SP SPInfo SPID is host read-only: impossible success
+  - Admin SP SPInfo Size is host read-only: impossible success
+  - Admin SP SPInfo SizeInUse is host read-only: impossible success
+  - Admin SP SPInfo UID is host read-only: impossible success
+  - ... 5 more
+- `core/5.3.2.1.3.txt`: 10 case(s)
+  - Admin SP SPInfo Name is host read-only: impossible success
+  - Admin SP SPInfo SPID is host read-only: impossible success
+  - Admin SP SPInfo Size is host read-only: impossible success
+  - Admin SP SPInfo SizeInUse is host read-only: impossible success
+  - Admin SP SPInfo UID is host read-only: impossible success
+  - ... 5 more
+- `core/5.3.2.1.4.txt`: 10 case(s)
+  - Admin SP SPInfo Name is host read-only: impossible success
+  - Admin SP SPInfo SPID is host read-only: impossible success
+  - Admin SP SPInfo Size is host read-only: impossible success
+  - Admin SP SPInfo SizeInUse is host read-only: impossible success
+  - Admin SP SPInfo UID is host read-only: impossible success
+  - ... 5 more
+- `core/5.3.2.1.5.txt`: 10 case(s)
+  - Admin SP SPInfo Name is host read-only: impossible success
+  - Admin SP SPInfo SPID is host read-only: impossible success
+  - Admin SP SPInfo Size is host read-only: impossible success
+  - Admin SP SPInfo SizeInUse is host read-only: impossible success
+  - Admin SP SPInfo UID is host read-only: impossible success
+  - ... 5 more
+- `core/5.3.2.1.6.txt`: 20 case(s)
+  - Authority Secure rejects boolean false as messaging_type: correct status
+  - Authority Secure rejects boolean false as messaging_type: impossible success
+  - Authority Secure rejects boolean true as messaging_type: correct status
+  - Authority Secure rejects boolean true as messaging_type: impossible success
+  - SPInfo SPSessionTimeout rejects boolean false as uinteger timeout: correct status
+  - ... 15 more
+- `core/5.3.2.1.7.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.3.2.2.txt`: 16 case(s)
+  - Admin SP SPTemplates Admin Name is host read-only: impossible success
+  - Admin SP SPTemplates Admin TemplateID is host read-only: impossible success
+  - Admin SP SPTemplates Admin UID is host read-only: impossible success
+  - Admin SP SPTemplates Admin Version is host read-only: impossible success
+  - Admin SP SPTemplates Base Name is host read-only: impossible success
+  - ... 11 more
+- `core/5.3.2.2.1.txt`: 16 case(s)
+  - Admin SP SPTemplates Admin Name is host read-only: impossible success
+  - Admin SP SPTemplates Admin TemplateID is host read-only: impossible success
+  - Admin SP SPTemplates Admin UID is host read-only: impossible success
+  - Admin SP SPTemplates Admin Version is host read-only: impossible success
+  - Admin SP SPTemplates Base Name is host read-only: impossible success
+  - ... 11 more
+- `core/5.3.2.2.2.txt`: 16 case(s)
+  - Admin SP SPTemplates Admin Name is host read-only: impossible success
+  - Admin SP SPTemplates Admin TemplateID is host read-only: impossible success
+  - Admin SP SPTemplates Admin UID is host read-only: impossible success
+  - Admin SP SPTemplates Admin Version is host read-only: impossible success
+  - Admin SP SPTemplates Base Name is host read-only: impossible success
+  - ... 11 more
+- `core/5.3.2.2.3.txt`: 16 case(s)
+  - Admin SP SPTemplates Admin Name is host read-only: impossible success
+  - Admin SP SPTemplates Admin TemplateID is host read-only: impossible success
+  - Admin SP SPTemplates Admin UID is host read-only: impossible success
+  - Admin SP SPTemplates Admin Version is host read-only: impossible success
+  - Admin SP SPTemplates Base Name is host read-only: impossible success
+  - ... 11 more
+- `core/5.3.2.2.4.txt`: 16 case(s)
+  - Admin SP SPTemplates Admin Name is host read-only: impossible success
+  - Admin SP SPTemplates Admin TemplateID is host read-only: impossible success
+  - Admin SP SPTemplates Admin UID is host read-only: impossible success
+  - Admin SP SPTemplates Admin Version is host read-only: impossible success
+  - Admin SP SPTemplates Base Name is host read-only: impossible success
+  - ... 11 more
+- `core/5.3.2.3.txt`: 133 case(s)
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - ... 128 more
+- `core/5.3.2.3.1.txt`: 44 case(s)
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN LastID is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Name is host read-only: impossible success
+  - ... 39 more
+- `core/5.3.2.3.2.txt`: 44 case(s)
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN LastID is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Name is host read-only: impossible success
+  - ... 39 more
+- `core/5.3.2.3.3.txt`: 44 case(s)
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN LastID is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Name is host read-only: impossible success
+  - ... 39 more
+- `core/5.3.2.3.4.txt`: 56 case(s)
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN LastID is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Name is host read-only: impossible success
+  - ... 51 more
+- `core/5.3.2.3.5.txt`: 44 case(s)
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN LastID is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Name is host read-only: impossible success
+  - ... 39 more
+- `core/5.3.2.3.6.txt`: 52 case(s)
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN LastID is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Name is host read-only: impossible success
+  - ... 47 more
+- `core/5.3.2.3.7.txt`: 64 case(s)
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN LastID is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Name is host read-only: impossible success
+  - ... 59 more
+- `core/5.3.2.3.8.txt`: 82 case(s)
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN LastID is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Name is host read-only: impossible success
+  - ... 77 more
+- `core/5.3.2.3.9.txt`: 44 case(s)
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN LastID is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Name is host read-only: impossible success
+  - ... 39 more
+- `core/5.3.2.3.10.txt`: 44 case(s)
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN LastID is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Name is host read-only: impossible success
+  - ... 39 more
+- `core/5.3.2.3.11.txt`: 44 case(s)
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN LastID is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Name is host read-only: impossible success
+  - ... 39 more
+- `core/5.3.2.3.12.txt`: 13 case(s)
+  - Created table descriptor MaxSize above MinSize may be set successfully
+  - Created table descriptor MaxSize below current CreateRow count fails: correct status
+  - Created table descriptor MaxSize below current CreateRow count fails: impossible success
+  - Created table descriptor MaxSize below recorded MinSize fails: correct status
+  - Created table descriptor MaxSize below recorded MinSize fails: impossible success
+  - ... 8 more
+- `core/5.3.2.3.13.txt`: 13 case(s)
+  - Created table descriptor MaxSize above MinSize may be set successfully
+  - Created table descriptor MaxSize below current CreateRow count fails: correct status
+  - Created table descriptor MaxSize below current CreateRow count fails: impossible success
+  - Created table descriptor MaxSize below recorded MinSize fails: correct status
+  - Created table descriptor MaxSize below recorded MinSize fails: impossible success
+  - ... 8 more
+- `core/5.3.2.4.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.3.2.4.3.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.3.2.4.5.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.3.2.4.7.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.3.2.4.8.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.3.2.4.9.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.3.2.5.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.3.2.5.5.txt`: 6 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Type CreateRow cannot specify TPer-calculated Size: correct status
+  - Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - Type Size Set cannot accept host modification success: correct status
+  - Type Size Set cannot accept host modification success: impossible success
+  - ... 1 more
+- `core/5.3.2.6.txt`: 82 case(s)
+  - Admin SP MethodID Activate row cannot report Name Revert
+  - Admin SP MethodID Activate row reports Name Activate
+  - Admin SP MethodID Authenticate row cannot report Name Revert
+  - Admin SP MethodID Authenticate row reports Name Authenticate
+  - Admin SP MethodID Get row cannot report Name Set
+  - ... 77 more
+- `core/5.3.2.6.1.txt`: 64 case(s)
+  - Admin SP MethodID Activate row cannot report Name Revert
+  - Admin SP MethodID Activate row reports Name Activate
+  - Admin SP MethodID Authenticate row cannot report Name Revert
+  - Admin SP MethodID Authenticate row reports Name Authenticate
+  - Admin SP MethodID Get row cannot report Name Set
+  - ... 59 more
+- `core/5.3.2.6.2.txt`: 64 case(s)
+  - Admin SP MethodID Activate row cannot report Name Revert
+  - Admin SP MethodID Activate row reports Name Activate
+  - Admin SP MethodID Authenticate row cannot report Name Revert
+  - Admin SP MethodID Authenticate row reports Name Authenticate
+  - Admin SP MethodID Get row cannot report Name Set
+  - ... 59 more
+- `core/5.3.2.6.3.txt`: 62 case(s)
+  - Admin SP MethodID Activate row cannot report Name Revert
+  - Admin SP MethodID Activate row reports Name Activate
+  - Admin SP MethodID Authenticate row cannot report Name Revert
+  - Admin SP MethodID Authenticate row reports Name Authenticate
+  - Admin SP MethodID Get row cannot report Name Set
+  - ... 57 more
+- `core/5.3.2.6.4.txt`: 62 case(s)
+  - Admin SP MethodID Activate row cannot report Name Revert
+  - Admin SP MethodID Activate row reports Name Activate
+  - Admin SP MethodID Authenticate row cannot report Name Revert
+  - Admin SP MethodID Authenticate row reports Name Authenticate
+  - Admin SP MethodID Get row cannot report Name Set
+  - ... 57 more
+- `core/5.3.2.7.txt`: 823 case(s)
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: correct return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get returns Admins and All: correct return value
+  - ... 818 more
+- `core/5.3.2.7.2.txt`: 37 case(s)
+  - Direct AccessControl Get self-identifies C_PIN User2 Set association: correct return value
+  - Direct AccessControl Get self-identifies C_PIN User2 Set association: impossible return value
+  - Direct AccessControl Get self-identifies K AES 256 Range1 GenKey association: correct return value
+  - Direct AccessControl Get self-identifies K AES 256 Range1 GenKey association: impossible return value
+  - Direct AccessControl Get self-identifies MBRControl Get not Set: correct return value
+  - ... 32 more
+- `core/5.3.2.7.3.txt`: 37 case(s)
+  - Direct AccessControl Get self-identifies C_PIN User2 Set association: correct return value
+  - Direct AccessControl Get self-identifies C_PIN User2 Set association: impossible return value
+  - Direct AccessControl Get self-identifies K AES 256 Range1 GenKey association: correct return value
+  - Direct AccessControl Get self-identifies K AES 256 Range1 GenKey association: impossible return value
+  - Direct AccessControl Get self-identifies MBRControl Get not Set: correct return value
+  - ... 32 more
+- `core/5.3.2.7.5.txt`: 416 case(s)
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: correct return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get returns Admins and All: correct return value
+  - ... 411 more
+- `core/5.3.2.7.6.txt`: 101 case(s)
+  - Direct AccessControl Get reports LogAlways for Locking_GlobalRange Set: correct return value
+  - Direct AccessControl Get reports LogAlways for Locking_GlobalRange Set: impossible return value
+  - Direct AccessControl Get reports LogAlways for Locking_Range1 Set: correct return value
+  - Direct AccessControl Get reports LogAlways for Locking_Range1 Set: impossible return value
+  - Direct AccessControl Get reports LogAlways for Locking_Range2 Set: correct return value
+  - ... 96 more
+- `core/5.3.2.7.7.txt`: 27 case(s)
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - AddACE success on Admin SP SPInfo Get must not return payload
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: correct success
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: impossible error
+  - Admin SP SPInfo Get DeleteMethodACL empty after AddACE returns NOT_AUTHORIZED: correct status
+  - ... 22 more
+- `core/5.3.2.7.8.txt`: 27 case(s)
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - AddACE success on Admin SP SPInfo Get must not return payload
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: correct success
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: impossible error
+  - Admin SP SPInfo Get DeleteMethodACL empty after AddACE returns NOT_AUTHORIZED: correct status
+  - ... 22 more
+- `core/5.3.2.7.9.txt`: 291 case(s)
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: correct return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get returns Admins and All: correct return value
+  - ... 286 more
+- `core/5.3.2.7.10.txt`: 27 case(s)
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - AddACE success on Admin SP SPInfo Get must not return payload
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: correct success
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: impossible error
+  - Admin SP SPInfo Get DeleteMethodACL empty after AddACE returns NOT_AUTHORIZED: correct status
+  - ... 22 more
+- `core/5.3.2.7.11.txt`: 125 case(s)
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set AddACELog: correct return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set AddACELog: impossible return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set DeleteMethodLog: correct return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set DeleteMethodLog: impossible return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set GetACLLog: correct return value
+  - ... 120 more
+- `core/5.3.2.7.12.txt`: 125 case(s)
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set AddACELog: correct return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set AddACELog: impossible return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set DeleteMethodLog: correct return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set DeleteMethodLog: impossible return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set GetACLLog: correct return value
+  - ... 120 more
+- `core/5.3.2.7.13.txt`: 125 case(s)
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set AddACELog: correct return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set AddACELog: impossible return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set DeleteMethodLog: correct return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set DeleteMethodLog: impossible return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set GetACLLog: correct return value
+  - ... 120 more
+- `core/5.3.2.7.14.txt`: 159 case(s)
+  - DataStore aligned mandatory-granularity overwrite updates tail exactly: correct return value
+  - DataStore aligned mandatory-granularity overwrite updates tail exactly: impossible return value
+  - DataStore column Values failure preserves long overlapped payload: correct return value
+  - DataStore column Values failure preserves long overlapped payload: impossible return value
+  - DataStore explicit interior Get preserves byte order after long writes: correct return value
+  - ... 154 more
+- `core/5.3.2.7.15.txt`: 143 case(s)
+  - DataStore aligned mandatory-granularity overwrite updates tail exactly: correct return value
+  - DataStore aligned mandatory-granularity overwrite updates tail exactly: impossible return value
+  - DataStore column Values failure preserves long overlapped payload: correct return value
+  - DataStore column Values failure preserves long overlapped payload: impossible return value
+  - DataStore explicit interior Get preserves byte order after long writes: correct return value
+  - ... 138 more
+- `core/5.3.2.8.txt`: 19 case(s)
+  - Host cannot modify SecretProtect ColumnNumber
+  - Host cannot modify SecretProtect ProtectMechanisms
+  - Host cannot modify SecretProtect Table column
+  - K_AES Key column Get cannot succeed
+  - K_AES Mode Get success cannot leak protected Key cell
+  - ... 14 more
+- `core/5.3.2.8.1.txt`: 3 case(s)
+  - Host cannot modify SecretProtect ColumnNumber
+  - Host cannot modify SecretProtect ProtectMechanisms
+  - Host cannot modify SecretProtect Table column
+- `core/5.3.2.8.2.txt`: 19 case(s)
+  - Host cannot modify SecretProtect ColumnNumber
+  - Host cannot modify SecretProtect ProtectMechanisms
+  - Host cannot modify SecretProtect Table column
+  - K_AES Key column Get cannot succeed
+  - K_AES Mode Get success cannot leak protected Key cell
+  - ... 14 more
+- `core/5.3.2.8.3.txt`: 19 case(s)
+  - Host cannot modify SecretProtect ColumnNumber
+  - Host cannot modify SecretProtect ProtectMechanisms
+  - Host cannot modify SecretProtect Table column
+  - K_AES Key column Get cannot succeed
+  - K_AES Mode Get success cannot leak protected Key cell
+  - ... 14 more
+- `core/5.3.2.8.4.txt`: 19 case(s)
+  - Host cannot modify SecretProtect ColumnNumber
+  - Host cannot modify SecretProtect ProtectMechanisms
+  - Host cannot modify SecretProtect Table column
+  - K_AES Key column Get cannot succeed
+  - K_AES Mode Get success cannot leak protected Key cell
+  - ... 14 more
+- `core/5.3.2.9.txt`: 327 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: correct return value
+  - ... 322 more
+- `core/5.3.2.9.1.txt`: 30 case(s)
+  - Admin SP ACE_Admin issued CommonName is host read-only: impossible success
+  - Admin SP ACE_Admin issued Name is host read-only: impossible success
+  - Admin SP ACE_Admin issued UID is host read-only: impossible success
+  - Admin SP ACE_Anybody issued CommonName is host read-only: impossible success
+  - Admin SP ACE_Anybody issued Name is host read-only: impossible success
+  - ... 25 more
+- `core/5.3.2.9.2.txt`: 30 case(s)
+  - Admin SP ACE_Admin issued CommonName is host read-only: impossible success
+  - Admin SP ACE_Admin issued Name is host read-only: impossible success
+  - Admin SP ACE_Admin issued UID is host read-only: impossible success
+  - Admin SP ACE_Anybody issued CommonName is host read-only: impossible success
+  - Admin SP ACE_Anybody issued Name is host read-only: impossible success
+  - ... 25 more
+- `core/5.3.2.9.3.txt`: 30 case(s)
+  - Admin SP ACE_Admin issued CommonName is host read-only: impossible success
+  - Admin SP ACE_Admin issued Name is host read-only: impossible success
+  - Admin SP ACE_Admin issued UID is host read-only: impossible success
+  - Admin SP ACE_Anybody issued CommonName is host read-only: impossible success
+  - Admin SP ACE_Anybody issued Name is host read-only: impossible success
+  - ... 25 more
+- `core/5.3.2.9.4.txt`: 273 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: correct return value
+  - ... 268 more
+- `core/5.3.2.9.5.txt`: 30 case(s)
+  - Personalized ACE C_PIN User8 Set PIN Get returns User8 BooleanExpr: correct return value
+  - Personalized ACE C_PIN User8 Set PIN Get returns User8 BooleanExpr: impossible return value
+  - Personalized ACE C_PIN User8 Set PIN still leaves C_PIN User8 Set GetACL pointing at User8 ACE: correct return value
+  - Personalized ACE C_PIN User8 Set PIN still leaves C_PIN User8 Set GetACL pointing at User8 ACE: impossible return value
+  - User8 Admin PIN Set clears Tries after prior failed Proof: correct return value
+  - ... 25 more
+- `core/5.3.2.10.txt`: 372 case(s)
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: correct return value
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: impossible return value
+  - Admin SP Authority Admin1 Get rejects boolean operation coercion: correct return value
+  - Admin SP Authority Admin1 Get rejects boolean operation coercion: impossible return value
+  - Admin SP Authority Admin1 Get rejects reserved auth_method operation: correct return value
+  - ... 367 more
+- `core/5.3.2.12.txt`: 282 case(s)
+  - Admin SP C_PIN_Admin1 issued CommonName is host read-only: impossible success
+  - Admin SP C_PIN_Admin1 issued Name is host read-only: impossible success
+  - Admin SP C_PIN_Admin1 issued UID is host read-only: impossible success
+  - Admin SP C_PIN_MSID issued CommonName is host read-only: impossible success
+  - Admin SP C_PIN_MSID issued Name is host read-only: impossible success
+  - ... 277 more
+- `core/5.3.2.12.1.txt`: 15 case(s)
+  - Admin SP C_PIN_Admin1 issued CommonName is host read-only: impossible success
+  - Admin SP C_PIN_Admin1 issued Name is host read-only: impossible success
+  - Admin SP C_PIN_Admin1 issued UID is host read-only: impossible success
+  - Admin SP C_PIN_MSID issued CommonName is host read-only: impossible success
+  - Admin SP C_PIN_MSID issued Name is host read-only: impossible success
+  - ... 10 more
+- `core/5.3.2.12.2.txt`: 15 case(s)
+  - Admin SP C_PIN_Admin1 issued CommonName is host read-only: impossible success
+  - Admin SP C_PIN_Admin1 issued Name is host read-only: impossible success
+  - Admin SP C_PIN_Admin1 issued UID is host read-only: impossible success
+  - Admin SP C_PIN_MSID issued CommonName is host read-only: impossible success
+  - Admin SP C_PIN_MSID issued Name is host read-only: impossible success
+  - ... 10 more
+- `core/5.3.2.12.3.txt`: 15 case(s)
+  - Admin SP C_PIN_Admin1 issued CommonName is host read-only: impossible success
+  - Admin SP C_PIN_Admin1 issued Name is host read-only: impossible success
+  - Admin SP C_PIN_Admin1 issued UID is host read-only: impossible success
+  - Admin SP C_PIN_MSID issued CommonName is host read-only: impossible success
+  - Admin SP C_PIN_MSID issued Name is host read-only: impossible success
+  - ... 10 more
+- `core/5.3.2.12.4.txt`: 11 case(s)
+  - Anybody UID Authenticate cannot return SUCCESS False
+  - Anybody UID Authenticate returns SUCCESS True
+  - C_PIN MSID PIN Get accepts password length 32 and rejects length 33: correct return value
+  - C_PIN MSID PIN Get accepts password length 32 and rejects length 33: impossible return value
+  - C_PIN PIN Get rejects boolean password coercion: correct return value
+  - ... 6 more
+- `core/5.3.2.12.5.txt`: 1 case(s)
+  - C_PIN CharSet numeric column cannot reference C_PIN object: impossible success
+- `core/5.3.2.12.6.txt`: 26 case(s)
+  - C_PIN Persistence numeric column cannot be boolean value two: impossible success
+  - C_PIN Tries rejects boolean false as unsigned counter: correct status
+  - C_PIN Tries rejects boolean false as unsigned counter: impossible success
+  - C_PIN Tries rejects boolean true as unsigned counter: correct status
+  - C_PIN Tries rejects boolean true as unsigned counter: impossible success
+  - ... 21 more
+- `core/5.3.2.12.7.txt`: 44 case(s)
+  - C_PIN Tries rejects boolean false as unsigned counter: correct status
+  - C_PIN Tries rejects boolean false as unsigned counter: impossible success
+  - C_PIN Tries rejects boolean true as unsigned counter: correct status
+  - C_PIN Tries rejects boolean true as unsigned counter: impossible success
+  - C_PIN TryLimit rejects boolean false as unsigned counter: correct status
+  - ... 39 more
+- `core/5.3.2.12.8.txt`: 2 case(s)
+  - C_PIN Persistence numeric column cannot be boolean value two: impossible success
+  - C_PIN TryLimit numeric column cannot be negative: impossible success
+- `core/5.3.2.13.txt`: 40 case(s)
+  - C_AES Hash accepts SHA-512 hash_protocol: correct success
+  - C_AES Hash accepts SHA-512 hash_protocol: impossible error
+  - C_AES Hash rejects boolean hash_protocol coercion: correct status
+  - C_AES Hash rejects boolean hash_protocol coercion: impossible success
+  - C_AES Hash rejects reserved hash_protocol: correct status
+  - ... 35 more
+- `core/5.3.2.14.txt`: 28 case(s)
+  - C_AES Hash accepts SHA-512 hash_protocol: correct success
+  - C_AES Hash accepts SHA-512 hash_protocol: impossible error
+  - C_AES Hash rejects boolean hash_protocol coercion: correct status
+  - C_AES Hash rejects boolean hash_protocol coercion: impossible success
+  - C_AES Hash rejects reserved hash_protocol: correct status
+  - ... 23 more
+- `core/5.3.2.15.txt`: 52 case(s)
+  - C_AES CFB FeedbackSize rejects value above AES block length: correct status
+  - C_AES CFB FeedbackSize rejects value above AES block length: impossible success
+  - C_AES CFB FeedbackSize rejects zero: correct status
+  - C_AES CFB FeedbackSize rejects zero: impossible success
+  - C_AES FeedbackSize Get rejects boolean uinteger: correct return value
+  - ... 47 more
+- `core/5.3.2.15.4.txt`: 14 case(s)
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: correct return value
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: impossible return value
+  - C_AES ResidualData rejects boolean bytes_16 coercion: correct status
+  - C_AES ResidualData rejects boolean bytes_16 coercion: impossible success
+  - C_AES_128 Key accepts bytes_16: correct success
+  - ... 9 more
+- `core/5.3.2.15.7.txt`: 14 case(s)
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: correct return value
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: impossible return value
+  - C_AES ResidualData rejects boolean bytes_16 coercion: correct status
+  - C_AES ResidualData rejects boolean bytes_16 coercion: impossible success
+  - C_AES_128 Key accepts bytes_16: correct success
+  - ... 9 more
+- `core/5.3.2.16.txt`: 52 case(s)
+  - C_AES CFB FeedbackSize rejects value above AES block length: correct status
+  - C_AES CFB FeedbackSize rejects value above AES block length: impossible success
+  - C_AES CFB FeedbackSize rejects zero: correct status
+  - C_AES CFB FeedbackSize rejects zero: impossible success
+  - C_AES FeedbackSize Get rejects boolean uinteger: correct return value
+  - ... 47 more
+- `core/5.3.2.16.4.txt`: 14 case(s)
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: correct return value
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: impossible return value
+  - C_AES ResidualData rejects boolean bytes_16 coercion: correct status
+  - C_AES ResidualData rejects boolean bytes_16 coercion: impossible success
+  - C_AES_128 Key accepts bytes_16: correct success
+  - ... 9 more
+- `core/5.3.2.16.7.txt`: 14 case(s)
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: correct return value
+  - C_AES ResidualData Get accepts bytes_16 and rejects short bytes: impossible return value
+  - C_AES ResidualData rejects boolean bytes_16 coercion: correct status
+  - C_AES ResidualData rejects boolean bytes_16 coercion: impossible success
+  - C_AES_128 Key accepts bytes_16: correct success
+  - ... 9 more
+- `core/5.3.2.17.txt`: 8 case(s)
+  - C_EC_160 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_160 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_224 CreateRow omitted curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.17.15.txt`: 8 case(s)
+  - C_EC_160 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_160 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_224 CreateRow omitted curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.18.txt`: 8 case(s)
+  - C_EC_160 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_160 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_224 CreateRow omitted curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.18.15.txt`: 8 case(s)
+  - C_EC_160 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_160 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_224 CreateRow omitted curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.19.txt`: 8 case(s)
+  - C_EC_160 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_160 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_224 CreateRow omitted curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.19.15.txt`: 8 case(s)
+  - C_EC_160 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_160 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_224 CreateRow omitted curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.20.txt`: 20 case(s)
+  - C_AES Hash accepts SHA-512 hash_protocol: correct success
+  - C_AES Hash accepts SHA-512 hash_protocol: impossible error
+  - C_AES Hash rejects boolean hash_protocol coercion: correct status
+  - C_AES Hash rejects boolean hash_protocol coercion: impossible success
+  - C_AES Hash rejects reserved hash_protocol: correct status
+  - ... 15 more
+- `core/5.3.2.21.txt`: 8 case(s)
+  - C_EC_160 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_160 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_224 CreateRow omitted curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.21.15.txt`: 8 case(s)
+  - C_EC_160 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_160 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: correct return value
+  - C_EC_192 CreateRow omitted curve columns default into later Get: impossible return value
+  - C_EC_224 CreateRow omitted curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.22.txt`: 8 case(s)
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_283 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.22.15.txt`: 8 case(s)
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_283 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.23.txt`: 8 case(s)
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_283 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.23.18.txt`: 8 case(s)
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_283 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.24.txt`: 8 case(s)
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_283 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.24.16.txt`: 8 case(s)
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_283 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.25.txt`: 8 case(s)
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_283 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.25.18.txt`: 8 case(s)
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_163 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - C_EC_233 CreateRow omitted table-specific curve columns default into later Get: impossible return value
+  - C_EC_283 CreateRow omitted table-specific curve columns default into later Get: correct return value
+  - ... 3 more
+- `core/5.3.2.26.txt`: 36 case(s)
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: correct return value
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: impossible return value
+  - C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: correct return value
+  - C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: impossible return value
+  - C_HMAC_160 Key accepts fixed bytes_20: correct success
+  - ... 31 more
+- `core/5.3.2.27.txt`: 44 case(s)
+  - C_AES Hash accepts SHA-512 hash_protocol: correct success
+  - C_AES Hash accepts SHA-512 hash_protocol: impossible error
+  - C_AES Hash rejects boolean hash_protocol coercion: correct status
+  - C_AES Hash rejects boolean hash_protocol coercion: impossible success
+  - C_AES Hash rejects reserved hash_protocol: correct status
+  - ... 39 more
+- `core/5.3.2.28.txt`: 24 case(s)
+  - C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: correct return value
+  - C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: impossible return value
+  - C_HMAC_160 Key accepts fixed bytes_20: correct success
+  - C_HMAC_160 Key accepts fixed bytes_20: impossible error
+  - C_HMAC_160 Key rejects short fixed bytes_20: correct status
+  - ... 19 more
+- `core/5.3.2.29.txt`: 24 case(s)
+  - C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: correct return value
+  - C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: impossible return value
+  - C_HMAC_160 Key accepts fixed bytes_20: correct success
+  - C_HMAC_160 Key accepts fixed bytes_20: impossible error
+  - C_HMAC_160 Key rejects short fixed bytes_20: correct status
+  - ... 19 more
+- `core/5.3.3.1.txt`: 21 case(s)
+  - Admin SP AdminSP CreateTable GetACL alias association does not exist: impossible success
+  - Admin SP AdminSP DeleteSP GetACL alias association does not exist: impossible success
+  - Admin SP AdminSP GetFreeSpace GetACL alias association does not exist: impossible success
+  - Admin SP LockingSP GetFreeSpace GetACL alias association does not exist: impossible success
+  - Admin SP cannot be deleted with DeleteSP
+  - ... 16 more
+- `core/5.3.3.1.1.txt`: 5 case(s)
+  - Admin SP cannot be deleted with DeleteSP
+  - DeleteSP success must not include return payload
+  - DeleteSP success returns an empty list
+  - Deleted Locking SP must not accept new sessions after DeleteSP close
+  - Disabled Locking SP DeleteSP removes the SP only after session close
+- `core/5.3.3.1.1.1.txt`: 5 case(s)
+  - Admin SP cannot be deleted with DeleteSP
+  - DeleteSP success must not include return payload
+  - DeleteSP success returns an empty list
+  - Deleted Locking SP must not accept new sessions after DeleteSP close
+  - Disabled Locking SP DeleteSP removes the SP only after session close
+- `core/5.3.3.2.txt`: 73 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - Admin SP AdminSP CreateTable GetACL alias association does not exist: impossible success
+  - Admin SP AdminSP DeleteSP GetACL alias association does not exist: impossible success
+  - Admin SP AdminSP GetFreeSpace GetACL alias association does not exist: impossible success
+  - Admin SP LockingSP GetFreeSpace GetACL alias association does not exist: impossible success
+  - ... 68 more
+- `core/5.3.3.2.1.txt`: 24 case(s)
+  - CreateTable CommonName longer than 32 bytes: impossible success
+  - CreateTable NewTableName longer than 32 bytes: impossible success
+  - CreateTable accepts 32-byte NewTableName and CommonName
+  - CreateTable byte table blocks later object table with same pair: correct status
+  - CreateTable byte table blocks later object table with same pair: impossible success
+  - ... 19 more
+- `core/5.3.3.2.2.txt`: 7 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateTable duplicate Name and CommonName cannot succeed
+  - Created byte table cannot accept CreateRow success
+  - Created byte table cannot accept DeleteRow success
+  - Created object table can CreateRow then DeleteRow with empty result
+  - ... 2 more
+- `core/5.3.3.2.3.txt`: 68 case(s)
+  - Created table AddACE on TableUID Get succeeds with empty payload
+  - Created table AddACE success must not include return payload
+  - Created table DeleteMethod on Get does not tombstone TableUID Set: correct success
+  - Created table DeleteMethod on Get does not tombstone TableUID Set: impossible error
+  - Created table DeleteMethod on Get preserves later Set GetACL mutation: correct return value
+  - ... 63 more
+- `core/5.3.3.2.4.txt`: 14 case(s)
+  - Byte CreateTable with HintSize returns INVALID_PARAMETER
+  - Byte CreateTable with MaxSize returns INVALID_PARAMETER
+  - Byte CreateTable with empty Columns may return Rows MinSize
+  - Byte CreateTable with non-empty Columns cannot succeed
+  - CreateTable HintSize five may return Rows five
+  - ... 9 more
+- `core/5.3.3.2.5.txt`: 18 case(s)
+  - Byte CreateTable with HintSize returns INVALID_PARAMETER
+  - Byte CreateTable with MaxSize returns INVALID_PARAMETER
+  - Byte CreateTable with empty Columns may return Rows MinSize
+  - Byte CreateTable with non-empty Columns cannot succeed
+  - CreateTable HintSize True is not a uinteger: impossible success
+  - ... 13 more
+- `core/5.3.3.2.6.txt`: 18 case(s)
+  - Byte CreateTable with HintSize returns INVALID_PARAMETER
+  - Byte CreateTable with MaxSize returns INVALID_PARAMETER
+  - Byte CreateTable with empty Columns may return Rows MinSize
+  - Byte CreateTable with non-empty Columns cannot succeed
+  - CreateTable HintSize True is not a uinteger: impossible success
+  - ... 13 more
+- `core/5.3.3.2.7.txt`: 18 case(s)
+  - Byte CreateTable with HintSize returns INVALID_PARAMETER
+  - Byte CreateTable with MaxSize returns INVALID_PARAMETER
+  - Byte CreateTable with empty Columns may return Rows MinSize
+  - Byte CreateTable with non-empty Columns cannot succeed
+  - CreateTable HintSize True is not a uinteger: impossible success
+  - ... 13 more
+- `core/5.3.3.2.8.txt`: 24 case(s)
+  - CreateTable CommonName longer than 32 bytes: impossible success
+  - CreateTable NewTableName longer than 32 bytes: impossible success
+  - CreateTable accepts 32-byte NewTableName and CommonName
+  - CreateTable byte table blocks later object table with same pair: correct status
+  - CreateTable byte table blocks later object table with same pair: impossible success
+  - ... 19 more
+- `core/5.3.3.2.9.txt`: 7 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateTable duplicate Name and CommonName cannot succeed
+  - Created byte table cannot accept CreateRow success
+  - Created byte table cannot accept DeleteRow success
+  - Created object table can CreateRow then DeleteRow with empty result
+  - ... 2 more
+- `core/5.3.3.2.9.1.txt`: 29 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - Byte CreateTable with HintSize returns INVALID_PARAMETER
+  - Byte CreateTable with MaxSize returns INVALID_PARAMETER
+  - Byte CreateTable with empty Columns may return Rows MinSize
+  - Byte CreateTable with non-empty Columns cannot succeed
+  - ... 24 more
+- `core/5.3.3.2.9.2.txt`: 29 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - Byte CreateTable with HintSize returns INVALID_PARAMETER
+  - Byte CreateTable with MaxSize returns INVALID_PARAMETER
+  - Byte CreateTable with empty Columns may return Rows MinSize
+  - Byte CreateTable with non-empty Columns cannot succeed
+  - ... 24 more
+- `core/5.3.3.2.10.txt`: 28 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateTable byte table blocks later object table with same pair: correct status
+  - CreateTable byte table blocks later object table with same pair: impossible success
+  - CreateTable different NewTableName with same CommonName may succeed
+  - CreateTable duplicate Name and CommonName cannot succeed
+  - ... 23 more
+- `core/5.3.3.3.txt`: 49 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateTable duplicate Name and CommonName cannot succeed
+  - Created byte table cannot accept CreateRow success
+  - Created byte table cannot accept DeleteRow success
+  - Created object table can CreateRow then DeleteRow with empty result
+  - ... 44 more
+- `core/5.3.3.3.1.txt`: 9 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateTable duplicate Name and CommonName cannot succeed
+  - Created byte table cannot accept CreateRow success
+  - Created byte table cannot accept DeleteRow success
+  - Created object table can CreateRow then DeleteRow with empty result
+  - ... 4 more
+- `core/5.3.3.3.1.1.txt`: 47 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateTable duplicate Name and CommonName cannot succeed
+  - Created byte table cannot accept CreateRow success
+  - Created byte table cannot accept DeleteRow success
+  - Created object table can CreateRow then DeleteRow with empty result
+  - ... 42 more
+- `core/5.3.3.3.2.txt`: 2 case(s)
+  - Delete on absent object UID 0000000000000000 cannot succeed
+  - Delete on absent object UID FFFFFFFFFFFFFFFF cannot succeed
+- `core/5.3.3.4.txt`: 230 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - Admin SP AccessControl table cannot accept direct CreateRow success
+  - Admin SP AccessControl table cannot accept direct DeleteRow success
+  - Admin SP MethodID table cannot accept direct CreateRow success
+  - Admin SP MethodID table cannot accept direct DeleteRow success
+  - ... 225 more
+- `core/5.3.3.4.1.txt`: 7 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateTable duplicate Name and CommonName cannot succeed
+  - Created byte table cannot accept CreateRow success
+  - Created byte table cannot accept DeleteRow success
+  - Created object table can CreateRow then DeleteRow with empty result
+  - ... 2 more
+- `core/5.3.3.4.2.txt`: 7 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateTable duplicate Name and CommonName cannot succeed
+  - Created byte table cannot accept CreateRow success
+  - Created byte table cannot accept DeleteRow success
+  - Created object table can CreateRow then DeleteRow with empty result
+  - ... 2 more
+- `core/5.3.3.4.2.1.txt`: 146 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - Admin SP AccessControl table cannot accept direct CreateRow success
+  - Admin SP AccessControl table cannot accept direct DeleteRow success
+  - Admin SP MethodID table cannot accept direct CreateRow success
+  - Admin SP MethodID table cannot accept direct DeleteRow success
+  - ... 141 more
+- `core/5.3.3.4.3.txt`: 25 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateRow duplicate multi-column unique combination cannot succeed
+  - CreateRow duplicate non-unique value with different unique value may succeed
+  - CreateRow duplicate single unique column cannot succeed
+  - CreateRow extra undeclared column cannot succeed
+  - ... 20 more
+- `core/5.3.3.5.txt`: 176 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - Admin SP AccessControl table cannot accept direct CreateRow success
+  - Admin SP AccessControl table cannot accept direct DeleteRow success
+  - Admin SP MethodID table cannot accept direct CreateRow success
+  - Admin SP MethodID table cannot accept direct DeleteRow success
+  - ... 171 more
+- `core/5.3.3.5.1.txt`: 5 case(s)
+  - DeleteRow of a different row does not release another row unique value
+  - DeleteRow of multiple created rows releases each unique-column value
+  - DeleteRow releases a deleted unique-column value for later CreateRow
+  - DeleteRow success on a created table cannot include return payload
+  - DeleteRow without Rows parameter on a created table fails: impossible success
+- `core/5.3.3.5.2.txt`: 7 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateTable duplicate Name and CommonName cannot succeed
+  - Created byte table cannot accept CreateRow success
+  - Created byte table cannot accept DeleteRow success
+  - Created object table can CreateRow then DeleteRow with empty result
+  - ... 2 more
+- `core/5.3.3.5.2.1.txt`: 59 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - Admin SP AccessControl table cannot accept direct CreateRow success
+  - Admin SP AccessControl table cannot accept direct DeleteRow success
+  - Admin SP MethodID table cannot accept direct CreateRow success
+  - Admin SP MethodID table cannot accept direct DeleteRow success
+  - ... 54 more
+- `core/5.3.3.5.3.txt`: 7 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateTable duplicate Name and CommonName cannot succeed
+  - Created byte table cannot accept CreateRow success
+  - Created byte table cannot accept DeleteRow success
+  - Created object table can CreateRow then DeleteRow with empty result
+  - ... 2 more
+- `core/5.3.3.6.txt`: 262 case(s)
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: correct return value
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: impossible return value
+  - ACE_DataStore_Get_All Get follows personalized BooleanExpr: correct return value
+  - ... 257 more
+- `core/5.3.3.6.1.txt`: 130 case(s)
+  - Active MBR shadow read reflects omitted-Where prefix rewrite
+  - Active MBR shadow read reflects partial byte-table overwrite
+  - Active MBR shadow read rejects payload before prefix rewrite
+  - Active MBR shadow read rejects prior user media after partial overwrite
+  - Active MBR shadow read rejects stale pre-overwrite MBR payload
+  - ... 125 more
+- `core/5.3.3.6.2.txt`: 24 case(s)
+  - DataStore Get returns bytes written by prior Set: correct return value
+  - DataStore Get returns bytes written by prior Set: impossible return value
+  - DataStore Get returns most recent bytes after overwrite: correct return value
+  - DataStore Get returns most recent bytes after overwrite: impossible return value
+  - DataStore byte-table Get returns Bytes rather than RowValues: correct return value
+  - ... 19 more
+- `core/5.3.3.6.2.1.txt`: 295 case(s)
+  - Active MBR shadow read reflects omitted-Where prefix rewrite
+  - Active MBR shadow read reflects partial byte-table overwrite
+  - Active MBR shadow read rejects payload before prefix rewrite
+  - Active MBR shadow read rejects prior user media after partial overwrite
+  - Active MBR shadow read rejects stale pre-overwrite MBR payload
+  - ... 290 more
+- `core/5.3.3.6.2.2.txt`: 26 case(s)
+  - C_PIN object-table Get cannot include endRow
+  - C_PIN object-table Get cannot omit startRow
+  - DataStore byte-table Get accepts row-bounds Cellblock
+  - DataStore byte-table Get cannot include Table component
+  - DataStore byte-table Get cannot include startColumn
+  - ... 21 more
+- `core/5.3.3.6.3.txt`: 181 case(s)
+  - C_PIN object-table Get cannot include endRow
+  - C_PIN object-table Get cannot omit startRow
+  - DataStore Admin read restoration does not restore Admin Set authority: correct status
+  - DataStore Admin read restoration does not restore Admin Set authority: impossible success
+  - DataStore Cellblock Row option with non-uinteger value fails: correct status
+  - ... 176 more
+- `core/5.3.3.7.txt`: 121 case(s)
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: correct return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get returns Admins and All: correct return value
+  - ... 116 more
+- `core/5.3.3.7.1.txt`: 28 case(s)
+  - Byte-table Set with Row Where and no Values succeeds with no effect
+  - Byte-table Set with Row Where must use Bytes not RowValues
+  - Byte-table Set with UID Where cannot succeed
+  - DataStore Get Cellblock startRow UID option is invalid for byte table: correct status
+  - DataStore Get Cellblock startRow UID option is invalid for byte table: impossible success
+  - ... 23 more
+- `core/5.3.3.7.1.1.txt`: 8 case(s)
+  - Byte-table Set with Row Where and no Values succeeds with no effect
+  - Byte-table Set with Row Where must use Bytes not RowValues
+  - Byte-table Set with UID Where cannot succeed
+  - Object Set with Where cannot succeed
+  - Object-table Set with UID Where must use RowValues not Bytes
+  - ... 3 more
+- `core/5.3.3.7.1.2.txt`: 399 case(s)
+  - Active MBR shadow read reflects omitted-Where prefix rewrite
+  - Active MBR shadow read reflects partial byte-table overwrite
+  - Active MBR shadow read rejects payload before prefix rewrite
+  - Active MBR shadow read rejects prior user media after partial overwrite
+  - Active MBR shadow read rejects stale pre-overwrite MBR payload
+  - ... 394 more
+- `core/5.3.3.7.2.txt`: 131 case(s)
+  - Byte-table Set with Row Where and no Values succeeds with no effect
+  - Byte-table Set with Row Where must use Bytes not RowValues
+  - Byte-table Set with UID Where cannot succeed
+  - DataStore Get with explicit equal start and end rows remains one-byte exact: correct return value
+  - DataStore Get with explicit equal start and end rows remains one-byte exact: impossible return value
+  - ... 126 more
+- `core/5.3.3.7.2.1.txt`: 467 case(s)
+  - Active MBR shadow read reflects omitted-Where prefix rewrite
+  - Active MBR shadow read reflects partial byte-table overwrite
+  - Active MBR shadow read rejects payload before prefix rewrite
+  - Active MBR shadow read rejects prior user media after partial overwrite
+  - Active MBR shadow read rejects stale pre-overwrite MBR payload
+  - ... 462 more
+- `core/5.3.3.7.2.2.txt`: 26 case(s)
+  - Byte-table Set with Row Where and no Values succeeds with no effect
+  - Byte-table Set with Row Where must use Bytes not RowValues
+  - Byte-table Set with UID Where cannot succeed
+  - Evidence-tight Values RowValues named geometry and lock cells are observable: correct return value
+  - Evidence-tight Values RowValues named geometry and lock cells are observable: impossible return value
+  - ... 21 more
+- `core/5.3.3.7.3.txt`: 96 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - Admins OR User1 ACE lets User1 rotate C_PIN and authenticate with new PIN: correct success
+  - ... 91 more
+- `core/5.3.3.7.4.txt`: 318 case(s)
+  - Byte-table Set with Row Where and no Values succeeds with no effect
+  - Byte-table Set with Row Where must use Bytes not RowValues
+  - Byte-table Set with UID Where cannot succeed
+  - DataStore Admin read restoration does not restore Admin Set authority: correct status
+  - DataStore Admin read restoration does not restore Admin Set authority: impossible success
+  - ... 313 more
+- `core/5.3.3.8.txt`: 11 case(s)
+  - C_PIN Next Count False is not a uinteger: impossible success
+  - C_PIN Next Count True is not a uinteger: impossible success
+  - C_PIN Next Count [True] is not a uinteger: impossible success
+  - C_PIN Next negative Count cannot succeed
+  - C_PIN Next numeric Count remains valid
+  - ... 6 more
+- `core/5.3.3.8.1.txt`: 6 case(s)
+  - C_PIN Next negative Count cannot succeed
+  - C_PIN object-table Next may return a UID list
+  - C_PIN object-table Next success cannot return RowValues
+  - C_PIN object-table Next success cannot return a scalar UID
+  - C_PIN object-table Next with Where may return following UID list
+  - ... 1 more
+- `core/5.3.3.8.2.txt`: 11 case(s)
+  - C_PIN Next Count False is not a uinteger: impossible success
+  - C_PIN Next Count True is not a uinteger: impossible success
+  - C_PIN Next Count [True] is not a uinteger: impossible success
+  - C_PIN Next negative Count cannot succeed
+  - C_PIN Next numeric Count remains valid
+  - ... 6 more
+- `core/5.3.3.8.3.txt`: 5 case(s)
+  - C_PIN Next Count False is not a uinteger: impossible success
+  - C_PIN Next Count True is not a uinteger: impossible success
+  - C_PIN Next Count [True] is not a uinteger: impossible success
+  - C_PIN Next numeric Count remains valid
+  - C_PIN Next omitted Count remains valid
+- `core/5.3.3.8.3.1.txt`: 6 case(s)
+  - C_PIN Next negative Count cannot succeed
+  - C_PIN object-table Next may return a UID list
+  - C_PIN object-table Next success cannot return RowValues
+  - C_PIN object-table Next success cannot return a scalar UID
+  - C_PIN object-table Next with Where may return following UID list
+  - ... 1 more
+- `core/5.3.3.8.4.txt`: 6 case(s)
+  - C_PIN Next negative Count cannot succeed
+  - C_PIN object-table Next may return a UID list
+  - C_PIN object-table Next success cannot return RowValues
+  - C_PIN object-table Next success cannot return a scalar UID
+  - C_PIN object-table Next with Where may return following UID list
+  - ... 1 more
+- `core/5.3.3.9.txt`: 23 case(s)
+  - Admin SP AdminSP CreateTable GetACL alias association does not exist: impossible success
+  - Admin SP AdminSP DeleteSP GetACL alias association does not exist: impossible success
+  - Admin SP AdminSP GetFreeSpace GetACL alias association does not exist: impossible success
+  - Admin SP LockingSP GetFreeSpace GetACL alias association does not exist: impossible success
+  - DataStore Authenticate GetACL missing association returns NOT_AUTHORIZED: correct status
+  - ... 18 more
+- `core/5.3.3.9.1.txt`: 7 case(s)
+  - GetFreeRows success cannot return an empty result
+  - GetFreeRows success cannot return two result fields
+  - GetFreeRows success returns one FreeRows result
+  - GetFreeSpace on a table object cannot succeed
+  - GetFreeSpace success cannot omit TableRows
+  - ... 2 more
+- `core/5.3.3.9.1.1.txt`: 7 case(s)
+  - GetFreeRows success cannot return an empty result
+  - GetFreeRows success cannot return two result fields
+  - GetFreeRows success returns one FreeRows result
+  - GetFreeSpace on a table object cannot succeed
+  - GetFreeSpace success cannot omit TableRows
+  - ... 2 more
+- `core/5.3.3.9.1.2.txt`: 7 case(s)
+  - GetFreeRows success cannot return an empty result
+  - GetFreeRows success cannot return two result fields
+  - GetFreeRows success returns one FreeRows result
+  - GetFreeSpace on a table object cannot succeed
+  - GetFreeSpace success cannot omit TableRows
+  - ... 2 more
+- `core/5.3.3.10.txt`: 130 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - Admin SP metadata table 0000000600000000 GetFreeRows GetACL association is not preconfigured: impossible success
+  - Admin SP metadata table 0000000700000000 GetFreeRows GetACL association is not preconfigured: impossible success
+  - Admin SP metadata table 0000000700000000 Set GetACL association is not preconfigured: impossible success
+  - Admin SP metadata table 0000000800000000 CreateRow GetACL association is not preconfigured: impossible success
+  - ... 125 more
+- `core/5.3.3.11.txt`: 173 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - ... 168 more
+- `core/5.3.3.11.1.txt`: 18 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE success must return an empty result list
+  - ... 13 more
+- `core/5.3.3.11.2.txt`: 18 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE success must return an empty result list
+  - ... 13 more
+- `core/5.3.3.11.3.1.txt`: 165 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - ... 160 more
+- `core/5.3.3.11.4.txt`: 164 case(s)
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - AddACE success on Admin SP SPInfo Get must not return payload
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: correct success
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: impossible error
+  - Admin SP AccessControl GetACL self-association can return NOT_AUTHORIZED
+  - ... 159 more
+- `core/5.3.3.12.txt`: 198 case(s)
+  - Anybody UID Authenticate cannot return SUCCESS False
+  - Anybody UID Authenticate returns SUCCESS True
+  - Authority Limit reached makes correct Proof unable to return true: correct return value
+  - Authority Limit reached makes correct Proof unable to return true: impossible return value
+  - Authority Uses reset after GenKey does not restore old PIN: correct status
+  - ... 193 more
+- `core/5.3.3.12.1.txt`: 80 case(s)
+  - Anybody UID Authenticate cannot return SUCCESS False
+  - Anybody UID Authenticate returns SUCCESS True
+  - Authority Limit reached makes correct Proof unable to return true: correct return value
+  - Authority Limit reached makes correct Proof unable to return true: impossible return value
+  - Correct Authenticate Proof after failed Proof resets Tries: correct return value
+  - ... 75 more
+- `core/5.3.3.12.2.txt`: 80 case(s)
+  - Anybody UID Authenticate cannot return SUCCESS False
+  - Anybody UID Authenticate returns SUCCESS True
+  - Authority Limit reached makes correct Proof unable to return true: correct return value
+  - Authority Limit reached makes correct Proof unable to return true: impossible return value
+  - Correct Authenticate Proof after failed Proof resets Tries: correct return value
+  - ... 75 more
+- `core/5.3.3.12.3.txt`: 11 case(s)
+  - Host Tries reset lets explicit Authenticate succeed after TryLimit lockout: correct return value
+  - Host Tries reset lets explicit Authenticate succeed after TryLimit lockout: impossible return value
+  - TryLimit lockout does not increment Tries beyond TryLimit: correct return value
+  - TryLimit lockout does not increment Tries beyond TryLimit: impossible return value
+  - TryLimit zero repeated explicit Authenticate failures keep Tries zero: correct return value
+  - ... 6 more
+- `core/5.3.3.12.3.1.txt`: 198 case(s)
+  - Anybody UID Authenticate cannot return SUCCESS False
+  - Anybody UID Authenticate returns SUCCESS True
+  - Authority Limit reached makes correct Proof unable to return true: correct return value
+  - Authority Limit reached makes correct Proof unable to return true: impossible return value
+  - Authority Uses reset after GenKey does not restore old PIN: correct status
+  - ... 193 more
+- `core/5.3.3.12.3.2.txt`: 7 case(s)
+  - Anybody UID Authenticate cannot return SUCCESS False
+  - Anybody UID Authenticate returns SUCCESS True
+  - Correct SID password Proof after C_PIN Set cannot omit Success boolean
+  - Correct SID password Proof after C_PIN Set cannot return SUCCESS False
+  - Correct SID password Proof after C_PIN Set returns SUCCESS True
+  - ... 2 more
+- `core/5.3.3.12.4.txt`: 11 case(s)
+  - Host Tries reset lets explicit Authenticate succeed after TryLimit lockout: correct return value
+  - Host Tries reset lets explicit Authenticate succeed after TryLimit lockout: impossible return value
+  - TryLimit lockout does not increment Tries beyond TryLimit: correct return value
+  - TryLimit lockout does not increment Tries beyond TryLimit: impossible return value
+  - TryLimit zero repeated explicit Authenticate failures keep Tries zero: correct return value
+  - ... 6 more
+- `core/5.3.3.13.txt`: 721 case(s)
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: correct return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get returns Admins and All: correct return value
+  - ... 716 more
+- `core/5.3.3.13.1.txt`: 18 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE success must return an empty result list
+  - ... 13 more
+- `core/5.3.3.13.2.txt`: 18 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE success must return an empty result list
+  - ... 13 more
+- `core/5.3.3.13.3.1.txt`: 532 case(s)
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: correct return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get returns Admins and All: correct return value
+  - ... 527 more
+- `core/5.3.3.13.4.txt`: 396 case(s)
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - AddACE success on Admin SP SPInfo Get must not return payload
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: correct success
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: impossible error
+  - Admin SP AccessControl GetACL self-association can return NOT_AUTHORIZED
+  - ... 391 more
+- `core/5.3.3.14.txt`: 200 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - ... 195 more
+- `core/5.3.3.14.1.txt`: 55 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE success must return an empty result list
+  - ... 50 more
+- `core/5.3.3.14.2.txt`: 44 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE success must return an empty result list
+  - ... 39 more
+- `core/5.3.3.14.3.txt`: 82 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE success must return an empty result list
+  - ... 77 more
+- `core/5.3.3.14.4.1.txt`: 191 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - ... 186 more
+- `core/5.3.3.14.5.txt`: 264 case(s)
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - AddACE success on Admin SP SPInfo Get must not return payload
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: correct success
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: impossible error
+  - Admin SP AccessControl GetACL self-association can return NOT_AUTHORIZED
+  - ... 259 more
+- `core/5.3.3.15.txt`: 180 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - ... 175 more
+- `core/5.3.3.15.1.txt`: 29 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE success must return an empty result list
+  - ... 24 more
+- `core/5.3.3.15.2.txt`: 18 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE success must return an empty result list
+  - ... 13 more
+- `core/5.3.3.15.3.txt`: 56 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE success must return an empty result list
+  - ... 51 more
+- `core/5.3.3.15.4.1.txt`: 171 case(s)
+  - AddACE cannot report success when invoked on a non-AccessControl target
+  - AddACE cannot report success without ACE
+  - AddACE cannot report success without InvokingID
+  - AddACE cannot report success without MethodID
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - ... 166 more
+- `core/5.3.3.15.5.txt`: 244 case(s)
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - AddACE success on Admin SP SPInfo Get must not return payload
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: correct success
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: impossible error
+  - Admin SP AccessControl GetACL self-association can return NOT_AUTHORIZED
+  - ... 239 more
+- `core/5.3.3.16.txt`: 41 case(s)
+  - Adjacent crossing write is readable before any segment GenKey
+  - C_PIN GenKey PinLength 32 remains valid
+  - C_PIN GenKey PinLength False is not a uinteger: impossible success
+  - C_PIN GenKey PinLength True is not a uinteger: impossible success
+  - C_PIN GenKey PinLength zero remains valid
+  - ... 36 more
+- `core/5.3.3.16.1.txt`: 2 case(s)
+  - C_PIN GenKey cannot accept PublicExponent: impossible success
+  - K_AES_256 GenKey cannot accept PublicExponent: impossible success
+- `core/5.3.3.16.2.txt`: 94 case(s)
+  - Authority Uses reset after GenKey does not restore old PIN: correct status
+  - Authority Uses reset after GenKey does not restore old PIN: impossible success
+  - Authority Uses reset plus PIN reissue after GenKey permits old PIN: correct success
+  - Authority Uses reset plus PIN reissue after GenKey permits old PIN: impossible error
+  - C_PIN GenKey PinLength 32 remains valid
+  - ... 89 more
+- `core/5.3.3.16.3.txt`: 12 case(s)
+  - C_PIN SID GenKey default length returns empty list: correct return value
+  - C_PIN SID GenKey default length returns empty list: impossible return value
+  - C_PIN SID GenKey explicit length returns empty list: correct return value
+  - C_PIN SID GenKey explicit length returns empty list: impossible return value
+  - K AES 128 GlobalRange GenKey returns empty list: correct return value
+  - ... 7 more
+- `core/5.3.3.16.3.1.txt`: 125 case(s)
+  - Adjacent crossing write is readable before any segment GenKey
+  - Authority Uses reset after GenKey does not restore old PIN: correct status
+  - Authority Uses reset after GenKey does not restore old PIN: impossible success
+  - Authority Uses reset plus PIN reissue after GenKey permits old PIN: correct success
+  - Authority Uses reset plus PIN reissue after GenKey permits old PIN: impossible error
+  - ... 120 more
+- `core/5.3.3.16.4.txt`: 108 case(s)
+  - Authority Uses reset after GenKey does not restore old PIN: correct status
+  - Authority Uses reset after GenKey does not restore old PIN: impossible success
+  - Authority Uses reset plus PIN reissue after GenKey permits old PIN: correct success
+  - Authority Uses reset plus PIN reissue after GenKey permits old PIN: impossible error
+  - C_PIN GenKey PinLength 32 remains valid
+  - ... 103 more
+- `core/5.3.3.17.txt`: 10 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 5 more
+- `core/5.3.3.17.1.txt`: 10 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 5 more
+- `core/5.3.3.17.2.txt`: 10 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 5 more
+- `core/5.3.3.17.3.txt`: 10 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 5 more
+- `core/5.3.3.17.6.1.txt`: 10 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 5 more
+- `core/5.3.3.17.7.txt`: 10 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 5 more
+- `core/5.3.3.18.txt`: 18 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 13 more
+- `core/5.3.3.18.1.txt`: 14 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 9 more
+- `core/5.3.3.18.2.txt`: 14 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 9 more
+- `core/5.3.3.18.3.txt`: 10 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 5 more
+- `core/5.3.3.18.4.txt`: 10 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 5 more
+- `core/5.3.3.18.5.txt`: 10 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 5 more
+- `core/5.3.4.1.1.txt`: 8 case(s)
+  - SecretProtect K_AES_128 row success cannot identify Mode as protected column
+  - SecretProtect K_AES_128 row success cannot point at K_AES_256 table
+  - SecretProtect K_AES_256 row success cannot identify Mode as protected column
+  - SecretProtect K_AES_256 row success cannot point at C_PIN table
+  - SecretProtect ProtectMechanisms Get rejects boolean protect_types coercion: correct return value
+  - ... 3 more
+- `core/5.3.4.1.1.1.txt`: 86 case(s)
+  - Authority Uses reset after GenKey does not restore old PIN: correct status
+  - Authority Uses reset after GenKey does not restore old PIN: impossible success
+  - Authority Uses reset plus PIN reissue after GenKey permits old PIN: correct success
+  - Authority Uses reset plus PIN reissue after GenKey permits old PIN: impossible error
+  - C_PIN GenKey invalidates previous SID PIN for Authenticate false result
+  - ... 81 more
+- `core/5.3.4.1.1.2.txt`: 253 case(s)
+  - Authority Limit reached makes correct Proof unable to return true: correct return value
+  - Authority Limit reached makes correct Proof unable to return true: impossible return value
+  - Authority Limit-only Set is observable without Enabled companion: correct return value
+  - Authority Limit-only Set is observable without Enabled companion: impossible return value
+  - Authority Limit-only Set with Uses reached blocks User1 StartSession: correct status
+  - ... 248 more
+- `core/5.3.4.1.2.txt`: 49 case(s)
+  - Admin SP Authority_Makers Set follows personalized ACE_Set_Enabled Anybody: correct success
+  - Admin SP Authority_Makers Set follows personalized ACE_Set_Enabled Anybody: impossible error
+  - Admin SP Authority_Makers Set with Makers ACE rejects Anybody-only session: correct status
+  - Admin SP Authority_Makers Set with Makers ACE rejects Anybody-only session: impossible success
+  - AdminExch exchange authority as HostSigningAuthority must not start successfully
+  - ... 44 more
+- `core/5.3.4.1.2.1.txt`: 9 case(s)
+  - Anybody UID Authenticate cannot return SUCCESS False
+  - Anybody UID Authenticate returns SUCCESS True
+  - Authenticate without supplied authority after Anybody auth returns INVALID_PARAMETER: correct status
+  - Authenticate without supplied authority after Anybody auth returns INVALID_PARAMETER: impossible success
+  - Correct SID password Proof after C_PIN Set cannot omit Success boolean
+  - ... 4 more
+- `core/5.3.4.1.2.2.txt`: 28 case(s)
+  - Admin SP Authority_Makers Set follows personalized ACE_Set_Enabled Anybody: correct success
+  - Admin SP Authority_Makers Set follows personalized ACE_Set_Enabled Anybody: impossible error
+  - Admin SP Authority_Makers Set with Makers ACE rejects Anybody-only session: correct status
+  - Admin SP Authority_Makers Set with Makers ACE rejects Anybody-only session: impossible success
+  - Authority AdminExch Get reports Admins class and Exchange operation: correct return value
+  - ... 23 more
+- `core/5.3.4.1.2.3.txt`: 11 case(s)
+  - AdminSP Revert aborts current session before later Set
+  - AdminSP Revert cannot succeed in read-only AdminSP session
+  - AdminSP Revert removes old user data when Locking SP was active
+  - AdminSP Revert succeeds with empty result in read-write SID session
+  - AdminSP Revert success must not include return payload
+  - ... 6 more
+- `core/5.3.4.1.2.4.txt`: 2 case(s)
+  - TPerSign explicit Authenticate must not return SUCCESS True
+  - TPerSign explicit Authenticate returns SUCCESS False
+- `core/5.3.4.1.2.5.txt`: 15 case(s)
+  - EC-DH startup cannot omit both SP exchange fields: correct return value
+  - EC-DH startup cannot omit both SP exchange fields: impossible return value
+  - EC-DH startup requires the SP static public key field: correct return value
+  - EC-DH startup requires the SP static public key field: impossible return value
+  - EC-DH startup returns SP nonce and static public key: correct return value
+  - ... 10 more
+- `core/5.3.4.1.3.txt`: 47 case(s)
+  - AdminExch exchange authority as HostSigningAuthority must not start successfully
+  - AdminExch remains invalid as HostSigningAuthority even with a credential: impossible success
+  - Credentialless HostExchange fallback cannot satisfy secure SID startup: impossible success
+  - Credentialless SP ResponseExch rejects secure SID startup even with SignedHash: impossible success
+  - Credentialless SP and Host exchange authorities both reject secure SID startup: impossible success
+  - ... 42 more
+- `core/5.3.4.1.4.txt`: 26 case(s)
+  - Disabled StartSession failure does not consume use before re-enable login: correct return value
+  - Disabled StartSession failure does not consume use before re-enable login: impossible return value
+  - Disabled User1 Authenticate must not return NOT_AUTHORIZED
+  - Disabled User1 Authenticate must not return SUCCESS True
+  - Disabled User1 Authenticate returns SUCCESS False
+  - ... 21 more
+- `core/5.3.4.1.5.txt`: 20 case(s)
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: correct return value
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: impossible return value
+  - Admin SP SID password SyncSession omits SignedHash when ResponseSign is Null: correct return value
+  - Admin SP SID password SyncSession omits SignedHash when ResponseSign is Null: impossible return value
+  - AdminExch exchange authority as HostSigningAuthority must not start successfully
+  - ... 15 more
+- `core/5.3.4.1.6.txt`: 41 case(s)
+  - AdminExch remains invalid as HostSigningAuthority even with a credential: impossible success
+  - Credentialless HostExchange fallback cannot satisfy secure SID startup: impossible success
+  - Credentialless SP ResponseExch rejects secure SID startup even with SignedHash: impossible success
+  - Credentialless SP and Host exchange authorities both reject secure SID startup: impossible success
+  - HashAndSign does not make correct Authenticate return false
+  - ... 36 more
+- `core/5.3.4.1.7.txt`: 12 case(s)
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: correct return value
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: impossible return value
+  - Admin SP SID password SyncSession omits SignedHash when ResponseSign is Null: correct return value
+  - Admin SP SID password SyncSession omits SignedHash when ResponseSign is Null: impossible return value
+  - HashAndSign does not make correct Authenticate return false
+  - ... 7 more
+- `core/5.3.4.1.8.txt`: 12 case(s)
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: correct return value
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: impossible return value
+  - Admin SP SID password SyncSession omits SignedHash when ResponseSign is Null: correct return value
+  - Admin SP SID password SyncSession omits SignedHash when ResponseSign is Null: impossible return value
+  - HashAndSign does not make correct Authenticate return false
+  - ... 7 more
+- `core/5.3.4.1.9.txt`: 35 case(s)
+  - AdminExch remains invalid as HostSigningAuthority even with a credential: impossible success
+  - Credentialless HostExchange fallback cannot satisfy secure SID startup: impossible success
+  - Credentialless SP ResponseExch rejects secure SID startup even with SignedHash: impossible success
+  - Credentialless SP and Host exchange authorities both reject secure SID startup: impossible success
+  - HashAndSign false after true permits omitted SignedHash: correct success
+  - ... 30 more
+- `core/5.3.4.1.10.txt`: 45 case(s)
+  - AdminExch exchange authority as HostSigningAuthority must not start successfully
+  - AdminExch remains invalid as HostSigningAuthority even with a credential: impossible success
+  - AdminSP StartSession HostSigningAuthority class Admins is INVALID_PARAMETER: correct status
+  - AdminSP StartSession HostSigningAuthority class Admins is INVALID_PARAMETER: impossible success
+  - AdminSP StartSession HostSigningAuthority class Makers is INVALID_PARAMETER: correct status
+  - ... 40 more
+- `core/5.3.4.1.11.txt`: 6 case(s)
+  - EC-MQV startup cannot omit both SP public key fields: correct return value
+  - EC-MQV startup cannot omit both SP public key fields: impossible return value
+  - EC-MQV startup requires the SP static public key field: correct return value
+  - EC-MQV startup requires the SP static public key field: impossible return value
+  - EC-MQV startup returns SP ephemeral and static public keys: correct return value
+  - ... 1 more
+- `core/5.3.4.1.12.txt`: 6 case(s)
+  - EC-DH startup cannot omit both SP exchange fields: correct return value
+  - EC-DH startup cannot omit both SP exchange fields: impossible return value
+  - EC-DH startup requires the SP static public key field: correct return value
+  - EC-DH startup requires the SP static public key field: impossible return value
+  - EC-DH startup returns SP nonce and static public key: correct return value
+  - ... 1 more
+- `core/5.3.4.1.13.txt`: 8 case(s)
+  - Admin SP Authority Admin1 PresentCertificate defaults false: correct return value
+  - Admin SP Authority Admin1 PresentCertificate defaults false: impossible return value
+  - Admin SP Authority Admins PresentCertificate defaults false: correct return value
+  - Admin SP Authority Admins PresentCertificate defaults false: impossible return value
+  - Admin SP Authority SID PresentCertificate defaults false: correct return value
+  - ... 3 more
+- `core/5.3.4.1.14.txt`: 97 case(s)
+  - Admin SP AdminSP CreateTable GetACL alias association does not exist: impossible success
+  - Admin SP AdminSP DeleteSP GetACL alias association does not exist: impossible success
+  - Admin SP AdminSP GetFreeSpace GetACL alias association does not exist: impossible success
+  - Admin SP LockingSP GetFreeSpace GetACL alias association does not exist: impossible success
+  - Anybody UID Authenticate cannot return SUCCESS False
+  - ... 92 more
+- `core/5.3.4.1.14.1.txt`: 87 case(s)
+  - Admins class authority Authenticate must not return SUCCESS False
+  - Admins class authority Authenticate must not return SUCCESS True
+  - Admins class authority Authenticate returns INVALID_PARAMETER
+  - Anybody UID Authenticate cannot return SUCCESS False
+  - Anybody UID Authenticate returns SUCCESS True
+  - ... 82 more
+- `core/5.3.4.2.txt`: 7 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateTable duplicate Name and CommonName cannot succeed
+  - Created byte table cannot accept CreateRow success
+  - Created byte table cannot accept DeleteRow success
+  - Created object table can CreateRow then DeleteRow with empty result
+  - ... 2 more
+- `core/5.3.4.2.1.txt`: 166 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - Admin-created table GetACL association is not visible in Locking SP: impossible success
+  - Admin-created table direct Get is not visible in Locking SP: impossible success
+  - Admin-created table direct Set is not visible in Locking SP: impossible success
+  - Byte CreateTable with HintSize returns INVALID_PARAMETER
+  - ... 161 more
+- `core/5.3.4.2.2.txt`: 435 case(s)
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: correct return value
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: impossible return value
+  - ACE_DataStore_Get_All Get follows personalized BooleanExpr: correct return value
+  - ACE_DataStore_Get_All Get follows personalized BooleanExpr: impossible return value
+  - ACE_K_AES_Mode Get returns Anybody and Mode: correct return value
+  - ... 430 more
+- `core/5.3.4.2.3.txt`: 182 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - Admin SP AccessControl table cannot accept direct CreateRow success
+  - Admin SP AccessControl table cannot accept direct DeleteRow success
+  - Admin SP MethodID table cannot accept direct CreateRow success
+  - Admin SP MethodID table cannot accept direct DeleteRow success
+  - ... 177 more
+- `core/5.3.4.2.4.txt`: 123 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - Admin SP AccessControl table cannot accept direct CreateRow success
+  - Admin SP AccessControl table cannot accept direct DeleteRow success
+  - Admin SP MethodID table cannot accept direct CreateRow success
+  - Admin SP MethodID table cannot accept direct DeleteRow success
+  - ... 118 more
+- `core/5.3.4.2.5.txt`: 26 case(s)
+  - AccessControl system table cannot accept DeleteRow success
+  - CreateTable duplicate Name and CommonName cannot succeed
+  - Created byte table cannot accept CreateRow success
+  - Created byte table cannot accept DeleteRow success
+  - Created object table can CreateRow then DeleteRow with empty result
+  - ... 21 more
+- `core/5.3.4.2.6.txt`: 545 case(s)
+  - Admin MBRControl Set cannot be followed by stale DoneOnReset Get
+  - Admin MBRControl Set is reflected by later Get
+  - Admins OR User1 ACE lets User1 rotate C_PIN and authenticate with new PIN: correct success
+  - Admins OR User1 ACE lets User1 rotate C_PIN and authenticate with new PIN: impossible error
+  - Admins OR User1 ACE rotation invalidates prior User1 PIN: impossible success
+  - ... 540 more
+- `core/5.3.4.2.7.txt`: 6 case(s)
+  - C_PIN Next negative Count cannot succeed
+  - C_PIN object-table Next may return a UID list
+  - C_PIN object-table Next success cannot return RowValues
+  - C_PIN object-table Next success cannot return a scalar UID
+  - C_PIN object-table Next with Where may return following UID list
+  - ... 1 more
+- `core/5.3.4.3.txt`: 324 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - Admin SP SPInfo Get AddACE success must not include return payload
+  - Admin SP SPInfo Get empty DeleteMethodACL rejects DeleteMethod success
+  - Admin SP SPInfo Get empty DeleteMethodACL returns NOT_AUTHORIZED
+  - ... 319 more
+- `core/5.3.4.3.1.txt`: 423 case(s)
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: correct return value
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: impossible return value
+  - Admin SP ACE table Next GetACL returns Anybody ACE: correct return value
+  - Admin SP ACE table Next GetACL returns Anybody ACE: impossible return value
+  - Admin SP AccessControl GetACL self-association can return NOT_AUTHORIZED
+  - ... 418 more
+- `core/5.3.4.3.2.txt`: 181 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: correct return value
+  - ... 176 more
+- `core/5.3.4.3.3.txt`: 360 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: correct return value
+  - ... 355 more
+- `core/5.3.4.4.txt`: 5 case(s)
+  - Admin SP cannot be deleted with DeleteSP
+  - DeleteSP success must not include return payload
+  - DeleteSP success returns an empty list
+  - Deleted Locking SP must not accept new sessions after DeleteSP close
+  - Disabled Locking SP DeleteSP removes the SP only after session close
+- `core/5.3.4.5.txt`: 10 case(s)
+  - GetPackage missing Purpose cannot succeed
+  - GetPackage success cannot return boolean instead of package bytes
+  - GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - GetPackage success cannot return status string instead of package bytes
+  - GetPackage with non-credential SigningKey cannot succeed
+  - ... 5 more
+- `core/5.3.4.6.txt`: 40 case(s)
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set AddACELog: correct return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set AddACELog: impossible return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set DeleteMethodLog: correct return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set DeleteMethodLog: impossible return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set GetACLLog: correct return value
+  - ... 35 more
+- `core/5.3.5.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.3.5.1.txt`: 55 case(s)
+  - Admin SP cannot be deleted with DeleteSP
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - ... 50 more
+- `core/5.4.2.1.txt`: 24 case(s)
+  - Admin SP TPerInfo Bytes is host read-only: impossible success
+  - Admin SP TPerInfo FirmwareVersion is host read-only: impossible success
+  - Admin SP TPerInfo GUDID is host read-only: impossible success
+  - Admin SP TPerInfo Generation is host read-only: impossible success
+  - Admin SP TPerInfo ProtocolVersion is host read-only: impossible success
+  - ... 19 more
+- `core/5.4.2.1.1.txt`: 18 case(s)
+  - Admin SP TPerInfo Bytes is host read-only: impossible success
+  - Admin SP TPerInfo FirmwareVersion is host read-only: impossible success
+  - Admin SP TPerInfo GUDID is host read-only: impossible success
+  - Admin SP TPerInfo Generation is host read-only: impossible success
+  - Admin SP TPerInfo ProtocolVersion is host read-only: impossible success
+  - ... 13 more
+- `core/5.4.2.1.2.txt`: 8 case(s)
+  - Admin SP TPerInfo Bytes is host read-only: impossible success
+  - Admin SP TPerInfo FirmwareVersion is host read-only: impossible success
+  - Admin SP TPerInfo GUDID is host read-only: impossible success
+  - Admin SP TPerInfo Generation is host read-only: impossible success
+  - Admin SP TPerInfo ProtocolVersion is host read-only: impossible success
+  - ... 3 more
+- `core/5.4.2.1.3.txt`: 18 case(s)
+  - Admin SP TPerInfo Bytes is host read-only: impossible success
+  - Admin SP TPerInfo FirmwareVersion is host read-only: impossible success
+  - Admin SP TPerInfo GUDID is host read-only: impossible success
+  - Admin SP TPerInfo Generation is host read-only: impossible success
+  - Admin SP TPerInfo ProtocolVersion is host read-only: impossible success
+  - ... 13 more
+- `core/5.4.2.1.4.txt`: 8 case(s)
+  - Admin SP TPerInfo Bytes is host read-only: impossible success
+  - Admin SP TPerInfo FirmwareVersion is host read-only: impossible success
+  - Admin SP TPerInfo GUDID is host read-only: impossible success
+  - Admin SP TPerInfo Generation is host read-only: impossible success
+  - Admin SP TPerInfo ProtocolVersion is host read-only: impossible success
+  - ... 3 more
+- `core/5.4.2.1.5.txt`: 8 case(s)
+  - Admin SP TPerInfo Bytes is host read-only: impossible success
+  - Admin SP TPerInfo FirmwareVersion is host read-only: impossible success
+  - Admin SP TPerInfo GUDID is host read-only: impossible success
+  - Admin SP TPerInfo Generation is host read-only: impossible success
+  - Admin SP TPerInfo ProtocolVersion is host read-only: impossible success
+  - ... 3 more
+- `core/5.4.2.1.6.txt`: 8 case(s)
+  - Admin SP TPerInfo Bytes is host read-only: impossible success
+  - Admin SP TPerInfo FirmwareVersion is host read-only: impossible success
+  - Admin SP TPerInfo GUDID is host read-only: impossible success
+  - Admin SP TPerInfo Generation is host read-only: impossible success
+  - Admin SP TPerInfo ProtocolVersion is host read-only: impossible success
+  - ... 3 more
+- `core/5.4.2.1.7.txt`: 8 case(s)
+  - Admin SP TPerInfo Bytes is host read-only: impossible success
+  - Admin SP TPerInfo FirmwareVersion is host read-only: impossible success
+  - Admin SP TPerInfo GUDID is host read-only: impossible success
+  - Admin SP TPerInfo Generation is host read-only: impossible success
+  - Admin SP TPerInfo ProtocolVersion is host read-only: impossible success
+  - ... 3 more
+- `core/5.4.2.1.8.txt`: 8 case(s)
+  - Admin SP TPerInfo Bytes is host read-only: impossible success
+  - Admin SP TPerInfo FirmwareVersion is host read-only: impossible success
+  - Admin SP TPerInfo GUDID is host read-only: impossible success
+  - Admin SP TPerInfo Generation is host read-only: impossible success
+  - Admin SP TPerInfo ProtocolVersion is host read-only: impossible success
+  - ... 3 more
+- `core/5.4.2.3.8.txt`: 15 case(s)
+  - Admin SP Template Admin Instances is host read-only: impossible success
+  - Admin SP Template Admin MaxInstances is host read-only: impossible success
+  - Admin SP Template Admin Name is host read-only: impossible success
+  - Admin SP Template Admin RevisionNumber is host read-only: impossible success
+  - Admin SP Template Admin UID is host read-only: impossible success
+  - ... 10 more
+- `core/5.4.2.3.9.txt`: 15 case(s)
+  - Admin SP Template Admin Instances is host read-only: impossible success
+  - Admin SP Template Admin MaxInstances is host read-only: impossible success
+  - Admin SP Template Admin Name is host read-only: impossible success
+  - Admin SP Template Admin RevisionNumber is host read-only: impossible success
+  - Admin SP Template Admin UID is host read-only: impossible success
+  - ... 10 more
+- `core/5.4.2.3.10.txt`: 15 case(s)
+  - Admin SP Template Admin Instances is host read-only: impossible success
+  - Admin SP Template Admin MaxInstances is host read-only: impossible success
+  - Admin SP Template Admin Name is host read-only: impossible success
+  - Admin SP Template Admin RevisionNumber is host read-only: impossible success
+  - Admin SP Template Admin UID is host read-only: impossible success
+  - ... 10 more
+- `core/5.4.2.3.11.txt`: 15 case(s)
+  - Admin SP Template Admin Instances is host read-only: impossible success
+  - Admin SP Template Admin MaxInstances is host read-only: impossible success
+  - Admin SP Template Admin Name is host read-only: impossible success
+  - Admin SP Template Admin RevisionNumber is host read-only: impossible success
+  - Admin SP Template Admin UID is host read-only: impossible success
+  - ... 10 more
+- `core/5.4.2.3.12.txt`: 15 case(s)
+  - Admin SP Template Admin Instances is host read-only: impossible success
+  - Admin SP Template Admin MaxInstances is host read-only: impossible success
+  - Admin SP Template Admin Name is host read-only: impossible success
+  - Admin SP Template Admin RevisionNumber is host read-only: impossible success
+  - Admin SP Template Admin UID is host read-only: impossible success
+  - ... 10 more
+- `core/5.4.2.4.txt`: 87 case(s)
+  - Admin SP SP table Admin row Bytes is host read-only: impossible success
+  - Admin SP SP table Admin row DateOfIssue is host read-only: impossible success
+  - Admin SP SP table Admin row EffectiveAuth is host read-only: impossible success
+  - Admin SP SP table Admin row LifeCycleState is host read-only: impossible success
+  - Admin SP SP table Admin row Name is host read-only: impossible success
+  - ... 82 more
+- `core/5.4.2.4.1.txt`: 20 case(s)
+  - Admin SP SP table Admin row Bytes is host read-only: impossible success
+  - Admin SP SP table Admin row DateOfIssue is host read-only: impossible success
+  - Admin SP SP table Admin row EffectiveAuth is host read-only: impossible success
+  - Admin SP SP table Admin row LifeCycleState is host read-only: impossible success
+  - Admin SP SP table Admin row Name is host read-only: impossible success
+  - ... 15 more
+- `core/5.4.2.4.2.txt`: 14 case(s)
+  - Admin SP SP table Admin row Bytes is host read-only: impossible success
+  - Admin SP SP table Admin row DateOfIssue is host read-only: impossible success
+  - Admin SP SP table Admin row EffectiveAuth is host read-only: impossible success
+  - Admin SP SP table Admin row LifeCycleState is host read-only: impossible success
+  - Admin SP SP table Admin row Name is host read-only: impossible success
+  - ... 9 more
+- `core/5.4.2.4.3.txt`: 14 case(s)
+  - Admin SP SP table Admin row Bytes is host read-only: impossible success
+  - Admin SP SP table Admin row DateOfIssue is host read-only: impossible success
+  - Admin SP SP table Admin row EffectiveAuth is host read-only: impossible success
+  - Admin SP SP table Admin row LifeCycleState is host read-only: impossible success
+  - Admin SP SP table Admin row Name is host read-only: impossible success
+  - ... 9 more
+- `core/5.4.2.4.4.txt`: 14 case(s)
+  - Admin SP SP table Admin row Bytes is host read-only: impossible success
+  - Admin SP SP table Admin row DateOfIssue is host read-only: impossible success
+  - Admin SP SP table Admin row EffectiveAuth is host read-only: impossible success
+  - Admin SP SP table Admin row LifeCycleState is host read-only: impossible success
+  - Admin SP SP table Admin row Name is host read-only: impossible success
+  - ... 9 more
+- `core/5.4.2.4.5.txt`: 14 case(s)
+  - Admin SP SP table Admin row Bytes is host read-only: impossible success
+  - Admin SP SP table Admin row DateOfIssue is host read-only: impossible success
+  - Admin SP SP table Admin row EffectiveAuth is host read-only: impossible success
+  - Admin SP SP table Admin row LifeCycleState is host read-only: impossible success
+  - Admin SP SP table Admin row Name is host read-only: impossible success
+  - ... 9 more
+- `core/5.4.2.4.6.txt`: 20 case(s)
+  - Admin SP SP table Admin row Bytes is host read-only: impossible success
+  - Admin SP SP table Admin row DateOfIssue is host read-only: impossible success
+  - Admin SP SP table Admin row EffectiveAuth is host read-only: impossible success
+  - Admin SP SP table Admin row LifeCycleState is host read-only: impossible success
+  - Admin SP SP table Admin row Name is host read-only: impossible success
+  - ... 15 more
+- `core/5.4.2.4.7.txt`: 31 case(s)
+  - Admin SP SP table Admin row Bytes is host read-only: impossible success
+  - Admin SP SP table Admin row DateOfIssue is host read-only: impossible success
+  - Admin SP SP table Admin row EffectiveAuth is host read-only: impossible success
+  - Admin SP SP table Admin row LifeCycleState is host read-only: impossible success
+  - Admin SP SP table Admin row Name is host read-only: impossible success
+  - ... 26 more
+- `core/5.4.2.4.8.txt`: 56 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 51 more
+- `core/5.4.3.1.txt`: 4 case(s)
+  - Opal Admin SP IssueSP GetACL association does not exist: correct status
+  - Opal Admin SP IssueSP GetACL association does not exist: impossible success
+  - Opal Admin SP IssueSP unsupported despite Core Admin Template method: correct status
+  - Opal Admin SP IssueSP unsupported despite Core Admin Template method: impossible success
+- `core/5.4.4.2.txt`: 5 case(s)
+  - Admin SP cannot be deleted with DeleteSP
+  - DeleteSP success must not include return payload
+  - DeleteSP success returns an empty list
+  - Deleted Locking SP must not accept new sessions after DeleteSP close
+  - Disabled Locking SP DeleteSP removes the SP only after session close
+- `core/5.4.4.3.txt`: 6 case(s)
+  - Open AdminSP read-write session cannot be combined with LockingSP read-only session: impossible success
+  - Open AdminSP read-write session cannot be combined with LockingSP read-write session: impossible success
+  - Read-write AdminSP StartSession can succeed after LockingSP session closes: correct success
+  - Read-write AdminSP StartSession can succeed after LockingSP session closes: impossible error
+  - Read-write AdminSP StartSession cannot succeed while LockingSP read-only session is open: impossible success
+  - ... 1 more
+- `core/5.4.4.3.1.txt`: 4 case(s)
+  - Opal Admin SP IssueSP GetACL association does not exist: correct status
+  - Opal Admin SP IssueSP GetACL association does not exist: impossible success
+  - Opal Admin SP IssueSP unsupported despite Core Admin Template method: correct status
+  - Opal Admin SP IssueSP unsupported despite Core Admin Template method: impossible success
+- `core/5.4.5.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.4.5.1.txt`: 4 case(s)
+  - Opal Admin SP IssueSP GetACL association does not exist: correct status
+  - Opal Admin SP IssueSP GetACL association does not exist: impossible success
+  - Opal Admin SP IssueSP unsupported despite Core Admin Template method: correct status
+  - Opal Admin SP IssueSP unsupported despite Core Admin Template method: impossible success
+- `core/5.5.2.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.3.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.3.1.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.3.1.2.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.3.1.3.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.3.1.4.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.3.1.5.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.3.1.6.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.3.1.7.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.3.1.8.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.3.1.9.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.3.1.10.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.3.1.11.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.1.1.3.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.1.2.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.2.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.2.1.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.2.2.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.3.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.3.2.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.3.3.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.4.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.4.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.4.2.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.5.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.5.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.5.2.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.5.2.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.5.3.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.6.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.6.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.6.2.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.7.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.4.7.2.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.5.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.5.1.1.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.5.1.2.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.5.1.3.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.5.2.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.5.3.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.5.4.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.5.6.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.5.7.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.5.8.txt`: 28 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 23 more
+- `core/5.5.6.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.5.6.1.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.6.3.1.txt`: 16 case(s)
+  - H_SHA_1 Accumulator Get accepts bytes_20 and rejects short bytes: correct return value
+  - H_SHA_1 Accumulator Get accepts bytes_20 and rejects short bytes: impossible return value
+  - H_SHA_1 Proof Get accepts bytes_20 and rejects short bytes: correct return value
+  - H_SHA_1 Proof Get accepts bytes_20 and rejects short bytes: impossible return value
+  - H_SHA_256 Accumulator Get accepts bytes_32 and rejects short bytes: correct return value
+  - ... 11 more
+- `core/5.6.3.2.txt`: 16 case(s)
+  - H_SHA_1 Accumulator Get accepts bytes_20 and rejects short bytes: correct return value
+  - H_SHA_1 Accumulator Get accepts bytes_20 and rejects short bytes: impossible return value
+  - H_SHA_1 Proof Get accepts bytes_20 and rejects short bytes: correct return value
+  - H_SHA_1 Proof Get accepts bytes_20 and rejects short bytes: impossible return value
+  - H_SHA_256 Accumulator Get accepts bytes_32 and rejects short bytes: correct return value
+  - ... 11 more
+- `core/5.6.3.3.txt`: 16 case(s)
+  - H_SHA_1 Accumulator Get accepts bytes_20 and rejects short bytes: correct return value
+  - H_SHA_1 Accumulator Get accepts bytes_20 and rejects short bytes: impossible return value
+  - H_SHA_1 Proof Get accepts bytes_20 and rejects short bytes: correct return value
+  - H_SHA_1 Proof Get accepts bytes_20 and rejects short bytes: impossible return value
+  - H_SHA_256 Accumulator Get accepts bytes_32 and rejects short bytes: correct return value
+  - ... 11 more
+- `core/5.6.3.4.txt`: 16 case(s)
+  - H_SHA_1 Accumulator Get accepts bytes_20 and rejects short bytes: correct return value
+  - H_SHA_1 Accumulator Get accepts bytes_20 and rejects short bytes: impossible return value
+  - H_SHA_1 Proof Get accepts bytes_20 and rejects short bytes: correct return value
+  - H_SHA_1 Proof Get accepts bytes_20 and rejects short bytes: impossible return value
+  - H_SHA_256 Accumulator Get accepts bytes_32 and rejects short bytes: correct return value
+  - ... 11 more
+- `core/5.6.4.1.txt`: 12 case(s)
+  - Random Count 32 returns thirty-two bytes
+  - Random Count 4 returns four bytes
+  - Random Count False is not a uinteger: impossible success
+  - Random Count True is not a uinteger: impossible success
+  - Random Count [True] is not a uinteger: impossible success
+  - ... 7 more
+- `core/5.6.4.1.1.txt`: 12 case(s)
+  - Random Count 32 returns thirty-two bytes
+  - Random Count 4 returns four bytes
+  - Random Count False is not a uinteger: impossible success
+  - Random Count True is not a uinteger: impossible success
+  - Random Count [True] is not a uinteger: impossible success
+  - ... 7 more
+- `core/5.6.4.1.2.txt`: 6 case(s)
+  - Random Count 4 returns four bytes
+  - Random negative Count cannot succeed
+  - Random success result length must match Count
+  - Random unsupported parameter cannot succeed
+  - Random with BufferOut must return an empty Result
+  - ... 1 more
+- `core/5.6.4.1.3.1.txt`: 6 case(s)
+  - Random Count 4 returns four bytes
+  - Random negative Count cannot succeed
+  - Random success result length must match Count
+  - Random unsupported parameter cannot succeed
+  - Random with BufferOut must return an empty Result
+  - ... 1 more
+- `core/5.6.4.3.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.3.2.1.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.3.3.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.4.txt`: 4 case(s)
+  - Encrypt with BufferOut cannot return ciphertext bytes: impossible success
+  - Encrypt with BufferOut returns empty result
+  - HMAC after HMACInit BufferOut cannot return consumed data: impossible success
+  - HMAC after HMACInit BufferOut returns empty result
+- `core/5.6.4.4.1.txt`: 4 case(s)
+  - Encrypt with BufferOut cannot return ciphertext bytes: impossible success
+  - Encrypt with BufferOut returns empty result
+  - HMAC after HMACInit BufferOut cannot return consumed data: impossible success
+  - HMAC after HMACInit BufferOut returns empty result
+- `core/5.6.4.4.1.2.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.4.2.txt`: 4 case(s)
+  - Encrypt with BufferOut cannot return ciphertext bytes: impossible success
+  - Encrypt with BufferOut returns empty result
+  - HMAC after HMACInit BufferOut cannot return consumed data: impossible success
+  - HMAC after HMACInit BufferOut returns empty result
+- `core/5.6.4.4.3.1.txt`: 4 case(s)
+  - Encrypt with BufferOut cannot return ciphertext bytes: impossible success
+  - Encrypt with BufferOut returns empty result
+  - HMAC after HMACInit BufferOut cannot return consumed data: impossible success
+  - HMAC after HMACInit BufferOut returns empty result
+- `core/5.6.4.4.4.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.5.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.5.2.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.6.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.6.2.1.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.6.3.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.7.txt`: 17 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - Encrypt with BufferOut cannot return ciphertext bytes: impossible success
+  - ... 12 more
+- `core/5.6.4.7.1.txt`: 4 case(s)
+  - Encrypt with BufferOut cannot return ciphertext bytes: impossible success
+  - Encrypt with BufferOut returns empty result
+  - HMAC after HMACInit BufferOut cannot return consumed data: impossible success
+  - HMAC after HMACInit BufferOut returns empty result
+- `core/5.6.4.7.1.2.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.7.2.txt`: 4 case(s)
+  - Encrypt with BufferOut cannot return ciphertext bytes: impossible success
+  - Encrypt with BufferOut returns empty result
+  - HMAC after HMACInit BufferOut cannot return consumed data: impossible success
+  - HMAC after HMACInit BufferOut returns empty result
+- `core/5.6.4.7.3.1.txt`: 4 case(s)
+  - Encrypt with BufferOut cannot return ciphertext bytes: impossible success
+  - Encrypt with BufferOut returns empty result
+  - HMAC after HMACInit BufferOut cannot return consumed data: impossible success
+  - HMAC after HMACInit BufferOut returns empty result
+- `core/5.6.4.7.4.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.8.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.8.2.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.9.txt`: 3 case(s)
+  - Sign with BufferOut cannot return signed bytes: impossible success
+  - Sign with BufferOut returns empty result
+  - Sign without BufferOut may return signed bytes
+- `core/5.6.4.9.1.txt`: 3 case(s)
+  - Sign with BufferOut cannot return signed bytes: impossible success
+  - Sign with BufferOut returns empty result
+  - Sign without BufferOut may return signed bytes
+- `core/5.6.4.9.1.2.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.9.2.txt`: 3 case(s)
+  - Sign with BufferOut cannot return signed bytes: impossible success
+  - Sign with BufferOut returns empty result
+  - Sign without BufferOut may return signed bytes
+- `core/5.6.4.9.3.1.txt`: 3 case(s)
+  - Sign with BufferOut cannot return signed bytes: impossible success
+  - Sign with BufferOut returns empty result
+  - Sign without BufferOut may return signed bytes
+- `core/5.6.4.9.4.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.10.txt`: 3 case(s)
+  - Verify success cannot return non-Boolean bytes: impossible success
+  - Verify success may return False
+  - Verify success may return True
+- `core/5.6.4.11.txt`: 7 case(s)
+  - Hash after HashFinalize cannot succeed: impossible success
+  - Hash after HashInit BufferOut cannot return consumed data: impossible success
+  - Hash after HashInit BufferOut returns empty result
+  - Hash can run while Hash stream is open
+  - Hash cannot run before HashInit opens the stream: impossible success
+  - ... 2 more
+- `core/5.6.4.11.1.txt`: 7 case(s)
+  - Hash after HashFinalize cannot succeed: impossible success
+  - Hash after HashInit BufferOut cannot return consumed data: impossible success
+  - Hash after HashInit BufferOut returns empty result
+  - Hash can run while Hash stream is open
+  - Hash cannot run before HashInit opens the stream: impossible success
+  - ... 2 more
+- `core/5.6.4.11.2.1.txt`: 7 case(s)
+  - Hash after HashFinalize cannot succeed: impossible success
+  - Hash after HashInit BufferOut cannot return consumed data: impossible success
+  - Hash after HashInit BufferOut returns empty result
+  - Hash can run while Hash stream is open
+  - Hash cannot run before HashInit opens the stream: impossible success
+  - ... 2 more
+- `core/5.6.4.11.3.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.12.txt`: 7 case(s)
+  - Hash after HashFinalize cannot succeed: impossible success
+  - Hash after HashInit BufferOut cannot return consumed data: impossible success
+  - Hash after HashInit BufferOut returns empty result
+  - Hash can run while Hash stream is open
+  - Hash cannot run before HashInit opens the stream: impossible success
+  - ... 2 more
+- `core/5.6.4.12.1.txt`: 7 case(s)
+  - Hash after HashFinalize cannot succeed: impossible success
+  - Hash after HashInit BufferOut cannot return consumed data: impossible success
+  - Hash after HashInit BufferOut returns empty result
+  - Hash can run while Hash stream is open
+  - Hash cannot run before HashInit opens the stream: impossible success
+  - ... 2 more
+- `core/5.6.4.12.1.2.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.12.2.1.txt`: 7 case(s)
+  - Hash after HashFinalize cannot succeed: impossible success
+  - Hash after HashInit BufferOut cannot return consumed data: impossible success
+  - Hash after HashInit BufferOut returns empty result
+  - Hash can run while Hash stream is open
+  - Hash cannot run before HashInit opens the stream: impossible success
+  - ... 2 more
+- `core/5.6.4.12.3.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.13.txt`: 7 case(s)
+  - Hash after HashFinalize cannot succeed: impossible success
+  - Hash after HashInit BufferOut cannot return consumed data: impossible success
+  - Hash after HashInit BufferOut returns empty result
+  - Hash can run while Hash stream is open
+  - Hash cannot run before HashInit opens the stream: impossible success
+  - ... 2 more
+- `core/5.6.4.13.1.1.txt`: 7 case(s)
+  - Hash after HashFinalize cannot succeed: impossible success
+  - Hash after HashInit BufferOut cannot return consumed data: impossible success
+  - Hash after HashInit BufferOut returns empty result
+  - Hash can run while Hash stream is open
+  - Hash cannot run before HashInit opens the stream: impossible success
+  - ... 2 more
+- `core/5.6.4.13.2.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.14.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.14.1.txt`: 4 case(s)
+  - Encrypt with BufferOut cannot return ciphertext bytes: impossible success
+  - Encrypt with BufferOut returns empty result
+  - HMAC after HMACInit BufferOut cannot return consumed data: impossible success
+  - HMAC after HMACInit BufferOut returns empty result
+- `core/5.6.4.14.2.1.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.14.3.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.15.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.15.1.txt`: 4 case(s)
+  - Encrypt with BufferOut cannot return ciphertext bytes: impossible success
+  - Encrypt with BufferOut returns empty result
+  - HMAC after HMACInit BufferOut cannot return consumed data: impossible success
+  - HMAC after HMACInit BufferOut returns empty result
+- `core/5.6.4.15.1.2.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.15.2.1.txt`: 4 case(s)
+  - Encrypt with BufferOut cannot return ciphertext bytes: impossible success
+  - Encrypt with BufferOut returns empty result
+  - HMAC after HMACInit BufferOut cannot return consumed data: impossible success
+  - HMAC after HMACInit BufferOut returns empty result
+- `core/5.6.4.15.3.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.16.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.16.2.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.4.17.txt`: 6 case(s)
+  - XOR DeletePattern clears PatternInput byte table: correct return value
+  - XOR DeletePattern clears PatternInput byte table: impossible return value
+  - XOR fails when PatternInput is shorter than input data: impossible success
+  - XOR with BufferOut returns empty result
+  - XOR without BufferOut returns bytewise XOR result: correct return value
+  - ... 1 more
+- `core/5.6.4.17.1.txt`: 6 case(s)
+  - XOR DeletePattern clears PatternInput byte table: correct return value
+  - XOR DeletePattern clears PatternInput byte table: impossible return value
+  - XOR fails when PatternInput is shorter than input data: impossible success
+  - XOR with BufferOut returns empty result
+  - XOR without BufferOut returns bytewise XOR result: correct return value
+  - ... 1 more
+- `core/5.6.4.17.2.txt`: 6 case(s)
+  - XOR DeletePattern clears PatternInput byte table: correct return value
+  - XOR DeletePattern clears PatternInput byte table: impossible return value
+  - XOR fails when PatternInput is shorter than input data: impossible success
+  - XOR with BufferOut returns empty result
+  - XOR without BufferOut returns bytewise XOR result: correct return value
+  - ... 1 more
+- `core/5.6.4.17.3.txt`: 6 case(s)
+  - XOR DeletePattern clears PatternInput byte table: correct return value
+  - XOR DeletePattern clears PatternInput byte table: impossible return value
+  - XOR fails when PatternInput is shorter than input data: impossible success
+  - XOR with BufferOut returns empty result
+  - XOR without BufferOut returns bytewise XOR result: correct return value
+  - ... 1 more
+- `core/5.6.4.17.3.1.txt`: 16 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 11 more
+- `core/5.6.4.17.3.2.txt`: 10 case(s)
+  - Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - ... 5 more
+- `core/5.6.4.17.4.txt`: 6 case(s)
+  - XOR DeletePattern clears PatternInput byte table: correct return value
+  - XOR DeletePattern clears PatternInput byte table: impossible return value
+  - XOR fails when PatternInput is shorter than input data: impossible success
+  - XOR with BufferOut returns empty result
+  - XOR without BufferOut returns bytewise XOR result: correct return value
+  - ... 1 more
+- `core/5.6.4.17.5.1.txt`: 6 case(s)
+  - XOR DeletePattern clears PatternInput byte table: correct return value
+  - XOR DeletePattern clears PatternInput byte table: impossible return value
+  - XOR fails when PatternInput is shorter than input data: impossible success
+  - XOR with BufferOut returns empty result
+  - XOR without BufferOut returns bytewise XOR result: correct return value
+  - ... 1 more
+- `core/5.6.4.17.6.txt`: 6 case(s)
+  - XOR DeletePattern clears PatternInput byte table: correct return value
+  - XOR DeletePattern clears PatternInput byte table: impossible return value
+  - XOR fails when PatternInput is shorter than input data: impossible success
+  - XOR with BufferOut returns empty result
+  - XOR without BufferOut returns bytewise XOR result: correct return value
+  - ... 1 more
+- `core/5.6.5.1.txt`: 6 case(s)
+  - XOR DeletePattern clears PatternInput byte table: correct return value
+  - XOR DeletePattern clears PatternInput byte table: impossible return value
+  - XOR fails when PatternInput is shorter than input data: impossible success
+  - XOR with BufferOut returns empty result
+  - XOR without BufferOut returns bytewise XOR result: correct return value
+  - ... 1 more
+- `core/5.6.5.2.txt`: 7 case(s)
+  - Hash after HashFinalize cannot succeed: impossible success
+  - Hash after HashInit BufferOut cannot return consumed data: impossible success
+  - Hash after HashInit BufferOut returns empty result
+  - Hash can run while Hash stream is open
+  - Hash cannot run before HashInit opens the stream: impossible success
+  - ... 2 more
+- `core/5.6.5.3.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.5.4.txt`: 6 case(s)
+  - XOR DeletePattern clears PatternInput byte table: correct return value
+  - XOR DeletePattern clears PatternInput byte table: impossible return value
+  - XOR fails when PatternInput is shorter than input data: impossible success
+  - XOR with BufferOut returns empty result
+  - XOR without BufferOut returns bytewise XOR result: correct return value
+  - ... 1 more
+- `core/5.6.5.5.1.txt`: 3 case(s)
+  - Sign with BufferOut cannot return signed bytes: impossible success
+  - Sign with BufferOut returns empty result
+  - Sign without BufferOut may return signed bytes
+- `core/5.6.5.5.2.txt`: 3 case(s)
+  - Sign with BufferOut cannot return signed bytes: impossible success
+  - Sign with BufferOut returns empty result
+  - Sign without BufferOut may return signed bytes
+- `core/5.6.5.6.1.txt`: 3 case(s)
+  - Verify success cannot return non-Boolean bytes: impossible success
+  - Verify success may return False
+  - Verify success may return True
+- `core/5.6.5.6.2.txt`: 3 case(s)
+  - Verify success cannot return non-Boolean bytes: impossible success
+  - Verify success may return False
+  - Verify success may return True
+- `core/5.6.5.7.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.5.8.txt`: 13 case(s)
+  - Decrypt after DecryptFinalize cannot succeed: impossible success
+  - Decrypt cannot run before DecryptInit opens the stream: impossible success
+  - Encrypt after EncryptFinalize cannot succeed: impossible success
+  - Encrypt cannot run before EncryptInit opens the stream: impossible success
+  - HMAC after HMACFinalize cannot succeed: impossible success
+  - ... 8 more
+- `core/5.6.6.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.6.6.1.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.7.1.1.txt`: 18 case(s)
+  - Failed GlobalRange geometry Set leaves fixed geometry observable: correct return value
+  - Failed GlobalRange geometry Set leaves fixed geometry observable: impossible return value
+  - GlobalRange RangeLength Set fails because geometry is fixed: correct status
+  - GlobalRange RangeLength Set fails because geometry is fixed: impossible success
+  - GlobalRange RangeStart Set fails because geometry is fixed: correct status
+  - ... 13 more
+- `core/5.7.2.1.txt`: 85 case(s)
+  - Admin SP cross-SP object 0000080100000001 Get GetACL association is not in this SP: impossible success
+  - Admin SP cross-SP object LockingInfo Get GetACL association is not in this SP: impossible success
+  - C_PIN object-table Get cannot include endRow
+  - C_PIN object-table Get cannot omit startRow
+  - DataStore byte-table Get accepts row-bounds Cellblock
+  - ... 80 more
+- `core/5.7.2.1.1.txt`: 13 case(s)
+  - Host cannot modify LockingInfo EncryptSupport: impossible success
+  - Host cannot modify LockingInfo KeysAvailableCfg: impossible success
+  - Host cannot modify LockingInfo MaxRanges: impossible success
+  - Host cannot modify LockingInfo MaxReEncryptions: impossible success
+  - Host cannot modify LockingInfo Name: impossible success
+  - ... 8 more
+- `core/5.7.2.1.2.txt`: 7 case(s)
+  - Host cannot modify LockingInfo EncryptSupport: impossible success
+  - Host cannot modify LockingInfo KeysAvailableCfg: impossible success
+  - Host cannot modify LockingInfo MaxRanges: impossible success
+  - Host cannot modify LockingInfo MaxReEncryptions: impossible success
+  - Host cannot modify LockingInfo Name: impossible success
+  - ... 2 more
+- `core/5.7.2.1.3.txt`: 13 case(s)
+  - Host cannot modify LockingInfo EncryptSupport: impossible success
+  - Host cannot modify LockingInfo KeysAvailableCfg: impossible success
+  - Host cannot modify LockingInfo MaxRanges: impossible success
+  - Host cannot modify LockingInfo MaxReEncryptions: impossible success
+  - Host cannot modify LockingInfo Name: impossible success
+  - ... 8 more
+- `core/5.7.2.1.4.txt`: 11 case(s)
+  - Host cannot modify LockingInfo EncryptSupport: impossible success
+  - Host cannot modify LockingInfo KeysAvailableCfg: impossible success
+  - Host cannot modify LockingInfo MaxRanges: impossible success
+  - Host cannot modify LockingInfo MaxReEncryptions: impossible success
+  - Host cannot modify LockingInfo Name: impossible success
+  - ... 6 more
+- `core/5.7.2.1.5.txt`: 55 case(s)
+  - Host cannot modify LockingInfo EncryptSupport: impossible success
+  - Host cannot modify LockingInfo KeysAvailableCfg: impossible success
+  - Host cannot modify LockingInfo MaxRanges: impossible success
+  - Host cannot modify LockingInfo MaxReEncryptions: impossible success
+  - Host cannot modify LockingInfo Name: impossible success
+  - ... 50 more
+- `core/5.7.2.1.6.txt`: 13 case(s)
+  - Host cannot modify LockingInfo EncryptSupport: impossible success
+  - Host cannot modify LockingInfo KeysAvailableCfg: impossible success
+  - Host cannot modify LockingInfo MaxRanges: impossible success
+  - Host cannot modify LockingInfo MaxReEncryptions: impossible success
+  - Host cannot modify LockingInfo Name: impossible success
+  - ... 8 more
+- `core/5.7.2.1.7.txt`: 7 case(s)
+  - Host cannot modify LockingInfo EncryptSupport: impossible success
+  - Host cannot modify LockingInfo KeysAvailableCfg: impossible success
+  - Host cannot modify LockingInfo MaxRanges: impossible success
+  - Host cannot modify LockingInfo MaxReEncryptions: impossible success
+  - Host cannot modify LockingInfo Name: impossible success
+  - ... 2 more
+- `core/5.7.2.2.txt`: 121 case(s)
+  - ACTIVE ReEncryptState blocks direct NextKey Set: impossible success
+  - ActiveKey cannot reference a C_PIN credential: impossible success
+  - AdvKeyMode reserved value two cannot be set successfully: impossible success
+  - Atomic RangeStart and RangeLength Set fails when final geometry overlaps: correct status
+  - Atomic RangeStart and RangeLength Set fails when final geometry overlaps: impossible success
+  - ... 116 more
+- `core/5.7.2.2.4.txt`: 210 case(s)
+  - Aligned RangeStart and nonzero RangeLength CreateRow succeeds: correct success
+  - Aligned RangeStart and nonzero RangeLength CreateRow succeeds: impossible error
+  - AlignmentRequired false allows otherwise unaligned CreateRow: correct success
+  - AlignmentRequired false allows otherwise unaligned CreateRow: impossible error
+  - Atomic RangeStart and RangeLength Set fails when final geometry overlaps: correct status
+  - ... 205 more
+- `core/5.7.2.2.5.txt`: 210 case(s)
+  - Aligned RangeStart and nonzero RangeLength CreateRow succeeds: correct success
+  - Aligned RangeStart and nonzero RangeLength CreateRow succeeds: impossible error
+  - AlignmentRequired false allows otherwise unaligned CreateRow: correct success
+  - AlignmentRequired false allows otherwise unaligned CreateRow: impossible error
+  - Atomic RangeStart and RangeLength Set fails when final geometry overlaps: correct status
+  - ... 205 more
+- `core/5.7.2.2.6.txt`: 488 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: correct return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: impossible return value
+  - Clearing both stored locks after read re-enable makes reads allowed: correct success
+  - ... 483 more
+- `core/5.7.2.2.7.txt`: 487 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: correct return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: impossible return value
+  - Clearing both stored locks after read re-enable makes reads allowed: correct success
+  - ... 482 more
+- `core/5.7.2.2.8.txt`: 482 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: correct return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: impossible return value
+  - Clearing both stored locks after read re-enable makes reads allowed: correct success
+  - ... 477 more
+- `core/5.7.2.2.9.txt`: 481 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: correct return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: impossible return value
+  - Clearing both stored locks after read re-enable makes reads allowed: correct success
+  - ... 476 more
+- `core/5.7.2.2.10.txt`: 425 case(s)
+  - Composite Cellblock preserves disabled WriteLockEnabled with stored WriteLocked true: correct return value
+  - Composite Cellblock preserves disabled WriteLockEnabled with stored WriteLocked true: impossible return value
+  - Composite Cellblock reflects empty LockOnReset without changing lock cells: correct return value
+  - Composite Cellblock reflects empty LockOnReset without changing lock cells: impossible return value
+  - Composite Cellblock reflects geometry enable lock and LockOnReset Set: correct return value
+  - ... 420 more
+- `core/5.7.2.2.11.txt`: 14 case(s)
+  - ACTIVE ReEncryptState blocks direct NextKey Set: impossible success
+  - ActiveKey cannot reference a C_PIN credential: impossible success
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: correct return value
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: impossible return value
+  - COMPLETED ADVKEY_req preserves K AES 128 NextKey family in ActiveKey: correct return value
+  - ... 9 more
+- `core/5.7.2.2.12.txt`: 35 case(s)
+  - ACTIVE ReEncryptState blocks direct NextKey Set: impossible success
+  - ActiveKey cannot reference a C_PIN credential: impossible success
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: correct return value
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: impossible return value
+  - COMPLETED ADVKEY_req preserves K AES 128 NextKey family in ActiveKey: correct return value
+  - ... 30 more
+- `core/5.7.2.2.13.txt`: 61 case(s)
+  - ADVKEY_req from COMPLETED ReEncryptState succeeds: correct success
+  - ADVKEY_req from COMPLETED ReEncryptState succeeds: impossible error
+  - ADVKEY_req from COMPLETED must not leave ReEncryptState COMPLETED
+  - ADVKEY_req from IDLE ReEncryptState fails: impossible success
+  - ADVKEY_req from PAUSED ReEncryptState succeeds: correct success
+  - ... 56 more
+- `core/5.7.2.2.14.txt`: 43 case(s)
+  - ACTIVE ReEncryptState blocks direct NextKey Set: impossible success
+  - ActiveKey cannot reference a C_PIN credential: impossible success
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: correct return value
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: impossible return value
+  - COMPLETED ADVKEY_req preserves K AES 128 NextKey family in ActiveKey: correct return value
+  - ... 38 more
+- `core/5.7.2.2.15.txt`: 27 case(s)
+  - ACTIVE ReEncryptState blocks direct NextKey Set: impossible success
+  - AdvKeyMode reserved value two cannot be set successfully: impossible success
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: correct return value
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: impossible return value
+  - COMPLETED ADVKEY_req preserves K AES 128 NextKey family in ActiveKey: correct return value
+  - ... 22 more
+- `core/5.7.2.2.16.txt`: 6 case(s)
+  - Locking VerifyMode accepts verify-enabled enum value: correct success
+  - Locking VerifyMode accepts verify-enabled enum value: impossible error
+  - Locking VerifyMode rejects reserved enum value: correct status
+  - Locking VerifyMode rejects reserved enum value: impossible success
+  - VerifyMode Get accepts no-verify enum and rejects reserved value: correct return value
+  - ... 1 more
+- `core/5.7.2.2.17.txt`: 42 case(s)
+  - ContOnReset rejects ProtocolStackReset as a reset condition: impossible success
+  - ContOnReset rejects string true boolean token as reset condition: correct status
+  - ContOnReset rejects string true boolean token as reset condition: impossible success
+  - Failed ProtocolStackReset ContOnReset Set preserves reset-stop pause: correct return value
+  - Failed ProtocolStackReset ContOnReset Set preserves reset-stop pause: impossible return value
+  - ... 37 more
+- `core/5.7.2.2.18.txt`: 8 case(s)
+  - Host cannot directly modify LastReEncStat: impossible success
+  - Host cannot directly modify LastReEncryptLBA: impossible success
+  - PAUSE_req from ACTIVE sets active-pause GeneralStatus: correct return value
+  - PAUSE_req from ACTIVE sets active-pause GeneralStatus: impossible return value
+  - PAUSE_req from PENDING sets pending-pause GeneralStatus: correct return value
+  - ... 3 more
+- `core/5.7.2.2.19.txt`: 10 case(s)
+  - GeneralStatus Get accepts active pause status and rejects reserved value: correct return value
+  - GeneralStatus Get accepts active pause status and rejects reserved value: impossible return value
+  - GeneralStatus Get accepts pending wait status and rejects reserved pause range value: correct return value
+  - GeneralStatus Get accepts pending wait status and rejects reserved pause range value: impossible return value
+  - Host cannot directly modify LastReEncStat: impossible success
+  - ... 5 more
+- `core/5.7.2.2.20.txt`: 43 case(s)
+  - ContOnReset rejects ProtocolStackReset as a reset condition: impossible success
+  - ContOnReset rejects string true boolean token as reset condition: correct status
+  - ContOnReset rejects string true boolean token as reset condition: impossible success
+  - Failed GeneralStatus Set does not overwrite active pause status: correct return value
+  - Failed GeneralStatus Set does not overwrite active pause status: impossible return value
+  - ... 38 more
+- `core/5.7.2.3.txt`: 38 case(s)
+  - C_PIN SID GenKey default length returns empty list: correct return value
+  - C_PIN SID GenKey default length returns empty list: impossible return value
+  - C_PIN SID GenKey explicit length returns empty list: correct return value
+  - C_PIN SID GenKey explicit length returns empty list: impossible return value
+  - K AES 128 GlobalRange GenKey returns empty list: correct return value
+  - ... 33 more
+- `core/5.7.2.3.4.txt`: 39 case(s)
+  - Adjacent crossing write is readable before any segment GenKey
+  - Failed GlobalRange GenKey during PENDING re-encryption leaves non-global segment readable: correct data
+  - Failed GlobalRange GenKey during PENDING re-encryption leaves non-global segment readable: impossible data
+  - Failed GlobalRange GenKey during PENDING re-encryption preserves global crossing data: correct data
+  - Failed GlobalRange GenKey during PENDING re-encryption preserves global crossing data: impossible data
+  - ... 34 more
+- `core/5.7.2.3.5.txt`: 16 case(s)
+  - K_AES Key column Get cannot succeed
+  - K_AES Mode Get success cannot leak protected Key cell
+  - K_AES Mode Get success cannot omit readable Mode cell
+  - K_AES Mode Get success cannot return reserved Mode enum
+  - K_AES unknown column Get cannot succeed
+  - ... 11 more
+- `core/5.7.2.4.txt`: 52 case(s)
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: correct return value
+  - C_HMAC Hash Get rejects boolean hash_protocol coercion: impossible return value
+  - C_PIN GenKey cannot accept PublicExponent: impossible success
+  - C_PIN SID GenKey default length returns empty list: correct return value
+  - C_PIN SID GenKey default length returns empty list: impossible return value
+  - ... 47 more
+- `core/5.7.2.4.4.txt`: 39 case(s)
+  - Adjacent crossing write is readable before any segment GenKey
+  - Failed GlobalRange GenKey during PENDING re-encryption leaves non-global segment readable: correct data
+  - Failed GlobalRange GenKey during PENDING re-encryption leaves non-global segment readable: impossible data
+  - Failed GlobalRange GenKey during PENDING re-encryption preserves global crossing data: correct data
+  - Failed GlobalRange GenKey during PENDING re-encryption preserves global crossing data: impossible data
+  - ... 34 more
+- `core/5.7.2.4.5.txt`: 16 case(s)
+  - K_AES Key column Get cannot succeed
+  - K_AES Mode Get success cannot leak protected Key cell
+  - K_AES Mode Get success cannot omit readable Mode cell
+  - K_AES Mode Get success cannot return reserved Mode enum
+  - K_AES unknown column Get cannot succeed
+  - ... 11 more
+- `core/5.7.2.5.txt`: 9 case(s)
+  - Admin MBRControl Set cannot be followed by stale DoneOnReset Get
+  - Admin MBRControl Set is reflected by later Get
+  - Fresh Opal MBRControl cannot report Done true
+  - Fresh Opal MBRControl cannot report Enable true
+  - Fresh Opal MBRControl cannot report empty DoneOnReset
+  - ... 4 more
+- `core/5.7.2.5.1.txt`: 1 case(s)
+  - Host cannot modify MBRControl UID: impossible success
+- `core/5.7.2.5.2.txt`: 115 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Active MBR shadow read reflects omitted-Where prefix rewrite
+  - Active MBR shadow read reflects partial byte-table overwrite
+  - Active MBR shadow read rejects payload before prefix rewrite
+  - ... 110 more
+- `core/5.7.2.5.3.txt`: 115 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Active MBR shadow read reflects omitted-Where prefix rewrite
+  - Active MBR shadow read reflects partial byte-table overwrite
+  - Active MBR shadow read rejects payload before prefix rewrite
+  - ... 110 more
+- `core/5.7.2.5.4.txt`: 81 case(s)
+  - Admin MBRControl Set cannot be followed by stale DoneOnReset Get
+  - Admin MBRControl Set is reflected by later Get
+  - ContOnReset rejects ProtocolStackReset as a reset condition: impossible success
+  - ContOnReset rejects string true boolean token as reset condition: correct status
+  - ContOnReset rejects string true boolean token as reset condition: impossible success
+  - ... 76 more
+- `core/5.7.3.1.txt`: 59 case(s)
+  - Disabled LockOnReset leaves stored locks clear before later re-enable: correct return value
+  - Disabled LockOnReset leaves stored locks clear before later re-enable: impossible return value
+  - Disabled ReadLockEnabled ignores stored ReadLocked true for host read: correct success
+  - Disabled ReadLockEnabled ignores stored ReadLocked true for host read: impossible error
+  - Disabled WriteLockEnabled ignores stored WriteLocked true for host write: correct success
+  - ... 54 more
+- `core/5.7.3.1.1.txt`: 285 case(s)
+  - Created Locking row HardwareReset does not relock Programmatic LockOnReset after manual unlock: correct return value
+  - Created Locking row HardwareReset does not relock Programmatic LockOnReset after manual unlock: impossible return value
+  - Created Locking row ProtocolStackReset aborts session without applying LockOnReset: correct return value
+  - Created Locking row ProtocolStackReset aborts session without applying LockOnReset: impossible return value
+  - Created Locking row empty LockOnReset preserves mixed locks after PowerCycle: correct return value
+  - ... 280 more
+- `core/5.7.3.1.2.txt`: 313 case(s)
+  - Clearing both stored locks after read re-enable clears Level0 Locked: correct return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: impossible return value
+  - Clearing both stored locks after read re-enable makes reads allowed: correct success
+  - Clearing both stored locks after read re-enable makes reads allowed: impossible error
+  - Clearing both stored locks after read re-enable makes writes allowed: correct success
+  - ... 308 more
+- `core/5.7.3.2.txt`: 331 case(s)
+  - Adjacent crossing write is readable before any segment GenKey
+  - Atomic slide preserves data in same-row overlap: correct data
+  - Atomic slide preserves data in same-row overlap: impossible data
+  - Boundary expansion toward adjacent row preserves data below boundary: correct data
+  - Boundary expansion toward adjacent row preserves data below boundary: impossible data
+  - ... 326 more
+- `core/5.7.3.3.txt`: 276 case(s)
+  - Atomic RangeStart and RangeLength Set fails when final geometry overlaps: correct status
+  - Atomic RangeStart and RangeLength Set fails when final geometry overlaps: impossible success
+  - Atomic RangeStart and RangeLength Set moves range to final non-overlap: correct success
+  - Atomic RangeStart and RangeLength Set moves range to final non-overlap: impossible error
+  - Atomic final non-overlap Set is observable in RangeStart and RangeLength: correct return value
+  - ... 271 more
+- `core/5.7.3.4.txt`: 183 case(s)
+  - Atomic RangeStart and RangeLength Set fails when final geometry overlaps: correct status
+  - Atomic RangeStart and RangeLength Set fails when final geometry overlaps: impossible success
+  - Atomic RangeStart and RangeLength Set moves range to final non-overlap: correct success
+  - Atomic RangeStart and RangeLength Set moves range to final non-overlap: impossible error
+  - Atomic final non-overlap Set is observable in RangeStart and RangeLength: correct return value
+  - ... 178 more
+- `core/5.7.3.5.txt`: 152 case(s)
+  - Atomic RangeStart and RangeLength Set fails when final geometry overlaps: correct status
+  - Atomic RangeStart and RangeLength Set fails when final geometry overlaps: impossible success
+  - Atomic RangeStart and RangeLength Set moves range to final non-overlap: correct success
+  - Atomic RangeStart and RangeLength Set moves range to final non-overlap: impossible error
+  - Atomic final non-overlap Set is observable in RangeStart and RangeLength: correct return value
+  - ... 147 more
+- `core/5.7.3.6.txt`: 55 case(s)
+  - Active MBR shadow read reflects omitted-Where prefix rewrite
+  - Active MBR shadow read reflects partial byte-table overwrite
+  - Active MBR shadow read rejects payload before prefix rewrite
+  - Active MBR shadow read rejects prior user media after partial overwrite
+  - Active MBR shadow read rejects stale pre-overwrite MBR payload
+  - ... 50 more
+- `core/5.7.3.7.txt`: 18 case(s)
+  - ACTIVE re-encryption blocks Delete of that range: correct status
+  - ACTIVE re-encryption blocks Delete of that range: impossible success
+  - ACTIVE re-encryption blocks DeleteRow of that range: correct status
+  - ACTIVE re-encryption blocks DeleteRow of that range: impossible success
+  - ACTIVE re-encryption blocks RangeLength change: correct status
+  - ... 13 more
+- `core/5.7.3.7.1.txt`: 37 case(s)
+  - ADVKEY_req from COMPLETED must not leave ReEncryptState COMPLETED
+  - CONT_req from PAUSED updates ReEncryptState to PENDING: correct return value
+  - CONT_req from PAUSED updates ReEncryptState to PENDING: impossible return value
+  - Global PENDING ReEncryptState blocks global range-key GenKey: impossible success
+  - Locking AdvKeyMode numeric auto-advance enum succeeds: correct success
+  - ... 32 more
+- `core/5.7.3.7.2.txt`: 14 case(s)
+  - ACTIVE ReEncryptState blocks direct NextKey Set: impossible success
+  - ActiveKey cannot reference a C_PIN credential: impossible success
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: correct return value
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: impossible return value
+  - COMPLETED ADVKEY_req preserves K AES 128 NextKey family in ActiveKey: correct return value
+  - ... 9 more
+- `core/5.7.3.7.3.txt`: 12 case(s)
+  - ADVKEY_req from COMPLETED must not leave ReEncryptState COMPLETED
+  - CONT_req from PAUSED updates ReEncryptState to PENDING: correct return value
+  - CONT_req from PAUSED updates ReEncryptState to PENDING: impossible return value
+  - PAUSE_req from ACTIVE updates ReEncryptState to PAUSED: correct return value
+  - PAUSE_req from ACTIVE updates ReEncryptState to PAUSED: impossible return value
+  - ... 7 more
+- `core/5.7.3.7.4.txt`: 71 case(s)
+  - ACTIVE ReEncryptState blocks direct NextKey Set: impossible success
+  - ADVKEY_req from COMPLETED ReEncryptState succeeds: correct success
+  - ADVKEY_req from COMPLETED ReEncryptState succeeds: impossible error
+  - ADVKEY_req from COMPLETED must not leave ReEncryptState COMPLETED
+  - ADVKEY_req from IDLE ReEncryptState fails: impossible success
+  - ... 66 more
+- `core/5.7.3.7.5.txt`: 33 case(s)
+  - ACTIVE ReEncryptState blocks direct NextKey Set: impossible success
+  - AdvKeyMode reserved value two cannot be set successfully: impossible success
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: correct return value
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: impossible return value
+  - COMPLETED ADVKEY_req preserves K AES 128 NextKey family in ActiveKey: correct return value
+  - ... 28 more
+- `core/5.7.3.8.txt`: 6 case(s)
+  - Direct AccessControl Get reports LogAlways for Locking_GlobalRange Set: correct return value
+  - Direct AccessControl Get reports LogAlways for Locking_GlobalRange Set: impossible return value
+  - Direct AccessControl Get reports LogAlways for Locking_Range1 Set: correct return value
+  - Direct AccessControl Get reports LogAlways for Locking_Range1 Set: impossible return value
+  - Direct AccessControl Get reports LogAlways for Locking_Range2 Set: correct return value
+  - ... 1 more
+- `core/5.7.4.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.7.4.1.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.8.1.1.txt`: 4 case(s)
+  - Fresh initial LogList row cannot report HighSecurity true
+  - Initial LogList row cannot report another Name
+  - Initial LogList row reports HighSecurity false
+  - Initial LogList row reports Name Log
+- `core/5.8.2.1.txt`: 31 case(s)
+  - AddLog Data longer than 64 bytes must not succeed
+  - AddLog on Log table may succeed in read-only session with empty result
+  - AddLog on a non-Log table must not succeed
+  - ClearLog on Log table succeeds with empty result
+  - ClearLog on a non-Log table must not succeed
+  - ... 26 more
+- `core/5.8.2.1.1.txt`: 12 case(s)
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - Log entry Name column cannot be host-modified: impossible success
+  - ... 7 more
+- `core/5.8.2.1.2.txt`: 12 case(s)
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - Log entry Name column cannot be host-modified: impossible success
+  - ... 7 more
+- `core/5.8.2.1.3.txt`: 12 case(s)
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - Log entry Name column cannot be host-modified: impossible success
+  - ... 7 more
+- `core/5.8.2.1.4.txt`: 12 case(s)
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - Log entry Name column cannot be host-modified: impossible success
+  - ... 7 more
+- `core/5.8.2.1.5.txt`: 12 case(s)
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - Log entry Name column cannot be host-modified: impossible success
+  - ... 7 more
+- `core/5.8.2.1.6.txt`: 12 case(s)
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - Log entry Name column cannot be host-modified: impossible success
+  - ... 7 more
+- `core/5.8.2.1.7.txt`: 12 case(s)
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - Log entry Name column cannot be host-modified: impossible success
+  - ... 7 more
+- `core/5.8.2.1.8.txt`: 12 case(s)
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - Log entry Name column cannot be host-modified: impossible success
+  - ... 7 more
+- `core/5.8.2.1.9.txt`: 14 case(s)
+  - Log entry Data numeric column cannot be host-modified: impossible success
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - ... 9 more
+- `core/5.8.2.1.10.txt`: 12 case(s)
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - Log entry Name column cannot be host-modified: impossible success
+  - ... 7 more
+- `core/5.8.2.1.11.txt`: 12 case(s)
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - Log entry Name column cannot be host-modified: impossible success
+  - ... 7 more
+- `core/5.8.2.1.12.txt`: 12 case(s)
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - Log entry Name column cannot be host-modified: impossible success
+  - ... 7 more
+- `core/5.8.2.1.13.txt`: 12 case(s)
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - Log entry Name column cannot be host-modified: impossible success
+  - ... 7 more
+- `core/5.8.2.1.14.txt`: 14 case(s)
+  - Log entry Data numeric column cannot be host-modified: impossible success
+  - Log entry ExactTime column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthName column cannot be host-modified: impossible success
+  - Log entry ExchangeAuthority column cannot be host-modified: impossible success
+  - Log entry LogKind column cannot be host-modified: impossible success
+  - ... 9 more
+- `core/5.8.2.2.txt`: 14 case(s)
+  - CreateLog duplicate log table name cannot succeed
+  - CreateLog missing MinSize cannot succeed
+  - CreateLog negative MinSize cannot succeed
+  - CreateLog on LogList returns LogListUID LogTableUID and Rows
+  - CreateLog on a non-LogList table must not succeed
+  - ... 9 more
+- `core/5.8.2.2.4.txt`: 2 case(s)
+  - Host cannot modify LogList Log column
+  - Host cannot modify LogList Serial column
+- `core/5.8.2.2.5.txt`: 2 case(s)
+  - Host cannot modify LogList Log column
+  - Host cannot modify LogList Serial column
+- `core/5.8.2.2.6.txt`: 5 case(s)
+  - Fresh initial LogList row cannot report HighSecurity true
+  - Initial LogList row cannot report another Name
+  - Initial LogList row reports HighSecurity false
+  - Initial LogList row reports Name Log
+  - LogList HighSecurity numeric column cannot be boolean value two: impossible success
+- `core/5.8.3.1.txt`: 4 case(s)
+  - AddLog Data longer than 64 bytes must not succeed
+  - AddLog on Log table may succeed in read-only session with empty result
+  - AddLog on a non-Log table must not succeed
+  - Successful AddLog must return an empty result list
+- `core/5.8.3.1.3.1.txt`: 4 case(s)
+  - AddLog Data longer than 64 bytes must not succeed
+  - AddLog on Log table may succeed in read-only session with empty result
+  - AddLog on a non-Log table must not succeed
+  - Successful AddLog must return an empty result list
+- `core/5.8.3.2.txt`: 16 case(s)
+  - CreateLog HighSecurity true is a valid boolean
+  - CreateLog HighSecurity value outside boolean range cannot succeed
+  - CreateLog HintSize True is not a uinteger: impossible success
+  - CreateLog MaxSize True is not a uinteger: impossible success
+  - CreateLog MinSize True is not a uinteger: impossible success
+  - ... 11 more
+- `core/5.8.3.2.1.txt`: 11 case(s)
+  - CreateLog HighSecurity true is a valid boolean
+  - CreateLog HighSecurity value outside boolean range cannot succeed
+  - CreateLog duplicate log table name cannot succeed
+  - CreateLog missing HighSecurity cannot succeed
+  - CreateLog missing MinSize cannot succeed
+  - ... 6 more
+- `core/5.8.3.2.2.txt`: 12 case(s)
+  - CreateLog HighSecurity true is a valid boolean
+  - CreateLog HighSecurity value outside boolean range cannot succeed
+  - CreateLog duplicate log table name cannot succeed
+  - CreateLog missing HighSecurity cannot succeed
+  - CreateLog missing MinSize cannot succeed
+  - ... 7 more
+- `core/5.8.3.2.3.txt`: 15 case(s)
+  - CreateLog HighSecurity true is a valid boolean
+  - CreateLog HighSecurity value outside boolean range cannot succeed
+  - CreateLog HintSize True is not a uinteger: impossible success
+  - CreateLog MaxSize True is not a uinteger: impossible success
+  - CreateLog MinSize True is not a uinteger: impossible success
+  - ... 10 more
+- `core/5.8.3.2.4.txt`: 4 case(s)
+  - CreateLog HintSize True is not a uinteger: impossible success
+  - CreateLog MaxSize True is not a uinteger: impossible success
+  - CreateLog MinSize True is not a uinteger: impossible success
+  - CreateLog numeric MaxSize and HintSize remain valid
+- `core/5.8.3.2.5.txt`: 8 case(s)
+  - CreateLog HighSecurity true is a valid boolean
+  - CreateLog HighSecurity value outside boolean range cannot succeed
+  - CreateLog HintSize True is not a uinteger: impossible success
+  - CreateLog MaxSize True is not a uinteger: impossible success
+  - CreateLog MinSize True is not a uinteger: impossible success
+  - ... 3 more
+- `core/5.8.3.2.6.txt`: 7 case(s)
+  - CreateLog duplicate log table name cannot succeed
+  - CreateLog missing MinSize cannot succeed
+  - CreateLog negative MinSize cannot succeed
+  - CreateLog on LogList returns LogListUID LogTableUID and Rows
+  - CreateLog on a non-LogList table must not succeed
+  - ... 2 more
+- `core/5.8.3.2.7.1.txt`: 11 case(s)
+  - CreateLog HighSecurity true is a valid boolean
+  - CreateLog HighSecurity value outside boolean range cannot succeed
+  - CreateLog duplicate log table name cannot succeed
+  - CreateLog missing HighSecurity cannot succeed
+  - CreateLog missing MinSize cannot succeed
+  - ... 6 more
+- `core/5.8.3.2.7.2.txt`: 11 case(s)
+  - CreateLog HighSecurity true is a valid boolean
+  - CreateLog HighSecurity value outside boolean range cannot succeed
+  - CreateLog duplicate log table name cannot succeed
+  - CreateLog missing HighSecurity cannot succeed
+  - CreateLog missing MinSize cannot succeed
+  - ... 6 more
+- `core/5.8.3.2.7.3.txt`: 11 case(s)
+  - CreateLog HighSecurity true is a valid boolean
+  - CreateLog HighSecurity value outside boolean range cannot succeed
+  - CreateLog duplicate log table name cannot succeed
+  - CreateLog missing HighSecurity cannot succeed
+  - CreateLog missing MinSize cannot succeed
+  - ... 6 more
+- `core/5.8.3.2.8.txt`: 7 case(s)
+  - CreateLog duplicate log table name cannot succeed
+  - CreateLog missing MinSize cannot succeed
+  - CreateLog negative MinSize cannot succeed
+  - CreateLog on LogList returns LogListUID LogTableUID and Rows
+  - CreateLog on a non-LogList table must not succeed
+  - ... 2 more
+- `core/5.8.3.3.txt`: 6 case(s)
+  - ClearLog on Log table succeeds with empty result
+  - ClearLog on a non-Log table must not succeed
+  - FlushLog on Log table succeeds with empty result after commit
+  - FlushLog on a non-Log table must not succeed
+  - Successful ClearLog must return an empty result list
+  - ... 1 more
+- `core/5.8.3.3.1.1.txt`: 6 case(s)
+  - ClearLog on Log table succeeds with empty result
+  - ClearLog on a non-Log table must not succeed
+  - FlushLog on Log table succeeds with empty result after commit
+  - FlushLog on a non-Log table must not succeed
+  - Successful ClearLog must return an empty result list
+  - ... 1 more
+- `core/5.8.3.3.2.txt`: 6 case(s)
+  - ClearLog on Log table succeeds with empty result
+  - ClearLog on a non-Log table must not succeed
+  - FlushLog on Log table succeeds with empty result after commit
+  - FlushLog on a non-Log table must not succeed
+  - Successful ClearLog must return an empty result list
+  - ... 1 more
+- `core/5.8.3.4.txt`: 6 case(s)
+  - ClearLog on Log table succeeds with empty result
+  - ClearLog on a non-Log table must not succeed
+  - FlushLog on Log table succeeds with empty result after commit
+  - FlushLog on a non-Log table must not succeed
+  - Successful ClearLog must return an empty result list
+  - ... 1 more
+- `core/5.8.3.4.1.1.txt`: 6 case(s)
+  - ClearLog on Log table succeeds with empty result
+  - ClearLog on a non-Log table must not succeed
+  - FlushLog on Log table succeeds with empty result after commit
+  - FlushLog on a non-Log table must not succeed
+  - Successful ClearLog must return an empty result list
+  - ... 1 more
+- `core/5.8.3.4.2.txt`: 6 case(s)
+  - ClearLog on Log table succeeds with empty result
+  - ClearLog on a non-Log table must not succeed
+  - FlushLog on Log table succeeds with empty result after commit
+  - FlushLog on a non-Log table must not succeed
+  - Successful ClearLog must return an empty result list
+  - ... 1 more
+- `core/5.8.4.1.txt`: 134 case(s)
+  - DataStore self-identifying AccessControl row for DataStore Get has empty issued LogTo: correct return value
+  - DataStore self-identifying AccessControl row for DataStore Get has empty issued LogTo: impossible return value
+  - DataStore self-identifying AccessControl row for DataStore Set has empty issued LogTo: correct return value
+  - DataStore self-identifying AccessControl row for DataStore Set has empty issued LogTo: impossible return value
+  - Direct AccessControl Get reports default issued C_PIN_User1 Set AddACELog: correct return value
+  - ... 129 more
+- `core/5.8.4.2.txt`: 4 case(s)
+  - AddLog Data longer than 64 bytes must not succeed
+  - AddLog on Log table may succeed in read-only session with empty result
+  - AddLog on a non-Log table must not succeed
+  - Successful AddLog must return an empty result list
+- `core/5.8.4.3.txt`: 12 case(s)
+  - AddLog Data longer than 64 bytes must not succeed
+  - AddLog on Log table may succeed in read-only session with empty result
+  - AddLog on a non-Log table must not succeed
+  - ClearLog on Log table succeeds with empty result
+  - ClearLog on a non-Log table must not succeed
+  - ... 7 more
+- `core/5.8.4.4.txt`: 2 case(s)
+  - Host cannot modify LogList Log column
+  - Host cannot modify LogList Serial column
+- `core/5.8.4.5.txt`: 84 case(s)
+  - DataStore self-identifying AccessControl row for DataStore Get has empty issued LogTo: correct return value
+  - DataStore self-identifying AccessControl row for DataStore Get has empty issued LogTo: impossible return value
+  - DataStore self-identifying AccessControl row for DataStore Set has empty issued LogTo: correct return value
+  - DataStore self-identifying AccessControl row for DataStore Set has empty issued LogTo: impossible return value
+  - Direct AccessControl Get reports empty issued C_PIN_User1 Set LogTo: correct return value
+  - ... 79 more
+- `core/5.8.5.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `core/5.8.5.1.txt`: 50 case(s)
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: correct status
+  - Cleared Frozen Disabled Locking SP still blocks ordinary Get with empty payload: impossible success
+  - Cleared Frozen Locking SP accepts later StartSession: correct success
+  - Cleared Frozen Locking SP accepts later StartSession: impossible error
+  - Cleared Frozen still leaves Disabled Locking SP Get blocked with empty payload: correct status
+  - ... 45 more
+- `opal/1.7.txt`: 6 case(s)
+  - Anybody cannot set ActiveDataRemovalMechanism: correct status
+  - Anybody cannot set ActiveDataRemovalMechanism: impossible success
+  - SID can set ActiveDataRemovalMechanism to mandatory Cryptographic Erase: correct success
+  - SID can set ActiveDataRemovalMechanism to mandatory Cryptographic Erase: impossible error
+  - reserved ActiveDataRemovalMechanism value fails: correct status
+  - ... 1 more
+- `opal/3.1.1.txt`: 91 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Data Removal Feature descriptor reports fixed length: correct return value
+  - Data Removal Feature descriptor reports fixed length: impossible return value
+  - Data Removal Feature descriptor reports fixed version: correct return value
+  - ... 86 more
+- `opal/3.1.1.2.txt`: 16 case(s)
+  - TPer AckNak true requires SequenceNumbers true: correct return value
+  - TPer AckNak true requires SequenceNumbers true: impossible return value
+  - TPer Asynchronous true requires MaxMethods zero: correct return value
+  - TPer Asynchronous true requires MaxMethods zero: impossible return value
+  - TPer MaxMethods zero is valid no limit when Asynchronous is false: correct return value
+  - ... 11 more
+- `opal/3.1.1.3.txt`: 51 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Disabled write locking keeps Locking Feature Locked bit clear: correct return value
+  - Disabled write locking keeps Locking Feature Locked bit clear: impossible return value
+  - Empty DoneOnReset preserves Locking Feature MBRDone bit: correct return value
+  - ... 46 more
+- `opal/3.1.1.3.1.txt`: 36 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: correct status
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: impossible success
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: correct return value
+  - ... 31 more
+- `opal/3.1.1.4.1.txt`: 8 case(s)
+  - Geometry descriptor mirrors aligned LockingInfo fields: correct return value
+  - Geometry descriptor mirrors aligned LockingInfo fields: impossible return value
+  - Geometry descriptor mirrors unlocked alignment flag: correct return value
+  - Geometry descriptor mirrors unlocked alignment flag: impossible return value
+  - Geometry descriptor rejects stale AlignmentGranularity: correct return value
+  - ... 3 more
+- `opal/3.1.1.4.2.txt`: 8 case(s)
+  - Geometry descriptor mirrors aligned LockingInfo fields: correct return value
+  - Geometry descriptor mirrors aligned LockingInfo fields: impossible return value
+  - Geometry descriptor mirrors unlocked alignment flag: correct return value
+  - Geometry descriptor mirrors unlocked alignment flag: impossible return value
+  - Geometry descriptor rejects stale AlignmentGranularity: correct return value
+  - ... 3 more
+- `opal/3.1.1.4.3.txt`: 8 case(s)
+  - Geometry descriptor mirrors aligned LockingInfo fields: correct return value
+  - Geometry descriptor mirrors aligned LockingInfo fields: impossible return value
+  - Geometry descriptor mirrors unlocked alignment flag: correct return value
+  - Geometry descriptor mirrors unlocked alignment flag: impossible return value
+  - Geometry descriptor rejects stale AlignmentGranularity: correct return value
+  - ... 3 more
+- `opal/3.1.1.4.4.txt`: 8 case(s)
+  - Geometry descriptor mirrors aligned LockingInfo fields: correct return value
+  - Geometry descriptor mirrors aligned LockingInfo fields: impossible return value
+  - Geometry descriptor mirrors unlocked alignment flag: correct return value
+  - Geometry descriptor mirrors unlocked alignment flag: impossible return value
+  - Geometry descriptor rejects stale AlignmentGranularity: correct return value
+  - ... 3 more
+- `opal/3.1.1.4.5.txt`: 8 case(s)
+  - Geometry descriptor mirrors aligned LockingInfo fields: correct return value
+  - Geometry descriptor mirrors aligned LockingInfo fields: impossible return value
+  - Geometry descriptor mirrors unlocked alignment flag: correct return value
+  - Geometry descriptor mirrors unlocked alignment flag: impossible return value
+  - Geometry descriptor rejects stale AlignmentGranularity: correct return value
+  - ... 3 more
+- `opal/3.1.1.5.txt`: 86 case(s)
+  - Adjacent crossing write is readable before any segment GenKey
+  - AdminSP Revert aborts current session before later Set
+  - AdminSP Revert cannot succeed in read-only AdminSP session
+  - AdminSP Revert removes old user data when Locking SP was active
+  - AdminSP Revert succeeds with empty result in read-write SID session
+  - ... 81 more
+- `opal/3.1.1.5.1.txt`: 66 case(s)
+  - Crossing reset read lock blocks reads even when crossing behavior processes unlocked transfers: impossible success
+  - Crossing reset read-only lock leaves writes permitted: correct success
+  - Crossing reset read-only lock leaves writes permitted: impossible error
+  - Crossing reset read-only lock preserves disabled write side as stored true: correct return value
+  - Crossing reset read-only lock preserves disabled write side as stored true: impossible return value
+  - ... 61 more
+- `opal/3.1.1.5.2.txt`: 66 case(s)
+  - Crossing reset read lock blocks reads even when crossing behavior processes unlocked transfers: impossible success
+  - Crossing reset read-only lock leaves writes permitted: correct success
+  - Crossing reset read-only lock leaves writes permitted: impossible error
+  - Crossing reset read-only lock preserves disabled write side as stored true: correct return value
+  - Crossing reset read-only lock preserves disabled write side as stored true: impossible return value
+  - ... 61 more
+- `opal/3.1.1.6.txt`: 20 case(s)
+  - Data Removal Feature descriptor reports fixed length: correct return value
+  - Data Removal Feature descriptor reports fixed length: impossible return value
+  - Data Removal Feature descriptor reports fixed version: correct return value
+  - Data Removal Feature descriptor reports fixed version: impossible return value
+  - Fresh Data Removal Feature descriptor has interrupted bit clear: correct return value
+  - ... 15 more
+- `opal/3.1.1.6.1.txt`: 20 case(s)
+  - Data Removal Feature descriptor reports fixed length: correct return value
+  - Data Removal Feature descriptor reports fixed length: impossible return value
+  - Data Removal Feature descriptor reports fixed version: correct return value
+  - Data Removal Feature descriptor reports fixed version: impossible return value
+  - Fresh Data Removal Feature descriptor has interrupted bit clear: correct return value
+  - ... 15 more
+- `opal/3.1.1.6.2.txt`: 20 case(s)
+  - Data Removal Feature descriptor reports fixed length: correct return value
+  - Data Removal Feature descriptor reports fixed length: impossible return value
+  - Data Removal Feature descriptor reports fixed version: correct return value
+  - Data Removal Feature descriptor reports fixed version: impossible return value
+  - Fresh Data Removal Feature descriptor has interrupted bit clear: correct return value
+  - ... 15 more
+- `opal/3.1.1.6.3.txt`: 49 case(s)
+  - Adjacent crossing write is readable before any segment GenKey
+  - Anybody cannot set ActiveDataRemovalMechanism: correct status
+  - Anybody cannot set ActiveDataRemovalMechanism: impossible success
+  - Data Removal Feature descriptor reports fixed length: correct return value
+  - Data Removal Feature descriptor reports fixed length: impossible return value
+  - ... 44 more
+- `opal/3.1.1.6.4.txt`: 6 case(s)
+  - reserved ActiveDataRemovalMechanism value 3 fails: correct status
+  - reserved ActiveDataRemovalMechanism value 3 fails: impossible success
+  - reserved ActiveDataRemovalMechanism value 6 fails: correct status
+  - reserved ActiveDataRemovalMechanism value 6 fails: impossible success
+  - reserved ActiveDataRemovalMechanism value 7 fails: correct status
+  - ... 1 more
+- `opal/3.2.2.txt`: 12 case(s)
+  - ProtocolStackReset on ComID 1 aborts Admin SP session on ComID 1: correct status
+  - ProtocolStackReset on ComID 1 aborts Admin SP session on ComID 1: impossible success
+  - ProtocolStackReset on ComID 1 aborts pending trusted startup on ComID 1: correct status
+  - ProtocolStackReset on ComID 1 aborts pending trusted startup on ComID 1: impossible success
+  - ProtocolStackReset on ComID 2 preserves Admin SP session on ComID 1: correct success
+  - ... 7 more
+- `opal/3.2.3.txt`: 307 case(s)
+  - Created Locking row HardwareReset does not relock Programmatic LockOnReset after manual unlock: correct return value
+  - Created Locking row HardwareReset does not relock Programmatic LockOnReset after manual unlock: impossible return value
+  - Created Locking row ProtocolStackReset aborts session without applying LockOnReset: correct return value
+  - Created Locking row ProtocolStackReset aborts session without applying LockOnReset: impossible return value
+  - Created Locking row empty LockOnReset preserves mixed locks after PowerCycle: correct return value
+  - ... 302 more
+- `opal/3.3.5.1.txt`: 104 case(s)
+  - Disabled TPER_RESET cannot be reported as a successful reset
+  - Disabled TPER_RESET failure leaves open session state unchanged: correct return value
+  - Disabled TPER_RESET failure leaves open session state unchanged: impossible return value
+  - Disabled lock features disregard locked cells and LockOnReset for host write: correct success
+  - Disabled lock features disregard locked cells and LockOnReset for host write: impossible error
+  - ... 99 more
+- `opal/3.3.5.2.txt`: 290 case(s)
+  - ContOnReset rejects ProtocolStackReset as a reset condition: impossible success
+  - ContOnReset rejects string true boolean token as reset condition: correct status
+  - ContOnReset rejects string true boolean token as reset condition: impossible success
+  - Created Locking row HardwareReset does not relock Programmatic LockOnReset after manual unlock: correct return value
+  - Created Locking row HardwareReset does not relock Programmatic LockOnReset after manual unlock: impossible return value
+  - ... 285 more
+- `opal/3.3.6.txt`: 66 case(s)
+  - ContOnReset rejects ProtocolStackReset as a reset condition: impossible success
+  - ContOnReset rejects string true boolean token as reset condition: correct status
+  - ContOnReset rejects string true boolean token as reset condition: impossible success
+  - Failed ProtocolStackReset ContOnReset Set preserves reset-stop pause: correct return value
+  - Failed ProtocolStackReset ContOnReset Set preserves reset-stop pause: impossible return value
+  - ... 61 more
+- `opal/4.1.1.1.txt`: 34 case(s)
+  - AckNak true with SequenceNumbers false is returned as both false: correct return value
+  - AckNak true with SequenceNumbers false is returned as both false: impossible return value
+  - Different ComID omitted HostProperties start from that ComID initial assumptions: correct return value
+  - Different ComID omitted HostProperties start from that ComID initial assumptions: impossible return value
+  - HardwareReset resets HostProperties knowledge for every tracked ComID: correct return value
+  - ... 29 more
+- `opal/4.1.1.2.txt`: 59 case(s)
+  - Password StartSession still echoes HostSessionID: correct return value
+  - Password StartSession still echoes HostSessionID: impossible return value
+  - SessionTimeout above MaxSessionTimeout fails: correct status
+  - SessionTimeout above MaxSessionTimeout fails: impossible success
+  - SessionTimeout above SPInfo SPSessionTimeout cap fails: correct status
+  - ... 54 more
+- `opal/4.2.1.1.txt`: 22 case(s)
+  - Admin SP SPInfo Name is host read-only: impossible success
+  - Admin SP SPInfo SPID is host read-only: impossible success
+  - Admin SP SPInfo Size is host read-only: impossible success
+  - Admin SP SPInfo SizeInUse is host read-only: impossible success
+  - Admin SP SPInfo UID is host read-only: impossible success
+  - ... 17 more
+- `opal/4.2.1.2.txt`: 16 case(s)
+  - Admin SP SPTemplates Admin Name is host read-only: impossible success
+  - Admin SP SPTemplates Admin TemplateID is host read-only: impossible success
+  - Admin SP SPTemplates Admin UID is host read-only: impossible success
+  - Admin SP SPTemplates Admin Version is host read-only: impossible success
+  - Admin SP SPTemplates Base Name is host read-only: impossible success
+  - ... 11 more
+- `opal/4.2.1.3.txt`: 81 case(s)
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - ... 76 more
+- `opal/4.2.1.4.txt`: 122 case(s)
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: correct return value
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: impossible return value
+  - Admin SP AccessControl table cannot accept direct CreateRow success
+  - Admin SP AccessControl table cannot accept direct DeleteRow success
+  - Admin SP Authority Admin1 GetACL returns Anybody ACE for Get: correct return value
+  - ... 117 more
+- `opal/4.2.1.5.txt`: 376 case(s)
+  - AddACE fails on duplicate ACE because AddACE changes only the ACL contents: impossible success
+  - AddACE success on Admin SP SPInfo Get must not return payload
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: correct success
+  - AddACEACL controls Admin SP SPInfo Get AddACE and success returns empty result: impossible error
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: correct return value
+  - ... 371 more
+- `opal/4.2.1.6.txt`: 242 case(s)
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: correct return value
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: impossible return value
+  - ACE_DataStore_Get_All Get follows personalized BooleanExpr: correct return value
+  - ACE_DataStore_Get_All Get follows personalized BooleanExpr: impossible return value
+  - ACE_K_AES_Mode Get returns Anybody and Mode: correct return value
+  - ... 237 more
+- `opal/4.2.1.7.txt`: 69 case(s)
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: correct return value
+  - Admin SP Anybody SyncSession omits SignedHash without response signing authority: impossible return value
+  - Admin SP Authority Admin1 Get rejects boolean operation coercion: correct return value
+  - Admin SP Authority Admin1 Get rejects boolean operation coercion: impossible return value
+  - Admin SP Authority Admin1 Get rejects reserved auth_method operation: correct return value
+  - ... 64 more
+- `opal/4.2.1.8.txt`: 35 case(s)
+  - Admin SP C_PIN_Admin1 issued CommonName is host read-only: impossible success
+  - Admin SP C_PIN_Admin1 issued Name is host read-only: impossible success
+  - Admin SP C_PIN_Admin1 issued UID is host read-only: impossible success
+  - Admin SP C_PIN_MSID issued CommonName is host read-only: impossible success
+  - Admin SP C_PIN_MSID issued Name is host read-only: impossible success
+  - ... 30 more
+- `opal/4.2.3.1.txt`: 283 case(s)
+  - Admin SP TPerInfo Bytes is host read-only: impossible success
+  - Admin SP TPerInfo FirmwareVersion is host read-only: impossible success
+  - Admin SP TPerInfo GUDID is host read-only: impossible success
+  - Admin SP TPerInfo Generation is host read-only: impossible success
+  - Admin SP TPerInfo ProtocolVersion is host read-only: impossible success
+  - ... 278 more
+- `opal/4.2.3.2.txt`: 15 case(s)
+  - Admin SP Template Admin Instances is host read-only: impossible success
+  - Admin SP Template Admin MaxInstances is host read-only: impossible success
+  - Admin SP Template Admin Name is host read-only: impossible success
+  - Admin SP Template Admin RevisionNumber is host read-only: impossible success
+  - Admin SP Template Admin UID is host read-only: impossible success
+  - ... 10 more
+- `opal/4.2.3.3.txt`: 104 case(s)
+  - Admin SP SP table Admin row Bytes is host read-only: impossible success
+  - Admin SP SP table Admin row DateOfIssue is host read-only: impossible success
+  - Admin SP SP table Admin row EffectiveAuth is host read-only: impossible success
+  - Admin SP SP table Admin row LifeCycleState is host read-only: impossible success
+  - Admin SP SP table Admin row Name is host read-only: impossible success
+  - ... 99 more
+- `opal/4.2.4.txt`: 32 case(s)
+  - Opal Admin SP IssueSP GetACL association does not exist: correct status
+  - Opal Admin SP IssueSP GetACL association does not exist: impossible success
+  - Opal Admin SP IssueSP unsupported despite Core Admin Template method: correct status
+  - Opal Admin SP IssueSP unsupported despite Core Admin Template method: impossible success
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - ... 27 more
+- `opal/4.2.5.1.txt`: 16 case(s)
+  - Anybody cannot set ActiveDataRemovalMechanism: correct status
+  - Anybody cannot set ActiveDataRemovalMechanism: impossible success
+  - SID can set ActiveDataRemovalMechanism to mandatory Cryptographic Erase: correct success
+  - SID can set ActiveDataRemovalMechanism to mandatory Cryptographic Erase: impossible error
+  - boolean ActiveDataRemovalMechanism False fails enum type validation: correct status
+  - ... 11 more
+- `opal/4.2.6.1.txt`: 16 case(s)
+  - Anybody cannot set ActiveDataRemovalMechanism: correct status
+  - Anybody cannot set ActiveDataRemovalMechanism: impossible success
+  - SID can set ActiveDataRemovalMechanism to mandatory Cryptographic Erase: correct success
+  - SID can set ActiveDataRemovalMechanism to mandatory Cryptographic Erase: impossible error
+  - boolean ActiveDataRemovalMechanism False fails enum type validation: correct status
+  - ... 11 more
+- `opal/4.2.6.1.2.txt`: 16 case(s)
+  - Anybody cannot set ActiveDataRemovalMechanism: correct status
+  - Anybody cannot set ActiveDataRemovalMechanism: impossible success
+  - SID can set ActiveDataRemovalMechanism to mandatory Cryptographic Erase: correct success
+  - SID can set ActiveDataRemovalMechanism to mandatory Cryptographic Erase: impossible error
+  - boolean ActiveDataRemovalMechanism False fails enum type validation: correct status
+  - ... 11 more
+- `opal/4.2.7.1.txt`: 12 case(s)
+  - Anybody cannot set ActiveDataRemovalMechanism: correct status
+  - Anybody cannot set ActiveDataRemovalMechanism: impossible success
+  - SID can set ActiveDataRemovalMechanism to mandatory Cryptographic Erase: correct success
+  - SID can set ActiveDataRemovalMechanism to mandatory Cryptographic Erase: impossible error
+  - reserved ActiveDataRemovalMechanism value 3 fails: correct status
+  - ... 7 more
+- `opal/4.2.9.1.txt`: 12 case(s)
+  - Random Count 32 returns thirty-two bytes
+  - Random Count 4 returns four bytes
+  - Random Count False is not a uinteger: impossible success
+  - Random Count True is not a uinteger: impossible success
+  - Random Count [True] is not a uinteger: impossible success
+  - ... 7 more
+- `opal/4.3.1.1.txt`: 18 case(s)
+  - Admin SP SPInfo Name is host read-only: impossible success
+  - Admin SP SPInfo SPID is host read-only: impossible success
+  - Admin SP SPInfo Size is host read-only: impossible success
+  - Admin SP SPInfo SizeInUse is host read-only: impossible success
+  - Admin SP SPInfo UID is host read-only: impossible success
+  - ... 13 more
+- `opal/4.3.1.2.txt`: 16 case(s)
+  - Admin SP SPTemplates Admin Name is host read-only: impossible success
+  - Admin SP SPTemplates Admin TemplateID is host read-only: impossible success
+  - Admin SP SPTemplates Admin UID is host read-only: impossible success
+  - Admin SP SPTemplates Admin Version is host read-only: impossible success
+  - Admin SP SPTemplates Base Name is host read-only: impossible success
+  - ... 11 more
+- `opal/4.3.1.3.txt`: 96 case(s)
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - Admin SP Table descriptor for C_PIN Column is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN CommonName is host read-only: impossible success
+  - Admin SP Table descriptor for C_PIN Kind is host read-only: impossible success
+  - ... 91 more
+- `opal/4.3.1.4.txt`: 18 case(s)
+  - Column table CreateRow association is not exposed as ordinary host row creation
+  - Rejected unauthenticated Set under twenty-three-entry OR does not mutate bytes: correct return value
+  - Rejected unauthenticated Set under twenty-three-entry OR does not mutate bytes: impossible return value
+  - Twenty-three-entry DataStore Get OR expression authorizes listed Admin1: correct return value
+  - Twenty-three-entry DataStore Get OR expression authorizes listed Admin1: impossible return value
+  - ... 13 more
+- `opal/4.3.1.5.txt`: 136 case(s)
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: correct return value
+  - Admin SP ACE Anybody row GetACL returns Anybody ACE: impossible return value
+  - Admin SP AccessControl table cannot accept direct CreateRow success
+  - Admin SP AccessControl table cannot accept direct DeleteRow success
+  - Admin SP Authority Admin1 GetACL returns Anybody ACE for Get: correct return value
+  - ... 131 more
+- `opal/4.3.1.6.txt`: 1207 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: correct return value
+  - ... 1202 more
+- `opal/4.3.1.7.txt`: 769 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: correct return value
+  - ACE_ACE_Set_BooleanExpression Get returns Admins and BooleanExpr column: impossible return value
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: correct return value
+  - ... 764 more
+- `opal/4.3.1.8.txt`: 570 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - Admin SP Authority Admin1 Get rejects boolean operation coercion: correct return value
+  - Admin SP Authority Admin1 Get rejects boolean operation coercion: impossible return value
+  - Admin SP Authority Admin1 Get rejects reserved auth_method operation: correct return value
+  - ... 565 more
+- `opal/4.3.1.9.txt`: 509 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - Admin SP C_PIN_Admin1 issued CommonName is host read-only: impossible success
+  - Admin SP C_PIN_Admin1 issued Name is host read-only: impossible success
+  - Admin SP C_PIN_Admin1 issued UID is host read-only: impossible success
+  - ... 504 more
+- `opal/4.3.1.10.txt`: 47 case(s)
+  - Admin SP template table 0000020500000000 CreateRow GetACL association is not preconfigured: impossible success
+  - Admin SP template table 0000020500000000 DeleteRow GetACL association is not preconfigured: impossible success
+  - Admin SP template table 0000020500000000 GetFreeRows GetACL association is not preconfigured: impossible success
+  - Admin SP template table 0000020500000000 Set GetACL association is not preconfigured: impossible success
+  - Admin SP template table SPTable CreateRow GetACL association is not preconfigured: impossible success
+  - ... 42 more
+- `opal/4.3.2.txt`: 30 case(s)
+  - Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - ... 25 more
+- `opal/4.3.4.1.txt`: 12 case(s)
+  - Random Count 32 returns thirty-two bytes
+  - Random Count 4 returns four bytes
+  - Random Count False is not a uinteger: impossible success
+  - Random Count True is not a uinteger: impossible success
+  - Random Count [True] is not a uinteger: impossible success
+  - ... 7 more
+- `opal/4.3.5.1.txt`: 70 case(s)
+  - Admin SP cross-SP object 0000080100000001 Get GetACL association is not in this SP: impossible success
+  - Admin SP cross-SP object LockingInfo Get GetACL association is not in this SP: impossible success
+  - C_PIN object-table Get cannot include endRow
+  - C_PIN object-table Get cannot omit startRow
+  - DataStore byte-table Get accepts row-bounds Cellblock
+  - ... 65 more
+- `opal/4.3.5.2.txt`: 460 case(s)
+  - ACTIVE ReEncryptState blocks direct NextKey Set: impossible success
+  - ActiveKey cannot reference a C_PIN credential: impossible success
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: correct return value
+  - COMPLETED ADVKEY_req moves K AES 256 NextKey to ActiveKey: impossible return value
+  - COMPLETED ADVKEY_req preserves K AES 128 NextKey family in ActiveKey: correct return value
+  - ... 455 more
+- `opal/4.3.5.2.1.1.txt`: 126 case(s)
+  - Aligned RangeStart and nonzero RangeLength CreateRow succeeds: correct success
+  - Aligned RangeStart and nonzero RangeLength CreateRow succeeds: impossible error
+  - AlignmentRequired false allows otherwise unaligned CreateRow: correct success
+  - AlignmentRequired false allows otherwise unaligned CreateRow: impossible error
+  - DeleteRow frees Locking range geometry for later CreateRow reuse: correct success
+  - ... 121 more
+- `opal/4.3.5.2.1.2.txt`: 126 case(s)
+  - Aligned RangeStart and nonzero RangeLength CreateRow succeeds: correct success
+  - Aligned RangeStart and nonzero RangeLength CreateRow succeeds: impossible error
+  - AlignmentRequired false allows otherwise unaligned CreateRow: correct success
+  - AlignmentRequired false allows otherwise unaligned CreateRow: impossible error
+  - DeleteRow frees Locking range geometry for later CreateRow reuse: correct success
+  - ... 121 more
+- `opal/4.3.5.2.2.txt`: 337 case(s)
+  - Clearing both stored locks after read re-enable clears Level0 Locked: correct return value
+  - Clearing both stored locks after read re-enable clears Level0 Locked: impossible return value
+  - Clearing both stored locks after read re-enable makes reads allowed: correct success
+  - Clearing both stored locks after read re-enable makes reads allowed: impossible error
+  - Clearing both stored locks after read re-enable makes writes allowed: correct success
+  - ... 332 more
+- `opal/4.3.5.3.txt`: 42 case(s)
+  - Activated Locking Feature descriptor reports enabled but not locked: correct return value
+  - Activated Locking Feature descriptor reports enabled but not locked: impossible return value
+  - Admin MBRControl Set cannot be followed by stale DoneOnReset Get
+  - Admin MBRControl Set is reflected by later Get
+  - Disabled write locking keeps Locking Feature Locked bit clear: correct return value
+  - ... 37 more
+- `opal/4.3.5.3.1.txt`: 87 case(s)
+  - Active MBR shadow read reflects omitted-Where prefix rewrite
+  - Active MBR shadow read reflects partial byte-table overwrite
+  - Active MBR shadow read rejects payload before prefix rewrite
+  - Active MBR shadow read rejects prior user media after partial overwrite
+  - Active MBR shadow read rejects stale pre-overwrite MBR payload
+  - ... 82 more
+- `opal/4.3.5.4.txt`: 139 case(s)
+  - Active MBR shadow read reflects omitted-Where prefix rewrite
+  - Active MBR shadow read reflects partial byte-table overwrite
+  - Active MBR shadow read rejects payload before prefix rewrite
+  - Active MBR shadow read rejects prior user media after partial overwrite
+  - Active MBR shadow read rejects stale pre-overwrite MBR payload
+  - ... 134 more
+- `opal/4.3.5.5.txt`: 136 case(s)
+  - Adjacent crossing write is readable before any segment GenKey
+  - Admin SP template table 0000020500000000 CreateRow GetACL association is not preconfigured: impossible success
+  - Admin SP template table 0000020500000000 DeleteRow GetACL association is not preconfigured: impossible success
+  - Admin SP template table 0000020500000000 GetFreeRows GetACL association is not preconfigured: impossible success
+  - Admin SP template table 0000020500000000 Set GetACL association is not preconfigured: impossible success
+  - ... 131 more
+- `opal/4.3.7.txt`: 77 case(s)
+  - Adjacent crossing write is readable before any segment GenKey
+  - Crossing reset read lock blocks reads even when crossing behavior processes unlocked transfers: impossible success
+  - Crossing reset read-only lock leaves writes permitted: correct success
+  - Crossing reset read-only lock leaves writes permitted: impossible error
+  - Crossing reset read-only lock preserves disabled write side as stored true: correct return value
+  - ... 72 more
+- `opal/4.3.8.1.txt`: 573 case(s)
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: correct return value
+  - ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: impossible return value
+  - ACE_DataStore_Get_All Get follows personalized BooleanExpr: correct return value
+  - ACE_DataStore_Get_All Get follows personalized BooleanExpr: impossible return value
+  - ACE_K_AES_Mode Get returns Anybody and Mode: correct return value
+  - ... 568 more
+- `opal/5.1.1.txt`: 16 case(s)
+  - Admin SP cannot be deleted with DeleteSP
+  - DeleteSP success must not include return payload
+  - DeleteSP success returns an empty list
+  - Deleted Locking SP must not accept new sessions after DeleteSP close
+  - Disabled Locking SP DeleteSP removes the SP only after session close
+  - ... 11 more
+- `opal/5.1.1.1.txt`: 11 case(s)
+  - Failed KeepGlobalRangeKey RevertSP leaves Locking SP session-startable
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: correct status
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: impossible success
+  - KeepGlobalRangeKey preserves Global Range data after successful RevertSP
+  - KeepGlobalRangeKey succeeds when Global Range is read locked but write unlocked: correct success
+  - ... 6 more
+- `opal/5.1.1.2.txt`: 299 case(s)
+  - ACE C_PIN_User1 Set PIN accepts supported Admins BooleanExpr
+  - ACE C_PIN_User1 Set PIN accepts supported Admins OR User1 BooleanExpr
+  - Admin SP cannot be deleted with DeleteSP
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: correct status
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: impossible success
+  - ... 294 more
+- `opal/5.1.2.txt`: 15 case(s)
+  - AdminSP Revert aborts current session before later Set
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: correct status
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: impossible success
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: correct return value
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: impossible return value
+  - ... 10 more
+- `opal/5.1.2.1.txt`: 11 case(s)
+  - AdminSP Revert aborts current session before later Set
+  - AdminSP Revert cannot succeed in read-only AdminSP session
+  - AdminSP Revert removes old user data when Locking SP was active
+  - AdminSP Revert succeeds with empty result in read-write SID session
+  - AdminSP Revert success must not include return payload
+  - ... 6 more
+- `opal/5.1.2.2.txt`: 15 case(s)
+  - AdminSP Revert aborts current session before later Set
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: correct status
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: impossible success
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: correct return value
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: impossible return value
+  - ... 10 more
+- `opal/5.1.2.2.1.txt`: 11 case(s)
+  - AdminSP Revert aborts current session before later Set
+  - AdminSP Revert cannot succeed in read-only AdminSP session
+  - AdminSP Revert removes old user data when Locking SP was active
+  - AdminSP Revert succeeds with empty result in read-write SID session
+  - AdminSP Revert success must not include return payload
+  - ... 6 more
+- `opal/5.1.2.3.txt`: 8 case(s)
+  - Fresh Data Removal Feature descriptor has interrupted bit clear: correct return value
+  - Fresh Data Removal Feature descriptor has interrupted bit clear: impossible return value
+  - Fresh Data Removal Feature descriptor rejects named Interrupted alias set: correct return value
+  - Fresh Data Removal Feature descriptor rejects named Interrupted alias set: impossible return value
+  - Successful GenKey completion leaves Data Removal interrupted bit clear: correct return value
+  - ... 3 more
+- `opal/5.1.3.txt`: 22 case(s)
+  - Failed KeepGlobalRangeKey RevertSP leaves Locking SP session-startable
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: correct status
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: impossible success
+  - KeepGlobalRangeKey preserves Global Range data after successful RevertSP
+  - KeepGlobalRangeKey succeeds when Global Range is read locked but write unlocked: correct success
+  - ... 17 more
+- `opal/5.1.3.1.txt`: 11 case(s)
+  - Failed KeepGlobalRangeKey RevertSP leaves Locking SP session-startable
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: correct status
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: impossible success
+  - KeepGlobalRangeKey preserves Global Range data after successful RevertSP
+  - KeepGlobalRangeKey succeeds when Global Range is read locked but write unlocked: correct success
+  - ... 6 more
+- `opal/5.1.3.2.txt`: 17 case(s)
+  - Failed KeepGlobalRangeKey RevertSP leaves Locking SP session-startable
+  - Failed KeepGlobalRangeKey RevertSP preserves Locking Feature locked state: correct return value
+  - Failed KeepGlobalRangeKey RevertSP preserves Locking Feature locked state: impossible return value
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: correct status
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: impossible success
+  - ... 12 more
+- `opal/5.1.3.3.txt`: 17 case(s)
+  - Failed KeepGlobalRangeKey RevertSP leaves Locking SP session-startable
+  - Failed KeepGlobalRangeKey RevertSP preserves Locking Feature locked state: correct return value
+  - Failed KeepGlobalRangeKey RevertSP preserves Locking Feature locked state: impossible return value
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: correct status
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: impossible success
+  - ... 12 more
+- `opal/5.1.3.4.txt`: 8 case(s)
+  - Fresh Data Removal Feature descriptor has interrupted bit clear: correct return value
+  - Fresh Data Removal Feature descriptor has interrupted bit clear: impossible return value
+  - Fresh Data Removal Feature descriptor rejects named Interrupted alias set: correct return value
+  - Fresh Data Removal Feature descriptor rejects named Interrupted alias set: impossible return value
+  - Successful GenKey completion leaves Data Removal interrupted bit clear: correct return value
+  - ... 3 more
+- `opal/5.2.1.2.txt`: 4 case(s)
+  - Opal Admin SP IssueSP GetACL association does not exist: correct status
+  - Opal Admin SP IssueSP GetACL association does not exist: impossible success
+  - Opal Admin SP IssueSP unsupported despite Core Admin Template method: correct status
+  - Opal Admin SP IssueSP unsupported despite Core Admin Template method: impossible success
+- `opal/5.2.2.txt`: 11 case(s)
+  - Failed KeepGlobalRangeKey RevertSP leaves Locking SP session-startable
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: correct status
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: impossible success
+  - KeepGlobalRangeKey preserves Global Range data after successful RevertSP
+  - KeepGlobalRangeKey succeeds when Global Range is read locked but write unlocked: correct success
+  - ... 6 more
+- `opal/5.2.2.1.txt`: 15 case(s)
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: correct status
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: impossible success
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: correct return value
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: impossible return value
+  - Failed KeepGlobalRangeKey RevertSP leaves Locking SP session-startable
+  - ... 10 more
+- `opal/5.2.2.2.txt`: 11 case(s)
+  - Failed KeepGlobalRangeKey RevertSP leaves Locking SP session-startable
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: correct status
+  - KeepGlobalRangeKey fails when Global Range is read locked and write locked: impossible success
+  - KeepGlobalRangeKey preserves Global Range data after successful RevertSP
+  - KeepGlobalRangeKey succeeds when Global Range is read locked but write unlocked: correct success
+  - ... 6 more
+- `opal/5.2.2.2.1.txt`: 9 case(s)
+  - Admin SP cannot be deleted with DeleteSP
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: correct status
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: impossible success
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: correct return value
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: impossible return value
+  - ... 4 more
+- `opal/5.2.2.2.2.txt`: 21 case(s)
+  - AdminSP Revert aborts current session before later Set
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: correct status
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: impossible success
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: correct return value
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: impossible return value
+  - ... 16 more
+- `opal/5.2.2.3.1.txt`: 32 case(s)
+  - AdminSP Revert aborts current session before later Set
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: correct status
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: impossible success
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: correct return value
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: impossible return value
+  - ... 27 more
+- `opal/5.2.2.3.2.txt`: 15 case(s)
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: correct status
+  - AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: impossible success
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: correct return value
+  - AdminSP Revert after explicit Manufactured Locking SP disables Level0 Locking Feature: impossible return value
+  - Failed KeepGlobalRangeKey RevertSP leaves Locking SP session-startable
+  - ... 10 more
+- `opal/5.2.3.txt`: 6 case(s)
+  - SP LifeCycleState Get accepts Issued and rejects reserved Core gap: correct return value
+  - SP LifeCycleState Get accepts Issued and rejects reserved Core gap: impossible return value
+  - SP LifeCycleState Get accepts Manufactured and rejects reserved Opal top value: correct return value
+  - SP LifeCycleState Get accepts Manufactured and rejects reserved Opal top value: impossible return value
+  - SP LifeCycleState Get rejects boolean lifecycle coercion: correct return value
+  - ... 1 more
+- `opal/5.3.txt`: 26 case(s)
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: correct success
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: impossible error
+  - DataStore Set aligned to observed mandatory granularity succeeds
+  - ... 21 more
+- `opal/5.3.1.txt`: 26 case(s)
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: correct success
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: impossible error
+  - DataStore Set aligned to observed mandatory granularity succeeds
+  - ... 21 more
+- `opal/5.3.1.1.txt`: 26 case(s)
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: correct success
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: impossible error
+  - DataStore Set aligned to observed mandatory granularity succeeds
+  - ... 21 more
+- `opal/5.3.1.1.1.txt`: 26 case(s)
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: correct success
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: impossible error
+  - DataStore Set aligned to observed mandatory granularity succeeds
+  - ... 21 more
+- `opal/5.3.1.1.2.txt`: 143 case(s)
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - DataStore Get with explicit equal start and end rows remains one-byte exact: correct return value
+  - DataStore Get with explicit equal start and end rows remains one-byte exact: impossible return value
+  - DataStore Get with omitted endRow cannot be treated as one-byte exact read
+  - ... 138 more
+- `opal/5.3.1.2.txt`: 26 case(s)
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: correct success
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: impossible error
+  - DataStore Set aligned to observed mandatory granularity succeeds
+  - ... 21 more
+- `opal/5.3.1.2.1.txt`: 26 case(s)
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: correct success
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: impossible error
+  - DataStore Set aligned to observed mandatory granularity succeeds
+  - ... 21 more
+- `opal/5.3.1.2.2.txt`: 26 case(s)
+  - Admin SP C_PIN table descriptor object-table granularity is zero: correct return value
+  - Admin SP C_PIN table descriptor object-table granularity is zero: impossible return value
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: correct success
+  - DataStore RecommendedAccessGranularity misalignment does not fail Set: impossible error
+  - DataStore Set aligned to observed mandatory granularity succeeds
+  - ... 21 more
+
+## Workflow
+
+1. Refresh `python3 tools/build_doc_inventory.py` and pick the next batch from `analysis/doc_cartography_queue.md`.
+2. Classify each shard as testable, supporting/cross-doc only, duplicate/index, non-testable, or manually triaged.
+3. For each testable rule, write one rule card: official sources, exact assertion type, cross-doc dependencies, and whether exact status is proven.
+4. Add only narrowed candidates to `tools/run_sourced_edges.py`; prefer impossible-`SUCCESS` FAIL cases when the document proves rejection but not a concrete error status.
+5. Run the new tag locally, then create three blind review packets with `tools/label_consensus.py export --tag <tag> --reviewer <id>`.
+6. Run `python3 tools/label_consensus.py report`; treat only accepted consensus cases as trusted regression data.
+7. Fix solver code only for accepted-case mismatches, then run consensus gate, full sourced, synthetic, unit/public eval, coverage, and inventory.
+
+Manual triage statuses should be used only when a section is truly informative, out of scope, duplicated elsewhere, or covered indirectly.
+

@@ -1,0 +1,23 @@
+{
+  "added_blocks": 2,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/4.3.1.9.md",
+  "existing_chars": 2127,
+  "existing_path": "artifacts/documents/opal/4.3.1.9.txt",
+  "extracted_chars": 1628,
+  "family": "opal",
+  "pages": [
+    83,
+    84
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 0,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/4.3.1.9.jsonl",
+  "section": "4.3.1.9",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 1,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/4.3.1.9.jsonl",
+  "title": "C_PIN (M)"
+}

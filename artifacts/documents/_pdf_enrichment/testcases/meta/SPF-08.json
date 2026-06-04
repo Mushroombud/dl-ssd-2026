@@ -1,0 +1,24 @@
+{
+  "added_blocks": 9,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/SPF-08.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 3556,
+  "family": "testcases",
+  "pages": [
+    59,
+    60,
+    61
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 9,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/SPF-08.jsonl",
+  "section": "SPF-08",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/SPF-08.jsonl",
+  "title": "RevertSP"
+}

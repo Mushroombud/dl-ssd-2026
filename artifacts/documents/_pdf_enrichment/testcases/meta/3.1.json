@@ -1,0 +1,24 @@
+{
+  "added_blocks": 12,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/3.1.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 6101,
+  "family": "testcases",
+  "pages": [
+    26,
+    27,
+    28
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 13,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/3.1.jsonl",
+  "section": "3.1",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 2,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/3.1.jsonl",
+  "title": "Minimum Test Requirements The Test Suite SHALL:"
+}

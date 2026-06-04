@@ -1,0 +1,24 @@
+{
+  "added_blocks": 6,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/3.1.1.6.md",
+  "existing_chars": 2796,
+  "existing_path": "artifacts/documents/opal/3.1.1.6.txt",
+  "extracted_chars": 2073,
+  "family": "opal",
+  "pages": [
+    24,
+    25,
+    26
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 3,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/3.1.1.6.jsonl",
+  "section": "3.1.1.6",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 3,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/3.1.1.6.jsonl",
+  "title": "Supported Data Removal Mechanism Feature (Feature Code = 0x0404)"
+}

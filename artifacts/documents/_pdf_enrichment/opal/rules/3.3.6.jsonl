@@ -1,0 +1,1 @@
+{"kind": "normative_text", "rule_id": "3.3.6:text:001", "section": "3.3.6", "source": "- 3.3.6 Protocol Stack Reset Commands (M) An IF-SEND containing a Protocol Stack Reset Command SHALL be supported. Refer to [2] for details.", "status": "candidate_for_review", "title": "Protocol Stack Reset Commands (M)"}

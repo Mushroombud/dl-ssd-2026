@@ -1,0 +1,23 @@
+{
+  "added_blocks": 5,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/ETC-23.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 1043,
+  "family": "testcases",
+  "pages": [
+    91,
+    92
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 4,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/ETC-23.jsonl",
+  "section": "ETC-23",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/ETC-23.jsonl",
+  "title": "Data Removal Mechanism – Set Unsupported Value"
+}

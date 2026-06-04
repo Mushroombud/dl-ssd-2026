@@ -1,0 +1,3 @@
+{"reviewer":"reviewer_session_key_c","case_id":"session-key-exchange-doc-9e7ad361bc","label":"FAIL","confidence":0.99,"concerns":""}
+{"reviewer":"reviewer_session_key_c","case_id":"session-key-exchange-doc-dd7ea387cb","label":"FAIL","confidence":0.99,"concerns":""}
+{"reviewer":"reviewer_session_key_c","case_id":"session-key-exchange-doc-786b385a10","label":"FAIL","confidence":0.94,"concerns":"HostExchangeAuthority value AdminExch is inferred to be the authority inspected as 0000000900000009; under that inference it requires secure messaging but has no credential, so SUCCESS is non-compliant."}

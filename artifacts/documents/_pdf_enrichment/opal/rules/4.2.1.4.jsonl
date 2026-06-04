@@ -1,0 +1,2 @@
+{"kind": "normative_text", "rule_id": "4.2.1.4:text:004", "section": "4.2.1.4", "source": "The InvokingID, MethodID and GetACLACL columns are a special case. Although they are marked as Read-Only with fixed access control, the access control for invocation of the Get method is (N).", "status": "candidate_for_review", "title": "MethodID (M)"}
+{"kind": "normative_text", "rule_id": "4.2.1.4:text:005", "section": "4.2.1.4", "source": "The ACL column is readable only via the GetACL method.", "status": "candidate_for_review", "title": "MethodID (M)"}

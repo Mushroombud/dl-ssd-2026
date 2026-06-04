@@ -1,0 +1,23 @@
+{
+  "added_blocks": 8,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/4.3.3.md",
+  "existing_chars": 121,
+  "existing_path": "artifacts/documents/opal/4.3.3.txt",
+  "extracted_chars": 2516,
+  "family": "opal",
+  "pages": [
+    85,
+    86
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 3,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/4.3.3.jsonl",
+  "section": "4.3.3",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 3,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/4.3.3.jsonl",
+  "title": "Crypto Template Tables"
+}

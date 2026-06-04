@@ -1,0 +1,2 @@
+{"kind": "normative_text", "rule_id": "4.1.1.2:text:001", "section": "4.1.1.2", "source": "- 4.1.1.2 StartSession (M) An Opal SSC compliant Storage Device SHALL support the following parameters for the StartSession method:", "status": "candidate_for_review", "title": "StartSession (M)"}
+{"kind": "normative_text", "rule_id": "4.1.1.2:text:002", "section": "4.1.1.2", "source": "- HostSessionID\n- SPID\n- Write\n- HostChallenge\n- HostSigningAuthority", "status": "candidate_for_review", "title": "StartSession (M)"}

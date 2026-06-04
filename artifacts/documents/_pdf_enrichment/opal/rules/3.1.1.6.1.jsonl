@@ -1,0 +1,1 @@
+{"kind": "normative_text", "rule_id": "3.1.1.6.1:text:001", "section": "3.1.1.6.1", "source": "- 3.1.1.6.1 Data Removal Operation Processing Definition The Data Removal Operation Processing bit SHALL be set to one if the TPer is performing any supported data removal operation including:", "status": "candidate_for_review", "title": "Data Removal Operation Processing Definition"}

@@ -1,0 +1,23 @@
+{
+  "added_blocks": 3,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/1.4.1.md",
+  "existing_chars": 405,
+  "existing_path": "artifacts/documents/opal/1.4.1.txt",
+  "extracted_chars": 993,
+  "family": "opal",
+  "pages": [
+    14,
+    15
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 1,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/1.4.1.jsonl",
+  "section": "1.4.1",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/1.4.1.jsonl",
+  "title": "Document Precedence"
+}

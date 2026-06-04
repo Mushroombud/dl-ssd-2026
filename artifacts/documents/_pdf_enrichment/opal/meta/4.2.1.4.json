@@ -1,0 +1,30 @@
+{
+  "added_blocks": 21,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/4.2.1.4.md",
+  "existing_chars": 1435,
+  "existing_path": "artifacts/documents/opal/4.2.1.4.txt",
+  "extracted_chars": 14562,
+  "family": "opal",
+  "pages": [
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 2,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/4.2.1.4.jsonl",
+  "section": "4.2.1.4",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 9,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/4.2.1.4.jsonl",
+  "title": "MethodID (M)"
+}

@@ -1,0 +1,23 @@
+{
+  "added_blocks": 5,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/SPF-20.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 1557,
+  "family": "testcases",
+  "pages": [
+    72,
+    73
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 2,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/SPF-20.jsonl",
+  "section": "SPF-20",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/SPF-20.jsonl",
+  "title": "Data Removal Mechanism Start of informative comment"
+}

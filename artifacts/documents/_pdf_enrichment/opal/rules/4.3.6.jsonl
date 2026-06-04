@@ -1,0 +1,1 @@
+{"kind": "normative_text", "rule_id": "4.3.6:text:001", "section": "4.3.6", "source": "- 4.3.6 Locking Template Methods Refer to Section 4.3.1.5 for supported methods.\n- 4.3.7 Storage Device Read/Write Data Command Locking Behavior Interactions with Range Crossing\n- 4.3.8 Non Template Tables", "status": "candidate_for_review", "title": "Locking Template Methods"}

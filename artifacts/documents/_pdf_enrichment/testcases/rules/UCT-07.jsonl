@@ -1,0 +1,1 @@
+{"kind": "normative_text", "rule_id": "UCT-07:text:002", "section": "UCT-07", "source": "- a. For Opal, Read the entire LAST_REQUIRED_RANGE\n- b. For all SSCs supported by this specification other than Opal, Read an ARBITRARILY_VARYING_LBA_RANGE", "status": "candidate_for_review", "title": "Unlocking Ranges"}

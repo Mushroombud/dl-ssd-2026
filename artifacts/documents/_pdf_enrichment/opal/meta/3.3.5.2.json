@@ -1,0 +1,22 @@
+{
+  "added_blocks": 2,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/3.3.5.2.md",
+  "existing_chars": 665,
+  "existing_path": "artifacts/documents/opal/3.3.5.2.txt",
+  "extracted_chars": 423,
+  "family": "opal",
+  "pages": [
+    32
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 1,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/3.3.5.2.jsonl",
+  "section": "3.3.5.2",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 1,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/3.3.5.2.jsonl",
+  "title": "TCG Reset Events"
+}

@@ -1,0 +1,22 @@
+{
+  "added_blocks": 0,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/1.4.md",
+  "existing_chars": 24,
+  "existing_path": "artifacts/documents/opal/1.4.txt",
+  "extracted_chars": 28,
+  "family": "opal",
+  "pages": [
+    14
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 0,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/1.4.jsonl",
+  "section": "1.4",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/1.4.jsonl",
+  "title": "Document References"
+}

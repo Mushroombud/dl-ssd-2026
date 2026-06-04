@@ -1,0 +1,3 @@
+{"kind": "normative_text", "rule_id": "SPF-13:text:001", "section": "SPF-13", "source": "This test case only applies to the following SSCs:", "status": "candidate_for_review", "title": "Authenticate"}
+{"kind": "normative_text", "rule_id": "SPF-13:text:004", "section": "SPF-13", "source": "- 1) Steps #1-4 SUCCEED\n- 2) The Get method in step #3 returns the C_PIN_SID PIN object’s UID column value", "status": "candidate_for_review", "title": "Authenticate"}
+{"kind": "normative_text", "rule_id": "SPF-13:text:006", "section": "SPF-13", "source": "This test case only applies to the following SSCs:", "status": "candidate_for_review", "title": "Authenticate"}

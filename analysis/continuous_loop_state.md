@@ -1,0 +1,2191 @@
+# Continuous Improvement Loop State
+
+Updated: 2026-05-31 KST
+
+## Operating Rule
+
+Keep advancing in small score-relevant batches. After each batch:
+
+1. add or update edge cases tied to a concrete concept,
+2. repair only generalized parser/semantic/expectation gaps,
+3. run local verification,
+4. record the batch in the update/audit logs,
+5. leave the next target here so the loop can resume without rediscovery.
+
+Do not update the server or submit unless explicitly requested.
+
+## Current Baseline
+
+- Latest submitted score: `88.00`
+- Local sourced cases: `3997`
+- Local synthetic cases: `6421`
+- Unit tests: `1210`
+- Official parsed docs: `811 / 1376` covered
+- Remaining untriaged docs: `349` D-priority
+- Latest server sync: `mutating-wrapper nonmutation submit build` on 2026-06-01 KST
+- Latest submit attempt:
+  - submitted `submit --dir /workspace/project --job-name sm-tcgstorageapi-bool-wrapper-20260602`
+  - submission id `1a5d91ef312d4a33b900980874847957`, job_id `1285`
+  - status last checked: `Success`, score `88.00`
+  - latest completed score remains `88.00` at job_id `1285`
+
+
+## Recent Local Batch - 2026-06-04 01:41 KST - AccessControl ACL mutation alias repair
+
+- Goal: find score-relevant API wrapper traces where trusted ACL mutations were described with explicit AccessControl/ACL wording rather than the short `addACE`/`setACL`/`removeACE` names.
+- Found failing local probes: explicit add/remove/set ACL aliases parsed as `UNKNOWN`, so successful mutation side effects were ignored and later `GetACL` could be judged incorrectly.
+- Repair: mapped trusted explicit aliases such as `addAccessControlEntry`, `appendACEToACL`, `replaceAccessControlACL`, `putAccessControlList`, `removeACEFromACL`, and `revokeAccessControlEntry` onto the same dynamic ACL state machine as AddACE/SetACL/RemoveACE.
+- Added regression coverage in unit tests, score probes, and synthetic cases. Ambiguous broad aliases like `AccessList` remain intentionally unmapped.
+- Verification pending in command output after this entry.
+
+
+## Recent Local Batch - 2026-06-04 01:49 KST - Locking range cell alias repair
+
+- Goal: target score-relevant Locking wrappers where hidden traces may use explicit cell names with update/put/store/save/program/read/fetch/query/load wording.
+- Found failing local probes: 114 bounded aliases around `RangeStart`, `RangeLength`, `ReadLockEnabled`, `WriteLockEnabled`, `ReadLocked`, and `WriteLocked` either ignored successful mutations or rejected valid cell reads.
+- Repair: lowered only explicit range-cell aliases to the existing official `Locking_RangeN.Set/Get` column model. No new Locking semantics were introduced.
+- Added unit, score-probe, and synthetic regressions. Verification pending in command output after this entry.
+
+
+## Recent Local Batch - 2026-06-04 01:58 KST - GetACL phrase alias repair
+
+- Goal: target hidden AccessControl/GetACL traces that use sentence-like wrapper names such as `getACLForObject`, `readACLForMethod`, or `getAccessControlForObject`.
+- Found failing local probes: 80 bounded phrase aliases rejected valid exact ACL lists before reaching the existing GetACL association checker.
+- Repair: lowered explicit ACL/Object/Method/Association/AccessControl phrase-reader aliases to the existing `AccessControl.GetACL` path. Broad ambiguous `AccessList` names remain unmapped.
+- Added unit, score-probe, and synthetic regressions. Verification pending in command output after this entry.
+
+
+## Recent Local Batch - 2026-06-04 02:03 KST - AccessControl mutation phrase alias repair
+
+- Goal: target stale-overaccepting ACL mutation wrappers with phrase names such as `grantACLForObject`, `removeACEForMethod`, and `replaceACLForObject`.
+- Found failing local probes: 124 bounded phrase aliases did not reach AddACE/RemoveACE/SetACL; valid mutated ACLs failed and stale ACLs could pass.
+- Repair: lowered explicit ACL/ACE/Object/Method/AccessControl phrase mutation aliases to the existing AccessControl dynamic ACL state machine.
+- Added unit, score-probe, and synthetic regressions. Verification pending in command output after this entry.
+
+## Active Queue
+
+1. Phase 3 / Phase 2 bridge:
+   - Locking wrapper trajectories that combine `setRange`, lock/unlock wrappers, host I/O, and later `getRange`.
+2. Phase 4:
+   - DataStore wrapper authority churn after offset/window repair.
+   - Failed wrapper `writeData` with offset must not mutate later wrapper/raw reads.
+3. Phase 3 deeper:
+   - Long LockOnReset trajectories with reset type boundaries and disabled-side re-enable.
+4. Phase 6:
+   - Remaining D-priority coverage triage after score-sensitive batches.
+
+## Verification Gate
+
+Run after solver-affecting batches:
+
+```bash
+python3 sm/tools/run_sourced_edges.py
+python3 sm/tools/run_synthetic_edges.py
+cd sm && python3 -m unittest tests.test_solver_rules -q
+python3 sm/tools/doc_coverage.py
+```
+
+## Last Completed Batch
+
+- TCGstorageAPI wrapper DataStore scoped-auth repair:
+  - Added two synthetic trajectories where a raw Admin1 session is open but high-level `readData(authAs=User1)` is called.
+  - Added two synthetic trajectories where a raw Admin1 session is open but high-level `writeData(authAs=User1)` is called.
+  - For reads, User1 cannot leak the Admin-written DataStore payload without `readAccess`; an empty unauthorized read result remains acceptable.
+  - For writes, User1 cannot inherit the open Admin1 raw session to bypass DataStore Set ACEs.
+  - Repaired `DataStore.Get` and `DataStore.Set` expectation handling so wrapper `readData/writeData` evaluate authorization under the wrapper `authAs` authority instead of inheriting an unrelated raw session authority.
+  - Added legitimate `readAccess/writeAccess(User1)` success trajectories to ensure scoped-auth repair does not overreject valid User wrapper reads/writes.
+  - Added wrapper `genKey` and `erase` authority-scope trajectories:
+    - correct User1 credential still cannot inherit open Admin1 raw session to run K_AES GenKey.
+    - correct User1 credential still cannot inherit open EraseMaster raw session to erase a band.
+  - Repaired `genKey` and `erase` authority checks to use wrapper-scoped authority state for high-level wrapper calls.
+  - Added wrapper `setRange` and `readLock` authority-scope trajectories:
+    - correct User1 credential still cannot inherit open Admin1 raw session to mutate Locking range state.
+  - Repaired range-wrapper `Set` authority checks for `setRange/readLock/writeLock/readUnlock/writeUnlock`.
+  - Added wrapper `changePIN`, `setMinPINLength`, and `enableAuthority` authority-scope trajectories:
+    - correct User1 credential still cannot inherit open SID/Admin raw sessions for protected PIN/Authority mutations.
+  - Repaired scoped Set checks for these authority/PIN wrappers.
+  - Added wrapper `setPort` and `setPskEntry` authority-scope trajectories:
+    - correct User1 credential still cannot inherit open SID raw session for AdminSP Port/TLS PSK mutations.
+  - Repaired scoped Set checks for these port/PSK wrappers.
+  - Added legitimate SID `setPort` / `setPskEntry` positive controls to guard against over-tightening.
+  - Added wrapper `getAuthority` authority-scope trajectory:
+    - correct User1 credential still cannot inherit open Admin1 raw session for protected Authority row Get.
+  - Repaired `getAuthority` Get authorization to use wrapper-scoped authority state.
+  - Added wrapper `getPskEntry` authority-scope trajectory:
+    - correct User1 credential still cannot inherit open SID raw session for protected TLS_PSK_Key Get.
+  - Repaired `TLS_PSK_Key.Get` authorization, including wrapper-scoped `getPskEntry`.
+  - Added legitimate Admin/SID positive controls for `getAuthority` and `getPskEntry` after scoped Get repairs.
+  - Added wrapper `getRange` and `getMEK` authority-scope trajectories:
+    - correct User1 credential cannot inherit open Admin1 raw session for protected Locking range/ActiveKey Get columns.
+  - Repaired protected Locking range Get authorization for `getRange/getMEK` wrapper calls.
+  - Added LockOnReset wrapper reset trajectories:
+    - a wrapper-set `LockOnReset=[0]` feeds the same reset state machine as raw Locking row Sets.
+    - matching reset asserts both stored locked cells when either lock side is enabled; disabled-side host I/O remains ineffective until the enabled flag changes.
+    - an initial speculative enabled-side-only production patch was rejected by sourced/unit evidence and reverted; the synthetic expectation was corrected to the official latent-lock behavior.
+  - Added raw/wrapper DataStore cross-observation trajectories:
+    - raw `DataStore.Set` feeds later wrapper `readData` byte windows.
+    - wrapper `writeData` offset overwrites feed later raw `DataStore.Get` windows.
+  - Added wrapper LockOnReset reset-type boundary trajectories:
+    - `LockOnReset=[1]` ignores `PowerCycle` but fires on `HardwareReset`.
+  - Relaxed direct `AccessControl.Get` mixed ACL-column handling:
+    - if a direct Get range includes unreadable ACL plus metadata, `SUCCESS` with metadata is still checked, ACL leakage remains forbidden, and whole-request rejection is now accepted.
+  - Added wrapper `checkPIN` TryLimit/Persistence trajectories:
+    - repeated failed high-level `checkPIN` calls exhaust TryLimit before a later correct PIN.
+    - a correct PIN before TryLimit remains accepted and clears the failed counter.
+    - `C_PIN.Persistence=false` clears failed tries on PowerCycle, while `Persistence=true` preserves the lockout.
+    - failed wrapper `checkPIN` increments raw-observable `C_PIN.Tries`.
+    - successful wrapper `checkPIN` increments raw-observable `Authority.Uses`.
+    - `Authority.Limit` reached through wrapper `checkPIN` blocks a later wrapper authentication.
+    - successful wrapper `changePIN` after a wrapper-induced lockout updates the credential and clears `C_PIN.Tries`.
+  - Added wrapper Locking latent-lock trajectories:
+    - `WriteLocked=true` has no host effect while `WriteLockEnabled=false`, then blocks host writes after re-enable.
+    - `ReadLocked=true` has no host effect while `ReadLockEnabled=false`, then blocks host reads after re-enable.
+    - `hasLockedRange()` ignores disabled latent write locks and reports true after re-enable.
+  - Added DataStore wrapper ACE churn -> raw byte-table observation trajectories:
+    - wrapper `readAccess(User1)` blocks Admin raw `DataStore.Get` payload while authorizing User raw `DataStore.Get`.
+    - wrapper `writeAccess(User1)` blocks Admin raw `DataStore.Set` mutation while authorizing User raw `DataStore.Set`.
+  - Added AccessControl mixed ACL-column guardrails:
+    - successful direct `AccessControl.Get` may return readable metadata while omitting ACL.
+    - successful direct `AccessControl.Get` still validates InvokingID/MethodID metadata and forbids ACL leakage.
+  - Added multi-range wrapper Locking trajectories:
+    - Range1 and Range2 wrapper `setRange` state stays independent.
+    - locked Range2 blocks host reads while unlocked Range1 remains readable.
+    - Range2 `getRange` cannot be satisfied by Range1 geometry/lock cells.
+    - Range2-only `LockOnReset=[0]` locks Range2 after PowerCycle while leaving Range1 unlocked.
+  - Added optional Range2 media-key trajectories:
+    - `getMEK` for Range2 must return the Range2 ActiveKey UID and reject Range1/wrong-family UIDs.
+    - wrapper `genKey(K_AES_256_Range2_Key)` invalidates old host data in Range2's interval.
+  - synthetic suite reached `376` cases with `0` mismatches; unit suite reached `1049` tests
+
+## Next Target
+
+Continue score-first long trajectory sweep:
+
+- keep targeting score-relevant hidden API traces before broad D-priority coverage,
+- check `readData/writeData`, `readAccess/writeAccess`, `getRange/getMEK`, lock/unlock wrappers, and reset boundaries for multi-step state consistency,
+- add a case before repairing if an ambiguity can affect state or expected return values,
+- verify with synthetic, sourced, unit, and coverage commands.
+
+Next concrete batch:
+
+- DataStore long trajectories:
+  - raw DataStore Set -> wrapper readData window and wrapper writeData offset -> raw DataStore Get must share one byte-table state.
+  - failed wrapper writeData/readAccess/writeAccess calls must not mutate later raw or wrapper reads.
+  - ACE replacement/churn should be checked with both positive controls and stale-payload rejection cases.
+- AccessControl/GetACL targeted review:
+  - look for strict failure-vs-partial-success assumptions around ACL-only columns and documented special method aliases.
+  - avoid broad leaderboard-driven changes; only keep relaxations consistent with official AccessControl/GetACL semantics and sourced cases.
+- C_PIN/Auth long trajectories:
+  - continue wrapper-shaped `checkPIN`, `changePIN`, `setMinPINLength`, TryLimit, Tries, Uses, Persistence, and reset combinations.
+  - prefer cases that mix high-level wrappers with raw C_PIN/Authority Get observations.
+- Locking/LockOnReset long trajectories:
+  - combine wrapper `setRange`, read/write lock wrappers, `LockOnReset`, reset, and later `getRange/getMEK`.
+  - preserve official latent locked-cell semantics while checking host I/O effect through enabled flags.
+
+## Latest Loop Snapshot - 2026-05-31 KST
+
+- Score-first plan is now the active loop order:
+  - P0 AccessControl/GetACL false-negative risk,
+  - P1 Locking optional-range state machine,
+  - P2 DataStore authority/offset/raw-wrapper mixing,
+  - then P3/P4/P5.
+- Added and verified this batch:
+  - AccessControl direct full-row `Get` guardrails around ACL omission/leakage and metadata validation.
+  - Range8 wrapper long trajectories for independent state, host I/O, `getRange`, and `LockOnReset` after `PowerCycle`.
+  - DataStore User1 -> User2 grant replacement with offset payload preservation, failed-write nonmutation, and later User2 mutation.
+- Current gates:
+  - sourced suite: `3994` cases, `0` mismatches.
+  - synthetic suite: `396` cases, `0` mismatches.
+  - unit suite: `1049` tests, OK via `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules`.
+  - coverage: `811 / 1376` parsed docs covered, A/B untriaged `0`.
+- No production solver code changed in this latest batch; it was guardrail expansion to prevent score-sensitive regressions and Range1/Range2-specific overfitting.
+- Follow-up P4 envelope batch:
+  - synthetic suite increased to `400` cases with `0` mismatches.
+  - wrapper tag increased to `187` cases with `0` mismatches.
+  - sourced suite and unit suite stayed clean.
+  - one generated `name=getRange` hypothesis was corrected to `operationName=getRange`, because `name` maps to raw `Get` semantics in the current parser.
+- Follow-up P1 Range8 media-key batch:
+  - synthetic suite increased to `404` cases with `0` mismatches.
+  - wrapper tag increased to `191` cases with `0` mismatches.
+  - sourced suite `3994 / 0`; unit suite `1049 OK`.
+  - added Range8 `getMEK` UID and `genKey` host-data invalidation guardrails.
+- Follow-up P3 User2 auth/policy batch:
+  - synthetic suite increased to `408` cases with `0` mismatches.
+  - wrapper tag increased to `195` cases with `0` mismatches.
+  - sourced suite `3994 / 0`; unit suite `1049 OK`.
+  - added User2 `checkPIN` Tries/Uses observations and MinPINLength + failed `changePIN` nonmutation cases.
+- Follow-up P2/P0 sparse and AccessControl batch:
+  - synthetic suite increased to `415` cases with `0` mismatches.
+  - wrapper tag increased to `199` cases with `0` mismatches; access-control tag increased to `11`.
+  - sourced suite `3994 / 0`; unit suite `1049 OK`.
+  - added sparse raw/wrapper DataStore position checks and Range8 AccessControl LogAlways/identity checks.
+- Follow-up MBR/session D-priority score-shaped batch:
+  - synthetic suite increased to `425` cases with `0` mismatches.
+  - mbr tag increased to `14`; session tag increased to `8`.
+  - sourced suite `3994 / 0`; unit suite `1049 OK`.
+  - added MBRDone/DoneOnReset reset behavior and ProtocolStackReset ComID scoping guardrails.
+- Follow-up ReEncrypt postcondition batch:
+  - synthetic suite increased to `430` cases with `0` mismatches.
+  - reencrypt tag increased to `7`.
+  - sourced suite `3994 / 0`; unit suite `1049 OK`.
+  - added START/PAUSE request postconditions and LastReEncryptLBA sentinel guardrails.
+- Failure-hunt repair batch:
+  - switched from adding mostly passing guardrails to subagent-driven mismatch search.
+  - repaired five actual mismatch classes:
+    - stale DataStore contiguous payload after sparse write,
+    - unsliced cross-range host-write payload memory,
+    - high-level `checkPIN` leaking authority into an already-open raw session,
+    - parser representation aliases for wrapper params, raw method names, and textual return status tuples without corrupting numeric payload lists,
+    - AccessControl issued ACE metadata / ACE Set GetACL exact ACL.
+  - rejected the proposed `AccessControl_0003F001 Log=""` candidate because Locking Template `Set` default logging is `LogAlways`.
+  - synthetic suite increased to `447` cases with `0` mismatches.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+  - coverage remained `811 / 1376`, A/B untriaged `0`.
+  - parser-payload follow-up exposed `GetFreeRows` arity / numeric-payload ambiguity, then fixed it; final sourced gate is clean.
+  - parser representation tag now includes `return_value` payload validation and dict-`params` `writeData` sparse offset controls.
+- GetACL positional argument repair:
+  - subagent failure hunt found a concrete current false negative: official `GetACL(InvokingID, MethodID)` positional arguments were treated as missing because the parser only trusted named forms.
+  - repaired AccessControl argument extraction so positional pairs feed association existence, exact ACL, dynamic AccessControl state, and cleanup paths.
+  - synthetic suite increased to `451` cases with `0` mismatches; access-control tag increased to `19`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; coverage remained `811 / 1376`, A/B untriaged `0`.
+  - dashboard relevance is high because this is a current solver miss in the score-sensitive AccessControl/GetACL area rather than only a passing guardrail.
+- High-level wrapper `return_value` repair:
+  - local representation probes found concrete false negatives for `getRange` and `readData` when successful wrapper payloads were encoded as `output.return_value` instead of `output.return`.
+  - repaired high-level return parsing to accept `return_value` / `returnValue` / `return_values` / `returnValues` / `values` aliases while preserving payload checks.
+  - synthetic suite increased to `455` cases with `0` mismatches; parser-representation tag increased to `10`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; coverage remained `811 / 1376`, A/B untriaged `0`.
+- High-level wrapper `result` / `rv` alias repair:
+  - follow-up probes found the same false-negative pattern for successful wrapper object payloads encoded as `output.result`, `output.Result`, `output.rv`, or `output.RV`.
+  - repaired high-level return parsing for these aliases while leaving explicit scalar status parsing first.
+  - synthetic suite increased to `457` cases with `0` mismatches; parser-representation tag increased to `12`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; coverage remained `811 / 1376`, A/B untriaged `0`.
+- High-level wrapper `arguments` / `args` dict repair:
+  - representation probes found current false negatives when wrapper arguments were nested under dict-valued `args` or `arguments`.
+  - repaired wrapper kwargs merging for `args`, `arguments`, `params`, and `parameters`, so C_PIN and DataStore semantics see the same argument values as direct keyword forms.
+  - synthetic suite increased to `461` cases with `0` mismatches; parser-representation tag increased to `14`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; coverage remained `811 / 1376`, A/B untriaged `0`.
+- AccessControl packed pair and `MethodID_` alias repair:
+  - failure hunt found concrete false negatives for packed `GetACL([InvokingID, MethodID])` and row-name alias `MethodID_Get`.
+  - repaired packed positional parsing and narrowed method alias stripping so `MethodID_Get` maps to `Get` while `MethodIDObj` remains a special method name.
+  - an initial broad alias rule caused 11 sourced `MethodIDObj` regressions; sourced gate caught it and the final narrowed repair is clean.
+  - synthetic suite remains `461` cases with `0` mismatches; access-control tag increased to `21`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; coverage remained `811 / 1376`, A/B untriaged `0`.
+- Created row UID+alias AccessControl key repair:
+  - found actual current misses where dynamic created rows addressed as `{uid: ROW_UID, name: Alias}` failed `AddACE`/`DeleteMethod` or failed to share state with later plain-UID `GetACL`.
+  - repaired AccessControl association keys to prefer the created object UID for created tables, descriptors, and rows while preserving static alias handling.
+  - synthetic suite increased to `465` cases with `0` mismatches; access-control tag increased to `25`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; coverage remained `811 / 1376`, A/B untriaged `0`.
+- Flat wrapper output envelope repair:
+  - subagent found broad false negatives for flat top-level wrapper outputs like `return_value`, `result`, and `values` without an `output` object.
+  - repaired output-section detection, excluded output aliases from wrapper kwargs, and made wrapper semantic helpers resolve function input from either `input` or top-level.
+  - synthetic suite increased to `477` cases with `0` mismatches; parser-representation tag increased to `17`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; coverage remained `811 / 1376`, A/B untriaged `0`.
+- TCGstorageAPI wrapper positional shape repair:
+  - subagent found false PASSes for `setRange(range,start,...)`, auth-first `readLock`, and `genKey(range_id=...)` / auth-first `genKey`.
+  - repaired range/auth positional disambiguation and media-key target resolution.
+  - wrapper tag increased to `208` cases with `0` mismatches.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; coverage remained `811 / 1376`, A/B untriaged `0`.
+- DataStore symbolic access and reversed window repair:
+  - subagent found false negatives for symbolic `readAccess/writeAccess(..., "DataStore")` and false positives for reversed byte-table windows.
+  - repaired wrapper access target normalization to canonical DataStore ACEs and rejected explicit `startRow > endRow` Get/readData windows.
+  - synthetic suite increased to `482` cases with `0` mismatches; wrapper tag increased to `211`; datastore-sparse tag increased to `4`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; coverage remained `811 / 1376`, A/B untriaged `0`.
+- Authority Limit and disabled-auth Tries repair:
+  - subagent found that Authority.Limit / disabled-authority failures were being treated like wrong PIN attempts, and limit-reached explicit Authenticate accepted broad method failures or missing bools.
+  - repaired explicit Authenticate expectation and gated C_PIN.Tries increments to actual credential failures only.
+  - synthetic suite increased to `488` cases with `0` mismatches; wrapper tag increased to `217`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; coverage remained `811 / 1376`, A/B untriaged `0`.
+- AccessControl special-method tightening and MBR shadow offset repair:
+  - subagents found current false PASSes in two score-sensitive areas:
+    - Locking SP special object `GetACL` accepted `MethodID=Get` UID aliases for `SPTemplates_` / `MethodID_` rows even though only `SPTemplatesObj` / `MethodIDObj` associations exist.
+    - active MBR shadow did not apply default `DoneOnReset=PowerCycle` and did not bind sparse MBR byte rows to host LBA byte windows.
+  - repaired exact AccessControl special-method handling, `SecretProtect_N.Get` ACL validation, MBR default reset behavior, and LBA-to-byte-offset shadow reads.
+  - synthetic suite increased to `497` cases with `0` mismatches; access-control tag remains `31`, mbr tag increased to `19`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; coverage remained `811 / 1376`, A/B untriaged `0`.
+- Wrapper function-name alias repair:
+  - representation probe found current false PASSes where `fn`, `methodName`, `apiName`, or `commandName` wrapper calls were ignored and later stale DataStore payloads were over-accepted.
+  - repaired high-level function-name detection and control-key filtering for those aliases.
+  - synthetic suite increased to `502` cases with `0` mismatches; parser-representation tag increased to `22`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper success-payload alias repair:
+  - representation probe found current false PASSes where wrapper outputs used `ok`, `success`, `value`, `data`, or `response` instead of `return`/`returnValue`.
+  - repaired high-level output detection and return-value extraction for those aliases.
+  - synthetic suite increased to `507` cases with `0` mismatches; parser-representation tag increased to `27`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper kwargs container and payload-argument repair:
+  - representation probe found current false PASSes where wrapper kwargs were nested under `options`, `opts`, `config`, `request`, `payload`, `body`, `inputArgs`, `kwArgs`, or `namedArgs`.
+  - repaired dict-container merging and restored scalar top-level `payload` / `data` / `value` as input kwargs.
+  - synthetic suite increased to `517` cases with `0` mismatches; parser-representation tag increased to `37`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper status-only success alias repair:
+  - representation probe found current false PASSes for wrapper success encoded as `passed`, `isSuccess`, `succeeded`, `status="OK"`, or `status=True`.
+  - repaired high-level return/status normalization for those aliases.
+  - synthetic suite increased to `522` cases with `0` mismatches; parser-representation tag increased to `42`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Locking wrapper range-alias repair:
+  - Locking probe found current false PASSes where `setRange` / `genKey` ignored `band_id`, `lockingRangeId`, `rangeNumber`, and `rangeIndex`.
+  - repaired range alias parsing for setRange/getRange/lock/genKey family and genKey RangeN target resolution.
+  - synthetic suite increased to `530` cases with `0` mismatches; parser-representation tag increased to `50`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- C_PIN wrapper authority/PIN alias repair:
+  - Auth probe found current false PASSes where `changePIN` ignored aliases like `user`, `authorityId`, `userId`, `newPin`, `pinCode`, and `password`.
+  - repaired changePIN/setMinPINLength/checkPIN authority and credential alias parsing.
+  - synthetic suite increased to `534` cases with `0` mismatches; parser-representation tag increased to `54`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper error-flag status repair:
+  - representation probe found current false PASSes around `error`, `failed`, and `failure` boolean outputs.
+  - repaired `False` as success and `True` as failure for those error-flag fields.
+  - synthetic suite increased to `540` cases with `0` mismatches; parser-representation tag increased to `60`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Host Read result alias repair:
+  - host I/O probe found Read result aliases `return_value`, `returnValue`, `payload`, `response`, and `value` were not parsed.
+  - repaired host Read output extraction across top-level output and `output.args`.
+  - synthetic suite increased to `550` cases with `0` mismatches; parser-representation tag increased to `70`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Host Write payload/LBA alias repair:
+  - host I/O probe found current false PASSes where Write payload aliases (`payload`, `value`) or LBA length aliases (`blockCount`, `numBlocks`, `sectorCount`) were ignored.
+  - repaired host Write payload extraction and broadened LBA/range spelling support.
+  - synthetic suite increased to `562` cases with `0` mismatches; parser-representation tag increased to `82`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Host command alias repair:
+  - host I/O probe found current false negatives where command names were encoded as `op`, `cmd`, `action`, `io`, or `request`.
+  - repaired host command detection and argument filtering for those aliases.
+  - synthetic suite increased to `572` cases with `0` mismatches; parser-representation tag increased to `92`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper return alias repair:
+  - wrapper probe found current false PASSes where success booleans under `ret`, `retval`, `returnVal`, `is_ok`, `isOk`, or `successFlag` were ignored.
+  - repaired high-level output detection, return-value extraction, and flat-output control filtering for those aliases.
+  - synthetic suite increased to `578` cases with `0` mismatches; parser-representation tag increased to `98`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- writeData payload alias repair:
+  - DataStore wrapper probe found current false PASSes where byte payloads under `bytes`, `blob`, `content`, `buf`, `hex`, `payloadBytes`, or `byteArray` were ignored.
+  - repaired high-level `writeData` byte-payload alias parsing.
+  - synthetic suite increased to `585` cases with `0` mismatches; parser-representation tag increased to `105`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Server update/submission attempt:
+  - copied current local `sm/src`, `sm/artifacts`, `README.md`, `setup.sh`, `pyproject.toml`, and `uv.lock` to remote `/workspace/project`.
+  - attempted `submit --dir /workspace/project --job-name sm-parser-state-585cases-20260531`.
+  - server rejected before creating a scored job: `Maximum number of submissions for today exceeded`.
+  - latest observable submitted score before this rejected attempt remained `88.0` at job_id `1049`.
+- setRange geometry alias repair:
+  - Locking wrapper probe found current false negatives where geometry kwargs like `start`/`length`, `startLBA`, `base`/`size`, `offset`/`size`, `begin`/`count`, and `firstLba`/`numBlocks` were ignored.
+  - repaired `setRange` canonicalization for RangeStart/RangeLength and common lock-state aliases.
+  - synthetic suite increased to `597` cases with `0` mismatches; parser-representation tag increased to `117`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- getRange payload alias and wrapper-scoped Get repair:
+  - Locking wrapper probe found current false PASSes where `getRange` return payloads used aliases like `start`/`length`, `startLBA`/`numBlocks`, or `base`/`size`.
+  - repaired expected-value detection and engine return-value lookup for these aliases.
+  - repaired high-level wrapper `Get` evaluation so `getRange`, `getMEK`, `getAuthority`, and `getPskEntry` apply wrapper-scoped authority before raw-session-open rejection.
+  - synthetic suite increased to `603` cases with `0` mismatches; parser-representation tag increased to `123`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper function-name alias repair II:
+  - wrapper probe found current false PASSes where `actionName`, `callName`, `funcName`, or `procedureName` calls were ignored.
+  - repaired function-name detection and envelope-control filtering for those aliases.
+  - synthetic suite increased to `607` cases with `0` mismatches; parser-representation tag increased to `127`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper error-flag alias repair II:
+  - status-envelope probe found current false PASSes where `err=False`, `hasError=False`, or `isError=False` wrapper outputs were ignored.
+  - repaired high-level status parsing for these explicit error-flag aliases, while leaving ambiguous `statusCode`/`code`/`rc` untouched.
+  - synthetic suite increased to `610` cases with `0` mismatches; parser-representation tag increased to `130`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Flat wrapper error-flag alias repair:
+  - flat wrapper probe found current false PASSes where top-level `err=False`, `hasError=False`, or `isError=False` records lacked an explicit `output` object.
+  - repaired flat output-section detection and output-control filtering for error-flag aliases.
+  - synthetic suite increased to `613` cases with `0` mismatches; parser-representation tag increased to `133`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- DataStore offset alias repair:
+  - DataStore wrapper probe found current false positives where `writeData` offset aliases `index`, `position`, `pos`, `byteOffset`, `byte_offset`, or `address` were ignored.
+  - repaired wrapper byte-start parsing in both event construction and byte-table transition/expectation helpers.
+  - synthetic suite increased to `619` cases with `0` mismatches; parser-representation tag increased to `139`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- readData window alias repair:
+  - DataStore wrapper probe found current false negatives where `readData` used `index`/`byteCount` or `position`/`numBytes` to request a slice.
+  - repaired read-window detection to use the same offset/length alias family as write-side sparse byte-table handling.
+  - synthetic suite increased to `621` cases with `0` mismatches; parser-representation tag increased to `141`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper return payload alias alignment:
+  - DataStore wrapper probe found current false negatives where `readData` returned payload bytes under `returnVal`, `results`, or `kwrv`.
+  - aligned high-level success detection and output payload extraction so aliases are checked against tracked bytes instead of ignored.
+  - synthetic suite increased to `627` cases with `0` mismatches; parser-representation tag increased to `147`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper output args payload alias alignment:
+  - DataStore wrapper probe found current false negatives where `readData` returned bytes under `output.args.payload`, `output.args.data`, `output.args.value`, or `output.args.response`.
+  - aligned output payload extraction with high-level return detection while preserving stale-byte rejection.
+  - synthetic suite increased to `635` cases with `0` mismatches; parser-representation tag increased to `155`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Raw byte-table window alias repair:
+  - raw DataStore Get probe found current false negatives for window aliases `startIndex/endIndex`, `byteOffset/byteCount`, `offset/length`, and `position/numBytes`.
+  - repaired byte-table Get range parsing and CellBlock component detection so bounded byte windows stay bounded.
+  - synthetic suite increased to `643` cases with `0` mismatches; parser-representation tag increased to `163`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Raw byte-table Set offset alias repair:
+  - raw DataStore Set probe found current false PASSes where sparse offsets encoded as `startIndex`, `byteOffset`, `offset`, `position`, or `index` collapsed to front-position writes.
+  - repaired byte-table Set offset extraction and invalid-row checks to share the broader alias family.
+  - synthetic suite increased to `653` cases with `0` mismatches; parser-representation tag increased to `173`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Raw byte-table Set payload alias repair:
+  - raw DataStore Set probe found current false PASSes where payload aliases `blob`, `content`, `buf`, `hex`, `payloadBytes`, or `byteArray` were ignored.
+  - repaired byte-table mutation, payload-presence, and payload-length paths to recognize the broader byte-payload alias family.
+  - synthetic suite increased to `665` cases with `0` mismatches; parser-representation tag increased to `185`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- MBR sparse byte-position verification repair:
+  - raw MBR Set/Get probe found current false PASSes where offset MBR writes were tracked but known byte positions were not checked on later MBR Get.
+  - repaired MBR Get expectations to validate known sparse byte positions, matching DataStore behavior while leaving unknown bytes unconstrained.
+  - synthetic suite increased to `675` cases with `0` mismatches; parser-representation tag increased to `195`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Nested byte-table Set offset alias repair:
+  - raw DataStore Set probe found current false PASSes when sparse offsets were nested under `Where` or `CellBlock` dictionaries.
+  - aligned nested Where/CellBlock offset parsing, row-address validity checks, and transition mutation.
+  - synthetic suite increased to `683` cases with `0` mismatches; parser-representation tag increased to `203`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Hex payload format normalization repair:
+  - raw DataStore Set probe found current false PASSes where formatted hex payloads like `0xAABB`, `AA BB`, `AA:BB`, or `AA-BB` were not normalized for mutation.
+  - repaired shared payload extraction to canonicalize prefixed/separated hex strings.
+  - synthetic suite increased to `691` cases with `0` mismatches; parser-representation tag increased to `211`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Locking wrapper false-boolean payload repair:
+  - Locking wrapper probe found current false negatives where `getRange` returned object payloads containing false boolean fields.
+  - repaired high-level status parsing so returned dict/list/tuple payloads are not mistaken for failure flags, and added comma integer parsing for range geometry.
+  - synthetic suite increased to `695` cases with `0` mismatches; parser-representation tag increased to `215`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- LockOnReset wrapper exact set repair:
+  - Locking wrapper probe found current false PASSes where `setRange(lockOnReset=[0,3])` could be followed by `getRange` returning only `[0]`.
+  - repaired high-level getRange expected values and return comparison for `LockOnReset` / `lor` reset-type sets.
+  - synthetic suite increased to `701` cases with `0` mismatches; parser-representation tag increased to `221`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- High-level Authenticate boolean result repair:
+  - C_PIN/authentication probe found high-level `authenticate` calls were parsed as unknown, and `return=false` was treated as wrapper failure.
+  - repaired high-level authenticate mapping to raw Authenticate semantics with boolean result validation.
+  - synthetic suite increased to `705` cases with `0` mismatches; parser-representation tag increased to `225`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- High-level Authenticate result envelope / TryLimit repair:
+  - follow-up probes found high-level `authenticate` false results under `result`, `success`, and `authenticated` envelope keys were not consistently treated as Authenticate boolean payloads.
+  - repaired return extraction for `success`, `authenticated`, and `authentication` aliases while preserving explicit status handling for non-Authenticate wrappers.
+  - added TryLimit trajectory proving a false high-level Authenticate result increments `C_PIN.Tries` and blocks a later correct credential after lockout.
+  - synthetic suite increased to `713` cases with `0` mismatches; parser-representation tag increased to `233`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Nested output envelope Authenticate repair:
+  - follow-up probes found current false negatives where the same Authenticate boolean result was wrapped as `output.output.result=false` or `output.Output.result=false`.
+  - repaired output-section extraction to unwrap exactly one redundant output layer when it is the only field.
+  - synthetic suite increased to `717` cases with `0` mismatches; parser-representation tag increased to `237`; wrapper tag remained clean at `217`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Authenticate input envelope repair:
+  - probes found correct high-level `authenticate` calls failed when args were represented as a single named dictionary or when the whole invocation was nested under `input.call`.
+  - repaired single-dict positional arg merging and narrow call/request/api input unwrapping.
+  - synthetic suite increased to `721` cases with `0` mismatches; parser-representation tag increased to `241`; wrapper tag remained clean at `217`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper call envelope state-check repair:
+  - probes found `input.call` wrapper events were parsed by the main path but not recognized by expectation-side wrapper-specific return validators.
+  - repaired `_function_input_section` so state checks for `getRange` and `readData` survive call/request/api envelopes.
+  - synthetic suite increased to `725` cases with `0` mismatches; parser-representation tag increased to `245`; wrapper tag remained clean at `217`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Status plus nested output payload repair:
+  - probes found explicit success status plus nested output payload could hide stale `getRange`, fail valid `readData`, or miss Authenticate false result.
+  - repaired return-value extraction to inspect nested `output` / `Output` payloads even when outer status fields are present.
+  - synthetic suite increased to `729` cases with `0` mismatches; parser-representation tag increased to `249`; wrapper tag remained clean at `217`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper output body payload alias repair:
+  - probes found `status_codes=SUCCESS` with payload under `body` let stale `getRange` pass and valid `readData` fail.
+  - repaired high-level return extraction to recognize `body` / `Body` as output payload aliases.
+  - synthetic suite increased to `731` cases with `0` mismatches; parser-representation tag increased to `251`; wrapper tag remained clean at `217`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper range/data payload alias repair:
+  - probes found `getRange` payloads under `rangeInfo` and `readData` payloads under `bytes`/`buffer`/`hex` were false negatives.
+  - repaired high-level return extraction for byte-payload and Locking-range object aliases while preserving stale-payload rejection.
+  - synthetic suite increased to `739` cases with `0` mismatches; parser-representation tag increased to `259`; wrapper tag remained clean at `217`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper numeric status alias repair:
+  - probes found `statusCode: 0` / `code: 0` / `rc: 0` were not recognized as successful wrapper mutations.
+  - repaired output-status extraction for numeric status aliases while keeping nonzero status as failure/nonmutation.
+  - synthetic suite increased to `743` cases with `0` mismatches; parser-representation tag increased to `263`; wrapper tag remained clean at `217`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper reset alias / LockOnReset repair:
+  - probes found wrapper reset names such as `function: hardwareReset` and `operationName: power_cycle` were not fed into the reset state machine.
+  - repaired high-level reset aliases while preserving reset-type distinctions through `_reset_event_type`.
+  - synthetic suite increased to `745` cases with `0` mismatches; wrapper tag increased to `219`; reset tag remained clean at `8`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper ProtocolStackReset ComID scoping repair:
+  - probes found `kwargs.comid` on wrapper ProtocolStackReset was not extracted, risking incorrect session abort/preservation.
+  - repaired ComID extraction through nested kwargs/args/params containers.
+  - synthetic suite increased to `749` cases with `0` mismatches; session tag increased to `12`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper StartSession persistent session repair:
+  - probes found high-level `startSession/openSession` wrappers did not open persistent sessions.
+  - repaired wrapper StartSession parsing while preserving raw operationName StartSession behavior and raw return-shape requirements.
+  - synthetic suite increased to `754` cases with `0` mismatches; session tag increased to `17`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper StartSession argument alias repair:
+  - probes found official StartSession kwargs and `openSP(authAs/proof/isWrite)` aliases were not parsed by the wrapper session path.
+  - repaired wrapper StartSession argument extraction while keeping raw StartSession separate.
+  - synthetic suite increased to `758` cases with `0` mismatches; session tag increased to `21`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper EndSession/CloseSession persistent close repair:
+  - probes found high-level `endSession` / `closeSession` / `close_session` wrappers did not close the persistent session opened by wrapper `startSession`.
+  - repaired explicit wrapper session-close aliases while leaving ambiguous host `close` outside TCG session semantics.
+  - synthetic suite increased to `764` cases with `0` mismatches; session tag increased to `27`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper SyncSession method alias repair:
+  - probes found `function: syncSession` was parsed as UNKNOWN, causing a false FAIL even inside an open session.
+  - repaired explicit `syncSession` / `syncTrustedSession` / `syncTlsSession` wrapper aliases to their Session Manager methods.
+  - synthetic suite increased to `766` cases with `0` mismatches; session tag increased to `29`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper setRange positional dictionary repair:
+  - probes found `setRange("Admin1", 1, {...})` treated the options dictionary as the RangeStart value, causing correct later `getRange` to fail and stale defaults to pass.
+  - repaired positional setRange option unpacking, including nested `values` / `settings` style dictionaries.
+  - synthetic suite increased to `769` cases with `0` mismatches; wrapper tag increased to `221`; parser-representation tag increased to `264`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper DataStore positional dictionary repair:
+  - probes found `writeData("Admin1", {"data": ..., "offset": ...})` could be ignored as a byte-table mutation, and `readData("Admin1", {"offset": ..., "length": ...})` missed the requested window.
+  - repaired positional payload/window dictionary unpacking plus wrapper byte start/end detection.
+  - synthetic suite increased to `772` cases with `0` mismatches; parser-representation tag increased to `267`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper setRange single-dict nested values repair:
+  - probes found `setRange({"authAs": ..., "range": 1, "values": {...}})` kept nested values opaque, causing correct `getRange` to fail and stale defaults to pass.
+  - repaired single-dict nested range values/settings/options unpacking.
+  - synthetic suite increased to `774` cases with `0` mismatches; parser-representation tag increased to `269`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper explicit session termination alias repair:
+  - probes found explicit high-level session/SP termination names such as `stopSession`, `terminateSession`, `abortSession`, `finishSession`, `stopSP`, and `terminateSP` were parsed as UNKNOWN.
+  - repaired those explicit aliases to close the persistent session while leaving broad ambiguous names such as generic `end`, `logout`, or `disconnect` untouched.
+  - synthetic suite increased to `786` cases with `0` mismatches; session tag increased to `41`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper lock/unlock single-dict range selector repair:
+  - probes found `readLock/writeLock/readUnlock/writeUnlock` with a single positional dict parsed the lock value but targeted `Band{dict}` instead of the requested range.
+  - repaired shared range selector extraction from positional dictionaries.
+  - synthetic suite increased to `794` cases with `0` mismatches; parser-representation tag increased to `277`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper genKey single-dict target repair:
+  - probes found `genKey` with a single positional dict could target a credential object instead of the requested Range1 media key.
+  - repaired single-dict `key` / `range_key` / `range` extraction so Range media-key invalidation is tracked.
+  - synthetic suite increased to `797` cases with `0` mismatches; parser-representation tag increased to `280`.
+  - sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Score probe loop daemon:
+  - started 2026-06-01 00:46 KST inside detached `screen` session `32397.score_probe_loop`, recorded in `sm/analysis/score_probe_loop.pid`.
+  - loop command: `while true; do python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 1; sleep 120; done`.
+  - purpose is to continuously rerun high-value Locking/DataStore/media-key/session wrapper probes and append only solver mismatches to `sm/analysis/score_probe_queue.jsonl`.
+  - strict guardrail: this loop does not edit code, sync the server, or submit.
+  - first dry pass found 2 `setRange` call-shape mismatches; parser repair cleared the probe set to `136 / 0`.
+- Wrapper setRange direct `values` payload repair:
+  - probes found `{"call": {"function": "setRange", ..., "values": {...}}}` lost the nested `values` payload because generic high-level input parsing treats `values` as a control/output-like key.
+  - repaired `setRange` specifically to recover direct `values` / `settings` / `options` / `rangeValues` from the function input section when kwargs filtering removed them.
+  - score probe pass now reports `136` probes with `0` mismatches.
+  - synthetic suite remained `797 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper reset / LockOnReset repair:
+  - expanded the score probe loop with `reset-locking-wrapper` cases for PowerCycle/reset aliases and failed reset outputs.
+  - probes found 4 mismatches: high-level `reset` was parsed as UNKNOWN instead of defaulting to PowerCycle, and `powerCycle` with explicit `status: FAIL` was treated as a successful reset.
+  - repaired reset wrapper parsing so `reset` enters host reset handling and explicit high-level status wins over fallback boolean interpretation.
+  - added 4 synthetic regression cases under the `reset` tag.
+  - score probe pass now reports `156` probes with `0` mismatches.
+  - synthetic suite increased to `801 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Wrapper DataStore `values` envelope repair:
+  - quick score probes found `writeData` shaped as `values: {data, offset}` succeeded but did not mutate tracked DataStore bytes, so stale later raw `Get` could pass.
+  - repaired `writeData` parsing to recover nested `values` / `settings` / `options` / `write` dictionaries from kwargs, call envelopes, params/body dictionaries, and single positional dictionaries.
+  - added 4 synthetic regression cases under `parser-representation`.
+  - score probe pass now reports `166` probes with `0` mismatches.
+  - synthetic suite increased to `805 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- AccessControl/GetACL `values` argument repair:
+  - probes found raw `GetACL` with `values: {InvokingID, MethodID}` failed to resolve the association even though equivalent positional/required args worked.
+  - repaired meta-method parsing for `GetACL` / `AddACE` / `RemoveACE` / `DeleteMethod` to recover InvokingID/MethodID from a values dictionary.
+  - added 2 synthetic regression cases under `access-control`.
+  - score probe pass now reports `168` probes with `0` mismatches.
+  - synthetic suite increased to `807 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Authenticate `values` envelope repair:
+  - probes found high-level `authenticate` with `values: {authority, proof}` rejected a correct PIN because `values` was filtered as a generic control/output-like key.
+  - repaired only the `authenticate` wrapper branch to recover authority/proof from a values dictionary.
+  - added 2 synthetic regression cases under `parser-representation`.
+  - score probe pass now reports `172` probes with `0` mismatches.
+  - synthetic suite increased to `809 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Session `values` envelope repair:
+  - probes found high-level `startSession` / `openSP` with `values: {SPID/auth/proof/write}` did not establish the persistent authenticated session.
+  - repaired the session wrapper branch to recover SPID, authority, proof/challenge, and write flag from values/settings/options/session dictionaries.
+  - added 2 synthetic regression cases under `session`.
+  - score probe pass now reports `174` probes with `0` mismatches.
+  - synthetic suite increased to `811 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- changePIN `values` envelope repair:
+  - probes found high-level `changePIN` with `values: {auth, pin, authAs}` did not update the tracked C_PIN credential.
+  - repaired the `changePIN` wrapper branch to recover authority, new credential, and authAs from values/settings/options dictionaries.
+  - added 2 synthetic regression cases under `credential`.
+  - score probe pass now reports `176` probes with `0` mismatches.
+  - synthetic suite increased to `813 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Additional values-envelope wrapper repairs:
+  - probes found `genKey`, `setMinPINLength`, and `enableAuthority` also missed values-envelope inputs.
+  - repaired `genKey` to recover key/range/auth from values/settings/options dictionaries.
+  - repaired `setMinPINLength` to recover auth/length/authAs from values/settings/options dictionaries.
+  - repaired `enableAuthority` to recover auth/enabled/target/authAs from values/settings/options dictionaries.
+  - added 5 synthetic regression cases across `parser-representation`, `credential-policy`, and `tcgstorageapi-wrapper`.
+  - score probe pass now reports `188` probes with `0` mismatches.
+  - synthetic suite increased to `818 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Erase `values` envelope repair:
+  - probes found high-level `erase` with `values: {range, authAs}` did not target the selected Locking range, so old host data could remain accepted.
+  - repaired the `erase` wrapper branch to recover range selector and authAs from values/settings/options dictionaries.
+  - added 1 synthetic regression case under `tcgstorageapi-wrapper`.
+  - score probe pass now reports `190` probes with `0` mismatches.
+  - synthetic suite increased to `819 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Lock/unlock `values` envelope repair:
+  - probes found `readLock` / `writeUnlock` with `values: {range, authAs}` did not update Locking range state.
+  - repaired the shared lock/unlock wrapper branch for `readLock`, `writeLock`, `readUnlock`, and `writeUnlock` to recover range/lock/auth/authAs from values/settings/options dictionaries.
+  - added 8 synthetic regression cases under `parser-representation`.
+  - score probe pass now reports `198` probes with `0` mismatches.
+  - synthetic suite increased to `827 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Symbolic range and values-envelope read/get repair:
+  - probes found `genKey values:{range:"Locking_Range1"}` could build a non-existent `K_AES_256_RangeLocking_Range1_Key` target instead of the Range1 key.
+  - probes also found `getRange values:{range,authAs}` targeted `BandNone` or an opaque dict, so stale RangeStart/RangeLength outputs could pass.
+  - probes found `readData` with `call/request/args` values-envelope windows parsed the wrapper event but did not feed byte-table window comparison, so stale DataStore slices could pass.
+  - repaired symbolic range canonicalization for `genKey`, values-envelope selector recovery for `getRange`, nested-window recovery for `readData`, and byte-table range extraction from parser-generated optional CellBlock/Where.
+  - added 7 synthetic regression cases under `parser-representation` and expanded score probes to `223 / 0`.
+  - synthetic suite increased to `836 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- DataStore access wrapper values-envelope repair:
+  - probes found `readAccess` / `writeAccess` with `values:{user,table,authAs}` parsed as `ACE_DataStoreNone_*` with a `None` user expression.
+  - repaired both access-wrapper branches to recover user/table/authAs from values/settings/options/access dictionaries.
+  - also normalized `enableRangeAccess` values-envelope parsing for object/user/authAs, though the scoring probe remains focused on DataStore access behavior.
+  - added 2 synthetic regression cases under `parser-representation` and expanded score probes to `233 / 0`.
+  - synthetic suite increased to `838 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Lifecycle values-envelope repair:
+  - probes found `revertLockingSP values:{cred,KeepGlobalRangeKey:true}` did not forward `KeepGlobalRangeKey`, so GlobalRange data was not preserved after a successful wrapper RevertSP.
+  - repaired `revertLockingSP` to recover cred and KeepGlobalRangeKey from values/settings/options dictionaries.
+  - also added conservative values-envelope recovery for `setPort`, `activate`, and AdminSP `revert` / `revertDrive`.
+  - preserved existing PSID-map behavior for `revert(args:[{wwn:psid}])` by only treating explicit nested `values` dictionaries as wrapper payloads.
+  - added 1 synthetic regression case under `parser-representation` and expanded score probes to `238 / 0`.
+  - synthetic suite increased to `839 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Authority get wrapper values-envelope repair:
+  - probes found `getAuthority values:{auth,authAs}` targeted an empty/opaque object, so stale True/False Authority.Enabled results both passed.
+  - repaired `getAuthority` to recover auth/target/authAs from values/settings/options dictionaries.
+  - added 1 synthetic regression case under `parser-representation` and expanded score probes to `248 / 0`.
+  - synthetic suite increased to `840 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- getMEK values-envelope repair:
+  - probes found `getMEK values:{range,authAs}` targeted `BandNone` or an opaque dict, so wrong Range2 ActiveKey UID could satisfy a Range1 query.
+  - repaired `getMEK` to recover range/auth/authAs from values/settings/options dictionaries.
+  - added 1 synthetic regression case under `parser-representation` and expanded score probes to `258 / 0`.
+  - synthetic suite increased to `841 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Random values-envelope repair:
+  - probes found `random values:{count:16}` did not feed the nested Count into Random result-length validation.
+  - repaired `random` wrapper parsing to recover Count from values/settings/options dictionaries and expose it through the canonical optional Count.
+  - repaired Random unsupported-argument validation so `values` is treated as a wrapper container while unsupported nested arguments still fail.
+  - added 3 synthetic regression cases under `parser-representation` and expanded score probes to `273 / 0`.
+  - synthetic suite increased to `844 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- checkPIN values-envelope repair:
+  - probes found `checkPIN values:{auth,pin}` did not recover authority/PIN in the high-level checkPIN branch, so correct and wrong credentials were both misclassified.
+  - repaired `checkPIN` to recover auth and credential from values/settings/options dictionaries, including single positional dict wrappers.
+  - added 2 synthetic regression cases under `parser-representation` and expanded score probes to `288 / 0`.
+  - synthetic suite increased to `846 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- TLS PSK values-envelope repair:
+  - probes found `setPskEntry values:{psk,PSK,CipherSuite,authAs}` lost target/authAs and misread wrapper selector `psk` plus payload `PSK` as duplicate row-value columns.
+  - repaired `setPskEntry` and `getPskEntry` values/settings/options parsing for selector, authAs, PSK payload, and CipherSuite.
+  - refined duplicate Set RowValues detection so wrapper selector keys like `psk` are ignored while exact payload key `PSK` still maps to the PSK column.
+  - added 2 synthetic regression cases under `parser-representation` and expanded score probes to `298 / 0`.
+  - synthetic suite increased to `848 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Port state tracking repair:
+  - probes found `setPort values:{port,PortLocked,authAs}` parsed the Set target correctly but did not persist the Port table cell for later reads.
+  - probes also found `getPort values:{port,authAs}` could lose the target and stale `PortLocked` results could pass.
+  - added tracked AdminSP Port row state for documented Port columns and made both wrapper `getPort` and raw Port `Get` compare known cells.
+  - repaired `getPort` values/settings/options parsing for port selector and authAs.
+  - added 3 synthetic regression cases under `parser-representation` and expanded score probes to `313 / 0`.
+  - synthetic suite increased to `851 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- TPerSign values-envelope repair:
+  - probes found `tperSign values:{data,authAs}` did not recover nested host data for kwargs/params/request/call shapes.
+  - repaired `tperSign` parsing to recover host payload and authAs from values/settings/options dictionaries.
+  - retained the documented 256-byte TCGstorageAPI TPerSign input limit for nested payloads.
+  - added 2 synthetic regression cases under `parser-representation` and expanded score probes to `321 / 0`.
+  - synthetic suite increased to `853 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- FirmwareAttestation values-envelope repair:
+  - probes found `firmwareAttestation values:{nonce,authAs}` did not recover the nested assessor nonce for kwargs/params/request/call shapes.
+  - repaired `firmwareAttestation` parsing to recover assessor nonce, RTRID/sub_name, and AssessorID from values/settings/options dictionaries.
+  - added 1 synthetic regression case under `parser-representation` and expanded score probes to `325 / 0`.
+  - synthetic suite increased to `854 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Explicit empty-payload guard for signing/attestation wrappers:
+  - probes found positional single-dict wrappers like `tperSign args:[{values:{authAs}}]` and `firmwareAttestation args:[{values:{authAs}}]` could be misread as having payload solely because the wrapper container was non-empty.
+  - tightened payload/nonce detection so an explicit empty `Data`/`Input`/`Buffer` value is terminal instead of falling through to raw positional wrapper inspection.
+  - added 2 synthetic regression cases under `parser-representation` and expanded score probes to `327 / 0`.
+  - synthetic suite increased to `856 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Erase symbolic selector repair:
+  - probes found `erase values:{range:"Locking_Range1"}` and `erase values:{band:"Band1"}` built noncanonical targets such as `BandLocking_Range1` / `BandBand1`.
+  - that caused a successful wrapper erase to miss Range1 state side effects, so old host data could still be accepted.
+  - repaired `erase` to recover range selectors from positional single-dict values envelopes and canonicalize symbolic locking range names through `_normalize_name` / `_range_id_from_symbol`.
+  - added 2 synthetic regression cases under `parser-representation` and expanded score probes to `337 / 0`.
+  - synthetic suite increased to `858 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- DataStore writeData values-envelope authAs repair:
+  - probes found `writeData values:{authAs:(Admin1,wrong),data,offset}` recovered payload and offset but not nested authAs in kwargs/params/request/call shapes.
+  - repaired `writeData` to recover authAs from the same payload envelope used for bytes and offset.
+  - added 1 synthetic regression case under `parser-representation` and expanded score probes to `342 / 0`.
+  - synthetic suite increased to `859 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Locking symbolic selector repair:
+  - probes found `setRange values:{band:"Band1"}` / `{range:"Locking_Range1"}` and lock/unlock symbolic selectors could build noncanonical targets such as `BandBand1` or `BandLocking_Range1`.
+  - added shared `_band_target_from_range_value` canonicalization and applied it to setRange/getRange/lock/unlock/erase target construction.
+  - repaired single positional dict lock/unlock values-envelope recovery and cleaned `setRange args1` authAs recovery when the first arg is a wrapper dict.
+  - added 3 synthetic regression cases under `parser-representation` and expanded score probes to `382 / 0`.
+  - synthetic suite increased to `862 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- getMEK symbolic selector repair:
+  - probes found `getMEK values:{band:"Band1"}` and `getMEK values:{range:"Locking_Range1"}` built noncanonical targets and accepted a stale Range2 ActiveKey for a Range1 query.
+  - reused `_band_target_from_range_value` for getMEK target construction.
+  - added 1 synthetic regression case under `parser-representation` and expanded score probes to `392 / 0`.
+  - synthetic suite increased to `863 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Reset boolean output alias repair:
+  - probes found failed reset wrappers represented as `ok:false`, `isOk:false`, or `successFlag:false` were parsed as successful resets.
+  - that could incorrectly apply LockOnReset side effects and create phantom range locks after a failed reset call.
+  - expanded high-level return extraction / boolean return parsing to include ok/isOk/isSuccess/succeeded/successFlag aliases.
+  - added 2 synthetic regression cases under `parser-representation` and expanded score probes to `398 / 0`.
+  - synthetic suite increased to `865 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Raw ACE symbol AccessControl grant repair:
+  - probes found `enableRangeAccess values:{ace:"ACE_0003E001"}` was parsed as an empty/malformed target because the string looked UID-like.
+  - repaired raw `ACE_XXXXXXXX` normalization case-insensitively so `ace`, `target`, and `object` aliases can update the Range1 read-lock ACE expression.
+  - added 3 synthetic regression cases under `parser-representation` and expanded score probes to `402 / 0`.
+  - synthetic suite increased to `868 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Hex-like object name priority repair:
+  - probes found compact C_EC aliases such as `cec160` / `C_EC_160` had the same bug class: object names made of hex-valid characters were parsed as fake UIDs.
+  - generalized `_object_ref_from_value` so known normalized Opal object names win before UID parsing, and made table aliases case-insensitive.
+  - added 2 synthetic regression cases under `parser-representation` and expanded score probes to `404 / 0`.
+  - synthetic suite increased to `870 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- AccessControl MethodID case canonicalization repair:
+  - probes found `GetACL values:{MethodID:"get"}` / `"GET"` missed the documented C_PIN_MSID.Get association even though `"Get"` passed.
+  - follow-up probes found lowercase raw `method.name:"getacl"` bypassed GetACL-specific validation.
+  - `_method_ref_name` now canonicalizes known method names against the MethodID universe, and raw event method names use the same canonicalization.
+  - added 4 synthetic access-control cases and expanded score probes to `408 / 0`.
+  - synthetic suite increased to `874 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- GetACL wrapped UID-list return repair:
+  - probes found `return_values:{ACL:[...]}` / `{ACE:[...]}` / `{values:[...]}` failed even when the wrapped ACE uidref list was correct.
+  - UID-list response checks now unwrap ACL/ACE/ACEs/values keys while still rejecting wrong wrapped ACE refs.
+  - added 3 synthetic access-control cases and expanded score probes to `411 / 0`.
+  - targeted access-control suite increased to `40 / 0`; full synthetic/sourced/unit verification pending after the next batch.
+- Structured UID-list wrapper repair:
+  - probes found `CreateRow return_values:{row_uids:[...]}` failed even though it is the same UID-list response as `Rows`/`UIDs`.
+  - UID-list response checks now unwrap uid_refs/row_uids/object_uids naming variants.
+  - added 1 synthetic parser-representation case and expanded score probes to `412 / 0`.
+  - synthetic suite increased to `880 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Nested boolean status object repair:
+  - probes found mutating wrappers with `return:{ok:false}` were parsed as SUCCESS and could apply phantom Locking side effects.
+  - `_high_level_status` now checks nested status-like booleans before treating dict/list returns as payloads.
+  - `_return_bool` no longer treats arbitrary one-key false payloads such as `{ReadLocked:0}` as failed calls.
+  - added 2 synthetic parser-representation cases and expanded score probes to `414 / 0`.
+  - synthetic suite increased to `880 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Nested status-code object repair:
+  - probes found mutating wrappers with `return:{status:"FAIL"}` / `{code:"FAIL"}` / `{status_codes:"FAIL"}` were still parsed as SUCCESS.
+  - `_high_level_status` now checks nested status-code fields inside return objects before applying side effects.
+  - added 2 synthetic parser-representation cases and expanded score probes to `416 / 0`.
+  - synthetic suite increased to `882 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Nested error-flag object repair:
+  - probes found mutating wrappers with `return:{error:true}` / `{failed:true}` / `{hasError:true}` were still parsed as SUCCESS.
+  - `_high_level_status` now checks nested error flags inside return objects before applying side effects.
+  - added 2 synthetic parser-representation cases and expanded score probes to `418 / 0`.
+  - synthetic suite increased to `884 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Authenticate nested boolean result repair:
+  - probes found `Authenticate return:{authenticated:false}` was parsed as method FAIL even though Authenticate false is a successful result boolean.
+  - high-level authenticate now treats nested boolean return objects as successful result payloads unless an explicit failure/error status is present.
+  - added 2 synthetic parser-representation cases and expanded score probes to `419 / 0`.
+  - synthetic suite increased to `886 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- checkPIN nested valid result repair:
+  - probes found `checkPIN return:{valid:false}` / `{valid:true}` were not recognized as boolean result payloads.
+  - `_return_bool` now treats valid/isValid/verified as boolean-result aliases.
+  - added 3 synthetic parser-representation cases and expanded score probes to `422 / 0`.
+  - synthetic suite increased to `889 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`.
+- Credential result alias and failed mutation status repair:
+  - probes found Authenticate/checkPIN match/verification/credential-valid aliases and mutating wrapper `passed:false` / nested `isSuccess:false` / `successFlag:false` status shapes.
+  - repaired credential-only boolean alias parsing and generalized nested success status parsing for failed mutating wrappers.
+  - added 40 synthetic/probe checks across authenticate-wrapper and locking-wrapper families.
+  - synthetic suite increased to `929 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `462 / 0`.
+- Mutating wrapper authorization-flag nonmutation repair:
+  - probes found `writeData return:{authorized:false}` could mutate DataStore bytes as if successful.
+  - repaired authorization-style false flags as `NOT_AUTHORIZED` for known mutating wrappers only.
+  - added 6 parser/probe checks for DataStore failed-write nonmutation.
+  - synthetic suite increased to `935 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `468 / 0`.
+- Mutating wrapper denial-flag nonmutation repair:
+  - probes found `writeLock return:{denied:true}` / `response:{unauthorized:true}` / `return:{authFailed:true}` could apply phantom Locking state.
+  - repaired denial-style true flags as `NOT_AUTHORIZED` for known mutating wrappers only.
+  - added 6 parser/probe checks for Locking failed-mutation nonmutation.
+  - synthetic suite increased to `941 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `474 / 0`.
+- Mutating wrapper rejection-flag nonmutation repair:
+  - probes found `writeLock return:{rejected:true}` / `response:{forbidden:true}` / `return:{accessDenied:true}` could apply phantom Locking state.
+  - expanded mutating-wrapper denial parsing to rejected/blocked/cancelled/forbidden/permissionDenied/accessDenied flags.
+  - added 6 parser/probe checks for Locking rejected-call nonmutation.
+  - synthetic suite increased to `947 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `480 / 0`.
+- GetACL UID-list wrapper field repair:
+  - probes found GetACL `return_values:{acl_uids:[...]}` / `{aceUids:[...]}` were not recognized as ACE uidref lists.
+  - repaired UID-list unwrapping for acl_uids/aclUids/aclUIDs and ace_uids/aceUids/aceUIDs.
+  - added 2 AccessControl/probe checks.
+  - synthetic suite increased to `949 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `482 / 0`.
+- Empty meta-ACL mutation return wrapper repair:
+  - probes found created-row `AddACE return_values:{status:"SUCCESS", values:[]}` was rejected despite representing the required empty list.
+  - repaired return-length parsing to unwrap return/return_values/values/payload wrapper fields before counting dictionary size.
+  - added 1 dynamic AccessControl/probe check.
+  - synthetic suite increased to `950 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `483 / 0`.
+- GetACL argument alias repair:
+  - probes found GetACL values dictionaries using `object/method`, `target/operation`, or a single nested args dict were rejected even though they encoded InvokingID/MethodID.
+  - repaired meta-method argument extraction for these SDK-style aliases.
+  - added 3 AccessControl/probe checks.
+  - synthetic suite increased to `953 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `486 / 0`.
+- StartSession session-ID return alias repair:
+  - probes found `TPerSessionID` response names were not recognized as `SPSessionID` in StartSession return payloads.
+  - repaired return-name aliases for TPerSessionID/TPerSession/TPerSID and HostSession/HostSID.
+  - added 1 parser/probe check.
+  - synthetic suite increased to `954 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `487 / 0`.
+- SyncSession tracked session-ID validation repair:
+  - probes found StartSession `TPerSessionID=9` did not make later `SyncSession(SPSessionID=8)` fail.
+  - repaired StartSession transition tracking for TPerSessionID aliases and SyncSession Host/SP session id validation.
+  - added 2 session/probe checks.
+  - synthetic suite increased to `956 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `489 / 0`.
+- EndSession mismatched-ID nontransition repair:
+  - probes found context EndSession with mismatched SPSessionID could close the tracked session anyway.
+  - repaired EndSession/CloseSession transitions to close only when supplied Host/SP session ids match.
+  - added 1 session/probe check.
+  - synthetic suite increased to `957 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `490 / 0`.
+- TPer session-ID argument alias validation repair:
+  - probes found SyncSession ignored TPerSessionID/tperSessionID/TPerSID argument aliases and could accept a wrong SP/TPer session id.
+  - repaired SyncSession/SyncTrustedSession/SyncTlsSession and trusted-session startup validation to treat TPer-centric names as the SP session identifier.
+  - expanded EndSession/CloseSession transition guards to the same alias set.
+  - added 6 session/probe checks.
+  - synthetic suite increased to `963 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `496 / 0`.
+- Host session-ID alias tracking repair:
+  - probes found HostSID/HSID aliases were recognized in some surface comparisons but not consistently echoed, tracked, or validated.
+  - repaired StartSession echo validation, StartSession state tracking, Sync/Trusted/TLS validation, and EndSession/CloseSession transition guards to use one HostSessionID alias set.
+  - added 2 session/probe checks.
+  - synthetic suite increased to `965 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `498 / 0`.
+- EndSession control-method consistency repair:
+  - probes found target EndSession with an explicit Session Manager invoking id was rejected even though context EndSession already closed sessions.
+  - repaired EndSession as a CloseSession-equivalent control method with the same Host/SP/TPer id validation.
+  - added 2 session/probe checks.
+  - synthetic suite increased to `967 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `500 / 0`.
+- GetACL method-node positional argument repair:
+  - probes found method-node positional GetACL args were not promoted to InvokingID/MethodID.
+  - repaired AccessControl meta-method parsing for `method.args=[InvokingID, MethodID]` and nested `method.args.required=[...]`, including ACE positional args for AddACE/RemoveACE.
+  - added 4 access-control/probe checks.
+  - synthetic suite increased to `971 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `504 / 0`.
+- getACL wrapper parser repair:
+  - probes found SDK-style `function:getACL` traces were parsed as UNKNOWN and skipped the documented AccessControl association logic.
+  - repaired high-level getACL/addACE/removeACE/deleteMethod wrapper parsing to AccessControl meta-method events with positional and object/target method/operation aliases.
+  - added 6 access-control/probe checks.
+  - synthetic suite increased to `977 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `510 / 0`.
+- AccessControl mutating wrapper failure repair:
+  - probes found addACE/removeACE/deleteMethod wrappers with `authorized:false` parsed as successful mutating calls.
+  - repaired mutating-wrapper status parsing so failed AccessControl metadata wrappers map to NOT_AUTHORIZED and do not mutate ACL state.
+  - added 3 access-control/probe checks.
+  - synthetic suite increased to `980 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `513 / 0`.
+- Credential/PSK mutating wrapper failure repair:
+  - probes found changePIN and setPSKEntry wrappers with `authorized:false` parsed as successful calls.
+  - repaired these mutating wrappers to map authorization-false dict returns to NOT_AUTHORIZED; setMinPINLength was explicitly deferred because its Set authorization expectation needs a separate model pass.
+  - added 2 credential/psk probe checks.
+  - synthetic suite increased to `982 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `515 / 0`.
+- Mutating wrapper conflicting-flag precedence repair:
+  - probes found writeLock/writeData/addACE wrappers with `authorized:true` plus `success:false` parsed as successful mutations.
+  - repaired mutating wrapper status precedence so denial/auth-false blocks first, then success-false maps to FAIL before any state transition.
+  - added 10 parser/datastore/locking probe checks.
+  - synthetic suite increased to `992 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `525 / 0`.
+- Close-session wrapper identifier repair:
+  - probes found endSession/closeSession wrappers dropped supplied Host/SP/TPer ids and could close the wrong tracked session.
+  - repaired wrapper parsing to carry positional and alias identifiers into EndSession/CloseSession validation and transition guards.
+  - added 3 session/probe checks.
+  - synthetic suite increased to `995 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `528 / 0`.
+- Start/Sync session wrapper identifier repair:
+  - probes found syncSession wrappers dropped supplied Host/SP ids and startSession wrappers did not echo-check positional/alias HostSessionID values.
+  - repaired sync/trusted/tls wrapper required ids and startSession HostSessionID alias propagation.
+  - added 4 session/probe checks.
+  - synthetic suite increased to `999 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `532 / 0`.
+- Trusted/TLS session wrapper parser repair:
+  - probes found startTrustedSession/startTlsSession wrappers parsed as UNKNOWN instead of their raw session-control methods.
+  - repaired wrapper parsing with positional and alias Host/SP/TPer identifier validation.
+  - added 4 session/probe checks.
+  - synthetic suite increased to `1003 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `536 / 0`.
+- setAuthority wrapper alias repair:
+  - wrapper scan found setAuthority parsed as UNKNOWN while enableAuthority already updated Authority.Enabled.
+  - repaired setAuthority as an Authority.Enabled mutating wrapper with nested values/options support.
+  - added 2 authority/probe checks.
+  - synthetic suite increased to `1005 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `538 / 0`.
+- setPSKEntry cipher_suite alias repair:
+  - probes found snake-case `cipher_suite` was not accepted as the required `CipherSuite` field in SDK-style PSK provisioning wrappers.
+  - repaired `setPSKEntry` optional-field canonicalization so compact `ciphersuite` aliases normalize before required-field validation.
+  - added 1 synthetic trajectory and 5 score probes across common wrapper envelopes.
+  - synthetic suite increased to `1006 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `543 / 0`.
+- getAuthority top-level user/uid selector repair:
+  - wrapper scan found getAuthority top-level `user` / `uid` kwargs produced an empty invoking object, while equivalent nested values envelopes were already checked.
+  - repaired getAuthority selector extraction to accept top-level `user`, `uid`, and `target` aliases.
+  - added 2 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1008 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `547 / 0`.
+- get/setPSKEntry selector alias and payload preservation repair:
+  - wrapper scan found getPSKEntry top-level `psk_id` / `pskId` / `id` selectors produced an empty Get target.
+  - repaired PSK selector extraction for get/set wrappers and preserved exact uppercase `PSK` bytes as payload when a separate selector alias is used.
+  - added 2 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1010 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `551 / 0`.
+- Port wrapper selector alias repair:
+  - wrapper scan found setPort/getPort top-level `port_id`, `portId`, `id`, `object`, and `target` selectors produced empty invoking objects.
+  - repaired Port selector extraction and filtered selector aliases out of Set payload optionals.
+  - added 2 synthetic trajectories and 6 score probes.
+  - synthetic suite increased to `1012 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `557 / 0`.
+- C_PIN credential wrapper selector alias repair:
+  - wrapper scan found changePIN/setMinPINLength `cpin` / `C_PIN` selectors could produce empty C_PIN targets.
+  - repaired credential selector extraction while deliberately leaving ambiguous `credential` as a PIN/password payload alias.
+  - added 3 synthetic trajectories and 3 score probes.
+  - synthetic suite increased to `1015 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `560 / 0`.
+- Locking range wrapper generic selector alias repair:
+  - wrapper scan found getRange/setRange/readLock/writeLock top-level `id`, `uid`, `object`, and `target` selectors produced BandNone.
+  - repaired shared range selector extraction and filtered these selector aliases out of setRange payload columns.
+  - added 4 synthetic trajectories and 38 score probes.
+  - synthetic suite increased to `1019 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `598 / 0`.
+- enableRangeAccess range/operation ACE derivation repair:
+  - wrapper scan found enableRangeAccess `range + operation` descriptors produced empty ACE targets while raw ACE symbols already worked.
+  - repaired semantic ACE derivation for read/write/admin-style range operations.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1023 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `602 / 0`.
+- DataStore snake-case byte alias repair:
+  - wrapper scan found writeData `start_offset` fell back to row 0 and `payload_bytes` was not recognized as payload, while camel/similar aliases already worked.
+  - repaired write/read byte offset extraction and payload alias handling.
+  - added 2 synthetic sweep entries and 12 score probes.
+  - synthetic suite increased to `1025 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `614 / 0`.
+- AccessControl obj/uid op/action alias repair:
+  - wrapper scan found getACL/addACE/removeACE/deleteMethod `obj`/`uid` and `op`/`action` aliases did not populate InvokingID/MethodID, including raw values dictionaries.
+  - repaired only these narrow aliases; broader table/row aliases were left unsupported to avoid overgeneralization.
+  - added 7 synthetic cases and 7 score probes.
+  - synthetic suite increased to `1032 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `621 / 0`.
+- Authenticate/checkPIN identity and passcode alias repair:
+  - wrapper scan found Authenticate/checkPIN `passcode`/`secret` proof aliases and `obj`/`target`/`identity`/`username` authority aliases could be ignored.
+  - repaired credential proof and authority selector extraction for Authenticate-like wrappers.
+  - added 2 synthetic trajectories and 2 score probes focused on TryLimit lockout.
+  - synthetic suite increased to `1034 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `623 / 0`.
+- Media-key genKey/getMEK selector alias repair:
+  - wrapper scan found `genKey` and `getMEK` could ignore integer `id` / `uid` / `object` / `target` / `key` / `range_key` / `mek` / `activeKey` selectors and therefore miss Range1 media-key invalidation or ActiveKey UID comparison.
+  - repaired `genKey` to derive `K_AES_256_RangeN_Key` from integer selector aliases while preserving symbolic K_AES key selectors.
+  - repaired `getMEK` to resolve the same selector family from top-level and values/settings/options envelopes before comparing returned ActiveKey UID wrappers.
+  - added 28 synthetic trajectories and expanded media-key score probes.
+  - synthetic suite increased to `1062 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `738 / 0`.
+- DataStore wrapper payload/length alias repair:
+  - wrapper scan found `writeData(value=...)` / `writeData(dataBytes=...)` lost byte payloads and `readData(byteLength=...)` / `readData(nBytes=...)` lost bounded read windows.
+  - repaired DataStore payload detection, payload-length checks, and read-window length extraction to share those aliases.
+  - added 8 synthetic trajectories and 26 score probes.
+  - synthetic suite increased to `1070 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `764 / 0`.
+- AccessControl GetACL InvokingID/MethodID alias repair:
+  - newly generated cases found 3 current misses in raw `GetACL` values dictionaries: `objectId/methodId`, `objectUID/methodUID`, and `invoking/methodName`.
+  - repaired high-level and raw meta-method argument recovery with a bounded alias set for official `InvokingID` / `MethodID` representation variants.
+  - intentionally did not reintroduce broad `table` / `row` aliases.
+  - added 9 synthetic trajectories and 3 score probes.
+  - synthetic suite increased to `1079 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `767 / 0`.
+- Reset event/resetType wrapper alias repair:
+  - reset scan found `event:PowerCycle` and `resetType:PowerCycle` parsed as unknown instead of reset events, which could miss LockOnReset side effects.
+  - repaired function-name extraction for reset-specific `event` / `resetType` keys while leaving generic `type` unsupported.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1083 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `771 / 0`.
+- StartSession values authority/credential alias repair:
+  - session sampling found `startSession(values={sp,user,password,readWrite})` and `openSP(values={sp,identity,secret,writable})` missed HostSigningAuthority/HostChallenge recovery.
+  - repaired values-envelope authority aliases `user` / `identity` / `username` and challenge aliases `secret` / `passcode`.
+  - added 4 synthetic trajectories and 4 score probes after shortening test C_PIN payloads so PIN-length policy does not confound the case.
+  - synthetic suite increased to `1087 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `775 / 0`.
+- C_PIN credential update alias repair:
+  - credential sampling found `setPIN`, `updatePIN`, and `changePassword` were parsed as `UNKNOWN` and did not update tracked C_PIN credentials.
+  - mapped these C_PIN-specific aliases onto the existing `changePIN` Set path and high-level mutating status handling; left ambiguous `setPassword` unsupported.
+  - added 9 synthetic trajectories and 6 score probes.
+  - synthetic suite increased to `1096 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `781 / 0`.
+- Authority/Port/PSK wrapper alias repair:
+  - wrapper sampling found `disableAuthority(identity=...)` was unknown, top-level `identity` / `username` Authority selectors could be ignored, `setPort(locked=...)` did not update `PortLocked`, and `setPskEntry(secret=...)` did not populate the required `PSK` payload column.
+  - repaired only those bounded wrapper aliases: `disableAuthority` maps to `Authority.Enabled=false`, Authority `identity` / `username` select the row, `locked` maps to `PortLocked`, and PSK `secret`-style byte aliases map to `PSK`.
+  - added 7 synthetic trajectories and 9 score probes.
+  - synthetic suite increased to `1103 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `790 / 0`.
+- Dedicated LockOnReset wrapper repair:
+  - score-focused sampling found `setLockOnReset` / `setRangeLockOnReset` / `getLockOnReset` / `getRangeLockOnReset` parsed as `UNKNOWN`, bypassing the existing LockOnReset reset state machine.
+  - mapped dedicated setters/getters onto the Locking row `Set`/`Get` paths with bounded range selector and LockOnReset value aliases.
+  - added 8 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1111 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `794 / 0`.
+- EraseRange and TryLimit wrapper repair:
+  - wrapper sampling found `eraseRange(rangeId=...)`, `setTryLimit(user=..., tryLimit=...)`, and `getTryLimit(identity=...)` parsed as `UNKNOWN`.
+  - mapped `eraseRange` onto the existing Erase path; mapped `setTryLimit` to C_PIN.TryLimit `Set`; mapped `getTryLimit` to a TryLimit-column-only C_PIN `Get` after a regression showed that full C_PIN Get would be protected by the PIN cell.
+  - added 6 synthetic trajectories and 6 score probes.
+  - synthetic suite increased to `1117 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `800 / 0`.
+- MBR control and byte wrapper repair:
+  - wrapper sampling found `setMBRDone`, `setMBREnable`, `setMBRControl`, `writeMBR`, and `readMBR` parsed as `UNKNOWN`.
+  - mapped compact MBR control wrappers to MBRControl Set columns and MBR byte wrappers to sparse byte-table Set/Get paths; adjusted regression expectations to include full-row MBRControl `DoneOnReset=[0]`.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1121 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `804 / 0`.
+- GenerateKey media-key alias repair:
+  - wrapper sampling found `generateKey(rangeId=...)` and `generateRangeKey(range=...)` parsed as `UNKNOWN`.
+  - mapped both aliases onto the existing `genKey` media-key path.
+  - added 4 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1125 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `806 / 0`.
+- Locking range field helper repair:
+  - wrapper sampling found compact field helpers (`setRangeStart`, `setRangeLength`, `enableReadLock`, `enableWriteLock`, `disableReadLock`, `disableWriteLock`, `setReadLocked`, `setWriteLocked`, `getRangeStart`, `isReadLocked`) parsed as `UNKNOWN`.
+  - mapped setter helpers to official Locking row columns and getter helpers to column-restricted `Get` events.
+  - added 2 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1127 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `810 / 0`.
+- Read-only helper alias repair:
+  - wrapper sampling found `getLockingInfo`, `getRandom`, `randomBytes`, `signData`, `tperSignData`, `firmwareAttest`, and `attestFirmware` parsed as `UNKNOWN`.
+  - mapped those aliases onto existing LockingInfo, Random, TPerSign, and FirmwareAttestation paths; fixed Random expectation validation so wrapper `length` / `size` / `numBytes` aliases are not treated as unsupported arguments.
+  - added 4 synthetic trajectories and 8 score probes.
+  - synthetic suite increased to `1131 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `818 / 0`.
+- Lifecycle and session helper alias repair:
+  - wrapper sampling found `activateLockingSP`, `activateSP`, `revertLocking`, `revertAdminSP`, `factoryReset`, `addACEEntry`, `removeACEEntry`, `startAdminSession`, and `startLockingSession` parsed as `UNKNOWN`.
+  - mapped only direct helper aliases to existing Activate/Revert/AddACE/RemoveACE/StartSession paths; intentionally left broad `grantAccess` / `revokeAccess` unsupported.
+  - added 3 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1134 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `820 / 0`.
+- DataStore/Locking/C_PIN wrapper alias repair:
+  - wrapper sampling found direct aliases for DataStore byte helpers (`putData`, `getData`, `writeDatastore`, `readDatastore`), Locking range helpers (`configureRange`, `getRangeConfig`, `lockRange`, `unlockRange`), and C_PIN counters (`setPINLimit`, `setTries`, `getTries`).
+  - mapped only bounded aliases onto existing DataStore Set/Get, Locking row Set/Get, and C_PIN TryLimit/Tries paths; intentionally left `setUses` / `getUses` unsupported because those belong to Authority usage semantics rather than the current C_PIN column model.
+  - added 7 synthetic trajectories and 5 score probes.
+  - synthetic suite increased to `1141 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `825 / 0`.
+- Authority Limit/Uses wrapper alias repair:
+  - wrapper sampling found Authority `Limit` / `Uses` / `Enabled` helper aliases (`setAuthorityLimit`, `getAuthorityLimit`, `setAuthorityUses`, `getAuthorityUses`, `setLimit`, `getLimit`, `enableUser`, `disableUser`, `setUserEnabled`) were ignored.
+  - mapped them to existing Authority columns 15, 16, and 5 without changing the underlying Authority limit state machine.
+  - added 3 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1144 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `827 / 0`.
+- MBRControl and ActiveKey wrapper return repair:
+  - wrapper sampling found MBR helper aliases and media-key aliases; after parser mapping, two concrete local false negatives appeared for partial `getMBRControl` returns and `getActiveKey` UID-wrapper returns.
+  - repaired `getMBRControl` partial-column inference and shared `getActiveKey` with the existing `getMEK` ActiveKey UID comparison path.
+  - added 4 synthetic trajectories and 3 score probes.
+  - synthetic suite increased to `1148 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `830 / 0`.
+- ReEncrypt wrapper alias repair:
+  - wrapper sampling found `startReEncrypt`, `pauseReEncrypt`, `resumeReEncrypt`, `setReEncryptRequest`, and `getReEncryptStatus` were ignored.
+  - mapped them to existing Locking `ReEncryptRequest` / `ReEncryptState` columns and reused the current ReEncrypt state transition rules.
+  - added 2 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1150 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `832 / 0`.
+- DataRemovalMechanism wrapper state repair:
+  - wrapper sampling found `dataRemoval`, `startDataRemoval`, `setDataRemovalMechanism`, `getDataRemovalMechanism`, and `getDataRemovalStatus` were ignored.
+  - mapped helper setters/getters to AdminSP `DataRemovalMechanism.ActiveDataRemovalMechanism` and added state tracking so stale later Gets are rejected.
+  - added 2 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1152 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `834 / 0`.
+- Log wrapper alias repair:
+  - wrapper sampling found `addLog`, `clearLog`, `flushLog`, and `createLog` were ignored.
+  - mapped them to Log/AddLog, Log/ClearLog, Log/FlushLog, and LogList/CreateLog while preserving official required-argument checks and CreateLog three-field result shape.
+  - fixed a discovered false positive where a missing AddLog `Data` parameter was synthesized as `None` and treated as present.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1156 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `838 / 0`.
+- Crypto stream wrapper/object compatibility repair:
+  - wrapper sampling found Hash/HMAC/Encrypt/Decrypt stream helper aliases and `verifyData` were ignored.
+  - mapped bounded stream wrappers to existing crypto methods and added SHA/AES/RSA target alias normalization.
+  - tightened raw crypto stream object compatibility so Hash/HMAC require H_SHA_* objects, while preserving explicit crypto object names in logs whose UID is synthetic or ambiguous.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1160 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `842 / 0`.
+- Credential package wrapper alias repair:
+  - wrapper sampling found GetPackage/SetPackage-style helpers were ignored.
+  - mapped `getPackage`/`exportPackage`/`exportKey`/`wrapKey` to `GetPackage` and `setPackage`/`importPackage`/`importKey`/`unwrapKey` to `SetPackage`.
+  - preserved existing package requirements: credential target, required GetPackage `Purpose`, required SetPackage `Value`, package key reference validation, and empty SetPackage success result.
+  - added 3 synthetic trajectories and 3 score probes.
+  - synthetic suite increased to `1163 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `845 / 0`.
+- Table query wrapper alias repair:
+  - explorer/table sampling found `createTable`, `getNext`, and `getFreeSpace` wrapper calls were ignored.
+  - mapped bounded table wrappers to `ThisSP.CreateTable`, table `Next`, and `ThisSP.GetFreeSpace`.
+  - fixed status tuple parsing so `[0, ...]` remains success but arbitrary nonzero numeric payload lists are not misread as status codes.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1167 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `849 / 0`.
+- Package alias and raw result shape tightening:
+  - package explorer found `importKeyPackage`, `exportKeyPackage`, `getCredentialPackage`, and `setCredentialPackage` still ignored.
+  - added those aliases to package wrapper lowering.
+  - raw `SetPackage` now rejects scalar Boolean success while wrapper SetPackage helpers may still expose SDK-style Boolean success.
+  - added 3 synthetic trajectories and 3 score probes.
+  - synthetic suite increased to `1170 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `852 / 0`.
+- XOR wrapper and BufferOut state repair:
+  - XOR explorer found `xor` wrappers ignored and raw `XOR BufferOut` not mutating later byte-table observations.
+  - mapped `xor`/`xorData`/`oneTimePad` to `ThisSP.XOR`.
+  - successful direct-input XOR now writes computed bytes into referenced DataStore/MBR BufferOut cellblocks.
+  - added 3 synthetic trajectories and 3 score probes.
+  - synthetic suite increased to `1173 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `855 / 0`.
+- CreateRow wrapper alias repair:
+  - table explorer found `createRow` / `newRow` ignored.
+  - mapped row-creation wrappers to table `CreateRow` while preserving row values for existing Locking geometry checks.
+  - added 2 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1175 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `857 / 0`.
+- Table row/query wrapper and GetFreeRows payload repair:
+  - table explorer leftovers found `deleteRow` / `removeRow` / `destroyRow` and `tableQuery` / `queryTable` / `getFreeRows` were not lowered.
+  - mapped row-deletion wrappers to table `DeleteRow` and query wrappers to object-table `GetFreeRows`, reusing existing official row deletion and table query semantics.
+  - discovered a concrete local false negative where `tableQuery("Locking")` with return `[4]` was interpreted as an empty status tuple instead of a one-field FreeRows payload; repaired this only for GetFreeRows-style wrappers.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1179 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `861 / 0`.
+- XOR cellblock input repair:
+  - remaining XOR probe design found raw XOR accepted only direct input bytes even though the method can consume a byte-table cellblock.
+  - added DataStore/MBR cellblock-byte resolution for XOR `Input`, using known byte-table state and row window offsets.
+  - extended XOR BufferOut mutation so cellblock input also writes the computed result to the destination cellblock.
+  - added 2 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1181 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `863 / 0`.
+- GetPackage empty Purpose tightening:
+  - package explorer leftover found `Purpose` was validated only for presence, not emptiness.
+  - tightened `GetPackage` so an empty purpose payload cannot be accepted as a valid credential package purpose.
+  - added 1 synthetic trajectory and 1 score probe.
+  - synthetic suite increased to `1182 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `864 / 0`.
+- Direct Delete wrapper alias repair:
+  - table/object wrapper sweep found direct deletion helpers were still ignored.
+  - mapped only bounded aliases (`deleteObject` / `removeObject` / `destroyObject`, plus `deleteRange` / `removeRange` / `destroyRange`) to official `Delete`; left generic `delete()` unsupported.
+  - added 2 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1184 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `866 / 0`.
+- DeleteTable wrapper descriptor mapping repair:
+  - table wrapper sweep found `deleteTable` / `removeTable` / `destroyTable` remained unmapped.
+  - mapped created table UIDs to their Table descriptor UIDs before official `Delete`, reusing existing created-table cleanup semantics.
+  - added 2 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1186 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `868 / 0`.
+- SetPackage empty Value tightening:
+  - package validation sweep found `SetPackage` rejected missing and empty-string `Value`, but not other empty package shapes.
+  - tightened `SetPackage` to reject all empty package material using the shared empty-payload check.
+  - added 1 synthetic trajectory and 1 score probe.
+  - synthetic suite increased to `1187 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `869 / 0`.
+- GetACL required-dictionary alias repair:
+  - AccessControl representation sweep found semantic accessors did not understand all SDK-style aliases already handled elsewhere.
+  - unified raw `required` alias handling for `uid`/`obj`/`target` as InvokingID and `action`/`operation`/`op` as MethodID.
+  - added 3 synthetic trajectories and 3 score probes.
+  - synthetic suite increased to `1190 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `872 / 0`.
+- GetACL top-level ACL return envelope repair:
+  - AccessControl return-envelope sweep found nested `return_values: {ACL: [...]}` was handled, but top-level `output: {ACL: [...]}` was not extracted as payload.
+  - added top-level ACL/ACE/ACEUID field names to output payload extraction.
+  - added 2 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1192 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `874 / 0`.
+- DataStore data-first positional wrapper repair:
+  - DataStore wrapper sweep found a concrete false PASS where `writeData(data, offset, authAs=...)` did not mutate tracked DataStore bytes because the offset was mistaken for the payload.
+  - generalized explicit-`authAs` wrapper parsing for data-first `writeData(data, offset)` and offset-first `readData(offset, length)` while keeping auth-first parsing intact.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1196 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `878 / 0`.
+- Wrapper authAs Authority.Uses accounting repair:
+  - C_PIN/DataStore subagent found a concrete false PASS/FAIL pair where successful `writeData(..., authAs=User1)` did not consume the User1 Authority.Uses budget before later `checkPIN`.
+  - implicit wrapper sessions now count successful non-Authenticate wrapper operations as successful authentication for the wrapper authority, reset Tries for that authority, and reject wrapper authAs success after a nonzero Authority.Limit is reached.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1200 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `882 / 0`.
+- Level0 user-authority universe GetACL repair:
+  - AccessControl subagent found false PASS/FAILs where observed Level0 `NumberOfLockingSPUserAuthorities=8` did not bound `UserN` Authority/C_PIN AccessControl associations.
+  - tracked the observed Locking SP user-authority count in state and used it when deciding whether `Authority_UserN` / `C_PIN_UserN` GetACL associations exist.
+  - added 3 synthetic trajectories and 3 score probes.
+  - synthetic suite increased to `1203 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `885 / 0`.
+- GenKey alias wrapper-scoped auth repair:
+  - Locking subagent found false PASSes where `generateKey` / `generateRangeKey` with explicit User authAs inherited the ambient Admin1 raw session.
+  - extended GenKey expectation scoping for bounded aliases: `genKey`, `generateKey`, `generateRangeKey`, `rotateKey`, and `regenerateKey`.
+  - added 3 synthetic trajectories and 3 score probes.
+  - synthetic suite increased to `1206 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `888 / 0`.
+- GetACL nested return-envelope uid-list repair:
+  - AccessControl subagent found a false FAIL for neutral nested GetACL envelopes like `return_values: {return: {ACL: [...]}}`.
+  - aligned uid-list validation, uid-list length, and required ACE-ref extraction to unwrap `return` / `payload` / `data` / `body` envelopes.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1210 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `892 / 0`.
+- Mutating wrapper failure-shape nonmutation repair:
+  - score-focused local sweep found failed `setAuthorityUses`, failed `lockRange`, and failed `enableMBR` wrappers were being applied as successful mutations because their aliases were missing from the mutating-wrapper failure-shape parser.
+  - expanded the mutating-wrapper alias set so failure-shaped outputs (`ok:false`, similar success/denial/error fields) prevent state changes across Authority counters, Locking range lock aliases, MBR control aliases, row/table create/delete aliases, object/range deletes, and MinPINLength setters.
+  - added 6 synthetic trajectories and 6 score probes.
+  - synthetic suite increased to `1216 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `898 / 0`.
+- Extended mutating-wrapper failure nonmutation repair:
+  - continued failure mining in deeper Locking/media-key/ReEncrypt wrapper paths and found false mutations for failed `configureRange`, failed `rotateKey` / `regenerateKey`, and failed `startReEncrypt`.
+  - expanded the mutating-wrapper alias set for additional state-changing helpers: `configureRange`, `rotateKey`, `regenerateKey`, ReEncrypt request aliases, DataRemoval aliases, package import/set aliases, log clear/flush, PIN counter aliases, and DataStore spelling aliases.
+  - added 6 synthetic trajectories and 6 score probes.
+  - synthetic suite increased to `1222 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `904 / 0`.
+- GetACL ACL/ACE refs return-envelope repair:
+  - AccessControl return-shape sweep found `GetACL` uidref lists under `aclRefs` / `aceRefs` wrappers were rejected even though the payload is still the same ACE uidref list.
+  - added bounded ACL/ACE refs aliases to uid-list validation and return-value extraction, while leaving generic ambiguous entry wrappers unsupported.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1226 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `908 / 0`.
+- GetACL SDK argument-name normalization repair:
+  - AccessControl representation sweep found valid GetACL arguments under `invokingObject` / `invokingObjectUID` and `operationId` / `actionUID` were not normalized to InvokingID/MethodID.
+  - extended bounded AccessControl argument aliases for both raw method values dictionaries and required dictionaries without relaxing association existence or ACL exactness.
+  - added 3 synthetic trajectories and 3 score probes.
+  - synthetic suite increased to `1229 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `911 / 0`.
+- Locking direct lock-enabled setter alias repair:
+  - Locking wrapper sweep found `setWriteLockEnabled(rangeId, true)` did not update WriteLockEnabled, so later WriteLocked state failed to block host writes.
+  - added bounded `setReadLockEnabled` / `setWriteLockEnabled` aliases to range field setter lowering and mutating-wrapper failure-shape detection.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1233 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `915 / 0`.
+- Locking boolean getter alias/result repair:
+  - Locking wrapper sweep found `getWriteLockEnabled` and sibling getter aliases were not fully modeled, and boolean `false` returns could be mistaken for wrapper failure.
+  - added direct getter aliases and scoped Boolean expected returns for ReadLockEnabled/WriteLockEnabled/ReadLocked/WriteLocked.
+  - high-level status parsing now treats Boolean returns from these getter aliases as successful payloads unless an explicit status says otherwise.
+  - added 2 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1235 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `917 / 0`.
+- DataStore write spelling and Locking direct locked setter alias repair:
+  - Wrapper alias sweep found `storeData`/`setData`/`writeBytes`/`putBytes` were ignored as `UNKNOWN`, allowing stale raw DataStore bytes after supposed writes.
+  - Also found direct Locking locked-cell setters such as `setWriteLock` were not connected to `WriteLocked`, missing host-write denial after `WriteLockEnabled=true`.
+  - added bounded DataStore write aliases and direct Locking locked-cell setter aliases.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1239 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `921 / 0`.
+- MBR byte-write spelling alias repair:
+  - MBR wrapper sweep found `storeMBR`/`setMBRBytes`/`writeMBRBytes` were ignored instead of updating MBR byte-table state.
+  - added bounded aliases to the existing `writeMBR` lowering and mutating-wrapper failure-shape set.
+  - added 2 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1241 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `923 / 0`.
+- C_PIN user/password update alias repair:
+  - Credential wrapper sweep found `setUserPIN`/`changeUserPIN`/`updateUserPIN`/`setPassword` were ignored as UNKNOWN, leaving stale credentials accepted.
+  - added bounded aliases to the existing C_PIN PIN/password Set lowering and mutating-wrapper failure-shape set.
+  - expanded existing credential alias trajectories for new-credential success and stale-credential rejection.
+  - synthetic suite increased to `1253 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `931 / 0`.
+- User counter alias repair:
+  - Authority/C_PIN counter sweep found `setUserLimit`/`setUserUses` and `setPINTries`/`setUserTries` were ignored as UNKNOWN.
+  - added bounded aliases to Authority Limit/Uses and C_PIN Tries setter lowering.
+  - added 3 synthetic trajectories and 3 score probes.
+  - synthetic suite increased to `1256 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `934 / 0`.
+- Authority enabled getter alias repair:
+  - Authority wrapper sweep found `isUserEnabled`/`getUserEnabled` were ignored as UNKNOWN instead of reading Authority.Enabled.
+  - reused the `getAuthority` scoped Authority row Get model, including authAs isolation and tracked enabled/disabled Boolean expectations.
+  - fixed one self-contradictory probe context before accepting the repair.
+  - added 2 synthetic trajectories and 2 score probes.
+  - synthetic suite increased to `1258 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `936 / 0`.
+- StartSession read-only alias repair:
+  - session wrapper sweep found a concrete false PASS: `readOnly=true` was ignored and defaulted to a writable StartSession.
+  - added inverse aliases (`ReadOnly`, `readOnly`, `readonly`, `read_only`, `ro`) that lower to official `Write=false` in kwargs and values/session envelopes.
+  - added 4 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1262 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `940 / 0`.
+- PowerCycle reset spelling alias repair:
+  - reset wrapper sweep found a concrete false PASS: `powerCycleReset` was ignored, leaving `LockOnReset=[0]` ranges unlocked.
+  - added bounded aliases `powerCycleReset` and `resetPowerCycle` to high-level reset parsing and reset-type classification.
+  - added 2 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1264 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `944 / 0`.
+- Locking setRange SDK field-name repair:
+  - locking composite sweep found concrete false FAILs for `rangeSize`, `numLBAs`, `readLockingEnabled`, and `writeLockingEnabled`.
+  - canonicalized those names to official `RangeLength`, `ReadLockEnabled`, and `WriteLockEnabled` cells without changing the underlying state machine.
+  - added 2 synthetic trajectories and 4 score probes.
+  - synthetic suite increased to `1266 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `948 / 0`.
+- DataStore read-window length alias repair:
+  - DataStore window sweep found concrete false FAILs for `bytesToRead`, `readLength`, `numBytesToRead`, and `countBytes`.
+  - mapped them to the same byte-window length semantics as official CellBlock end-row derivation.
+  - added 10 synthetic trajectories and 8 score probes.
+  - synthetic suite increased to `1276 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `956 / 0`.
+- Credential verification alias repair:
+  - credential wrapper sweep found concrete false FAILs for `verifyPIN`, `authenticateUser`, `checkCredential`, and `verifyCredential`.
+  - lowered only bounded one-shot verification aliases to Authenticate/checkPIN; `login` remains unsupported because it may mean persistent session startup.
+  - added 8 synthetic trajectories and 8 score probes.
+  - synthetic suite increased to `1284 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `964 / 0`.
+- AccessControl AddACE values-envelope ACE repair:
+  - AccessControl wrapper sweep found values-envelope `addACE`/`removeACE` could drop nested `ACE`/`aceRef` arguments.
+  - extracted bounded ACE aliases from the same nested envelope as InvokingID/MethodID.
+  - added 2 synthetic dynamic-row trajectories and 4 score probes.
+  - synthetic suite increased to `1286 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `968 / 0`.
+- Range media-key GenKey alias and scoped-auth repair:
+  - media-key wrapper sweep found concrete false PASSes for `rotateRangeKey`, `regenerateRangeKey`, `rekeyRange`, `refreshRangeKey`, `generateMEK`, and `rotateMEK`.
+  - lowered them to official Range key `GenKey` and included them in wrapper-scoped authAs evaluation, so explicit bad User credentials cannot inherit an ambient Admin session.
+  - added 12 synthetic trajectories and 12 score probes.
+  - synthetic suite increased to `1298 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `980 / 0`.
+- ReEncrypt START wrapper alias repair:
+  - ReEncrypt wrapper sweep found concrete false FAILs for `beginReEncrypt`, `beginReEncryption`, `reEncryptRange`, and `startReEncryption`.
+  - lowered them to official `ReEncryptRequest = START_req` and included them in mutating-wrapper failure-shape detection.
+  - added 4 synthetic trajectories and 8 score probes.
+  - synthetic suite increased to `1302 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `988 / 0`.
+- MBR read-window length alias repair:
+  - MBR wrapper sweep found concrete false FAILs for `readMBR` middle-slice reads using `bytesToRead`, `readLength`, `numBytesToRead`, and `countBytes`.
+  - mapped the aliases to byte-window length semantics in both `readMBR` lowering and shared byte-table range parsing.
+  - fixed optional `CellBlock` component detection so wrapper-generated `endRow` bounds suppress full-table minimum-length checks.
+  - added 8 synthetic trajectories and 8 score probes.
+  - synthetic suite increased to `1310 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `996 / 0`.
+- ReEncrypt PAUSE/CONT wrapper alias hardening:
+  - ReEncrypt wrapper sweep found adjacent unmodeled spelling `continueReEncryption`.
+  - lowered it to official `CONT_req` and included it in mutating-wrapper failure-shape detection.
+  - added PAUSE/CONT helper alias regression coverage for stale-state rejection.
+  - added 12 synthetic trajectories and 12 score probes.
+  - synthetic suite increased to `1322 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1008 / 0`.
+- Locking lockRead/lockWrite spelling alias repair:
+  - Locking wrapper sweep found concrete false FAILs for `lockRead` and `lockWrite`.
+  - connected `lockRead` / `lockWrite` / `unlockRead` / `unlockWrite` to the same `ReadLocked` / `WriteLocked` state transitions as `readLock` / `writeLock`.
+  - added host I/O positive and stale-denial/allowance negative checks.
+  - added 8 synthetic trajectories and 8 score probes.
+  - synthetic suite increased to `1330 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1016 / 0`.
+- MBRControl helper spelling alias repair:
+  - MBR wrapper sweep found concrete stale-state gaps for `setMBREnabled`, `setDoneMBR`, `clearMBRDone`, `resetMBRDone`, `unmarkMBRDone`, `setMBRNotDone`, and `setMBRDisabled`.
+  - mapped them narrowly to official `MBRControl.Enabled` / `MBRControl.Done` cells.
+  - added accepted and stale-observation rejection checks.
+  - added 14 synthetic trajectories and 14 score probes.
+  - synthetic suite increased to `1344 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1030 / 0`.
+- DataStore byte helper spelling alias repair:
+  - DataStore wrapper sweep found concrete false PASSes for `storeBytes`, `setBytes`, and `writeDS`, plus false FAILs for `getBytes`, `readBytes`, and `readDS`.
+  - mapped them to the existing DataStore byte-table read/write lowering with the same offset/window semantics.
+  - added accepted current-byte and rejected stale-byte checks.
+  - added 12 synthetic trajectories and 12 score probes.
+  - synthetic suite increased to `1356 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1042 / 0`.
+- MBR byte helper spelling alias repair:
+  - MBR wrapper sweep found concrete false PASSes for `storeMBRBytes`, `setMBRData`, and `writeMBRData`, plus false FAILs for `getMBR`, `getMBRBytes`, `readMBRBytes`, and `readMBRData`.
+  - mapped them to the existing MBR byte-table read/write lowering with the same offset/window semantics.
+  - added accepted current-byte and rejected stale-byte checks.
+  - added 14 synthetic trajectories and 14 score probes.
+  - synthetic suite increased to `1370 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1056 / 0`.
+- Locking locking-enabled / lockFor helper alias repair:
+  - Locking wrapper sweep found concrete false FAILs for `enableReadLocking`, `disableReadLocking`, `enableWriteLocking`, `disableWriteLocking`, `setReadLockingEnabled`, `setWriteLockingEnabled`, `lockForRead`, `unlockForRead`, `lockForWrite`, and `unlockForWrite`.
+  - mapped them to official Locking `ReadLockEnabled` / `WriteLockEnabled` / `ReadLocked` / `WriteLocked` cells.
+  - added accepted state-update and rejected stale-`getRange` checks.
+  - added 20 synthetic trajectories and 20 score probes.
+  - synthetic suite increased to `1390 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1076 / 0`.
+- Final server update/submission:
+  - synced current local state to `/workspace/project`.
+  - server-side verification passed: synthetic `1390 / 0`, sourced `3994 / 0`, unit `1049 OK`.
+  - submitted job `1246`, submission `de322861874347a29f09d747863f573f`.
+  - result: `Success`, score `88.00`.
+- Authority.Enabled structured boolean return repair:
+  - found a concrete false FAIL for `getAuthority` / `isUserEnabled` object-shaped returns such as `{Enabled: true}`, `{isEnabled: true}`, and inverse `{Disabled: false}`.
+  - extended boolean return normalization to treat Enabled/isEnabled as direct booleans and Disabled/isDisabled as inverse booleans.
+  - added accepted structured-return checks and stale structured-return rejection checks.
+  - synthetic suite increased to `1396 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1082 / 0`.
+- Locking boolean getter structured column return repair:
+  - found a concrete false FAIL for `getWriteLockEnabled` returning `{WriteLockEnabled: true}`.
+  - extended boolean return normalization for single-field Locking boolean column objects while leaving multi-boolean full range dictionaries ambiguous.
+  - added positive and stale negative checks.
+  - synthetic suite increased to `1398 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1084 / 0`.
+- Authority.Enabled descriptive field alias expansion:
+  - extended structured boolean parsing for SDK-like `AuthorityEnabled`, `UserEnabled`, `isUserEnabled`, and `enabledFlag` direct fields plus inverse disabled fields.
+  - added descriptive-field Authority getter probes.
+  - synthetic suite increased to `1402 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1088 / 0`.
+- C_PIN/Authority counter getter return alias repair:
+  - found concrete false FAILs for SDK-style getter return field names `{pinLimit}`, `{pinTries}`, `{authorityLimit}`, and `{authorityUses}`.
+  - extended named return-cell flattening for C_PIN TryLimit/Tries and Authority Limit/Uses aliases, while leaving generic `value` ambiguous.
+  - synthetic suite increased to `1406 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1092 / 0`.
+- MBRControl getter return alias repair:
+  - found concrete false FAILs for `getMBRControl` SDK-style return fields `{MBREnable}` and `{MBRDone}`.
+  - mapped MBREnable/MBREnabled to MBRControl.Enabled and MBRDone to MBRControl.Done in named return-cell flattening.
+  - synthetic suite increased to `1409 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1095 / 0`.
+- LockOnReset getter wrapper alias repair:
+  - found concrete false FAILs for `getLockingRangeLockOnReset` and `isLockOnResetEnabled`.
+  - added bounded aliases to the Locking.LockOnReset getter path and validated the boolean form against non-empty reset type state.
+  - synthetic suite increased to `1413 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1099 / 0`.
+- ReEncrypt/status and media-key getter alias repair:
+  - found concrete false FAILs for `getRangeKey` / `getMediaEncryptionKey` and `getReEncryptState` / `reEncryptStatus` / `getReEncryptionStatus`.
+  - routed those names through the existing official Locking `ActiveKey` and `ReEncryptState` readers without widening ambiguous return-field parsing.
+  - synthetic suite increased to `1423 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1109 / 0`.
+- Media-key object-symbol return canonicalization:
+  - found a concrete false FAIL where an ActiveKey getter returned the canonical key object symbol instead of raw UID bytes.
+  - canonicalized `K_AES_*_RangeN_Key` names to their UID refs for return comparison, while preserving stale-key rejection.
+  - synthetic suite increased to `1427 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1113 / 0`.
+- ReEncrypt status getter generic state/status return repair:
+  - found concrete false FAILs for SDK-style `{state: 2}` and `{status: "PENDING"}` ReEncrypt status returns.
+  - added a narrow fallback for ReEncrypt status getter events only, preserving stale `IDLE` rejection after `START_req`.
+  - synthetic suite increased to `1436 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1122 / 0`.
+- `isReEncrypting` boolean wrapper repair:
+  - mapped `isReEncrypting` to the tracked ReEncryptState and added structured boolean return aliases.
+  - PENDING / ACTIVE / PAUSED are true, IDLE is false, and stale false after START_req is rejected.
+  - synthetic suite increased to `1439 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1125 / 0`.
+- Locking status/mode getter alias repair:
+  - found concrete false FAILs for `getAdvKeyMode`, `getAdvancedKeyMode`, `getVerifyMode`, `getGeneralStatus`, and `getLockingRangeStatus`.
+  - lowered them to bounded Locking column Gets for columns 14, 15, and 19.
+  - synthetic suite increased to `1449 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1135 / 0`.
+- Locking NextKey getter alias repair:
+  - found concrete false FAILs for `getNextKey`, `getPendingKey`, `getReEncryptKey`, `getNewKey`, and `getRangeNextKey`.
+  - lowered them to bounded Locking column 11 Gets with existing media-key uidref comparison.
+  - synthetic suite increased to `1460 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1146 / 0`.
+- DataRemovalMechanism getter return alias repair:
+  - found a concrete false FAIL for `{mechanism: 2}` return shape after `setDataRemovalMechanism`.
+  - mapped `mechanism` / `dataRemovalMechanism` to DataRemovalMechanism column 1 while leaving generic `status` untouched.
+  - synthetic suite increased to `1462 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1148 / 0`.
+- Locking `getRangeLocks` composite getter alias repair:
+  - found a concrete false FAIL for `getRangeLocks` returning the ReadLocked/WriteLocked pair.
+  - lowered it to a bounded column 7-8 Get and require both returned cells to match tracked state.
+  - synthetic suite increased to `1464 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1150 / 0`.
+- GetACL required-envelope argument repair:
+  - found a concrete false FAIL for `getACL` inputs whose InvokingID/MethodID were nested under `required`.
+  - taught the AccessControl wrapper parser to consume `required` / `requiredArgs` envelopes, preserving exact ACL comparison.
+  - synthetic suite increased to `1466 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1152 / 0`.
+- C_PIN `getPINTries` getter alias repair:
+  - found a concrete false FAIL for `getPINTries`.
+  - mapped it to C_PIN.Tries column 6 while leaving ambiguous remaining-attempts semantics unsupported.
+  - synthetic suite increased to `1468 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1154 / 0`.
+- Authority `getUserLimit` / `getUserUses` getter alias repair:
+  - found concrete false FAILs for `getUserLimit` and `getUserUses`.
+  - mapped them to Authority.Limit and Authority.Uses with stale-value rejection.
+  - synthetic suite increased to `1471 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1157 / 0`.
+- Port locked getter/return alias repair:
+  - found concrete false FAILs for `getPort` returning `{locked: true}` and `isPortLocked` returning `{isLocked: true}` after `PortLocked` was set.
+  - mapped Port lock return aliases to Port.PortLocked and lowered `getPortLocked` / `isPortLocked` / `getPortState` to bounded Port column 3 Gets.
+  - stale PortLocked values remain rejected.
+  - synthetic suite increased to `1474 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1160 / 0`.
+- Boolean getter raw-false success repair:
+  - replayed the historical probe queue and confirmed `isReEncrypting(...)->false` while idle was still an active false FAIL.
+  - known Boolean getters now parse raw `false` as a successful Boolean result instead of a failed wrapper call.
+  - added a Port-specific raw Boolean expectation for `isPortLocked` / `getPortLocked` / `getPortState`, preserving stale-value rejection.
+  - synthetic suite increased to `1477 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1163 / 0`.
+- Random wrapper raw-args / bytes-repr length repair:
+  - replayed the historical queue and fixed `randomBytes(length=16)` returning a Python bytes repr string.
+  - parser-internal `_raw_args` no longer counts as an unsupported Random argument.
+  - Random byte-count validation now measures Python bytes repr strings as byte payloads and still rejects wrong lengths.
+  - synthetic suite increased to `1479 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1165 / 0`.
+- Direct optional CellBlock column parsing repair:
+  - replayed the historical queue and fixed wrapper Set -> direct optional-CellBlock Get state comparison for MBRControl.
+  - direct method parsing now reads CellBlock selectors from optional args as well as required/raw args.
+  - added cross-representation MBRControl tests with accepted current cells and rejected stale cells.
+  - synthetic suite increased to `1481 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1167 / 0`.
+- NextKey UID bytes-repr return repair:
+  - fixed `getNextKey` returning a named key UID field with Python bytes repr payload.
+  - NextKey wrapper getters compare UID-reference semantics when the tracked NextKey has a canonical key UID.
+  - 8-byte Python bytes repr strings now canonicalize to UID refs, with stale Range2 UID rejection preserved.
+  - synthetic suite increased to `1483 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1169 / 0`.
+- C_PIN MinPINLength getter/state repair:
+  - found false FAILs for `getMinPINLength` / `getMinimumPINLength` / `getPINMinLength` despite existing `_MinPINLength` Set tracking.
+  - added bounded getter aliases and C_PIN Get expectations for tracked minimum PIN length state.
+  - kept aliases narrow: explicit `minimumPINLength` / `pinMinLength`, no generic `length` / `value` widening.
+  - synthetic suite increased to `1485 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1171 / 0`.
+- GetACL full UID / bytes-repr ACE ref repair:
+  - fixed GetACL exact ACL returns when ACE uidrefs are represented as full 8-byte UID hex values or Python bytes repr strings.
+  - ACE canonicalization is restricted to UID refs with `00000000` high prefix so K_AES object UIDs are not misclassified.
+  - added accepted full-UID/bytes-repr ACL cases and incomplete full-UID ACL rejection.
+  - synthetic suite increased to `1488 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1174 / 0`.
+- AddACE full UID / bytes-repr ACE argument repair:
+  - found false FAILs where successful `AddACE` with full UID or Python bytes-repr ACE arguments was not reflected in later `GetACL`.
+  - shared ACE canonicalization now maps ACE-namespace full UIDs and bytes reprs into `ACE_...` before AddACE/RemoveACE/SetACL state mutation and validation.
+  - kept object UID collision guard by requiring `00000000` high prefix and an issued ACE suffix.
+  - synthetic suite increased to `1491 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1177 / 0`.
+- SetACL wrapper replacement-state repair:
+  - found false FAILs where SDK-style `setACL` did not lower to official `SetACL`, and old ACLs remained accepted after a successful replacement.
+  - added parser support for required-envelope, direct object/method, and positional `setACL` forms.
+  - added AccessControl ACL replacement state; later `GetACL` now compares against the replacement, and later AddACE/RemoveACE mutate the replacement list.
+  - added empty-list SetACL replacement handling and stale default-ACE rejection after empty replacement.
+  - synthetic suite increased to `1496 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1182 / 0`.
+- Boolean getter `value` return-field repair:
+  - found false FAILs for Locking boolean getters returning `{"value": ...}` despite the tracked cell state being known.
+  - added `value` / `Value` to shared boolean return parsing, scoped by existing boolean expectations.
+  - synthetic suite increased to `1504 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1190 / 0`.
+- Locked getter `locked` / `isLocked` return-field repair:
+  - found false FAILs for locked-state getters returning `{"locked": ...}` / `{"isLocked": ...}`.
+  - added locked-field aliases to shared boolean return parsing, scoped by existing boolean expectations.
+  - synthetic suite increased to `1512 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1198 / 0`.
+- Single-cell numeric getter scalar/value repair:
+  - found false FAILs for RangeStart/RangeLength getters returning raw scalar or single-field `value` / `result` / `return` payloads.
+  - added a narrow one-expected-cell fallback in engine comparison.
+  - synthetic suite increased to `1516 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1202 / 0`.
+- LastReEncStat getter alias repair:
+  - found false FAILs for SDK-style LastReEncStat getter names after Locking row state mutation.
+  - lowered `getLastReEncryptStatus` / `getLastReEncryptionStatus` / `getLastReEncStat` / `getLastReEncryptStat` to bounded Locking column 18 Gets.
+  - synthetic suite increased to `1524 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1210 / 0`.
+- LastReEncryptLBA getter alias repair:
+  - found false FAILs for official Locking column 17 through common SDK getter names.
+  - lowered `getLastReEncryptLBA` / `getLastReEncryptionLBA` / `getLastReEncLBA` / `getReEncryptLBA` / `getReEncryptionLBA` to bounded Locking column 17 Gets.
+  - synthetic suite increased to `1534 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1220 / 0`.
+- ContOnReset getter/state comparison repair:
+  - found false FAILs for common SDK getters over official Locking column 16.
+  - lowered six ContOnReset getter names and added single-column state comparison while preserving multi-column omission behavior used by reset-stop tests.
+  - synthetic suite increased to `1546 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1232 / 0`.
+- ActiveKey getter alias / UID-return repair:
+  - found false FAILs for seven additional ActiveKey/MEK getter aliases and then fixed the expectation-side UID-return recognizer for those aliases.
+  - new aliases share the existing bounded Locking column 10 path, including object-symbol and UID bytes comparison.
+  - synthetic suite increased to `1574 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1260 / 0`.
+- NextKey getter alias / UID-return repair:
+  - found false FAILs for ten additional pending/new/re-encryption key getter aliases.
+  - new aliases share bounded Locking column 11 behavior and the expectation-side UID bytes-repr comparison.
+  - synthetic suite increased to `1614 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1300 / 0`.
+- Locking boolean getter alias repair:
+  - found false FAILs for range-prefixed/property-style boolean getter names over Locking columns 5-8.
+  - lowered the aliases and extended Boolean expectation matching, preserving stale-value rejection.
+  - synthetic suite increased to `1666 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1352 / 0`.
+- Locking boolean setter alias repair:
+  - found ignored setter aliases where both current and stale later getRange observations passed.
+  - lowered range-prefixed enable/disable/lock/unlock/state setter names to bounded Locking columns 5-8.
+  - synthetic suite increased to `1710 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1396 / 0`.
+- Range numeric getter/setter alias repair:
+  - found ignored RangeStart/RangeLength setter aliases and missing LBA/Size/Len getter aliases.
+  - lowered LBA aliases to RangeStart and Size/Len aliases to RangeLength; RangeEnd stayed unsupported because it is ambiguous.
+  - synthetic suite increased to `1730 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1416 / 0`.
+- MBRControl getter / done-flag alias repair:
+  - found missing single-field MBRControl getters and `setMBRDoneFlag`.
+  - lowered Enabled/Done getters to bounded MBRControl CellBlock reads and `setMBRDoneFlag` to MBRControl.Done.
+  - synthetic suite increased to `1740 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1426 / 0`.
+- Port lock getter/setter alias repair:
+  - found missing Port lock getter aliases and ignored PortLocked setter aliases.
+  - lowered `getPortLock` / `isPortLock` / `portLocked` to bounded Port.PortLocked reads, and `lockPort` / `unlockPort` / `setPortLocked` / `setPortState` / `setPortLock` to bounded Port.PortLocked mutations.
+  - synthetic suite increased to `1756 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1442 / 0`.
+- Authority.Enabled getter/setter alias repair:
+  - found missing Authority/User Enabled getter aliases and ignored setter aliases for Authority.Enabled.
+  - lowered `userEnabled` / `getAuthorityEnabled` / `isAuthorityEnabled` / `authorityEnabled` / `getUserState` to bounded Authority.Enabled reads, and `setAuthorityEnabled` / `setAuthorityState` / `setUserEnable` / `setUserState` to bounded Authority.Enabled mutations.
+  - fixed `enableAuthority` default-true behavior without breaking values-envelope `enable=False`.
+  - synthetic suite increased to `1776 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1462 / 0`.
+- C_PIN TryLimit/Tries alias repair:
+  - found ignored TryLimit setter aliases and missing TryLimit/Tries getter aliases.
+  - lowered `setPINTryLimit` / `setPINRetryLimit` / `setUserTryLimit` / `setCredentialTryLimit` to C_PIN.TryLimit, and `setUserRetries` / `setCredentialTries` / `getUserRetries` / `getCredentialTries` to C_PIN.Tries.
+  - added corresponding `getPINTryLimit` / `getPINRetryLimit` / `getUserTryLimit` / `getCredentialTryLimit` reads.
+  - synthetic suite increased to `1800 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1486 / 0`.
+- MBR byte positional payload / read alias repair:
+  - found stale over-acceptance for `writeMBR("AABB", offset=...)` because the first positional argument was not treated as byte payload.
+  - added scoped positional-payload handling when an offset/window is named, plus `putMBR` / `putMBRBytes` write aliases and `getMBRData` read alias.
+  - synthetic suite increased to `1808 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1494 / 0`.
+- DataStore read alias repair:
+  - found missing DataStore byte read aliases `fetchData` / `loadData`.
+  - lowered both to the existing bounded DataStore read window path with stale-byte rejection.
+  - synthetic suite increased to `1812 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1498 / 0`.
+- Random wrapper alias repair:
+  - found missing Random aliases `generateRandom` / `getRandomBytes` / `rng` / `getRNG`.
+  - lowered all to the official Random Count path with requested-length and wrong-length checks.
+  - synthetic suite increased to `1820 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1506 / 0`.
+- TPerSign wrapper alias repair:
+  - found missing payload-bearing TPerSign aliases `sign` / `signBytes` / `signPayload` / `createSignature` / `generateSignature`.
+  - lowered them to the same bounded TPerSign path as `signData`, including missing-payload and overlong-payload rejection.
+  - synthetic suite increased to `1835 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1521 / 0`.
+- FirmwareAttestation wrapper alias repair:
+  - found missing nonce-bearing FirmwareAttestation aliases `getFirmwareAttestation` / `firmwareQuote` / `getFirmwareQuote` / `quoteFirmware` / `attestation`.
+  - lowered them to the same bounded TperAttestation path as `firmwareAttestation`, with missing-nonce rejection.
+  - synthetic suite increased to `1845 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1531 / 0`.
+- TLS PSK metadata state / alias repair:
+  - found stale over-acceptance after successful PSK wrapper mutations because TLS_PSK_Key metadata was not persisted into solver state.
+  - added tracked PSK metadata cells and made authorized PSK wrapper/raw Gets compare known returned cells against that state.
+  - added setter aliases `setPSK` / `configurePSK` / `putPSK` / `storePSK` / `enablePSK` and getter aliases `getPSK` / `readPSK` / `pskEntry` / `getPreSharedKey`.
+  - synthetic suite increased to `1865 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1551 / 0`.
+- Log wrapper alias repair:
+  - found missing SDK-style Log.AddLog aliases `appendLog` / `writeLog` / `putLogEntry` / `addLogEntry` and Log.ClearLog aliases `eraseLog` / `resetLog` / `clearLogEntries`.
+  - lowered them to existing documented AddLog/ClearLog paths while preserving missing Data rejection for AddLog.
+  - synthetic suite increased to `1876 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1562 / 0`.
+- Crypto stream alias repair:
+  - found missing stream-shaped Hash/HMAC aliases `initHash` / `hashStart` / `updateHash` / `finalHash` / `hashFinish` / `completeHash` / `initHMAC` / `hmacStart` / `beginHMAC` / `macInit` / `startMAC`.
+  - lowered them to existing HashInit/Hash/HashFinalize/HMACInit paths while preserving the HashInit-before-Hash precondition.
+  - synthetic suite increased to `1888 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1574 / 0`.
+- CreateTable wrapper alias repair:
+  - found missing table creation aliases `makeTable` / `allocateTable` / `newObjectTable`.
+  - lowered them to ThisSP.CreateTable, with `newObjectTable` inferring Object kind while preserving required `MinSize` validation.
+  - synthetic suite increased to `1892 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1578 / 0`.
+- StartSession SP-specific alias repair:
+  - found missing SP-specific session aliases `startAdminSP` / `openAdminSP` / `startLockingSP` / `openLockingSP`.
+  - lowered them to StartSession with inferred AdminSP or LockingSP, preserving authenticated persistent write-session side effects.
+  - synthetic suite increased to `1900 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1586 / 0`.
+- CreateLog wrapper alias repair:
+  - found missing LogList.CreateLog aliases `newLog` / `createLogTable` / `newLogTable` / `allocateLog`.
+  - lowered them to existing CreateLog parsing while preserving required `MinSize` validation and result shape.
+  - synthetic suite increased to `1908 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1594 / 0`.
+- Table row/free-space wrapper alias repair:
+  - found missing table utility aliases for GetFreeSpace, CreateRow, and DeleteRow wrappers.
+  - lowered `queryFreeSpace` / `getAvailableSpace` / `availableSpace`, `insertRow` / `addRow` / `appendRow` / `createTableRow` / `newTableRow`, and `deleteTableRow` / `removeTableRow` / `dropRow` while preserving required row parameters.
+  - synthetic suite increased to `1927 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1613 / 0`.
+- Package wrapper alias repair:
+  - found missing credential package aliases `backupPackage` / `readPackage` / `restorePackage` / `loadPackage` / `writePackage`.
+  - lowered them to existing GetPackage/SetPackage parsing while preserving Purpose and Value requirements.
+  - synthetic suite increased to `1937 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1623 / 0`.
+- XOR wrapper alias repair:
+  - found missing XOR aliases `xorBytes` / `xorDataBytes` / `oneTimePadXor` / `otpXor`.
+  - lowered them to existing ThisSP.XOR parsing while preserving direct byte-result comparison.
+  - synthetic suite increased to `1945 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1631 / 0`.
+- DataRemoval setter alias repair:
+  - found stale over-acceptance for `eraseData` / `dataErase` / `startDataErase` / `setDataRemoval` because these aliases were ignored before later DataRemovalMechanism reads.
+  - lowered them to existing ActiveDataRemovalMechanism Set parsing with stale-value rejection.
+  - synthetic suite increased to `1953 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1639 / 0`.
+- MBR byte-table write alias repair:
+  - found stale over-acceptance for `writeMbrTable` / `updateMBR` / `saveMBR` / `programMBR` because these aliases were ignored before later MBR reads.
+  - lowered them to existing MBR byte-table Set parsing with offset/bytes state tracking.
+  - synthetic suite increased to `1961 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1647 / 0`.
+- Lifecycle activate alias repair:
+  - found missing LockingSP activation aliases `activateLocking` / `enableLockingSP`.
+  - lowered both to the existing AdminSP Activate(LockingSP) lifecycle transition used by `activateLockingSP`.
+  - preserved the downstream LockingSP session-open evidence and left the riskier already-open-AdminSP-session interaction untouched.
+  - synthetic suite increased to `1963 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1649 / 0`.
+- Certificate byte-table wrapper alias repair:
+  - found missing read-only certificate wrapper aliases for TPer attestation and TPer signing certificate byte tables.
+  - lowered attestation aliases to `_CertData_TPerAttestation` and signing aliases to `_CertData_TPerSign`, preserving AdminSP/Anybody read semantics.
+  - synthetic suite increased to `1976 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1662 / 0`.
+- Hash stream wrapper alias repair:
+  - found missing digest/hash SDK aliases for HashInit, Hash, and HashFinalize.
+  - lowered them to official H_SHA_* stream methods while preserving the HashInit-before-Hash precondition.
+  - synthetic suite increased to `1999 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1685 / 0`.
+- HMAC stream wrapper alias repair:
+  - found missing HMAC/MAC SDK aliases for HMACInit, HMAC, and HMACFinalize.
+  - lowered them to official H_SHA_* HMAC stream methods while preserving the HMACInit-before-HMAC precondition.
+  - synthetic suite increased to `2024 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1710 / 0`.
+- Encrypt/Decrypt stream wrapper alias repair:
+  - found missing C_AES Encrypt/Decrypt stream aliases for init, update, and finalize phases.
+  - lowered them to official C_AES stream methods while preserving init-before-update preconditions.
+  - synthetic suite increased to `2060 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1746 / 0`.
+- Verify wrapper alias repair:
+  - found missing Verify aliases `verify` / `checkSignature` / `validateSignature` / `verifyProof` / `checkProof`.
+  - lowered them to official Verify while preserving the Boolean result-shape requirement.
+  - synthetic suite increased to `2070 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1756 / 0`.
+- Trusted/TLS session wrapper alias repair:
+  - found missing StartTrustedSession/StartTlsSession wrapper aliases.
+  - lowered them to official session-control methods while preserving HostSessionID/SPSessionID validation.
+  - synthetic suite increased to `2082 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1768 / 0`.
+- MEK/ActiveKey wrapper alias expectation repair:
+  - found parser/expectation alias-universe mismatch for additional getMEK-style wrappers.
+  - aligned returned key UID interpretation with parser aliases so correct ActiveKey UID passes and stale Range2 UID remains rejected.
+  - synthetic suite increased to `2106 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1792 / 0`.
+- GenKey media-key alias state/auth repair:
+  - found stale over-acceptance for additional GenKey aliases and a wrapper-scoped auth gap for wrong explicit authAs.
+  - added aliases to parser, mutating-wrapper tracking, and GenKey expectation wrapper-scope handling.
+  - synthetic suite increased to `2118 / 0`; sourced suite remained `3994 / 0`; unit suite remained `1049 OK`; score probes increased to `1804 / 0`.
+- 2026-06-02 score-focused payload tightening continuation:
+  - found a GetPackage list-payload over-acceptance where `getPackage`/export-package wrappers collapsed `output.return: [true]` through the legacy status-list parser and accepted it as package material.
+  - preserved GetPackage/export/read/backup wrapper return lists as actual package payloads, added score/synthetic/sourced regression coverage, and verified score probes, synthetic `2606 / 0`, sourced `3997 / 0`, unit `1060 OK`, and public eval `100.00`.
+  - found a raw EndSession result-shape over-acceptance where successful raw `EndSession` accepted `[true]`/`[1]` result payloads.
+  - required empty raw EndSession/CloseSession success results while preserving high-level wrapper Boolean success conventions, added score/synthetic regression coverage, and verified score probes, synthetic `2607 / 0`, sourced `3997 / 0`, unit `1060 OK`.
+  - found a C_EC CreateRow result-shape over-acceptance where `return_values: [1]` was interpreted as an ACE shorthand UID-list instead of a created C_EC row UID.
+  - forbade ACE-prefixed shorthand refs for C_EC CreateRow success results while preserving normal one-UID results and structured `row_uids` wrappers; added score/synthetic regression coverage and verified score probes `2370 / 0`, synthetic `2608 / 0`, sourced `3997 / 0`, unit `1060 OK`.
+  - found a raw Hash result-shape over-acceptance where `H_SHA_256.Hash` without `BufferOut` accepted an empty `{}` result instead of digest bytes.
+  - added a scoped minimum byte-result length for Hash/HMAC stream update methods without BufferOut; added score/synthetic regression coverage and verified score probes `2371 / 0`, synthetic `2609 / 0`, sourced `3997 / 0`, unit `1060 OK`.
+  - found observed-state empty-payload false PASSes in MBRControl and Locking `getRange`; scoped both repairs to states that had already been observed or mutated, preserving initial availability shorthand while rejecting empty success payloads after state is known.
+  - found empty byte-payload false PASSes in wrapper GetPackage and certificate reads; scoped repairs to wrapper aliases so raw method availability traces remain compatible while wrapper success must expose non-empty package/certificate bytes.
+  - latest local verification after these repairs: score probes `2378 / 0`, synthetic `2616 / 0`, sourced `3997 / 0`, unit `1060 OK`, public eval `100.00`.
+- 2026-06-02 09:08 KST - Continued local no-submit loop:
+  - Repaired host I/O locked/denied status-token parsing for LockOnReset-driven locked ranges.
+  - Added regression coverage up to score probes `2474 / 0`, synthetic `2633 / 0`, sourced `3997 / 0`, unit `1060 OK`, public eval `100.00`.
+  - Replayed historical score queue; remaining 14 mismatches are stale/conflicting with current probes, so no risky patch was made from them.
+  - Fresh mutation scans: AccessControl/GetACL `43 / 0 hits`, C_PIN/auth `66 / 0 hits`, DataStore wrong-payload `79 / 0 hits`.
+- 2026-06-02 09:12 KST - Continued score-focused repair:
+  - Found and fixed MBRControl wrapper empty-get over-acceptance after failed `enableMBR`.
+  - Latest verification: score probes `2475 / 0`, synthetic `2634 / 0`, sourced `3997 / 0`, unit `1060 OK`, public eval `100.00`.
+- 2026-06-02 09:17 KST - Continued score-focused repair:
+  - Found and fixed TLS_PSK_Key `getPskEntry` empty/status-only wrapper payload over-acceptance while preserving `return: None` compatibility.
+  - Latest verification: score probes `2477 / 0`, synthetic `2636 / 0`, sourced `3997 / 0`, unit `1060 OK`, public eval `100.00`.
+- 2026-06-02 09:27 KST - Continued score-focused repair:
+  - Found and fixed Boolean getter status-token over-acceptance: stateful getters for Authority, Locking, and Port no longer treat a bare `SUCCESS` return payload as the actual Boolean value.
+  - Added permanent regression coverage for status-only Authority.Enabled, WriteLockEnabled, `getPort`, and PortLocked getter payloads.
+  - Latest verification: mutation sweep `560 / 0 hits`, score probes `2481 / 0`, synthetic `2640 / 0`, sourced `3997 / 0`, unit `1060 OK`, public eval `100.00`.
+- 2026-06-02 09:33 KST - Continued score-focused repair:
+  - Found and fixed C_AES `Encrypt`/`Decrypt` update empty-result over-acceptance when no `BufferOut` is supplied.
+  - Added score/synthetic/unit regression coverage while leaving finalize methods unchanged.
+  - Latest verification: score probes `2499 / 0`, synthetic `2658 / 0`, sourced `3997 / 0`, unit `1061 OK`, public eval `100.00`.
+- 2026-06-02 09:40 KST - Continued sourced-doc repair:
+  - Found and fixed typed Get column omission/status-token over-acceptance for readable official table columns while preserving protected PIN omission compatibility.
+  - Added synthetic/unit regressions for TPerInfo, C_PIN_MSID, and LockingInfo typed CellBlock results.
+  - Latest verification: score probes `2499 / 0`, synthetic `2661 / 0`, sourced `3997 / 0`, unit `1062 OK`, public eval `100.00`.
+- 2026-06-02 09:49 KST - Continued sourced-doc repair:
+  - Found and fixed explicit Table descriptor CellBlock over-acceptance for byte-table metadata: `Kind`, minimum `Rows`, and mandatory/recommended granularity constraints.
+  - Scoped the repair away from abstract no-column row Get logs and kept `Column` / `NumColumns` optional to avoid overfitting compact valid responses.
+  - Latest verification: score probes `2499 / 0`, synthetic `2661 / 0`, sourced `3997 / 0`, unit `1062 OK`.
+- 2026-06-02 10:14 KST - Server sync and submit:
+  - Locally completed TCGstorageAPI wrapper repairs for `takeOwnership`, `writeData` empty-return rejection, and structured Boolean success envelopes.
+  - Local/server verification before submit: score probes `2506 / 0`, synthetic `2665 / 0`, sourced `3997 / 0`, unit `1066 OK`, public eval `100.00`.
+  - Uploaded current project to `/workspace/seungmin/sm`, mirrored clean submit tree to `/workspace/project`, and ran server public eval `100.00`.
+  - Submitted `submit --dir /workspace/project --job-name sm-tcgstorageapi-bool-wrapper-20260602`.
+  - Submission id `1a5d91ef312d4a33b900980874847957`, job_id `1285`, status `Success`, score `88.00`.
+- 2026-06-04 KST - Resumed no-submit improvement loop:
+  - Stopped submission polling after user requested no more submissions.
+  - Found and repaired bounded DataStore/DS `Bytes`/`Payload` wrapper alias misses: write aliases now mutate the shared DataStore sparse byte table, and read aliases now compare exact offset/length windows.
+  - Follow-up generated alias sweep over `DataStorePayload` / `DSPayload` / `DataStoreBytes` / `DSBytes` combinations found and repaired the remaining bounded misses, including `setDataStorePayload`, `putDSBytes`, `storeDSPayload`, `updateDSBytes`, `programDataStorePayload`, `programDSBytes`, and `fetchDSBytes`.
+  - Verification after repair: score probes `4546 / 0`, synthetic `4540 / 0`, sourced `3997 / 0`, unit `1146 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued no-submit improvement loop:
+  - Generated a kwargs-shaped MBR byte-table alias sweep over write verbs `write/set/put/store/save/update/program` and read verbs `read/get/fetch/load` crossed with `MBRPayload`, `MBRBytes`, `MBRData`, `MBRTable`, `MBRTableBytes`, `MBRShadow`, `MBRShadowBytes`, `MBRShadowPayload`, and bounded block/chunk/segment/range/slice/window names.
+  - Found 63 real solver misses: several successful write wrappers accepted stale later `readMBR` bytes, while several read wrappers rejected both current and stale byte windows because they were not lowered to the official MBR byte-table `Get`.
+  - Repaired the parser alias sets by mapping the missing bounded MBR write aliases to the existing MBR byte-table `Set` path and the missing bounded read aliases to the existing MBR byte-table `Get` path. No new byte-state model was introduced.
+  - Added score, synthetic, and unit regressions covering the expanded MBR alias family.
+  - Verification after repair: generated MBR alias sweep `0 misses`, score probes `4687 / 0`, synthetic `4681 / 0`, sourced `3997 / 0`, unit `1148 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued package result-shape tightening:
+  - Generated a GetPackage alias/result-shape sweep and found recognized aliases such as `getKeyPackage`, `getCredentialPackage`, `getPINPackage`, `exportPINPackage`, `backupPINPackage`, `dumpPackage`, and `dumpCredentialPackage` accepted `{}` as a successful package payload.
+  - Failure found: parser lowering knew the broader GetPackage alias universe, but `_expected_get_package` only applied the non-empty wrapper payload rule to a narrower subset. Function return-list preservation also lagged behind parser lowering for some aliases.
+  - Repair: synchronized GetPackage wrapper alias lists across parser return preservation and expectation result-shape tightening. Successful wrapper GetPackage aliases now require non-empty package material instead of accepting an empty object.
+  - Added score, synthetic, and unit regressions for empty object package payload rejection across the alias family.
+  - Verification after repair: package shape sweep `0 recognized shape holes`, score probes `4713 / 0`, synthetic `4707 / 0`, sourced `3997 / 0`, unit `1148 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued counter update/put alias repair:
+  - Generated C_PIN/Authority counter setter/getter sweeps for TryLimit, Tries, and Uses.
+  - Found successful `updateTryLimit`, `putTryLimit`, `updateTries`, `putTries`, `updateUses`, and `putUses` calls accepted stale later getter values, indicating the wrappers were treated as generic success instead of official counter `Set` mutations.
+  - Repair: mapped update/put counter aliases to the existing C_PIN TryLimit/Tries and Authority Uses `Set` paths. Excluded `resetTries` because its semantics are distinct and the generated oracle was ambiguous.
+  - Added score, synthetic, and unit regressions requiring update/put counter setters to accept current values and reject stale values.
+  - Verification after repair: counter alias sweep `0 misses`, score probes `4729 / 0`, synthetic `4723 / 0`, sourced `3997 / 0`, unit `1149 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued DataRemovalMechanism alias repair:
+  - Generated DataRemovalMechanism setter/getter sweeps over `set/select/choose/configure/update/put` setters and `get/read/fetch` getters.
+  - Found `updateDataRemovalMechanism` and `putDataRemovalMechanism` accepted stale later mechanism getters, and `fetchDataRemovalMechanism` did not lower to the bounded DataRemovalMechanism `Get`.
+  - Repair: mapped update/put DataRemovalMechanism aliases to the existing AdminSP DataRemovalMechanism `Set` path and mapped `fetchDataRemovalMechanism` to the existing bounded `Get` path.
+  - Added score, synthetic, and unit regressions requiring current ActiveDataRemovalMechanism values to pass, stale values to fail, and Boolean-only getter results to remain rejected.
+  - Verification after repair: DataRemoval alias sweep `0 misses`, score probes `4736 / 0`, synthetic `4730 / 0`, sourced `3997 / 0`, unit `1149 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued PortLocked update/put alias repair:
+  - Generated PortLocked setter/getter sweeps over `set/lock/unlock/update/put`-style wrappers and bounded Port row getters.
+  - Found successful `updatePortLocked`, `putPortLocked`, `updatePortLock`, `putPortLock`, and `updatePortState` calls accepted stale later `PortLocked` getter values, meaning those wrappers were treated as generic success rather than official Port table mutations.
+  - Repair: mapped the unambiguous update/put Port lock aliases to the existing AdminSP Port row `PortLocked` `Set` path. Ambiguous read-style `readPortState` cases were left unchanged because the generated oracle could not distinguish whole-row Port state from scalar lock state with enough confidence.
+  - Added score, synthetic, and unit regressions requiring current `PortLocked` values to pass and stale values to fail after the repaired aliases.
+  - Verification after repair: score probes `4746 / 0`, synthetic `4740 / 0`, sourced `3997 / 0`, unit `1150 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking state alias repair:
+  - Generated a LockOnReset / ReEncrypt / Locking boolean-cell alias sweep crossing update/put/read/fetch/LOR spellings with later state getters.
+  - Found 349 targeted misses before repair: update/put LockOnReset aliases and read/fetch/LOR getter aliases failed to share the tracked `Locking.LockOnReset` column; update/put ReEncryptRequest aliases and read/fetch ReEncrypt status getters missed `ReEncryptState`; update/put Locking boolean setters for `ReadLockEnabled`, `WriteLockEnabled`, `ReadLocked`, and `WriteLocked` were accepted without mutating the tracked cells.
+  - Repair: mapped only bounded aliases onto existing official Locking table columns. ReEncrypt read/fetch status getters also now share the existing SDK generic `state` / `status` result-field fallback used by the get-style aliases.
+  - Added score, synthetic, and unit regressions for current-value PASS and stale-value FAIL trajectories across the repaired alias families.
+  - Verification after repair: generated alias sweep `0 misses`, score probes `4803 / 0`, synthetic `4772 / 0`, sourced `3997 / 0`, unit `1153 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued TLS_PSK_Key wrapper alias repair:
+  - Re-ran the PSK alias sweep with a corrected oracle requiring real TLS_PSK metadata (`Enabled`, `PSK`, and `CipherSuite`) rather than an underspecified payload.
+  - Found stale over-acceptance for bounded setter aliases such as `updatePskEntry`, `putPskEntry`, `configurePskEntry`, `setTLSPSK`, `updateTLSPSK`, `putTLSPSK`, and `setPreSharedKeyEntry`, plus valid-output false rejection for bounded query/get/read/fetch aliases such as `queryPSK`, `queryPskEntry`, `getTLSPSK`, `readTLSPSK`, and `queryPreSharedKeyEntry`.
+  - Repair: mapped only explicit PSK/TLSPSK/PreSharedKey metadata aliases to the existing `TLS_PSK_Key.Set` / `Get` paths and synchronized wrapper-scoped auth plus non-empty metadata payload checks. Ambiguous `load/export` spellings were left unchanged.
+  - Added score, synthetic, and unit regressions requiring current TLS_PSK metadata to pass, stale metadata to fail, and Boolean-only getter payloads to remain rejected.
+  - Verification after repair: generated PSK alias sweep `0 misses`, score probes `4863 / 0`, synthetic `4792 / 0`, sourced `3997 / 0`, unit `1153 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued credential update alias repair:
+  - Generated PIN/password/passcode/credential setter sweeps checking that successful wrappers update the tracked `C_PIN.PIN` credential and make the old proof fail.
+  - Found stale credential over-acceptance and valid new-credential false rejection for bounded aliases including `putPIN`, `putPINCode`, `putPassword`, `updatePassword`, `setPasscode`, `changePasscode`, `putPasscode`, `putCredential`, `putUserPassword`, and `putUserCredential`.
+  - Repair: mapped the missing bounded aliases to the existing C_PIN credential `Set` path and synchronized wrapper-scoped auth so these aliases cannot bypass the same credential checks as `changePIN`.
+  - Added score, synthetic, and unit regressions requiring new credentials to pass and stale credentials to fail after the repaired aliases.
+  - Verification after repair: generated credential alias sweep `0 misses`, score probes `4885 / 0`, synthetic `4808 / 0`, sourced `3997 / 0`, unit `1153 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued MBRControl wrapper alias repair:
+  - Generated an MBRControl setter/getter sweep over explicit SDK-style names and found 56 setter misses plus 40 getter misses, including `putMBRControl`, `storeMBRControl`, `updateMBREnabled`, `putMBRDone`, `updateMBRDoneOnReset`, `putDoneOnReset`, `queryMBREnabled`, `queryMBRDoneFlag`, `queryMBRDOR`, and `fetchMBRResetTypes`.
+  - Failure found: these aliases are bounded to the official Opal `MBRControl` row, but parser lowering covered only the narrower set/get/configure family. Successful setters could be accepted without mutating `Enabled`, `Done`, or `DoneOnReset`, and equivalent query/load/read/fetch getters could reject valid tracked cell payloads.
+  - Repair: mapped explicit control/status/state aliases to the existing `MBRControl.Set` / `Get` paths and added scalar aliases for `Enabled`, `Done`, and `DoneOnReset` to the same official cell model. Ambiguous MBR byte-table names remain on the byte-table path.
+  - Added score, synthetic, and unit regressions requiring current MBRControl cell values to pass and stale values to fail across the repaired alias families.
+  - Verification after repair: generated MBRControl alias sweep `0 misses`, score probes `4927 / 0`, synthetic `4840 / 0`, sourced `3997 / 0`, unit `1154 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued MBRControl DoneOnReset list-result repair:
+  - Generated a result-shape sweep for the newly repaired DoneOnReset getter aliases and found `queryMBRDoneOnReset`, `loadMBRDoneOnReset`, `readDoneOnReset`, `fetchDoneOnReset`, `queryMBRDOR`, and `fetchMBRResetTypes` rejected both current and stale direct list payloads such as `[1]`.
+  - Failure found: the aliases lowered to official `MBRControl.Get` column 3, but the engine only used direct scalar fallback for non-container values. The typed CellBlock check also forced table-shaped payloads before the single-cell fallback could compare the reset_types list.
+  - Repair: list-preserved the new DoneOnReset getter aliases and added a narrow engine fallback that treats a direct list payload as the value of `MBRControl.DoneOnReset` only for symbol `MBRControl` column 3.
+  - Added score, synthetic, and unit regressions requiring current reset-type lists to pass and stale lists to fail.
+  - Verification after repair: generated DoneOnReset list getter sweep `0 misses`, score probes `4939 / 0`, synthetic `4852 / 0`, sourced `3997 / 0`, unit `1155 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued LockOnReset direct-list getter repair:
+  - Generated the same result-shape sweep for Locking `LockOnReset` getters and found 19 misses: existing get/read/fetch aliases plus newly sampled `query/load` and `LOR` variants rejected both current and stale direct list payloads.
+  - Failure found: some `query/load` aliases were not lowered to `Locking_RangeN.Get` column 9, and direct reset_types list payloads were not preserved/compared as the value of the `LockOnReset` cell.
+  - Repair: added the missing bounded getter aliases, list-preserved the LockOnReset getter family, removed redundant named `LockOnReset` result enforcement in favor of official cell comparison, and extended the reset_types direct-list fallback to symbol `Locking_*` column 9 only.
+  - Added score, synthetic, and unit regressions requiring direct current reset-type lists to pass and stale lists to fail.
+  - Verification after repair: generated LockOnReset list getter sweep `0 misses`, score probes `5047 / 0`, synthetic `4960 / 0`, sourced `3997 / 0`, unit `1156 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued ReEncrypt query/fetch alias repair:
+  - Generated a ReEncrypt getter result-shape sweep and found trusted misses for bounded aliases such as `fetchReEncryptionStatus`, `queryReEncryptStatus`, `queryReEncryptState`, `queryReEncryptionStatus`, and `fetchReEncryptionState`.
+  - Failure found: these aliases were not lowered to official `Locking_RangeN.Get` column 12 or were absent from the ReEncrypt single-cell `state` fallback alias set. A successful prior `updateReEncryptRequest` could therefore be followed by false rejection of valid state observations.
+  - Repair: mapped the missing query/fetch ReEncrypt aliases to the existing `ReEncryptState` getter path and synchronized the engine fallback for generic `state` payloads. Ambiguous `{status: ...}` object cases were not broadened because `status` can collide with output status-code interpretation.
+  - Added score, synthetic, and unit regressions requiring current scalar/state payloads to pass and stale payloads to fail.
+  - Verification after repair: trusted ReEncrypt getter sweep `0 misses`, score probes `5092 / 0`, synthetic `5030 / 0`, sourced `3997 / 0`, unit `1157 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued DataRemovalMechanism query/load alias repair:
+  - Generated a DataRemovalMechanism getter sweep and found UNKNOWN lowering for `queryDataRemovalMechanism`, `loadDataRemovalMechanism`, `readActiveDataRemovalMechanism`, `fetchActiveDataRemovalMechanism`, and `queryActiveDataRemovalMechanism`.
+  - Failure found: these bounded SDK-style getters were absent from the parser alias set even though adjacent `get/read/fetchDataRemovalMechanism` wrappers already shared the official `DataRemovalMechanism.Get` column 1 model.
+  - Repair: mapped the missing query/load/active getter aliases to the existing AdminSP `DataRemovalMechanism.Get` path. Existing scalar, `mechanism`, `value`, and cell-name result comparisons then worked without adding a new state model.
+  - Added score, synthetic, and unit regressions requiring current scalar/cell payloads to pass and stale payloads to fail.
+  - Verification after repair: generated DataRemovalMechanism getter sweep `0 misses`, score probes `5140 / 0`, synthetic `5078 / 0`, sourced `3997 / 0`, unit `1158 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued GetACL ACL-list reader alias repair:
+  - Generated a bounded GetACL wrapper alias sweep and found UNKNOWN lowering for explicit ACL-list readers including `readAccessControlList`, `fetchAccessControlList`, `queryAccessControlList`, `readACEList`, `queryAceEntries`, `fetchAceEntries`, `readObjectACL`, `fetchMethodACL`, and `queryAssociationACL`.
+  - Failure found: these aliases are narrow GetACL readers but were absent from the high-level parser alias table. They failed before reaching the existing AccessControl association existence and exact ACE-list comparison logic.
+  - Repair: mapped explicit ACL/ACE/Object/Method/Association list-reader aliases to the existing `AccessControl.GetACL` wrapper path. Broader `get/read/fetch/queryAccessList` spellings were intentionally left unchanged because they are less clearly tied to AccessControl ACL semantics.
+  - Added score, synthetic, and unit regressions requiring the full expected ACE uidref list to pass and incomplete ACL lists to fail.
+  - Verification after repair: trusted ACL alias sweep `0 misses`, score probes `5186 / 0`, synthetic `5124 / 0`, sourced `3997 / 0`, unit `1159 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking MaxRanges wrapper-boundary repair:
+  - Generated an optional-range wrapper sweep and found 3 misses after `LockingInfo.MaxRanges=8`: `setRange`, `updateRange`, and `setRangeStart` accepted successful `Range9` updates even though Range9 is outside the observed supported range count.
+  - Failure found: `_expected_set` checked re-encryption and authority helpers before the MaxRanges support guard. Those helpers can materialize `state.ranges[9]` while merely evaluating the response, which made `_range_id_support_state` treat Range9 as observed/present and bypass the later out-of-range rejection.
+  - Repair: moved the Locking range support guard ahead of re-encryption and authority-dependent range state reads, so wrapper `Set` expectations reject out-of-range RangeNNNN before any expectation helper can create a synthetic range state.
+  - Added unit, score, and synthetic regressions for Range9 `setRange` / `updateRange` / `setRangeStart` after `MaxRanges=8`, plus positive Range9 controls after `MaxRanges=9`.
+  - Verification after repair: targeted wrapper sweep `0 misses`, score probes `5716 / 0`, synthetic `5654 / 0`, sourced `3997 / 0`, unit `1164 OK`, public eval `100.00`.
+- 2026-06-04 KST - Rejected LockOnReset disabled stored-cell hypothesis:
+  - Generated a reset/get sweep that initially suggested `LockOnReset=[0]` should set stored `ReadLocked`/`WriteLocked` to true even when both lock-enabled columns were false.
+  - Cross-check against sourced long cases rejected that interpretation: Core Locking state-machine sections say disabled lock features disregard the corresponding locked cell and LockOnReset during reset recovery; the stored locked cell becomes meaningful only when re-enabled before the matching reset or when set directly while disabled and then re-enabled.
+  - Action: reverted the tentative transition change and removed the tentative score/synthetic cases. No solver repair was kept.
+  - Verification after revert: targeted disabled LockOnReset unit cases OK, sourced `3997 / 0`, synthetic `5654 / 0`.
+- 2026-06-04 KST - Continued LockingInfo wrapper alias / MaxRanges boundary repair:
+  - Generated a LockingInfo wrapper sweep and found real misses for `readLockingInfo`, `fetchLockingInfo`, `queryLockingInfo`, `loadLockingInfo`, `getMaxRanges`, and `queryRangeSupport`.
+  - Failure found: these aliases parsed as `UNKNOWN`, so observed `MaxRanges=8` did not feed the optional-range support state; a later successful `setRange(Range9)` was incorrectly accepted.
+  - Repair: mapped explicit LockingInfo/range-support/MaxRanges reader aliases to the existing official `LockingInfo.Get` path and added a narrow non-empty wrapper payload requirement for these aliases.
+  - Added unit, score-probe, and synthetic regressions requiring alias-fed `MaxRanges=8` to reject later Range9 wrapper Set, while alias-fed `MaxRanges=9` remains a positive control.
+  - Verification after repair: focused unit OK, locking-wrapper-maxranges synthetic tag `14 / 0`, score probes `5724 / 0`, synthetic `5662 / 0`, sourced `3997 / 0`, unit `1167 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued scalar MaxRanges getter alias repair:
+  - Generated a second MaxRanges alias sweep and found real misses for scalar/count-style aliases including `getMaxLockingRanges`, `queryLockingRangeCount`, `getRangeLimit`, `getRangeCount`, `getNumberOfRanges`, and `getNumRanges`.
+  - Failure found: scalar getter aliases either parsed as `UNKNOWN` or rejected valid scalar/value payloads, so `MaxRanges=8` was not recorded and later Range9 wrapper success could be accepted.
+  - Repair: lowered only explicit MaxRanges/range-count/range-limit aliases to `LockingInfo.Get` column 4 and treated direct scalar / `{value: n}` payloads as that single cell. Whole-row `queryLockingInfo` still rejects scalar-only payloads.
+  - Verification after repair: focused unit OK, locking-wrapper-maxranges synthetic tag `19 / 0`, score probes `5729 / 0`, synthetic `5667 / 0`, sourced `3997 / 0`, unit `1169 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued LockingInfo geometry scalar getter repair:
+  - Generated a geometry getter sweep and found real misses for Opal LockingInfo scalar getters: `getAlignmentRequired`, `isAlignmentRequired`, `getLogicalBlockSize`, `queryAlignmentGranularity`, and `fetchLowestAlignedLBA`.
+  - Failure found: these aliases parsed as `UNKNOWN`; additionally `LowestAlignedLBA=0` was misread as a failed wrapper status rather than a valid scalar cell payload.
+  - Repair: lowered only Opal geometry getter aliases for columns 7-10 to `LockingInfo.Get` single-cell queries, allowed scalar/`value` payloads for those cells, and prevented stale repeated observations.
+  - Verification after repair: focused unit OK, score probes `5734 / 0`, synthetic `5672 / 0`, sourced `3997 / 0`, unit `1170 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking range geometry setter alias repair:
+  - Generated a Range geometry setter alias sweep and found real stale-state misses for `putRangeGeometry`, `configureRangeGeometry`, `defineRange`, `resizeRange`, `setLockingRangeGeometry`, `configureBandGeometry`, and `setLbaRange`.
+  - Failure found: these aliases parsed as `UNKNOWN`; successful wrapper calls were accepted but did not mutate tracked `RangeStart`/`RangeLength`, so stale later `getRange` payloads were accepted.
+  - Repair: mapped explicit range/band/LBA geometry setter aliases to the existing official Locking range `Set` path, sharing the same RangeStart/RangeLength state and authorization checks.
+  - Verification after repair: focused unit OK, score probes `5748 / 0`, synthetic `5686 / 0`, sourced `3997 / 0`, unit `1171 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking range lock state/locks envelope repair:
+  - Generated a Locking lock-field wrapper sweep and found real stale-state misses for SDK-style payload envelopes such as `setReadLockEnabled(state={enabled:true})`, `setWriteLocked(state={locked:true})`, and `configureRangeReadLock(locks={read:true})`.
+  - Failure found: the aliases reached the official Locking range `Set` path, but nested `state` / `locks` / `lockState` payloads were not extracted. The parser stored `None` for columns 5-8 or left `configureRangeReadLock` / `configureRangeWriteLock` as `UNKNOWN`, so current later getters failed while stale getters passed.
+  - Repair: kept the same official Locking columns (`ReadLockEnabled`, `WriteLockEnabled`, `ReadLocked`, `WriteLocked`) and added bounded envelope normalization for `state`, `locks`, `lock`, and `lockState`, including directional `read` / `write` aliases.
+  - Verification after repair: focused sweep `0 misses`, score probes `5760 / 0`, synthetic `5698 / 0`, sourced `3997 / 0`, unit `1172 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking range lock output envelope repair:
+  - Generated a matching getter output-shape sweep and found false rejections for current values represented as `locks={read:true}`, `locks={write:true}`, or `lockState={read:true}` / `lockState={write:true}`.
+  - Failure found: `expected_return_bool` compared scalar/named Boolean outputs but did not read directional wrapper envelopes for Locking range single-cell Gets, so valid current outputs failed even though stale outputs were correctly rejected.
+  - Repair: added a narrow engine fallback only for Locking range `Get` calls over a single Boolean lock column 5-8. The fallback maps the target column to the appropriate directional `read` or `write` key inside `locks`, `lock`, `state`, or `lockState`.
+  - Verification after repair: focused sweep `0 misses`, score probes `5768 / 0`, synthetic `5706 / 0`, sourced `3997 / 0`, unit `1173 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued composite getRange lock envelope comparison repair:
+  - Extended the same output sweep to composite `getRange` and found a deeper false PASS: `getRange` could accept stale `rangeInfo.locks.read=false` after `ReadLocked=true`, because the expectation builder treated the envelope as field presence rather than registering it for value comparison.
+  - Repair: taught both expectation-side payload detection and engine-side value lookup to interpret directional `locks` / `lockState` / `state` envelopes as the corresponding official Locking Boolean cells when the selector is one of the four lock columns.
+  - Verification after repair: focused composite sweep `0 misses`, score probes `5770 / 0`, synthetic `5708 / 0`, sourced `3997 / 0`, unit `1174 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued composite getRange window geometry output repair:
+  - Generated nested geometry output sweeps and found a false rejection for current `getRange -> {window:{lba:240, blocks:8}}` after `RangeStart=240` / `RangeLength=8`.
+  - Repair: added bounded output aliases `lba` for `RangeStart` and `blocks` for `RangeLength` in both expectation registration and engine comparison, so stale window values still fail.
+  - Verification after repair: focused window sweep `0 misses`, score probes `5772 / 0`, synthetic `5710 / 0`, sourced `3997 / 0`, unit `1175 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued composite getRange sector window output repair:
+  - Extended the geometry output sweep across window synonyms. `firstSector/sectorCount`, `startBlock/blockCount`, `startLba/numBlocks`, and `base/count` already separated current/stale correctly; `sector/sectors` false-rejected the current output.
+  - Repair: added bounded output aliases `sector` for `RangeStart` and `sectors` for `RangeLength` in the same selector-only comparison tables.
+  - Verification after repair: focused sector sweep `0 misses`, score probes `5774 / 0`, synthetic `5712 / 0`, sourced `3997 / 0`, unit `1175 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued GetACL result wrapper alias repair:
+  - Generated AccessControl result-shape sweeps and found false rejections for exact GetACL ACE uidref lists wrapped as `accessControlList`, `aceEntries`, or `entries`.
+  - Repair: added those wrapper keys to the UID-list extraction, length, and exact-ref comparison paths. Verified on a known exact association (`Locking_Range1` / `Get`) so incomplete wrapped lists still fail.
+  - Verification after repair: focused GetACL wrapper sweep `0 misses`, score probes `5778 / 0`, synthetic `5716 / 0`, sourced `3997 / 0`, unit `1176 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued DataStore window/range/slice envelope repair:
+  - Generated DataStore byte-table wrapper sweeps and found false PASSes where `writeDataStore(window={offset,length})`, `writeDataStore(range={start,count})`, or `writeDataStore(slice={startOffset,byteCount})` accepted stale later reads because the write offset envelope was ignored.
+  - Repair: normalized top-level `window`, `range`, and `slice` envelopes into the existing DataStore Set/Get byte-table paths. No new byte-table semantics were introduced; the existing sparse byte state now receives the right start offset and read window.
+  - Verification after repair: focused DataStore envelope sweep `0 misses`, score probes `5784 / 0`, synthetic `5722 / 0`, sourced `3997 / 0`, unit `1178 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued MBR window/range/slice envelope repair:
+  - Generated the same byte-table envelope sweep against MBR wrappers and found 768 trusted misses before repair. `window` and `slice` request envelopes were written at Row 0 instead of the requested byte offset, and `range.start/range.count` was not interpreted as a byte-table window.
+  - Repair: normalized top-level `window`, `range`, and `slice` envelopes on the actual `writeMBR` alias path, preserved top-level `authAs` when a nested envelope is used, and added nested `start` as a byte start selector for MBR byte-table wrappers.
+  - Verification after repair: focused MBR envelope sweep `0 misses`, score probes `5790 / 0`, synthetic `5728 / 0`, sourced `3997 / 0`, unit `1179 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued byte-table return representation repair:
+  - Generated byte-return representation sweeps for DataStore and MBR. Found false rejections for valid byte sequences returned as hex-string lists, `0x`-prefixed hex strings, and `0x`-prefixed string lists; MBR also misread native byte lists as status tuples before preservation.
+  - Repair: normalized unambiguous byte payload encodings in `_extract_pattern`, preserved MBR byte-list returns, fixed `0x` byte length calculation, and prevented byte-like payloads from being classified as status/boolean payloads.
+  - Verification after repair: focused representation sweep `0 misses`, score probes `5802 / 0`, synthetic `5740 / 0`, sourced `3997 / 0`, unit `1180 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued MBR extended byte-window envelope repair:
+  - Generated an expanded MBR request-envelope sweep and found false PASSes for nested `block`, `chunk`, `segment`, `span`, `bounds`, `byteRange`, and `request.window` byte windows.
+  - Repair: added those envelope names to MBR byte-table wrapper lowering only, reusing existing sparse byte-state comparison.
+  - Verification after repair: focused MBR envelope sweep `0 misses`, score probes `5816 / 0`, synthetic `5754 / 0`, sourced `3997 / 0`, unit `1180 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued GetACL per-entry ACE object result repair:
+  - Generated GetACL result-shape sweeps and found false rejections for exact ACE uidref lists represented as per-entry objects such as `{"uid": "ACE_..."}` under direct lists, `rows`, `entries`, or `acl`.
+  - Repair: canonicalized explicit ACE ref fields before generic UID interpretation so `ACE_0003D001` stays an ACE ref rather than becoming a generic hex UID.
+  - Verification after repair: focused GetACL object-list sweep `0 misses`, score probes `5820 / 0`, synthetic `5758 / 0`, sourced `3997 / 0`, unit `1180 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Authenticate top-level credential-result repair:
+  - Generated Authenticate result-wrapper sweeps and found false PASSes for wrong proof with top-level `verified=true`, `matched=true`, `valid=true`, `accepted=true`, or `authorized=true`, plus missing parsing for `credentialMatched` / `pinMatched`.
+  - Repair: for Authenticate wrappers only, inspect the output object itself for credential-result Boolean aliases when no explicit status exists, and add the missing matched aliases.
+  - Verification after repair: focused Authenticate result sweep `0 misses`, score probes `5850 / 0`, synthetic `5788 / 0`, sourced `3997 / 0`, unit `1181 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued GetACL association/request argument wrapper repair:
+  - Generated GetACL argument-shape sweeps and found false rejections for exact `Locking_Range1.Get` ACLs when the object/method pair was carried as `association`, `aclRequest`, `request`, `targetMethod`, or nested `values.association`.
+  - Repair: normalized structured association/request envelopes into the existing `InvokingID`/`MethodID` arguments for AccessControl wrapper lowering. Exact ACL comparison and association existence rules were kept unchanged.
+  - Added unit, score-probe, and synthetic regressions for 6 accepted structured wrappers plus matching incomplete-ACL failures.
+  - Verification after repair: focused GetACL argument sweep `0 misses`, score probes `5862 / 0`, synthetic `5800 / 0`, sourced `3997 / 0`, unit `1182 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued C_PIN TryLimit policy-envelope repair:
+  - Generated TryLimit lockout sweeps and found real false PASSes: `setTryLimit` with `policy`, `limits`, `security`, `credentialPolicy`, `request`, `values`, or `config` envelopes did not update tracked `C_PIN.TryLimit`, so a correct `checkPIN` could return true after a single failed attempt under TryLimit=1.
+  - Repair: recursively extracted structured numeric TryLimit aliases from policy-style envelopes and mapped them to the existing C_PIN.TryLimit column. Authorization and Authenticate/checkPIN lockout semantics stayed unchanged.
+  - Added unit, score-probe, and synthetic regressions for 7 envelope forms, each with lockout PASS and bypass FAIL variants.
+  - Verification after repair: focused TryLimit policy sweep `0 misses`, score probes `5876 / 0`, synthetic `5814 / 0`, sourced `3997 / 0`, unit `1183 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued C_PIN/Authority counter policy-envelope repair:
+  - Generated adjacent counter sweeps and found real stale-state PASSes for `setTries(limits.retryCount/security.pinAttempts)`, `setAuthLimit(policy.authLimit/limits.maxAuthentications/security.useLimit)`, and `setAuthorityUses(policy.useCount/security.credentialUses)`.
+  - Repair: expanded C_PIN Tries aliases and applied the same structured policy-envelope counter extraction to Authority Limit/Uses setter lowering.
+  - Added unit, score-probe, and synthetic regressions for representative C_PIN Tries, Authority Limit, and Authority Uses envelope forms.
+  - Verification after repair: focused counter policy sweep `0 misses`, score probes `5888 / 0`, synthetic `5826 / 0`, sourced `3997 / 0`, unit `1184 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking range policy/config envelope repair:
+  - Generated Locking range policy/config sweeps and found stale-state misses for `configureRangeGeometry(policy={lba,blocks})`, `setRange(security={locks:{read,write}})`, and `configureRangeReadLock(config={locks:{read}})`.
+  - Repair: extended bounded range setter envelopes (`policy`, `config`, `security`, `geometry`, `window`, etc.), added `lba` / `blocks` geometry aliases, and mapped nested directional lock dictionaries only through unambiguous official lock columns.
+  - Added targeted unit coverage using clear single-cell getters; deliberately did not broaden ambiguous composite `getRange -> locks` interpretation.
+  - Verification after repair: targeted trusted checks `0 misses`, score probes `5888 / 0`, synthetic `5826 / 0`, sourced `3997 / 0`, unit `1185 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued LockOnReset policy/config envelope repair:
+  - Generated LockOnReset reset-state sweeps and found real false PASSes where `setLockOnReset(policy={resetTypes:[0]})`, `setLockOnReset(config={lor:[0]})`, and nested `values.policy.resetTypes` failed to lock the range after PowerCycle.
+  - Repair: recursively extracted structured reset-type-list aliases from bounded LockOnReset policy/config envelopes and mapped them to the existing official `LockOnReset` column.
+  - Added unit, score-probe, and synthetic regressions for the three failing envelope forms.
+  - Verification after repair: focused LockOnReset policy sweep `0 misses`, score probes `5894 / 0`, synthetic `5832 / 0`, sourced `3997 / 0`, unit `1185 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued DataStore access policy/permission envelope repair:
+  - Generated DataStore access-grant envelope sweeps and found real read-authorization misses for `grantDataRead(policy={user,table})`, `grantDataRead(access={identity,object})`, `grantDataRead(permission={subject,resource})`, and nested `request.access`.
+  - Repair: normalized bounded subject/resource aliases from structured access/policy/permission envelopes into the existing DataStore Get ACE personalization path.
+  - Added unit, score-probe, and synthetic regressions requiring the grant to authorize User1 reads while rejecting stale unauthorized empty reads.
+  - Verification after repair: focused sweep `0 misses`, score probes `5902 / 0`, synthetic `5840 / 0`, sourced `3997 / 0`, unit `1185 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued DataStore generic access write-mode envelope repair:
+  - Generated long DataStore write/readback sweeps and found real misses where generic `grantDataAccess` with nested `access` / `permission` / `request.access` write-mode selectors still updated the read ACE instead of the write ACE.
+  - Repair: scalarized mode extraction so structured `access`/`permission` dictionaries are not mistaken for the mode; nested `mode`, `operation`, scalar `access`, and scalar `permission` now select the existing DataStore Set ACE.
+  - Added unit, score-probe, and synthetic regressions that require User1 write to mutate bytes and reject stale Admin readback.
+  - Verification after repair: focused sweep `0 misses`, score probes `5926 / 0`, synthetic `5864 / 0`, sourced `3997 / 0`, unit `1185 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued GetACL ACL-list result wrapper key repair:
+  - Generated AccessControl/GetACL result-key sweeps and found false rejections for exact ACL lists under explicit keys like `aclEntries`, `aceList`, and `accessEntries`.
+  - Repair: added only explicit ACL/ACE/access-list wrapper keys to UID-list detection, length checks, and exact UID-ref extraction; broad `items` / `records` / `results` remain rejected.
+  - Added unit, score-probe, and synthetic regressions requiring current exact ACL wrappers to pass and incomplete wrappers to fail.
+  - Verification after repair: focused sweep `0 misses`, score probes `5936 / 0`, synthetic `5874 / 0`, sourced `3997 / 0`, unit `1185 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued MBRControl policy/config envelope repair:
+  - Generated MBRControl policy/config/state/control sweeps and found real misses where successful `setMBRControl` wrappers did not update `Enabled`, `Done`, or `DoneOnReset`, plus false rejections for dedicated `setMBRDoneOnReset` reset-list envelopes.
+  - Repair: flattened bounded MBRControl envelopes (`policy`, `config`, `state`, `control`, `status`, `request`, `reset`) and mapped structured Boolean/list aliases into existing MBRControl cells.
+  - Added unit, score-probe, and synthetic regressions requiring current MBRControl observations to pass and stale observations to fail.
+  - Verification after repair: focused sweep `0 misses`, score probes `5952 / 0`, synthetic `5890 / 0`, sourced `3997 / 0`, unit `1186 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Authenticate nested credential-result envelope repair:
+  - Generated Authenticate result-envelope sweeps with explicit User1 credential state and found that nested credential/authentication/verification result objects needed credential-aware Boolean extraction.
+  - Repair: when credential aliases are enabled, unwrap bounded credential-result envelopes before comparing `verified`, `credentialMatched`, `pinMatched`, `accepted`, and related Boolean fields.
+  - Added unit, score-probe, and synthetic regressions requiring correct nested true and wrong nested false to pass, while wrong nested true fails.
+  - Verification after repair: focused sweep `0 misses`, score probes `6000 / 0`, synthetic `5938 / 0`, sourced `3997 / 0`, unit `1187 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued ReEncrypt/DataRemoval policy-config-request envelope repair:
+  - Generated ReEncrypt/DataRemoval setter sweeps and found stale-state misses for `setReEncryptRequest(policy/config/request.reencrypt)` and `setDataRemovalMechanism(policy/config/request.dataRemoval)` payloads.
+  - Repair: flattened bounded policy/config/request envelopes and extracted explicit scalar ReEncrypt request / DataRemoval mechanism aliases into the existing official cell-state model.
+  - Added unit, score-probe, and synthetic regressions requiring current observations to pass and stale observations to fail.
+  - Verification after repair: focused sweep `0 misses`, score probes `6012 / 0`, synthetic `5950 / 0`, sourced `3997 / 0`, unit `1189 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued ReEncrypt getter range-selector envelope repair:
+  - Generated ReEncrypt getter selector sweeps and found stale-state false PASSes for `getReEncryptStatus(policy/config/request/query)` after Range1 was moved to PENDING.
+  - Repair: normalized bounded ReEncrypt getter selector envelopes and scalarized nested `query.target.rangeId` before lowering to the official Locking row Get.
+  - Added unit, score-probe, and synthetic regressions requiring PENDING to pass and stale IDLE to fail for four selector envelopes.
+  - Verification after repair: focused sweep `0 misses`, score probes `6020 / 0`, synthetic `5958 / 0`, sourced `3997 / 0`, unit `1190 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking column getter range-selector envelope repair:
+  - Generated selector-envelope sweeps for Locking column getters (`NextKey`, `AdvKeyMode`, `LastReEncryptLBA`, `LastReEncStat`, `GeneralStatus`) and found stale-value false PASSes under `policy/config/request/query` wrappers.
+  - Repair: normalized bounded selector envelopes for those getter aliases and scalarized nested `target.rangeId` before lowering to official Locking row Gets.
+  - Added unit, score-probe, and synthetic regressions covering typed enum, numeric, status, and key uidref getter outputs.
+  - Verification after repair: focused sweep `0 misses`, score probes `6060 / 0`, synthetic `5998 / 0`, sourced `3997 / 0`, unit `1191 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Crypto BufferOut policy-config-request envelope repair:
+  - Generated crypto BufferOut envelope sweeps and found false rejects/false passes for `encrypt(policy/config/request/operation)` and `hashInit(policy/config/request/operation)` where BufferOut was hidden under `output`, `destination`, or nested `crypto`.
+  - Repair: flattened bounded crypto payload envelopes and mapped explicit output/destination aliases to the official `BufferOut` argument.
+  - Added unit, score-probe, and synthetic regressions requiring empty-result PASS and byte-result FAIL when BufferOut is supplied.
+  - Verification after repair: focused sweep `0 misses`, score probes `6076 / 0`, synthetic `6014 / 0`, sourced `3997 / 0`, unit `1192 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Sign BufferOut policy-config-request envelope repair:
+  - Generated Sign BufferOut envelope sweeps and found false rejects for `signPayload(policy/config/request/operation)` where target/payload/BufferOut were hidden under structured wrappers.
+  - Repair: flattened bounded Sign payload envelopes and mapped explicit output/destination aliases to the official `BufferOut` argument.
+  - Added unit, score-probe, and synthetic regressions requiring empty-result PASS and byte-result FAIL for explicit crypto target + BufferOut.
+  - Verification after repair: focused sweep `0 misses`, score probes `6084 / 0`, synthetic `6022 / 0`, sourced `3997 / 0`, unit `1193 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Random count/BufferOut envelope repair:
+  - Generated Random envelope sweeps and found that `policy/config/request/operation` wrappers were parsed partially but then rejected as unsupported Random parameters.
+  - Repair: extracted Count/BufferOut from bounded Random containers and taught the unsupported-argument check to treat those keys as wrappers, while still rejecting unknown nested arguments.
+  - Added unit, score-probe, and synthetic regressions for Count length checks and BufferOut empty-result checks.
+  - Verification after repair: focused sweep `0 misses`, score probes `6100 / 0`, synthetic `6038 / 0`, sourced `3997 / 0`, unit `1194 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued FirmwareAttestation nonce envelope repair:
+  - Generated FirmwareAttestation nonce envelope sweeps and found false rejects for `firmwareAttestation(policy/config/request/operation)` despite valid assessor nonce and byte attestation output.
+  - Repair: flattened bounded attestation payload containers and extracted explicit nonce/challenge aliases into the official FirmwareAttestation event.
+  - Added unit, score-probe, and synthetic regressions requiring attestation bytes PASS and Boolean result FAIL.
+  - Verification after repair: focused sweep `0 misses`, score probes `6108 / 0`, synthetic `6046 / 0`, sourced `3997 / 0`, unit `1195 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued C_PIN counter getter policy-config-request envelope repair:
+  - Generated C_PIN counter getter selector sweeps and found stale-value false PASSes for `getRetryLimit(policy/config/request)` and `getRetryCount(policy/config/request)` after mutating `C_PIN_User1`.
+  - Repair: flattened bounded selector wrappers and extracted credential/identity/auth aliases before lowering to the official C_PIN row Get semantics.
+  - Added unit, score-probe, and synthetic regressions for TryLimit/Tries current-vs-stale observations across policy/config/request wrappers. Removed `getMinPinLength` from this repair because it is a separate pseudo-column path.
+  - Verification after repair: focused sweep `0 misses`, score probes `6120 / 0`, synthetic `6058 / 0`, sourced `3997 / 0`, unit `1196 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Authority counter getter policy-config-request envelope repair:
+  - Generated Authority counter getter selector sweeps and found stale-value false PASSes for `getAuthorityLimit(policy/config/request)` and `getAuthorityUses(policy/config/request)` after mutating `Authority_User1`.
+  - Repair: expanded bounded getter selector envelopes to match Authority setter envelopes and recursively extracted explicit authority/identity/user/target aliases.
+  - Added unit, score-probe, and synthetic regressions for Limit/Uses current-vs-stale observations across policy/config/request wrappers.
+  - Verification after repair: focused sweep `0 misses`, score probes `6132 / 0`, synthetic `6070 / 0`, sourced `3997 / 0`, unit `1197 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Port policy-config-request envelope state repair:
+  - Generated Port setter/getter envelope sweeps and found stale-value false PASSes for `setPort(policy/config/request)` and `getPort/getPortLocked(policy/config/request)` around tracked `PortLocked`.
+  - Repair: flattened bounded Port envelopes and recursively extracted explicit Port selectors plus PortLocked state aliases.
+  - Added unit, score-probe, and synthetic regressions for setter mutation and getter selection across policy/config/request wrappers.
+  - Verification after repair: focused sweeps `0 misses`, score probes `6156 / 0`, synthetic `6094 / 0`, sourced `3997 / 0`, unit `1198 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued AccessControl AddACE policy-request envelope mutation repair:
+  - Generated dynamic-row AddACE envelope sweeps and found false PASSes where nested `policy.association`, `request.accessControlRequest`, or `params.target` AddACE calls did not update later GetACL state.
+  - Repair: recognized bounded ACL payload containers, parsed `target` as an association wrapper, and split target-like dicts into explicit object/method pairs.
+  - Added unit, score-probe, and synthetic regressions requiring later GetACL to include the added ACE and reject stale ACL lists.
+  - Verification after repair: focused sweep `0 misses`, score probes `6162 / 0`, synthetic `6100 / 0`, sourced `3997 / 0`, unit `1199 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Package policy-config-request envelope repair:
+  - Generated GetPackage/SetPackage envelope sweeps and found false rejects where policy/config/request payloads lost credential target plus required Purpose/Value.
+  - Repair: expanded package payload containers and recursively recovered explicit credential/auth selectors from nested target/credential objects.
+  - Added unit, score-probe, and synthetic regressions for valid GetPackage/SetPackage envelopes and empty package material rejects. Avoided overclaiming Boolean-result rejection for SetPackage.
+  - Verification after repair: focused sweep `0 misses`, score probes `6172 / 0`, synthetic `6110 / 0`, sourced `3997 / 0`, unit `1200 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued TLS PSK policy-config-request envelope state repair:
+  - Generated PSK setter/getter envelope sweeps and found stale-value false PASSes where `setPskEntry(policy/config/request)` and `getPskEntry(policy/config/request)` lost the selected TLS_PSK_Key row or metadata.
+  - Repair: expanded PSK wrapper containers, recursively extracted row selectors from target-like dictionaries, and merged bounded metadata containers while keeping uppercase `PSK` as payload material.
+  - Added unit, score-probe, and synthetic regressions requiring current PSK metadata to pass and stale metadata to fail.
+  - Verification after repair: focused sweep `0 misses`, score probes `6184 / 0`, synthetic `6122 / 0`, sourced `3997 / 0`, unit `1201 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued StartSession policy-config-request envelope repair:
+  - Generated StartSession envelope sweeps and found false rejects where `policy/config/request` payloads lost SPID, authority, proof, or Write.
+  - Repair: expanded StartSession payload containers, merged nested session/credential dictionaries, and extracted scalar proof/password as HostChallenge.
+  - Added unit, score-probe, and synthetic regressions requiring the wrapper session to authorize a later AdminSP mutation.
+  - Verification after repair: focused sweep `0 misses`, score probes `6187 / 0`, synthetic `6128 / 0`, sourced `3997 / 0`, unit `1202 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Session-control policy-config-request ID envelope repair:
+  - Generated SyncSession/EndSession/StartTrustedSession/StartTlsSession policy/config/request/session sweeps and found false PASSes where nested HostSessionID/SPSessionID/TPerSessionID values were ignored.
+  - Repair: added bounded session-ID envelope extraction and routed hidden identifiers into existing Session Manager state validation.
+  - Added unit, score-probe, and synthetic regressions requiring matching wrapper IDs to pass and mismatched wrapper IDs to fail.
+  - Verification after repair: focused sweep `0 misses`, synthetic tag `24 / 0`, score probe loop no mismatches, full synthetic `6152 / 0`, sourced `3997 / 0`, unit `1203 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued RevertSP policy-config-request envelope lifecycle repair:
+  - Generated RevertSP policy/config/request sweeps and found false PASSes where AdminSP PSID RevertSP wrappers fell through as UNKNOWN and failed to reset LockingSP activation.
+  - Repair: flattened bounded RevertSP envelopes before target classification, recovered AdminSP/LockingSP target aliases, scalarized nested credential/proof/psid dictionaries, and preserved KeepGlobalRangeKey.
+  - Added unit, score-probe, and synthetic regressions for AdminSP lifecycle reset and LockingSP GlobalRange preservation through wrappers.
+  - Verification after repair: focused sweep fixed false PASSes, synthetic tag `6 / 0`, score probe loop no mismatches, full synthetic `6158 / 0`, sourced `3997 / 0`, unit `1204 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Activate policy-config-request credential transition repair:
+  - Generated Activate/activateLockingSP policy/config/request credential sweeps and found false PASSes where wrong SID proof wrappers mutated LockingSP activation state for later StartSession checks.
+  - Repair: recovered bounded Activate credential envelopes into authAs=(SID, proof) and blocked successful transitions from mutating state when explicit wrapper credentials are known wrong.
+  - Added unit, score-probe, and synthetic regressions for right-proof activation and wrong-proof non-activation across policy/config/request wrappers.
+  - Verification after repair: focused sweep fixed false PASSes, synthetic tag `18 / 0`, score probe loop no mismatches, full synthetic `6176 / 0`, sourced `3997 / 0`, unit `1205 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued takeOwnership policy-config-request credential transition repair:
+  - Generated takeOwnership policy/config/request credential sweeps and found false PASSes where nested wrong SID proof became authAs=(SID,None), activating LockingSP for later StartSession checks.
+  - Repair: expanded bounded takeOwnership envelopes and scalarized nested credential proof/pin/password/secret fields.
+  - Added unit, score-probe, and synthetic regressions for right-proof activation and wrong-proof non-activation across policy/config/request wrappers.
+  - Verification after repair: focused sweep fixed false PASSes, synthetic tag `6 / 0`, score probe loop no mismatches, full synthetic `6182 / 0`, sourced `3997 / 0`, unit `1206 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Erase policy-config-request range-selector envelope repair:
+  - Generated erase/eraseRange policy/config/request selector sweeps and found false rejects where valid wrappers lost range selectors or canonicalized request.target={range:1} to Band{'range':1}.
+  - Repair: expanded bounded Erase envelopes, merged target/credential dictionaries, and scalarized dict range selectors before lowering to BandN.
+  - Added unit, score-probe, and synthetic regressions requiring Erase wrappers to invalidate old media data after range geometry is configured.
+  - Verification after repair: focused sweep fixed selector false rejects, synthetic tag `6 / 0`, score probe loop no mismatches, full synthetic `6188 / 0`, sourced `3997 / 0`, unit `1207 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued GenKey policy-config-request range-key envelope repair:
+  - Generated GenKey/generateKey/genRangeKey/rotateKey/rekeyRange policy/config/request selector sweeps and found false PASSes where stale host data remained accepted after hidden key-rotation wrappers.
+  - Repair: expanded bounded GenKey envelopes, merged target/credential dictionaries, scalarized dict range selectors, and recovered Admin auth/proof aliases.
+  - Added unit, score-probe, and synthetic regressions requiring hidden Range1 key selectors to invalidate old media data.
+  - Verification after repair: focused sweep fixed stale-media false PASSes, synthetic tag `15 / 0`, score probe loop no mismatches, full synthetic `6203 / 0`, sourced `3997 / 0`, unit `1208 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued getMEK policy-config-request ActiveKey selector envelope repair:
+  - Generated getMEK/getActiveKey/readMEK policy/config/request selector sweeps and found false PASSes where Range2 queries lost hidden selectors and accepted stale Range1 ActiveKey UID refs.
+  - Repair: expanded bounded media-key getter envelopes, merged target/credential dictionaries, scalarized dict range selectors, and recovered explicit Admin auth/proof aliases.
+  - Added unit, score-probe, and synthetic regressions requiring Range2 ActiveKey UID refs to pass and stale Range1 UID refs to fail across policy/config/request wrappers.
+  - Verification after repair: focused sweep fixed stale-key false PASSes, synthetic tag `18 / 0`, score probe loop no mismatches, full synthetic `6221 / 0`, sourced `3997 / 0`, unit `1209 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued generic reset payload reset-type envelope repair:
+  - Generated generic `reset` resetType/target envelope sweeps and found false PASSes where HardwareReset payloads were treated as default PowerCycle, leaving `LockOnReset=[1]` ranges writable.
+  - Repair: for ambiguous `reset()` only, recovered bounded reset-type payloads from direct and nested policy/config/request/operation/target envelopes and mapped them to existing reset methods.
+  - Added unit, score-probe, and synthetic regressions requiring HardwareReset-only LockOnReset to block later host writes through five generic reset payload shapes.
+  - Verification after repair: focused sweep fixed reset-type false PASSes, synthetic tag `10 / 0`, score probe loop no mismatches, full synthetic `6231 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued GetACL nested association envelope repair:
+  - Generated AccessControl GetACL nested request/values association sweeps and found a false reject where `request.values.association` failed to recover InvokingID/MethodID.
+  - Repair: flattened bounded ACL payload containers one extra level across request/config/policy/values/association wrappers before extracting association identity.
+  - Added unit, score-probe, and synthetic regressions requiring nested GetACL wrappers to accept the full Locking_Range1.Get exact ACL and reject incomplete ACE lists.
+  - Verification after repair: focused sweep fixed nested association false reject, synthetic tag `6 / 0`, score probe loop no mismatches, full synthetic `6235 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued DataStore nested byte-window envelope repair:
+  - Generated DataStore request/policy/config byte-window sweeps and found stale-byte false PASSes plus write lowering to `Row=0, Bytes=None` when payloads were nested.
+  - Repair: flattened bounded DataStore read/write containers across request/config/policy/values/window/range/slice envelopes before extracting payload bytes, offset, length, and authAs.
+  - Added unit, score-probe, and synthetic regressions requiring nested writes and differently shaped reads to preserve the exact `AABBCC` byte window and reject stale `000000`.
+  - Verification after repair: focused sweep fixed all 12 nested write/read combinations, synthetic tag `8 / 0`, score probe loop no mismatches, full synthetic `6243 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued MBR nested byte-window envelope repair:
+  - Generated MBR request/policy/config byte-window sweeps and found stale-byte false PASSes where nested policy/config/request.values payloads did not preserve byte offsets and data.
+  - Repair: merged bounded MBR write payload containers instead of replacing the payload with only the nested window/range/slice dict, preserving both bytes and selectors.
+  - Added unit, score-probe, and synthetic regressions requiring nested MBR writes and differently shaped reads to preserve the exact `AABBCC` byte window and reject stale `000000`.
+  - Verification after repair: focused sweep fixed all 12 nested write/read combinations, synthetic tag `8 / 0`, score probe loop no mismatches, full synthetic `6251 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued ReEncrypt nested request/value envelope repair:
+  - Generated ReEncrypt request/policy/config value-envelope sweeps and found stale-state false PASSes plus valid-state false rejects where nested setters/getters lost `ReEncryptRequest` or range selectors.
+  - Repair: bounded-merged ReEncrypt payload aliases across values/settings/options/policy/config/request/target/query wrappers and recovered scalar request values from nested request/value envelopes.
+  - Added unit, score-probe, and synthetic regressions requiring nested START_req setters and nested status getters to preserve the exact row state and reject stale `IDLE`.
+  - Verification after repair: focused setter/getter tests passed, synthetic tag `10 / 0`, score probe loop no mismatches, full synthetic `6261 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued DataRemoval nested mechanism envelope repair:
+  - Generated DataRemovalMechanism nested request/value sweeps and found stale-mechanism false PASSes where request.values, policy.request.values, or request.activeDataRemoval wrappers returned success without updating tracked mechanism state.
+  - Repair: broadened bounded DataRemoval payload aliases and merged activeDataRemoval/dataRemoval/removal/value containers before extracting the scalar active mechanism.
+  - Added unit, score-probe, and synthetic regressions requiring nested setters to preserve mechanism `2` and reject stale mechanism `1`.
+  - Verification after repair: focused sweep fixed stale false PASSes, synthetic tag `6 / 0`, score probe loop no mismatches, full synthetic `6267 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking range nested geometry envelope repair:
+  - Generated Locking setRange nested geometry sweeps and found stale-geometry false PASSes where request.values.geometry and policy.request.values wrappers returned success without updating RangeStart/RangeLength.
+  - Repair: bounded-merged setRange payload containers over two levels before extracting range selector, geometry, lock state, and auth fields.
+  - Added unit, score-probe, and synthetic regressions requiring nested geometry setters to preserve `RangeStart=222, RangeLength=7` and reject stale `RangeStart=0`.
+  - Verification after repair: focused sweep fixed stale false PASSes, synthetic tag `4 / 0`, score probe loop no mismatches, full synthetic `6271 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking range nested getter selector repair:
+  - Generated Locking getRange nested selector sweeps and found stale-geometry false PASSes where request.values, policy.query.target, and config.target wrappers lost the selected range row.
+  - Repair: bounded-merged getRange payload containers over two levels before extracting range selector and auth fields.
+  - Added unit, score-probe, and synthetic regressions requiring nested getters to select Range1 and reject stale `RangeStart=0`.
+  - Verification after repair: focused sweep fixed stale false PASSes, synthetic tag `6 / 0`, score probe loop no mismatches, full synthetic `6277 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking range nested lock/unlock envelope repair:
+  - Generated lockRange/unlockRange nested payload sweeps and found stale locked-state false PASSes where request.values, policy.request.values, and config.target+locks wrappers lost selectors or read/write flags.
+  - Repair: bounded-merged lock payload containers over two levels before extracting range selector, auth, and read/write flags.
+  - Added unit, score-probe, and synthetic regressions requiring nested lockRange to set both lock cells and nested unlockRange to clear them.
+  - Verification after repair: focused sweep fixed stale false PASSes, synthetic tag `8 / 0`, score probe loop no mismatches, full synthetic `6285 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking column nested getter selector repair:
+  - Generated single-column Locking getter nested selector sweeps and found stale Boolean/composite false PASSes where request.values, policy.query.target, and config.target wrappers lost the selected range row.
+  - Repair: bounded-merged selector envelopes for range-field getters and getRangeLocks before lowering to CellBlock Get.
+  - Added unit, score-probe, and synthetic regressions for representative getReadLocked, getWriteLockEnabled, and getRangeLocks nested selectors.
+  - Verification after repair: focused sweep fixed stale false PASSes, synthetic tag `18 / 0`, score probe loop no mismatches, full synthetic `6303 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued LockOnReset nested setter/getter envelope repair:
+  - Generated LockOnReset nested setter/getter sweeps and found current-list false FAILs plus stale-list/unlocked-write false PASSes where request.values, policy.request.values, config.target/reset, and nested getter selectors were ignored.
+  - Repair: added reset/target/query envelopes and bounded-merged LockOnReset setter/getter payloads before extracting range selector, reset list, and auth fields.
+  - Added unit, score-probe, and synthetic regressions requiring nested setters to report `[0,3]`, reject stale `[0]`, and block host writes after PowerCycle; nested getters must select the tracked row.
+  - Verification after repair: focused sweep fixed stale false PASSes, synthetic tag `18 / 0`, score probe loop no mismatches, full synthetic `6321 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued MBRControl nested setter envelope repair:
+  - Generated MBRControl nested setter sweeps and found false rejects where request.values, policy.request.values, and config.mbrControl wrappers did not update Enabled/Done/DoneOnReset.
+  - Repair: added mbrControl/value containers and bounded-merged MBRControl setter payloads before extracting control cells and auth fields.
+  - Added unit, score-probe, and synthetic regressions requiring nested setters to preserve `Enabled=True, Done=False, DoneOnReset=[0]` and reject stale disabled/done/empty state.
+  - Verification after repair: focused sweep fixed false rejects, synthetic tag `6 / 0`, score probe loop no mismatches, full synthetic `6327 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued AccessControl nested SetACL/RemoveACE direct association repair:
+  - Generated nested ACL mutation sweeps and found current false FAILs plus stale ACL false PASSes where `policy.request.values.object/method/acl` and `policy.request.values.object/method/ace` lost the direct association after ACL payload merging.
+  - Repair: after bounded ACL payload merging, re-extract direct InvokingID/MethodID aliases from the merged payload before applying dynamic `SetACL`/`RemoveACE` state semantics.
+  - Added unit, score-probe, and synthetic regressions requiring nested `SetACL` to replace later `GetACL` lists and nested `RemoveACE` to remove added ACEs from later `GetACL`.
+  - Verification after repair: focused sweep fixed false FAIL/PASS pair, synthetic tag `4 / 0`, score probe loop no mismatches, full synthetic `6331 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued AccessControl request-values mutation envelope repair:
+  - Generated `accessControlRequest.values` and `ACLRequest.values` mutation sweeps and found false FAIL/PASS pairs for `AddACE`, `SetACL`, and `RemoveACE`.
+  - Repair: added ACLRequest/accessControlRequest aliases to the initial ACL payload candidate list, then reused the existing bounded merge and dynamic ACL state machinery.
+  - Added unit, score-probe, and synthetic regressions for all three ACL mutations through both request-valued envelopes.
+  - Verification after repair: focused sweep fixed all six mutation shapes, synthetic tag `12 / 0`, score probe loop no mismatches, full synthetic `6343 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued MBR request byte-window envelope repair:
+  - Generated MBR byte-window request-envelope sweeps and found stale payload false PASSes where `mbrRequest`, `MBRRequest`, `mbrShadowRequest`, and `byteTableRequest` read windows lost offset/length.
+  - Repair: added MBR-domain request containers to bounded read/write payload aliases and changed MBR read lowering to bounded-merge nested window/range/slice payloads before extracting byte offsets.
+  - Added unit, score-probe, and synthetic regressions for `mbrRequest.values -> mbrRequest.window` and `mbrShadowRequest.values -> byteTableRequest.window`.
+  - Verification after repair: focused sweep fixed stale false PASSes, synthetic nested MBR tag `12 / 0`, score probe loop no mismatches, full synthetic `6347 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking range domain request envelope repair:
+  - Generated Locking `lockingRequest/rangeRequest/lockingRangeRequest` set/get sweeps and found stale geometry false PASSes when top-level domain request envelopes were ignored.
+  - Repair: added Locking-domain request containers to bounded `setRange` and `getRange` payload aliases.
+  - Added unit, score-probe, and synthetic regressions for domain request setters plus domain request getter selectors.
+  - Verification after repair: focused sweeps fixed stale false PASSes, `locking-range-nested-geometry-doc` `8 / 0`, `locking-range-domain-request-doc` `6 / 0`, score probe loop no mismatches, full synthetic `6357 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued LockOnReset and lockRange domain request envelope repair:
+  - Generated Locking-domain request sweeps for `setLockOnReset`, `getLockOnReset`, `lockRange`, and `getRangeLocks`; found stale reset-list and stale unlocked-state false PASSes.
+  - Repair: added Locking-domain request containers to LockOnReset setter/getter, `getRangeLocks`, and `lockRange` payload aliases.
+  - Added unit, score-probe, and synthetic regressions for domain request reset-list setters/getters plus lock flag mutation paths.
+  - Verification after repair: focused sweeps fixed false PASS/FAIL pairs, `lockonreset-nested-envelope-doc` `32 / 0`, `locking-range-nested-lock-doc` `14 / 0`, score probe loop no mismatches, full synthetic `6377 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Media-key domain request envelope repair:
+  - Generated GenKey/getMEK sweeps for `lockingRequest`, `rangeRequest`, `keyRequest`, and `lockingRangeRequest`; found stale host-data false PASSes after GenKey and stale Range1 ActiveKey false PASSes for Range2 getMEK.
+  - Repair: added key-specific and Locking-domain request containers to GenKey and getMEK payload aliases.
+  - Added unit, score-probe, and synthetic regressions for GenKey old-media invalidation and getMEK Range2 ActiveKey UID matching through the new envelopes.
+  - Verification after repair: focused sweeps fixed false PASSes, `genkey-policy-envelope-doc` `35 / 0`, `getmek-policy-envelope-doc` `42 / 0`, score probe loop no mismatches, full synthetic `6421 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Erase/ReEncrypt/DataRemoval domain request envelope repair:
+  - Generated domain-request sweeps for Erase, ReEncryptRequest, and DataRemovalMechanism using `eraseRequest`, `lockingRangeRequest`, `lockingRequest`, `rangeRequest`, `reencryptRequest`, `dataRemovalRequest`, `removalRequest`, and `adminRequest` wrappers.
+  - Repair: added the remaining high-value domain request containers to Erase, ReEncrypt setter/getter, and DataRemoval setter/getter payload alias/merge logic so selected range, request value, auth, and active mechanism survive lowering.
+  - Added unit, score-probe, and synthetic regressions requiring erase wrappers to invalidate old media, ReEncrypt wrappers to preserve `START_req -> PENDING`, and DataRemoval wrappers to preserve mechanism `2`.
+  - Verification after repair: focused sweeps fixed stale observation risks, `erase-policy-envelope-doc` `10 / 0`, `reencrypt-nested-envelope-doc` `16 / 0`, `data-removal-nested-envelope-doc` `12 / 0`, score probe loop no mismatches, full synthetic `6437 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Crypto/Sign/Random/Attestation domain request envelope repair:
+  - Generated domain-request sweeps for Crypto, Sign, Random, and FirmwareAttestation result-shape rules using `cryptoRequest`, `cipherRequest`, `hashRequest`, `signRequest`, `signatureRequest`, `randomRequest`, `rngRequest`, `attestationRequest`, `firmwareRequest`, `quoteRequest`, and `operationRequest`.
+  - Repair: added explicit domain request containers to parser payload aliases; also taught Random unsupported-argument validation that these are containers, not unsupported parameters.
+  - Added unit, score-probe, and synthetic regressions requiring BufferOut operations to return empty results, Random Count to enforce byte length, and FirmwareAttestation to reject boolean-only success.
+  - Verification after repair: focused sweeps fixed current/stale inversions, `crypto-bufferout-envelope-doc` `32 / 0`, `sign-bufferout-envelope-doc` `14 / 0`, `random-envelope-doc` `24 / 0`, `firmware-attestation-envelope-doc` `14 / 0`, score probe loop no mismatches, full synthetic `6473 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Port/PSK domain request envelope state repair:
+  - Generated Port and PSK state sweeps using `portRequest`, `adminRequest`, `pskRequest`, `tlsPskRequest`, and `preSharedKeyRequest` wrappers.
+  - Repair: added these table-domain containers to Port setter/getter and PSK setter/getter payload aliases so row selector, auth, `PortLocked`, `Enabled`, `PSK`, and `CipherSuite` survive lowering.
+  - Added unit, score-probe, and synthetic regressions requiring current table state to pass and stale state to fail after domain request setters/getters.
+  - Verification after repair: focused sweeps fixed stale false PASSes, `port-policy-envelope-doc` `42 / 0`, `psk-policy-envelope-doc` `24 / 0`, score probe loop no mismatches, full synthetic `6503 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Package domain request envelope payload repair:
+  - Generated Package sweeps using `packageRequest`, `credentialPackageRequest`, and `keyPackageRequest` wrappers.
+  - Repair: added package-domain containers and two-level bounded merge to GetPackage/SetPackage payload extraction so Purpose, Value, credential target, package material, and auth survive lowering.
+  - Added unit, score-probe, and synthetic regressions requiring package-domain GetPackage wrappers to accept byte payloads and reject boolean markers, plus SetPackage wrappers to preserve non-empty/empty package material.
+  - Verification after repair: focused sweep fixed false rejects, `package-policy-envelope-doc` `20 / 0`, score probe loop no mismatches, full synthetic `6513 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued C_PIN/Authority counter domain request state repair:
+  - Generated counter sweeps using `credentialRequest`, `cpinRequest`, `pinRequest`, `authorityRequest`, `authRequest`, and `identityRequest` wrappers.
+  - Repair: added these domain containers to C_PIN/Authority counter payload aliases, recursed for both selector and value extraction, and added `maxTries` as a TryLimit alias.
+  - Added unit, score-probe, and synthetic regressions requiring current C_PIN/Authority counters to pass and stale counters to fail after domain request setters.
+  - Verification after repair: focused sweep fixed false PASS/FAIL inversions, `credential-counter-policy-envelope-doc` `24 / 0`, score probe loop no mismatches, full synthetic `6525 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued MBRControl domain request envelope repair:
+  - Generated MBRControl state sweeps using `mbrControlRequest`, `mbrRequest`, and `bootRequest` wrappers.
+  - Repair: added these MBR/boot-domain request containers to MBRControl setter payload aliases so `Enabled`, `Done`, `DoneOnReset`, and `authAs` survive lowering.
+  - Added unit, score-probe, and synthetic regressions requiring current MBRControl state to pass and stale MBRControl state to fail after domain request setters.
+  - Verification after repair: focused sweep fixed false PASS/FAIL inversions, `mbrcontrol-policy-envelope-doc` `22 / 0`, score probe loop no mismatches, full synthetic `6531 / 0`, sourced `3997 / 0`, unit `1210 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued HostProperties domain request envelope repair:
+  - Generated HostProperties negotiation sweeps using `hostPropertiesRequest`, `propertiesRequest`, `sessionRequest`, and `comIdRequest` wrappers.
+  - Repair: added these request containers and bounded two-level merge to Properties wrapper payload extraction so `ComID` and submitted HostProperties survive lowering.
+  - Added unit, score-probe, and synthetic regressions requiring current negotiated HostProperties to pass and stale default HostProperties to fail.
+  - Verification after repair: focused sweep fixed 24 wrapper/shape inversions, `host-properties-envelope-doc` `8 / 0`, score probe loop no mismatches, full synthetic `6539 / 0`, sourced `3997 / 0`, unit `1211 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Log domain request envelope payload repair:
+  - Generated AddLog/CreateLog/ClearLog sweeps using `logRequest`, `addLogRequest`, `logEntryRequest`, `createLogRequest`, `logListRequest`, `clearLogRequest`, and `flushLogRequest` wrappers.
+  - Repair: added these Log-domain request containers and bounded two-level merge to Log wrapper payload extraction so required entry data, creation size fields, target log, and auth survive lowering.
+  - Added unit, score-probe, and synthetic regressions requiring AddLog required data, CreateLog three-field success shape, missing-field rejection, and ClearLog empty-result wrapper behavior through request envelopes.
+  - Verification after repair: focused sweep fixed AddLog/CreateLog false rejects and shape checks, `log-domain-request-envelope-doc` `8 / 0`, score probe loop no mismatches, full synthetic `6547 / 0`, sourced `3997 / 0`, unit `1212 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Lifecycle domain request envelope credential repair:
+  - Generated Activate/takeOwnership sweeps using `activateRequest`, `spRequest`, `lifecycleRequest`, `securityProviderRequest`, `ownershipRequest`, `takeOwnershipRequest`, and `credentialRequest` wrappers.
+  - Repair: added lifecycle/ownership/SP request containers to Activate and takeOwnership payload aliases so proof credentials survive before LockingSP lifecycle mutation.
+  - Added unit, score-probe, and synthetic regressions requiring correct proof to activate LockingSP and wrong proof to leave later LockingSP `StartSession` rejected.
+  - Verification after repair: focused sweep fixed wrong-proof false PASSes, `lifecycle-domain-request-envelope-doc` `8 / 0`, score probe loop no mismatches, full synthetic `6555 / 0`, sourced `3997 / 0`, unit `1213 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued RevertSP domain request envelope target repair:
+  - Generated AdminSP RevertSP sweeps using `revertRequest`, `revertSpRequest`, `spRequest`, `lifecycleRequest`, and `securityProviderRequest` wrappers.
+  - Repair: added these lifecycle/SP request containers to RevertSP payload aliases so target SP and PSID credential survive lowering.
+  - Added unit, score-probe, and synthetic regressions requiring AdminSP RevertSP request containers to reset LockingSP activation while preserving wrapper result-shape checks.
+  - Verification after repair: focused sweep fixed valid AdminSP RevertSP false rejects, `revertsp-policy-envelope-doc` `10 / 0`, score probe loop no mismatches, full synthetic `6559 / 0`, sourced `3997 / 0`, unit `1213 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued StartSession domain request envelope echo repair:
+  - Generated StartSession sweeps using `startSessionRequest`, `sessionRequest`, `spSessionRequest`, and `securityProviderRequest` wrappers.
+  - Repair: added these session/SP request containers to StartSession payload aliases so required SPID/Write/auth/challenge and HostSessionID survive lowering.
+  - Added unit, score-probe, and synthetic regressions requiring matching HostSessionID echo to pass and mismatched echo to fail through request envelopes.
+  - Verification after repair: focused sweep fixed valid StartSession false rejects and echo checks, `startsession-domain-request-envelope-doc` `8 / 0`, score probe loop no mismatches, full synthetic `6567 / 0`, sourced `3997 / 0`, unit `1214 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Session-control domain request envelope ID repair:
+  - Generated SyncSession/EndSession/CloseSession sweeps using `syncSessionRequest`, `endSessionRequest`, `closeSessionRequest`, `sessionRequest`, `spSessionRequest`, and `securityProviderRequest` wrappers.
+  - Repair: added these session-control request containers to the shared session-ID payload aliases so HostSessionID and SPSessionID survive lowering.
+  - Added unit, score-probe, and synthetic regressions requiring matching IDs to pass and mismatched SPSessionID to fail after StartSession establishes the active ID pair.
+  - Verification after repair: focused sweep fixed mismatched-ID false PASSes, `session-id-envelope-doc` `48 / 0`, score probe loop no mismatches, full synthetic `6591 / 0`, sourced `3997 / 0`, unit `1214 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued ProtocolStackReset domain request envelope ComID repair:
+  - Generated protocol reset sweeps using `resetRequest`, `protocolResetRequest`, `comIdRequest`, and `sessionRequest` wrappers.
+  - Repair: added reset/protocol/ComID/session request containers and values/settings traversal to reset method extraction, and made dict-valued `ComIDRequest` recurse before conversion.
+  - Added unit, score-probe, and synthetic regressions requiring same-ComID ProtocolStackReset to abort the open session and other-ComID reset to preserve it.
+  - Verification after repair: focused sweep fixed same/other ComID false PASS/FAIL inversions, `protocol-reset-domain-request-envelope-doc` `16 / 0`, score probe loop no mismatches, full synthetic `6607 / 0`, sourced `3997 / 0`, unit `1215 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Table lifecycle domain request envelope payload repair:
+  - Generated CreateTable/CreateRow sweeps using `createTableRequest`, `tableRequest`, `schemaRequest`, `createRowRequest`, and `rowRequest` wrappers.
+  - Repair: added table/row/schema request containers and bounded two-level payload merge to CreateTable/CreateRow wrapper lowering; changed CreateTable payload extraction to preserve valid falsy numeric fields such as `MinSize=0`.
+  - Added unit, score-probe, and synthetic regressions requiring valid nested table creation to pass, missing `MinSize` to fail, Boolean CreateTable success to fail, and nested dynamic CreateRow to preserve target table/Values with UID-list result shape.
+  - Verification after repair: focused sweep fixed valid wrapper false rejects and shape risks, `table-lifecycle-domain-request-envelope-doc` `9 / 0`, score probe loop no mismatches, full synthetic `6616 / 0`, sourced `3997 / 0`, unit `1216 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Table delete/query domain request envelope payload repair:
+  - Generated DeleteRow/DeleteTable/TableQuery/Next/GetFreeSpace sweeps using `deleteRowRequest`, `rowRequest`, `tableRequest`, `deleteTableRequest`, `tableQueryRequest`, `freeRowsRequest`, `nextRequest`, and `freeSpaceRequest` wrappers.
+  - Repair: added table/row/query/delete/free-space request containers and bounded two-level merge to the corresponding wrapper lowering paths so selectors, row UIDs, targets, counts, and auth survive.
+  - Added unit, score-probe, and synthetic regressions requiring valid DeleteRow/DeleteTable request envelopes to pass, missing row UID to fail, and table query/Next/free-space result-shape checks to remain strict.
+  - Verification after repair: focused sweep fixed DeleteRow/DeleteTable valid false rejects, `table-lifecycle-delete-query-envelope-doc` `16 / 0`, score probe loop no mismatches, full synthetic `6632 / 0`, sourced `3997 / 0`, unit `1217 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued XOR domain request envelope and BufferOut shape repair:
+  - Generated XOR sweeps using `xorRequest`, `cryptoRequest`, `byteTableRequest`, and `operationRequest` wrappers.
+  - Repair: added XOR/crypto/byte-table operation request containers and bounded merge to XOR wrapper lowering, and tightened XOR `BufferOut` expected response to forbid scalar Boolean empty-result substitutes.
+  - Added unit, score-probe, and synthetic regressions requiring correct direct XOR result to pass, stale XOR result to fail, BufferOut request mutation to persist, and Boolean BufferOut return to fail.
+  - Verification after repair: focused sweep fixed valid XOR false rejects plus Boolean BufferOut false PASSes, `xor-domain-request-envelope-doc` `12 / 0`, score probe loop no mismatches, full synthetic `6644 / 0`, sourced `3997 / 0`, unit `1218 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued C_PIN MinPINLength domain request envelope policy repair:
+  - Generated C_PIN minimum PIN policy sweeps using `credentialRequest`, `cpinRequest`, `pinRequest`, and `policyRequest` wrappers.
+  - Repair: added credential/C_PIN/PIN/policy request containers and bounded merge to PIN/MinPINLength wrapper lowering so selected credential, length, limits, and auth survive.
+  - Added unit, score-probe, and synthetic regressions requiring nested `setMinPINLength` to reject later short `changePIN` success and stale `getMinPINLength` observations.
+  - Verification after repair: focused sweep fixed `_MinPINLength` non-mutation false PASSes, `credential-policy-envelope-doc` `8 / 0`, score probe loop no mismatches, full synthetic `6652 / 0`, sourced `3997 / 0`, unit `1219 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Authenticate domain request envelope proof repair:
+  - Generated Authenticate sweeps using `credentialRequest`, `authRequest`, `authenticationRequest`, `proofRequest`, and `pinRequest` wrappers.
+  - Repair: added credential/auth/proof/PIN request containers and bounded merge to Authenticate wrapper lowering, and copied normalized `Auth`/`Proof` into event optional fields.
+  - Added unit, score-probe, and synthetic regressions requiring correct proof true to pass, wrong proof false to pass, and wrong proof true to fail through every request envelope.
+  - Verification after repair: focused sweep fixed request-envelope proof extraction, `authenticate-domain-request-envelope-doc` `15 / 0`, score probe loop no mismatches, full synthetic `6667 / 0`, sourced `3997 / 0`, unit `1220 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Authority Enabled domain request envelope state repair:
+  - Generated Authority.Enabled sweeps using `authorityRequest`, `authRequest`, `identityRequest`, `userRequest`, and `policyRequest` wrappers.
+  - Repair: added authority/auth/identity/user/policy request containers and bounded merge to Authority.Enabled wrapper lowering, preserving falsy `enabled=False` values.
+  - Added unit, score-probe, and synthetic regressions requiring nested enable/disable setters to update later Authenticate true/false observations.
+  - Verification after repair: focused sweep fixed Authority.Enabled request-envelope non-mutation, `authority-enabled-envelope-doc` `40 / 0`, score probe loop no mismatches, full synthetic `6707 / 0`, sourced `3997 / 0`, unit `1221 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Authority getter domain request envelope selector repair:
+  - Generated Authority getter sweeps using `authorityRequest`, `authRequest`, `identityRequest`, `userRequest`, `policyRequest`, and `queryRequest` wrappers.
+  - Repair: added these request/query containers plus nested `values`/`query`/`selector` extraction to Authority getter lowering so the requested authority selector survives before Get-state expectations run.
+  - Added unit, score-probe, and synthetic regressions requiring nested `getAuthority`/`isUserEnabled`/`getUserEnabled` to accept the current enabled state and reject stale disabled observations.
+  - Verification after repair: focused sweep fixed stale getter false PASSes, `authority-getter-envelope-doc` `36 / 0`, score probe loop no mismatches, full synthetic `6743 / 0`, sourced `3997 / 0`, unit `1222 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Authority getter deep request envelope selector repair:
+  - Generated deeper Authority getter chain sweeps using `authRequest.identityRequest.userRequest.values`, `request.authorityRequest.queryRequest.values`, and `config.policyRequest.query.selector`.
+  - Repair: increased only the Authority getter payload merge depth so selected authority/authAs fields survive realistic multi-layer request/query wrappers.
+  - Added unit, score-probe, and synthetic regressions requiring the deep getter wrappers to reject stale disabled observations after `User1` is enabled.
+  - Verification after repair: direct deep sweep `0` misses, `authority-getter-deep-envelope-doc` `18 / 0`, score probe loop no mismatches, full synthetic `6761 / 0`, sourced `3997 / 0`, unit `1223 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Random deep request envelope Count/BufferOut repair:
+  - Generated Random deep-envelope sweeps using `policy.request.random.values`, `config.operation.random.values`, `request.randomRequest.values`, `operationRequest.random.request.values`, and `randomRequest.operation.rng.values`.
+  - Repair: bounded-merged nested Random/domain envelopes before extracting `Count` and `BufferOut`, preventing fallback to default `Count=32`.
+  - Added unit, score-probe, and synthetic regressions requiring 8-byte direct outputs to pass, wrong-length outputs to fail, BufferOut empty results to pass, and BufferOut byte returns to fail.
+  - Verification after repair: direct deep sweep `0` misses, `random-deep-envelope-doc` `20 / 0`, score probe loop no mismatches, full synthetic `6781 / 0`, sourced `3997 / 0`, unit `1224 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued ReEncrypt deep request/target selector repair:
+  - Generated ReEncrypt deep-envelope sweeps using `config.target.request`, `lockingRequest.rangeRequest.reencryptRequest.values`, `request.lockingRequest.rangeRequest.values`, and `policy.query.target.request` style chains.
+  - Repair: bounded-merged ReEncrypt setter/getter payloads and added local range-selector recursion so `target` dictionaries can unwrap through request/query/value containers.
+  - Added unit, score-probe, and synthetic regressions requiring deep setters to move `ReEncryptState` to `PENDING` and deep getters to reject stale `IDLE`.
+  - Verification after repair: direct deep sweep `0` misses, `reencrypt-deep-envelope-doc` `20 / 0`, score probe loop no mismatches, full synthetic `6801 / 0`, sourced `3997 / 0`, unit `1225 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued MBR deep byte-window envelope repair:
+  - Generated MBR deep byte-window sweeps using `request.mbrShadowRequest.slice.values`, `byteTableRequest.range.payload`, `config.target.window.values`, and `policy.request.slice.values`.
+  - Repair: extended MBR read/write bounded payload merge and treated dict-valued `payload`/`target` as byte-window containers before extracting offset, length, bytes, and auth.
+  - Added unit, score-probe, and synthetic regressions requiring deep `writeMBR`/`readMBR` wrappers to share sparse MBR byte state and reject stale reads.
+  - Verification after repair: direct deep sweep `0` misses, `mbr-deep-window-envelope-doc` `10 / 0`, score probe loop no mismatches, full synthetic `6811 / 0`, sourced `3997 / 0`, unit `1226 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued AccessControl/GetACL deep association envelope repair:
+  - Generated GetACL deep association sweeps using `policy.request.association.values`, `config.target.association.values`, `accessControlRequest.request.targetMethod.values`, `request.aclRequest.association.values`, and `values.accessControlRequest.objectMethod.values`.
+  - Repair: extended AccessControl/GetACL bounded payload merge and made `_acl_association_pair` recursively unwrap request/ACL/association containers before exact ACE membership comparison.
+  - Added unit, score-probe, and synthetic regressions requiring exact ACL uidref lists to pass and incomplete lists to fail through every deep association chain.
+  - Verification after repair: direct deep sweep `0` misses, `accesscontrol-getacl-deep-envelope-doc` `10 / 0`, score probe loop no mismatches, full synthetic `6821 / 0`, sourced `3997 / 0`, unit `1227 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued DataStore deep byte-window envelope repair:
+  - Generated DataStore byte-window sweeps using `dataStoreRequest.byteTableRequest.window.values`, `request.dataStoreRequest.range.payload`, `config.target.byteWindow.values`, `policy.request.slice.values`, `values.dataStoreRequest.payload.values`, and `operationRequest.dataRequest.window.payload`.
+  - Found valid deep write/read trajectories false-rejected because the wrapper lowering lost byte payload, offset, length, and auth fields before reaching the DataStore byte-table model.
+  - Repair: added explicit DataStore/byte-table/window request containers to DataStore read/write payload aliases and increased only this bounded merge depth to four levels.
+  - Added unit, score-probe, and synthetic regressions requiring current deep reads to pass and stale deep reads to fail.
+  - Verification after repair: direct deep sweep `0` misses, `datastore-deep-window-envelope-doc` `12 / 0`, score probe loop no mismatches, full synthetic `6833 / 0`, sourced `3997 / 0`, unit `1228 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued Locking range deep target envelope repair:
+  - Generated Locking `setRange/getRange` sweeps using `lockingRequest.rangeRequest.geometry.values`, `request.lockingRangeRequest.window.values`, `config.target.rangeValues.geometry`, `policy.request.rangeRequest.values`, `values.lockingRequest.rangeValues.values`, and `operationRequest.lockingRangeRequest.target.values`.
+  - Found stale `getRange` false PASSes when dict-valued `target` containers were converted into synthetic `Band{...}` names instead of canonical `Locking_Range1`.
+  - Repair: extended explicit Locking range payload aliases/merge depth and taught `_band_target_from_range_value` to recursively unwrap range request/value/geometry/window containers before target conversion.
+  - Added unit, score-probe, and synthetic regressions requiring current deep range state to pass and stale range state to fail.
+  - Verification after repair: direct deep sweep `0` misses, `locking-range-deep-target-envelope-doc` `12 / 0`, score probe loop no mismatches, full synthetic `6845 / 0`, sourced `3997 / 0`, unit `1228 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued LockOnReset deep reset/types envelope repair:
+  - Generated LockOnReset sweeps using `lockingRequest.rangeRequest.reset.values`, `request.lockingRangeRequest.reset.types`, `config.target.rangeValues.reset`, `policy.request.rangeRequest.values`, `values.lockingRequest.reset.values`, and `operationRequest.lockingRangeRequest.target.values`.
+  - Found stale reset-list false PASSes and valid false rejects when dict-valued `types/reset/target` wrappers were treated as scalar reset values or synthetic `Band{...}` targets.
+  - Repair: added explicit reset/types containers to LockOnReset setter/getter extraction, recursed through dict-valued reset-list aliases, and extended the range target helper to unwrap reset containers.
+  - Added unit, score-probe, and synthetic regressions requiring current deep reset lists to pass and stale reset lists to fail.
+  - Verification after repair: direct deep sweep `0` misses, `lockonreset-deep-envelope-doc` `12 / 0`, score probe loop no mismatches, full synthetic `6857 / 0`, sourced `3997 / 0`, unit `1228 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued C_PIN deep counter/auth envelope state repair:
+  - Generated C_PIN TryLimit/Tries/Auth sweeps using `request.cpinRequest.target/counter`, `request.authRequest.target/proofRequest`, and `operationRequest.authenticationRequest.proofRequest`.
+  - Guarded against the high-level wrapper losing the selected User1 credential or proof, which would permit stale `Tries=0` observations or incorrect TryLimit bypass after one failed proof.
+  - Repair: added explicit C_PIN/auth/proof/counter request containers and bounded recursive selector/proof extraction to C_PIN counter setters/getters and checkPIN/Authenticate lowering.
+  - Added unit, score-probe, and synthetic regressions requiring deep wrong proof to increment Tries, deep `getPINTries` to report the new count, and correct PIN success to remain blocked at TryLimit=1.
+  - Verification after repair: direct parse/trajectory check passed, `cpin-deep-counter-envelope-doc` `4 / 0`, score probe loop no mismatches, full synthetic `6861 / 0`, sourced `3997 / 0`, unit `1229 OK`, public eval `100.00`.
+- 2026-06-04 KST - Continued StartSession deep operation/startup envelope repair:
+  - Generated deep session wrapper sweeps using `operationRequest.session.values` and `startupRequest.session.values`.
+  - Found a valid wrapper startup false-rejected because `SPID`, `HostSigningAuthority`, `HostChallenge`, and `Write` were hidden too deeply and `StartSession` lowered with `SPID=None`.
+  - Repair: added explicit operation/startup session request containers and increased the StartSession wrapper payload merge depth to four levels.
+  - Added unit, score-probe, and synthetic regressions requiring deep wrapper startup to open a persistent authenticated Admin SP session and reject an ignored-session nonauthorized follow-up.
+  - Verification after repair: direct parse/trajectory check passed, `startsession-deep-envelope-doc` `4 / 0`, score probe loop no mismatches, full synthetic `6865 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`.
+- 2026-06-04 KST - Extended StartSession deep target/start envelope repair before user-requested submit:
+  - Follow-up fuzzing found `config.session.start.values` still lowering with `SPID=None`; target/auth/proof/settings split wrappers needed explicit regression coverage.
+  - Repair: added StartSession payload aliases for `target`, `start`, and `startSession`, preserving existing bounded merge and raw StartSession validation.
+  - Expanded `startsession-deep-envelope-doc` to cover `operationRequest.session.target + credential/options`, `startupRequest.request.target/auth/proof/settings`, and `config.session.start.values` in addition to the earlier operation/startup session values cases.
+  - Verification after extension: targeted unit OK, `startsession-deep-envelope-doc` `10 / 0`, score probe loop no mismatches, full synthetic `6871 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.

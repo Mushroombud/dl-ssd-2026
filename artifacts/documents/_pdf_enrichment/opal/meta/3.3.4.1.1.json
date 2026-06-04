@@ -1,0 +1,23 @@
+{
+  "added_blocks": 3,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/3.3.4.1.1.md",
+  "existing_chars": 1067,
+  "existing_path": "artifacts/documents/opal/3.3.4.1.1.txt",
+  "extracted_chars": 970,
+  "family": "opal",
+  "pages": [
+    30,
+    31
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 0,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/3.3.4.1.1.jsonl",
+  "section": "3.3.4.1.1",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 2,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/3.3.4.1.1.jsonl",
+  "title": "Stream Encoding Modifications"
+}

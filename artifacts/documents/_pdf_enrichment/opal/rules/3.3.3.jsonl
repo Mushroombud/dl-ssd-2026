@@ -1,0 +1,1 @@
+{"kind": "normative_text", "rule_id": "3.3.3:text:001", "section": "3.3.3", "source": "- 3.3.3 ComIDs For the purpose of communication using Security Protocol 0x01, the TPer SHALL:\n- 3.3.4 Synchronous Protocol The TPer SHALL support the Synchronous Protocol. Refer to [2] for details.", "status": "candidate_for_review", "title": "ComIDs"}

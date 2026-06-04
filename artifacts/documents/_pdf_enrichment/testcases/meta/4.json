@@ -1,0 +1,22 @@
+{
+  "added_blocks": 3,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/4.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 888,
+  "family": "testcases",
+  "pages": [
+    29
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 2,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/4.jsonl",
+  "section": "4",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/4.jsonl",
+  "title": "Use Case Test Cases"
+}

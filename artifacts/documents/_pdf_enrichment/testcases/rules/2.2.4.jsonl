@@ -1,0 +1,1 @@
+{"kind": "normative_text", "rule_id": "2.2.4:text:001", "section": "2.2.4", "source": "The Test Sequence includes the required steps, in sequential order, that SHALL be performed to obtain the Expected Response for a given test. Test Sequences may include different steps for [3] [4] [5] [6].", "status": "candidate_for_review", "title": "Test Sequence"}

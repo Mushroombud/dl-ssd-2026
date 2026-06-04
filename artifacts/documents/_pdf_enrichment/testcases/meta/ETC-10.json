@@ -1,0 +1,26 @@
+{
+  "added_blocks": 20,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/ETC-10.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 5346,
+  "family": "testcases",
+  "pages": [
+    80,
+    81,
+    82,
+    83,
+    84
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 14,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/ETC-10.jsonl",
+  "section": "ETC-10",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/ETC-10.jsonl",
+  "title": "Invalid Invoking ID - Get"
+}

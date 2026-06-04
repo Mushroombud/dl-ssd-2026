@@ -1,0 +1,1 @@
+{"kind": "normative_text", "rule_id": "ETC-17:text:002", "section": "ETC-17", "source": "- 1) Steps #1 SUCCEEDS\n- 2) The Set method in step #2 returns a status code of INVALID_PARAMETER\n- 3) Step #3 SUCCEEDS", "status": "candidate_for_review", "title": "Invalid Type"}

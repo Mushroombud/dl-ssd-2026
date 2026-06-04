@@ -1,0 +1,3 @@
+[submodule "tools/vendor/opendataloader-pdf"]
+	path = tools/vendor/opendataloader-pdf
+	url = https://github.com/opendataloader-project/opendataloader-pdf

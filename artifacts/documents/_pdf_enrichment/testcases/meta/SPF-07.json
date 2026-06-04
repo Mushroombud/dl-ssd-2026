@@ -1,0 +1,22 @@
+{
+  "added_blocks": 3,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/SPF-07.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 836,
+  "family": "testcases",
+  "pages": [
+    58
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 0,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/SPF-07.jsonl",
+  "section": "SPF-07",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/SPF-07.jsonl",
+  "title": "Host Session Number (HSN)"
+}

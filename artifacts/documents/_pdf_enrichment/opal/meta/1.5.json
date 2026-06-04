@@ -1,0 +1,24 @@
+{
+  "added_blocks": 5,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/1.5.md",
+  "existing_chars": 104,
+  "existing_path": "artifacts/documents/opal/1.5.txt",
+  "extracted_chars": 3409,
+  "family": "opal",
+  "pages": [
+    15,
+    16,
+    17
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 7,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/1.5.jsonl",
+  "section": "1.5",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 2,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/1.5.jsonl",
+  "title": "Dependencies on Other Feature Sets"
+}

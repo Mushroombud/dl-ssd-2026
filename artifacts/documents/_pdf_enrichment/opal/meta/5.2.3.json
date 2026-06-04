@@ -1,0 +1,22 @@
+{
+  "added_blocks": 2,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/5.2.3.md",
+  "existing_chars": 1189,
+  "existing_path": "artifacts/documents/opal/5.2.3.txt",
+  "extracted_chars": 1249,
+  "family": "opal",
+  "pages": [
+    98
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 0,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/5.2.3.jsonl",
+  "section": "5.2.3",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 1,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/5.2.3.jsonl",
+  "title": "Type Table Modification"
+}

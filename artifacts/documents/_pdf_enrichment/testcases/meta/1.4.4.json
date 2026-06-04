@@ -1,0 +1,22 @@
+{
+  "added_blocks": 0,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/1.4.4.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 28,
+  "family": "testcases",
+  "pages": [
+    17
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 0,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/1.4.4.jsonl",
+  "section": "1.4.4",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/1.4.4.jsonl",
+  "title": "List Conventions"
+}

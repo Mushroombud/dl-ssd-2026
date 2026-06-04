@@ -1,0 +1,23 @@
+{
+  "added_blocks": 6,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/SPF-02.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 1272,
+  "family": "testcases",
+  "pages": [
+    51,
+    52
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 6,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/SPF-02.jsonl",
+  "section": "SPF-02",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/SPF-02.jsonl",
+  "title": "IF-RECV Behavior Tests"
+}

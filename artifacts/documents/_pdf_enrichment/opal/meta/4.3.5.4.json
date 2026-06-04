@@ -1,0 +1,22 @@
+{
+  "added_blocks": 3,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/4.3.5.4.md",
+  "existing_chars": 129,
+  "existing_path": "artifacts/documents/opal/4.3.5.4.txt",
+  "extracted_chars": 1000,
+  "family": "opal",
+  "pages": [
+    89
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 1,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/4.3.5.4.jsonl",
+  "section": "4.3.5.4",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 2,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/4.3.5.4.jsonl",
+  "title": "MBR (M)"
+}

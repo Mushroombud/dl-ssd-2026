@@ -1,0 +1,2 @@
+{"kind": "normative_text", "rule_id": "ETC-18:text:002", "section": "ETC-18", "source": "- 1) Steps #1-2 SUCCEED\n- 2) Step #3 RevertSP method returns a status code of FAIL\n- 3) Step #4 SUCCEEDS", "status": "candidate_for_review", "title": "RevertSP – GlobalRange Locked"}
+{"kind": "normative_text", "rule_id": "ETC-18:text:004", "section": "ETC-18", "source": "1) The StartSession method in step #1 results in a SyncSession method with a status code of INVALID_PARAMETER", "status": "candidate_for_review", "title": "RevertSP – GlobalRange Locked"}

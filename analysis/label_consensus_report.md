@@ -1,0 +1,3260 @@
+# Label Consensus Report
+
+Generated: 2026-05-31T20:21:19
+
+## Policy
+
+- Minimum independent reviewers: 3
+- Minimum reviewer confidence: 0.75
+- Review directory: `analysis/label_reviews`
+- Author labels are not counted as independent reviews.
+- Case names and author labels are hidden in default review exports to reduce label leakage.
+
+## Summary
+
+- accepted: 3591
+- needs_review: 278
+- quarantine_author_disagreement: 1
+- quarantine_concerns: 88
+- quarantine_disagreement: 19
+- quarantine_low_confidence: 17
+
+## Non-Accepted Cases
+
+- `cpin-password-return-type-doc-9f85d98fe9` [needs_review] cpin-password-return-type-doc
+  - internal name: C_PIN MSID PIN Get accepts password length 32 and rejects length 33: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: c-pin, password, max-bytes-32, get-postcondition, typed-return
+  - repair hint: Check successful C_PIN PIN Get returns: if a PIN cell is returned, it must satisfy the password max_bytes_32 type and cannot be a boolean coercion.
+  - evidence: core/5.1.3.50.txt, core/5.1.3.51.txt, core/5.1.3.52.txt, core/5.1.3.63.txt, core/5.3.2.12.txt, core/5.3.2.12.4.txt
+- `cpin-password-return-type-doc-fe888aae81` [needs_review] cpin-password-return-type-doc
+  - internal name: C_PIN MSID PIN Get accepts password length 32 and rejects length 33: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: c-pin, password, max-bytes-32, get-postcondition, typed-return
+  - repair hint: Check successful C_PIN PIN Get returns: if a PIN cell is returned, it must satisfy the password max_bytes_32 type and cannot be a boolean coercion.
+  - evidence: core/5.1.3.50.txt, core/5.1.3.51.txt, core/5.1.3.52.txt, core/5.1.3.63.txt, core/5.3.2.12.txt, core/5.3.2.12.4.txt
+- `cpin-password-return-type-doc-dc8d086025` [needs_review] cpin-password-return-type-doc
+  - internal name: C_PIN PIN Get rejects boolean password coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: c-pin, password, max-bytes-32, get-postcondition, typed-return
+  - repair hint: Check successful C_PIN PIN Get returns: if a PIN cell is returned, it must satisfy the password max_bytes_32 type and cannot be a boolean coercion.
+  - evidence: core/5.1.3.50.txt, core/5.1.3.51.txt, core/5.1.3.52.txt, core/5.1.3.63.txt, core/5.3.2.12.txt, core/5.3.2.12.4.txt
+- `cpin-password-return-type-doc-081d6b049c` [needs_review] cpin-password-return-type-doc
+  - internal name: C_PIN PIN Get rejects boolean password coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: c-pin, password, max-bytes-32, get-postcondition, typed-return
+  - repair hint: Check successful C_PIN PIN Get returns: if a PIN cell is returned, it must satisfy the password max_bytes_32 type and cannot be a boolean coercion.
+  - evidence: core/5.1.3.50.txt, core/5.1.3.51.txt, core/5.1.3.52.txt, core/5.1.3.63.txt, core/5.3.2.12.txt, core/5.3.2.12.4.txt
+- `genkey-pinlength-uinteger-tight-doc-9bc333b68e` [quarantine_concerns] genkey-pinlength-uinteger-tight-doc
+  - internal name: C_PIN GenKey PinLength zero remains valid
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: genkey, c-pin, pin-length, uinteger, parameter-type, credential-rotation
+  - repair hint: Check that C_PIN GenKey.PinLength is a uinteger in the range 0..32: booleans must not be accepted through Python integer coercion.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.2.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt, core/5.1.3.82.txt
+  - genkey_pinlength_uinteger_a: PASS conf=0.95 concerns=-
+  - genkey_pinlength_uinteger_b: PASS conf=0.94 concerns=The snippets state a maximum but no explicit minimum beyond the uinteger base type; this supports 0 but leaves no separate PinLength-specific lower-bound text.
+  - genkey_pinlength_uinteger_c: PASS conf=0.95 concerns=-
+- `locking-doc-b851c105a8` [quarantine_concerns] locking-doc
+  - internal name: ReadLocked true causes data protection error when MBR is inactive: correct status
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: host-io, locking-range, read-write-lock, range-boundary
+  - repair hint: Check host Read/Write expected behavior against effective locking ranges and ReadLockEnabled/WriteLockEnabled gating.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.8.txt, core/5.7.3.2.txt
+  - agent_nu2: PASS conf=0.9 concerns=-
+  - agent_omicron2: PASS conf=0.78 concerns=The trajectory does not state MBR Control state, and the target uses INVALID_PARAMETER rather than the snippet's literal Data Protection Error.
+  - agent_xi2: PASS conf=0.9 concerns=-
+- `locking-doc-d50b5ce5c2` [quarantine_concerns] locking-doc
+  - internal name: ReadLocked true causes data protection error when MBR is inactive: impossible success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: host-io, locking-range, read-write-lock, range-boundary
+  - repair hint: Check host Read/Write expected behavior against effective locking ranges and ReadLockEnabled/WriteLockEnabled gating.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.8.txt, core/5.7.3.2.txt
+  - agent_nu2: FAIL conf=0.94 concerns=-
+  - agent_omicron2: FAIL conf=0.86 concerns=MBR Control state is not shown, but no shown table row matches SUCCESS with no returned data for this locked read.
+  - agent_xi2: FAIL conf=0.9 concerns=-
+- `locking-doc-0a2dedce7e` [quarantine_concerns] locking-doc
+  - internal name: MBR inactive mixed read-lock boundary is data protection error: correct status
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: host-io, locking-range, read-write-lock, range-boundary
+  - repair hint: Check host Read/Write expected behavior against effective locking ranges and ReadLockEnabled/WriteLockEnabled gating.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.8.txt, core/5.7.3.2.txt
+  - agent_delta: PASS conf=0.9 concerns=-
+  - agent_epsilon: PASS conf=0.96 concerns=-
+  - agent_nu2: PASS conf=0.93 concerns=-
+  - agent_omicron2: PASS conf=0.86 concerns=The target uses INVALID_PARAMETER rather than the snippet's literal Data Protection Error.
+  - agent_xi2: PASS conf=0.88 concerns=-
+  - agent_zeta: PASS conf=0.93 concerns=-
+- `locking-doc-da4c2809f3` [quarantine_concerns] locking-doc
+  - internal name: WriteLocked true causes data protection error: correct status
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: host-io, locking-range, read-write-lock, range-boundary
+  - repair hint: Check host Read/Write expected behavior against effective locking ranges and ReadLockEnabled/WriteLockEnabled gating.
+  - evidence: core/5.7.2.2.7.txt, core/5.7.2.2.9.txt, core/5.7.3.2.txt
+  - agent_nu2: PASS conf=0.94 concerns=-
+  - agent_omicron2: PASS conf=0.87 concerns=The target uses INVALID_PARAMETER rather than the snippet's literal Data Protection Error.
+  - agent_xi2: PASS conf=0.9 concerns=-
+- `locking-doc-baeee0d5e5` [quarantine_concerns] locking-doc
+  - internal name: MBR inactive mixed write-lock boundary is data protection error: correct status
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: host-io, locking-range, read-write-lock, range-boundary
+  - repair hint: Check host Read/Write expected behavior against effective locking ranges and ReadLockEnabled/WriteLockEnabled gating.
+  - evidence: core/5.7.2.2.7.txt, core/5.7.2.2.9.txt, core/5.7.3.2.txt
+  - agent_delta: PASS conf=0.88 concerns=-
+  - agent_epsilon: PASS conf=0.95 concerns=-
+  - agent_nu2: PASS conf=0.93 concerns=-
+  - agent_omicron2: PASS conf=0.82 concerns=Assumes the boundary-crossing request is the Mixed row; the target also uses INVALID_PARAMETER rather than the snippet's literal Data Protection Error.
+  - agent_xi2: PASS conf=0.88 concerns=-
+  - agent_zeta: PASS conf=0.92 concerns=-
+- `mbr-doc-6de85002a7` [quarantine_author_disagreement] mbr-doc
+  - internal name: MBR active read inside shadow must not return old user data
+  - author label: FAIL
+  - reason: reviewer consensus PASS disagrees with author label FAIL
+  - concepts: host-io, mbr-shadowing, locking-range, table-230-231
+  - repair hint: Check MBRControl Enable/Done, LBA relation to the MBR region, mixed locking ranges, and read-result comparators.
+  - evidence: core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, core/5.7.3.2.txt
+  - agent_alpha: PASS conf=0.86 concerns=-
+  - agent_beta: PASS conf=0.92 concerns=-
+  - agent_gamma: PASS conf=0.76 concerns=The packet does not show the actual MBR-table contents, so the specific AA payload cannot be independently verified.
+- `mbr-table-doc-16a62ffe0e` [quarantine_concerns] mbr-table-doc
+  - internal name: Done true disables MBR table payload shadowing
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: host-io, mbr-shadowing, mbr-table, byte-table, payload-provenance
+  - repair hint: Check that successful authenticated MBR byte-table Set records the table payload and active MBR shadow reads return that payload, not prior user media data.
+  - evidence: core/5.7.3.6.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt
+  - mbr_table_a: PASS conf=1.0 concerns=-
+  - mbr_table_b: PASS conf=1.0 concerns=-
+  - mbr_table_c: PASS conf=0.75 concerns=The snippets do not explicitly state the exact post-Done read source, but they do define active shadowing only as Enable true and Done false.
+- `mbr-table-doc-f330655a4b` [quarantine_concerns] mbr-table-doc
+  - internal name: Unauthenticated MBR table Set cannot modify payload: correct status
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: host-io, mbr-shadowing, mbr-table, byte-table, payload-provenance
+  - repair hint: Check that successful authenticated MBR byte-table Set records the table payload and active MBR shadow reads return that payload, not prior user media data.
+  - evidence: core/5.7.3.6.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt
+  - mbr_table_a: PASS conf=1.0 concerns=-
+  - mbr_table_b: PASS conf=0.75 concerns=The snippet states the authorization requirement but does not define the exact error code mapping, so confidence is medium rather than high.
+  - mbr_table_c: PASS conf=1.0 concerns=-
+- `authority-password-operation-doc-135f96eeeb` [needs_review] authority-password-operation-doc
+  - internal name: Admin SP Authority Admin1 Get reports Password operation: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: auth, authority, preconfigured-row, operation, auth-method, password, get
+  - repair hint: Check Opal issued password authorities: Admin1 and User1 Operation cells are Password auth_method values, so successful Authority.Get cannot report another valid auth_method, a reserved auth_method, or boolean coercion.
+  - evidence: core/5.1.3.8.txt, core/5.3.2.10.txt, core/5.3.2.10.10.txt, opal/4.2.1.7.txt, opal/4.3.1.8.txt
+- `authority-password-operation-doc-135cb8c9f8` [needs_review] authority-password-operation-doc
+  - internal name: Admin SP Authority Admin1 Get reports Password operation: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: auth, authority, preconfigured-row, operation, auth-method, password, get
+  - repair hint: Check Opal issued password authorities: Admin1 and User1 Operation cells are Password auth_method values, so successful Authority.Get cannot report another valid auth_method, a reserved auth_method, or boolean coercion.
+  - evidence: core/5.1.3.8.txt, core/5.3.2.10.txt, core/5.3.2.10.10.txt, opal/4.2.1.7.txt, opal/4.3.1.8.txt
+- `authority-password-operation-doc-107414f664` [needs_review] authority-password-operation-doc
+  - internal name: Admin SP Authority Admin1 Get rejects reserved auth_method operation: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: auth, authority, preconfigured-row, operation, auth-method, password, get
+  - repair hint: Check Opal issued password authorities: Admin1 and User1 Operation cells are Password auth_method values, so successful Authority.Get cannot report another valid auth_method, a reserved auth_method, or boolean coercion.
+  - evidence: core/5.1.3.8.txt, core/5.3.2.10.txt, core/5.3.2.10.10.txt, opal/4.2.1.7.txt, opal/4.3.1.8.txt
+- `authority-password-operation-doc-34b265d2e5` [needs_review] authority-password-operation-doc
+  - internal name: Admin SP Authority Admin1 Get rejects reserved auth_method operation: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: auth, authority, preconfigured-row, operation, auth-method, password, get
+  - repair hint: Check Opal issued password authorities: Admin1 and User1 Operation cells are Password auth_method values, so successful Authority.Get cannot report another valid auth_method, a reserved auth_method, or boolean coercion.
+  - evidence: core/5.1.3.8.txt, core/5.3.2.10.txt, core/5.3.2.10.10.txt, opal/4.2.1.7.txt, opal/4.3.1.8.txt
+- `authority-password-operation-doc-39fc32cb95` [needs_review] authority-password-operation-doc
+  - internal name: Admin SP Authority Admin1 Get rejects boolean operation coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: auth, authority, preconfigured-row, operation, auth-method, password, get
+  - repair hint: Check Opal issued password authorities: Admin1 and User1 Operation cells are Password auth_method values, so successful Authority.Get cannot report another valid auth_method, a reserved auth_method, or boolean coercion.
+  - evidence: core/5.1.3.8.txt, core/5.3.2.10.txt, core/5.3.2.10.10.txt, opal/4.2.1.7.txt, opal/4.3.1.8.txt
+- `authority-password-operation-doc-62f0b9fd16` [needs_review] authority-password-operation-doc
+  - internal name: Admin SP Authority Admin1 Get rejects boolean operation coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: auth, authority, preconfigured-row, operation, auth-method, password, get
+  - repair hint: Check Opal issued password authorities: Admin1 and User1 Operation cells are Password auth_method values, so successful Authority.Get cannot report another valid auth_method, a reserved auth_method, or boolean coercion.
+  - evidence: core/5.1.3.8.txt, core/5.3.2.10.txt, core/5.3.2.10.10.txt, opal/4.2.1.7.txt, opal/4.3.1.8.txt
+- `authority-password-operation-doc-89809a218e` [needs_review] authority-password-operation-doc
+  - internal name: Locking SP Authority User1 Get reports Password operation: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: auth, authority, preconfigured-row, operation, auth-method, password, get
+  - repair hint: Check Opal issued password authorities: Admin1 and User1 Operation cells are Password auth_method values, so successful Authority.Get cannot report another valid auth_method, a reserved auth_method, or boolean coercion.
+  - evidence: core/5.1.3.8.txt, core/5.3.2.10.txt, core/5.3.2.10.10.txt, opal/4.2.1.7.txt, opal/4.3.1.8.txt
+- `authority-password-operation-doc-aab00fdbbf` [needs_review] authority-password-operation-doc
+  - internal name: Locking SP Authority User1 Get reports Password operation: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: auth, authority, preconfigured-row, operation, auth-method, password, get
+  - repair hint: Check Opal issued password authorities: Admin1 and User1 Operation cells are Password auth_method values, so successful Authority.Get cannot report another valid auth_method, a reserved auth_method, or boolean coercion.
+  - evidence: core/5.1.3.8.txt, core/5.3.2.10.txt, core/5.3.2.10.10.txt, opal/4.2.1.7.txt, opal/4.3.1.8.txt
+- `ace-get-preconfig-cells-doc-eb108b7799` [quarantine_concerns] ace-get-preconfig-cells-doc
+  - internal name: ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: correct return value
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: ace, get, preconfiguration, booleanexpr, columns, personalization, state-observation
+  - repair hint: Check that authorized ACE.Get validates returned BooleanExpr and Columns cells against Opal preconfiguration, while a successful BooleanExpr Set changes the later observable BooleanExpr instead of leaving the default value in force.
+  - evidence: core/5.1.3.2.txt, core/5.1.3.3.txt, core/5.3.2.9.txt, core/5.3.3.6.txt, core/5.3.4.2.2.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.2.1.6.txt, opal/4.3.1.7.txt, opal/4.3.8.1.txt
+  - ace_get_preconfig_a: PASS conf=0.99 concerns=-
+  - ace_get_preconfig_b: PASS conf=0.9 concerns=The document row includes the *ACE1 annotation, but the snippet explains it as a support note rather than an ACE expression element.
+  - ace_get_preconfig_c: PASS conf=0.93 concerns=The source note marks supported BooleanExpr values with *ACE1, but the returned value is one of the specified supported values.
+- `ace-get-preconfig-cells-doc-7e83181090` [quarantine_concerns] ace-get-preconfig-cells-doc
+  - internal name: ACE_DataStore_Get_All Get follows personalized BooleanExpr: correct return value
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: ace, get, preconfiguration, booleanexpr, columns, personalization, state-observation
+  - repair hint: Check that authorized ACE.Get validates returned BooleanExpr and Columns cells against Opal preconfiguration, while a successful BooleanExpr Set changes the later observable BooleanExpr instead of leaving the default value in force.
+  - evidence: core/5.1.3.2.txt, core/5.1.3.3.txt, core/5.3.2.9.txt, core/5.3.3.6.txt, core/5.3.4.2.2.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.2.1.6.txt, opal/4.3.1.7.txt, opal/4.3.8.1.txt
+  - ace_get_preconfig_a: PASS conf=0.98 concerns=-
+  - ace_get_preconfig_b: PASS conf=0.94 concerns=The Set value is shown as the User1 UID while the Get renders it symbolically as User1; this appears to be the same authority representation.
+  - ace_get_preconfig_c: PASS conf=0.9 concerns=The trajectory encodes User1 as its UID in Set and as a symbolic name in Get, which I treat as equivalent based on the authority reference evidence.
+- `ace-get-preconfig-cells-doc-e570c05a49` [quarantine_concerns] ace-get-preconfig-cells-doc
+  - internal name: ACE_DataStore_Get_All Get follows personalized BooleanExpr: impossible return value
+  - author label: FAIL
+  - reason: 2 review(s) recorded concerns
+  - concepts: ace, get, preconfiguration, booleanexpr, columns, personalization, state-observation
+  - repair hint: Check that authorized ACE.Get validates returned BooleanExpr and Columns cells against Opal preconfiguration, while a successful BooleanExpr Set changes the later observable BooleanExpr instead of leaving the default value in force.
+  - evidence: core/5.1.3.2.txt, core/5.1.3.3.txt, core/5.3.2.9.txt, core/5.3.3.6.txt, core/5.3.4.2.2.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.2.1.6.txt, opal/4.3.1.7.txt, opal/4.3.8.1.txt
+  - ace_get_preconfig_a: FAIL conf=0.98 concerns=-
+  - ace_get_preconfig_b: FAIL conf=0.95 concerns=The Set value is provided as a UID and the Get value symbolically, but the UID corresponds to the User1 authority in the packet context.
+  - ace_get_preconfig_c: FAIL conf=0.9 concerns=The Set uses the User1 UID while the expected readable form may be symbolic, but either way Admins does not reflect the successful modification.
+- `ace-kaes-set-crosscheck-long-doc-43ab6dee92` [quarantine_concerns] ace-kaes-set-crosscheck-long-doc
+  - internal name: ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: correct return value
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: ace, k-aes, accesscontrol, getacl, booleanexpr, columns, personalization, long-trajectory
+  - repair hint: Check the boundary between an ACE object's Set association and the target method association it protects: K_AES GenKey ACE rows have BooleanExpr/Columns cells from Opal, ACE.Set may personalize BooleanExpr, but GetACL for the ACE object's Set method still returns ACE_ACE_Set_BooleanExpression while GetACL for the K_AES key object's GenKey method still returns the K_AES GenKey ACE.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.6.txt, core/5.3.3.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+  - ace_kaes_set_crosscheck_a: PASS conf=0.88 concerns=The packet evidence does not directly show that authority UID 0000000900030001 is named User1; label assumes the trajectory's UID-to-name aliasing is accepted.
+  - ace_kaes_set_crosscheck_b: PASS conf=0.93 concerns=-
+  - ace_kaes_set_crosscheck_c: PASS conf=0.9 concerns=The trajectory uses a User1 UID while the final response uses symbolic User1; I treat them as the same Authority reference based on the cited object-reference evidence.
+- `ace-kaes-set-crosscheck-long-doc-d3889c2bf7` [quarantine_concerns] ace-kaes-set-crosscheck-long-doc
+  - internal name: ACE_K_AES_128_GlobalRange_GenKey Get follows personalized User1 expression: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: ace, k-aes, accesscontrol, getacl, booleanexpr, columns, personalization, long-trajectory
+  - repair hint: Check the boundary between an ACE object's Set association and the target method association it protects: K_AES GenKey ACE rows have BooleanExpr/Columns cells from Opal, ACE.Set may personalize BooleanExpr, but GetACL for the ACE object's Set method still returns ACE_ACE_Set_BooleanExpression while GetACL for the K_AES key object's GenKey method still returns the K_AES GenKey ACE.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.6.txt, core/5.3.3.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+  - ace_kaes_set_crosscheck_a: FAIL conf=0.94 concerns=-
+  - ace_kaes_set_crosscheck_b: FAIL conf=0.93 concerns=-
+  - ace_kaes_set_crosscheck_c: FAIL conf=0.9 concerns=The trajectory uses a User1 UID while the final response uses symbolic Admins/User1 names; the label assumes these symbolic names correspond to the cited Authority references.
+- `ace-kaes-set-crosscheck-long-doc-c181bd1609` [quarantine_concerns] ace-kaes-set-crosscheck-long-doc
+  - internal name: ACE_K_AES_256_Range1_GenKey Get follows personalized Admins OR User1 expression: correct return value
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: ace, k-aes, accesscontrol, getacl, booleanexpr, columns, personalization, long-trajectory
+  - repair hint: Check the boundary between an ACE object's Set association and the target method association it protects: K_AES GenKey ACE rows have BooleanExpr/Columns cells from Opal, ACE.Set may personalize BooleanExpr, but GetACL for the ACE object's Set method still returns ACE_ACE_Set_BooleanExpression while GetACL for the K_AES key object's GenKey method still returns the K_AES GenKey ACE.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.6.txt, core/5.3.3.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+  - ace_kaes_set_crosscheck_a: PASS conf=0.88 concerns=The packet evidence does not directly show that authority UID 0000000900030001 is named User1; label assumes the trajectory's UID-to-name aliasing is accepted.
+  - ace_kaes_set_crosscheck_b: PASS conf=0.93 concerns=-
+  - ace_kaes_set_crosscheck_c: PASS conf=0.9 concerns=The final response normalizes the User1 UID to a symbolic User1 name; I treat that as equivalent to the trajectory reference.
+- `ace-kaes-set-crosscheck-long-doc-eb4182ffb7` [quarantine_concerns] ace-kaes-set-crosscheck-long-doc
+  - internal name: ACE_K_AES_256_Range1_GenKey Get follows personalized Admins OR User1 expression: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: ace, k-aes, accesscontrol, getacl, booleanexpr, columns, personalization, long-trajectory
+  - repair hint: Check the boundary between an ACE object's Set association and the target method association it protects: K_AES GenKey ACE rows have BooleanExpr/Columns cells from Opal, ACE.Set may personalize BooleanExpr, but GetACL for the ACE object's Set method still returns ACE_ACE_Set_BooleanExpression while GetACL for the K_AES key object's GenKey method still returns the K_AES GenKey ACE.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.6.txt, core/5.3.3.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+  - ace_kaes_set_crosscheck_a: FAIL conf=0.94 concerns=-
+  - ace_kaes_set_crosscheck_b: FAIL conf=0.93 concerns=-
+  - ace_kaes_set_crosscheck_c: FAIL conf=0.9 concerns=The label assumes the symbolic User1/Admins names in the response correspond to the Authority UID references in the trajectory and evidence.
+- `startsession-hostsessionid-echo-tight-do-7d3e36aea2` [quarantine_concerns] startsession-hostsessionid-echo-tight-doc
+  - internal name: SyncSession lower-camel hostSessionID still echoes StartSession HostSessionID: correct return value
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: session-manager, start-session, sync-session, host-session-id, return-shape, exact-echo
+  - repair hint: Check that successful StartSession/SyncSession echoes the exact host-side session number supplied in StartSession.HostSessionID; merely returning any HostSessionID field is not enough.
+  - evidence: core/3.3.7.1.txt, core/5.2.3.1.txt, core/5.2.3.1.1.txt, core/5.2.3.2.txt, core/5.2.3.2.1.txt, opal/4.1.1.2.txt
+  - startsession_hsn_echo_a: PASS conf=0.86 concerns=-
+  - startsession_hsn_echo_b: PASS conf=0.93 concerns=-
+  - startsession_hsn_echo_c: PASS conf=0.93 concerns=Evidence names the protocol parameter HostSessionID, while this trajectory uses lower-camel hostSessionID; judgment treats it as the same field based on the case trajectory.
+- `startsession-hostsessionid-echo-tight-do-bc1800380f` [quarantine_concerns] startsession-hostsessionid-echo-tight-doc
+  - internal name: SyncSession lower-camel hostSessionID still echoes StartSession HostSessionID: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: session-manager, start-session, sync-session, host-session-id, return-shape, exact-echo
+  - repair hint: Check that successful StartSession/SyncSession echoes the exact host-side session number supplied in StartSession.HostSessionID; merely returning any HostSessionID field is not enough.
+  - evidence: core/3.3.7.1.txt, core/5.2.3.1.txt, core/5.2.3.1.1.txt, core/5.2.3.2.txt, core/5.2.3.2.1.txt, opal/4.1.1.2.txt
+  - startsession_hsn_echo_a: FAIL conf=0.88 concerns=-
+  - startsession_hsn_echo_b: FAIL conf=0.96 concerns=-
+  - startsession_hsn_echo_c: FAIL conf=0.94 concerns=Evidence names the protocol parameter HostSessionID, while this trajectory uses lower-camel hostSessionID; judgment treats it as the same field based on the case trajectory.
+- `session-id-uinteger-tight-doc-4b6e62175b` [quarantine_concerns] session-id-uinteger-tight-doc
+  - internal name: StartSession accepts hexadecimal HostSessionID uinteger
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: session-manager, start-session, start-trusted-session, host-session-id, sp-session-id, uinteger, parameter-type
+  - repair hint: Check that explicitly supplied HostSessionID/SPSessionID startup parameters are uinteger values: negative numbers, booleans, and nonnumeric text cannot produce successful startup or trusted-startup exchanges.
+  - evidence: core/5.2.3.1.txt, core/5.2.3.1.1.txt, core/5.2.3.2.1.txt, core/5.2.3.2.2.txt, core/5.2.3.3.txt, core/5.2.3.3.1.txt, core/5.2.3.3.2.txt, core/5.2.3.4.1.txt, core/5.2.3.4.2.txt, opal/4.1.1.2.txt
+  - session_id_uinteger_a: PASS conf=0.9 concerns=-
+  - session_id_uinteger_b: PASS conf=0.8 concerns=The snippets state the parameter type but do not separately define accepted lexical encodings for uinteger values.
+  - session_id_uinteger_c: PASS conf=0.82 concerns=The snippets do not define textual encodings for uinteger, so this assumes 0x2A is an accepted numeric representation rather than arbitrary text.
+- `startsession-write-boolean-tight-doc-64f9034fd1` [quarantine_concerns] startsession-write-boolean-tight-doc
+  - internal name: StartSession Write False is a boolean read-only request
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: session-manager, start-session, write, read-write-session, read-only-session, boolean, parameter-type
+  - repair hint: Check that StartSession.Write is an explicit boolean selector for read-write vs read-only session type; non-boolean values such as 2 or arbitrary text cannot produce successful startup.
+  - evidence: core/5.1.3.10.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, opal/4.1.1.2.txt
+  - startsession_write_bool_a: PASS conf=0.78 concerns=Opal support for Write=false is optional, and the trajectory does not state the device capability.
+  - startsession_write_bool_b: PASS conf=0.82 concerns=The snippets do not state this specific TPer supports read-only sessions, only that Opal permits optional support for Write False.
+  - startsession_write_bool_c: PASS conf=0.86 concerns=-
+- `startsession-sp-busy-doc-e4a19e772f` [needs_review] startsession-sp-busy-doc
+  - internal name: Same-SP read-write StartSession while read-write session is open returns SP_BUSY: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: session-manager, start-session, sync-session, sp-busy, read-write-session, read-only-session, session-state
+  - repair hint: Check concurrent StartSession handling: same-SP read-write startup while any session is open, or same-SP read-only startup while a read-write session is open, must return SP_BUSY rather than SUCCESS.
+  - evidence: core/5.1.5.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/5.2.3.2.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `startsession-sp-busy-doc-b0664d5676` [needs_review] startsession-sp-busy-doc
+  - internal name: Same-SP read-write StartSession while read-write session is open returns SP_BUSY: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: session-manager, start-session, sync-session, sp-busy, read-write-session, read-only-session, session-state
+  - repair hint: Check concurrent StartSession handling: same-SP read-write startup while any session is open, or same-SP read-only startup while a read-write session is open, must return SP_BUSY rather than SUCCESS.
+  - evidence: core/5.1.5.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/5.2.3.2.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `startsession-sp-busy-doc-4810aa7e2c` [needs_review] startsession-sp-busy-doc
+  - internal name: Same-SP read-only StartSession while read-write session is open returns SP_BUSY: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: session-manager, start-session, sync-session, sp-busy, read-write-session, read-only-session, session-state
+  - repair hint: Check concurrent StartSession handling: same-SP read-write startup while any session is open, or same-SP read-only startup while a read-write session is open, must return SP_BUSY rather than SUCCESS.
+  - evidence: core/5.1.5.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/5.2.3.2.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `startsession-sp-busy-doc-fdbd5635d3` [needs_review] startsession-sp-busy-doc
+  - internal name: Same-SP read-only StartSession while read-write session is open returns SP_BUSY: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: session-manager, start-session, sync-session, sp-busy, read-write-session, read-only-session, session-state
+  - repair hint: Check concurrent StartSession handling: same-SP read-write startup while any session is open, or same-SP read-only startup while a read-write session is open, must return SP_BUSY rather than SUCCESS.
+  - evidence: core/5.1.5.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/5.2.3.2.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `startsession-sp-busy-doc-87456798b9` [needs_review] startsession-sp-busy-doc
+  - internal name: Same-SP read-write StartSession while read-only session is open returns SP_BUSY: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: session-manager, start-session, sync-session, sp-busy, read-write-session, read-only-session, session-state
+  - repair hint: Check concurrent StartSession handling: same-SP read-write startup while any session is open, or same-SP read-only startup while a read-write session is open, must return SP_BUSY rather than SUCCESS.
+  - evidence: core/5.1.5.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/5.2.3.2.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `startsession-sp-busy-doc-5cf51c8947` [needs_review] startsession-sp-busy-doc
+  - internal name: Same-SP read-write StartSession while read-only session is open returns SP_BUSY: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: session-manager, start-session, sync-session, sp-busy, read-write-session, read-only-session, session-state
+  - repair hint: Check concurrent StartSession handling: same-SP read-write startup while any session is open, or same-SP read-only startup while a read-write session is open, must return SP_BUSY rather than SUCCESS.
+  - evidence: core/5.1.5.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/5.2.3.2.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `startsession-sp-busy-doc-4d12c0fd4a` [needs_review] startsession-sp-busy-doc
+  - internal name: Same-SP read-write StartSession after EndSession can succeed: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: session-manager, start-session, sync-session, sp-busy, read-write-session, read-only-session, session-state
+  - repair hint: Check concurrent StartSession handling: same-SP read-write startup while any session is open, or same-SP read-only startup while a read-write session is open, must return SP_BUSY rather than SUCCESS.
+  - evidence: core/5.1.5.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/5.2.3.2.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `startsession-sp-busy-doc-5a5de06dd0` [needs_review] startsession-sp-busy-doc
+  - internal name: Same-SP read-write StartSession after EndSession can succeed: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: session-manager, start-session, sync-session, sp-busy, read-write-session, read-only-session, session-state
+  - repair hint: Check concurrent StartSession handling: same-SP read-write startup while any session is open, or same-SP read-only startup while a read-write session is open, must return SP_BUSY rather than SUCCESS.
+  - evidence: core/5.1.5.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/5.2.3.2.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `adminsp-rw-session-combination-doc-328140350d` [needs_review] adminsp-rw-session-combination-doc
+  - internal name: Open AdminSP read-write session cannot be combined with LockingSP read-write session: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, start-session, read-write-session, cross-sp-session, session-state
+  - repair hint: Check that an open read-write AdminSP session cannot be combined with sessions to other SPs, and a read-write AdminSP StartSession cannot succeed while another SP session is open.
+  - evidence: core/5.4.4.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `adminsp-rw-session-combination-doc-ae122be9a9` [needs_review] adminsp-rw-session-combination-doc
+  - internal name: Open AdminSP read-write session cannot be combined with LockingSP read-only session: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, start-session, read-write-session, cross-sp-session, session-state
+  - repair hint: Check that an open read-write AdminSP session cannot be combined with sessions to other SPs, and a read-write AdminSP StartSession cannot succeed while another SP session is open.
+  - evidence: core/5.4.4.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `adminsp-rw-session-combination-doc-f0c05c073c` [needs_review] adminsp-rw-session-combination-doc
+  - internal name: Read-write AdminSP StartSession cannot succeed while LockingSP read-write session is open: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, start-session, read-write-session, cross-sp-session, session-state
+  - repair hint: Check that an open read-write AdminSP session cannot be combined with sessions to other SPs, and a read-write AdminSP StartSession cannot succeed while another SP session is open.
+  - evidence: core/5.4.4.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `adminsp-rw-session-combination-doc-0c0571b676` [needs_review] adminsp-rw-session-combination-doc
+  - internal name: Read-write AdminSP StartSession cannot succeed while LockingSP read-only session is open: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, start-session, read-write-session, cross-sp-session, session-state
+  - repair hint: Check that an open read-write AdminSP session cannot be combined with sessions to other SPs, and a read-write AdminSP StartSession cannot succeed while another SP session is open.
+  - evidence: core/5.4.4.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `adminsp-rw-session-combination-doc-a5582628a3` [needs_review] adminsp-rw-session-combination-doc
+  - internal name: Read-write AdminSP StartSession can succeed after LockingSP session closes: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, start-session, read-write-session, cross-sp-session, session-state
+  - repair hint: Check that an open read-write AdminSP session cannot be combined with sessions to other SPs, and a read-write AdminSP StartSession cannot succeed while another SP session is open.
+  - evidence: core/5.4.4.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `adminsp-rw-session-combination-doc-0dab39adcd` [needs_review] adminsp-rw-session-combination-doc
+  - internal name: Read-write AdminSP StartSession can succeed after LockingSP session closes: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, start-session, read-write-session, cross-sp-session, session-state
+  - repair hint: Check that an open read-write AdminSP session cannot be combined with sessions to other SPs, and a read-write AdminSP StartSession cannot succeed while another SP session is open.
+  - evidence: core/5.4.4.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `crypto-stream-bufferout-result-tight-doc-7c09b49947` [needs_review] crypto-stream-bufferout-result-tight-doc
+  - internal name: Encrypt with BufferOut returns empty result
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, bufferout, result-shape
+  - repair hint: Check crypto stream BufferOut result shape: Encrypt/Decrypt with BufferOut return an empty result, and HMAC after HMACInit with BufferOut also returns an empty result.
+  - evidence: core/5.6.4.4.txt, core/5.6.4.4.1.txt, core/5.6.4.4.2.txt, core/5.6.4.4.3.1.txt, core/5.6.4.7.txt, core/5.6.4.7.1.txt, core/5.6.4.7.2.txt, core/5.6.4.7.3.1.txt, core/5.6.4.14.1.txt, core/5.6.4.15.1.txt, core/5.6.4.15.2.1.txt
+- `crypto-stream-bufferout-result-tight-doc-2b109c690d` [needs_review] crypto-stream-bufferout-result-tight-doc
+  - internal name: Encrypt with BufferOut cannot return ciphertext bytes: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, bufferout, result-shape
+  - repair hint: Check crypto stream BufferOut result shape: Encrypt/Decrypt with BufferOut return an empty result, and HMAC after HMACInit with BufferOut also returns an empty result.
+  - evidence: core/5.6.4.4.txt, core/5.6.4.4.1.txt, core/5.6.4.4.2.txt, core/5.6.4.4.3.1.txt, core/5.6.4.7.txt, core/5.6.4.7.1.txt, core/5.6.4.7.2.txt, core/5.6.4.7.3.1.txt, core/5.6.4.14.1.txt, core/5.6.4.15.1.txt, core/5.6.4.15.2.1.txt
+- `crypto-stream-bufferout-result-tight-doc-3b93200729` [needs_review] crypto-stream-bufferout-result-tight-doc
+  - internal name: HMAC after HMACInit BufferOut returns empty result
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, bufferout, result-shape
+  - repair hint: Check crypto stream BufferOut result shape: Encrypt/Decrypt with BufferOut return an empty result, and HMAC after HMACInit with BufferOut also returns an empty result.
+  - evidence: core/5.6.4.4.txt, core/5.6.4.4.1.txt, core/5.6.4.4.2.txt, core/5.6.4.4.3.1.txt, core/5.6.4.7.txt, core/5.6.4.7.1.txt, core/5.6.4.7.2.txt, core/5.6.4.7.3.1.txt, core/5.6.4.14.1.txt, core/5.6.4.15.1.txt, core/5.6.4.15.2.1.txt
+- `crypto-stream-bufferout-result-tight-doc-3b7ac9bae5` [needs_review] crypto-stream-bufferout-result-tight-doc
+  - internal name: HMAC after HMACInit BufferOut cannot return consumed data: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, bufferout, result-shape
+  - repair hint: Check crypto stream BufferOut result shape: Encrypt/Decrypt with BufferOut return an empty result, and HMAC after HMACInit with BufferOut also returns an empty result.
+  - evidence: core/5.6.4.4.txt, core/5.6.4.4.1.txt, core/5.6.4.4.2.txt, core/5.6.4.4.3.1.txt, core/5.6.4.7.txt, core/5.6.4.7.1.txt, core/5.6.4.7.2.txt, core/5.6.4.7.3.1.txt, core/5.6.4.14.1.txt, core/5.6.4.15.1.txt, core/5.6.4.15.2.1.txt
+- `crypto-cellblock-accesscontrol-doc-97f98eab3c` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `crypto-cellblock-accesscontrol-doc-95315ddeea` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: Encrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `crypto-cellblock-accesscontrol-doc-26beb172c7` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: Decrypt DataStore input cellblock requires DataStore Get ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `crypto-cellblock-accesscontrol-doc-d0a647e557` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: Decrypt DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `crypto-cellblock-accesscontrol-doc-cd826848d0` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: Sign DataStore input cellblock requires DataStore Get ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `crypto-cellblock-accesscontrol-doc-33ed92e835` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: Sign DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `crypto-cellblock-accesscontrol-doc-c5d31b40dd` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: Hash DataStore BufferIn cellblock requires DataStore Get ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `crypto-cellblock-accesscontrol-doc-1f8ae9e38e` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: HashInit DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `crypto-cellblock-accesscontrol-doc-7996dde470` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: HMAC DataStore Buffer cellblock requires DataStore Get ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `crypto-cellblock-accesscontrol-doc-e8abc057d3` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: HMACInit DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `hash-stream-state-bufferout-tight-doc-bcc88fbd96` [needs_review] hash-stream-state-bufferout-tight-doc
+  - internal name: Hash cannot run before HashInit opens the stream: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
+  - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
+  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+- `hash-stream-state-bufferout-tight-doc-b254c08faf` [needs_review] hash-stream-state-bufferout-tight-doc
+  - internal name: HashFinalize cannot run before HashInit opens the stream: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
+  - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
+  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+- `hash-stream-state-bufferout-tight-doc-362d08fc7b` [needs_review] hash-stream-state-bufferout-tight-doc
+  - internal name: Hash can run while Hash stream is open
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
+  - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
+  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+- `hash-stream-state-bufferout-tight-doc-730771a014` [needs_review] hash-stream-state-bufferout-tight-doc
+  - internal name: Second HashInit before HashFinalize cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
+  - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
+  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+- `hash-stream-state-bufferout-tight-doc-0ff0e93916` [needs_review] hash-stream-state-bufferout-tight-doc
+  - internal name: Hash after HashFinalize cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
+  - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
+  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+- `hash-stream-state-bufferout-tight-doc-e5acf64509` [needs_review] hash-stream-state-bufferout-tight-doc
+  - internal name: Hash after HashInit BufferOut returns empty result
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
+  - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
+  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+- `hash-stream-state-bufferout-tight-doc-3d2741584e` [needs_review] hash-stream-state-bufferout-tight-doc
+  - internal name: Hash after HashInit BufferOut cannot return consumed data: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
+  - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
+  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+- `xor-byte-table-bufferout-doc-88bb6bd32f` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR without BufferOut returns bytewise XOR result: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `xor-byte-table-bufferout-doc-69a3e01288` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR without BufferOut returns bytewise XOR result: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `xor-byte-table-bufferout-doc-0454cb8517` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR with BufferOut returns empty result
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `xor-byte-table-bufferout-doc-644b54a584` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR fails when PatternInput is shorter than input data: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `xor-byte-table-bufferout-doc-640f445834` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR DeletePattern clears PatternInput byte table: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `xor-byte-table-bufferout-doc-4370f68ed9` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR DeletePattern clears PatternInput byte table: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `verify-result-boolean-tight-doc-2000dbf4ee` [needs_review] verify-result-boolean-tight-doc
+  - internal name: Verify success may return True
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, verify, hash-object, public-key-credential, result-shape
+  - repair hint: Check Verify result shape: successful Verify on a hash object or public key credential returns a Boolean result, so non-Boolean successful return payloads are invalid.
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.3.txt, core/5.6.4.10.3.1.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt
+- `verify-result-boolean-tight-doc-68bd983438` [needs_review] verify-result-boolean-tight-doc
+  - internal name: Verify success may return False
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, verify, hash-object, public-key-credential, result-shape
+  - repair hint: Check Verify result shape: successful Verify on a hash object or public key credential returns a Boolean result, so non-Boolean successful return payloads are invalid.
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.3.txt, core/5.6.4.10.3.1.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt
+- `verify-result-boolean-tight-doc-f0bde60524` [needs_review] verify-result-boolean-tight-doc
+  - internal name: Verify success cannot return non-Boolean bytes: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, verify, hash-object, public-key-credential, result-shape
+  - repair hint: Check Verify result shape: successful Verify on a hash object or public key credential returns a Boolean result, so non-Boolean successful return payloads are invalid.
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.3.txt, core/5.6.4.10.3.1.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt
+- `sign-bufferout-result-tight-doc-12ffa20d98` [needs_review] sign-bufferout-result-tight-doc
+  - internal name: Sign with BufferOut returns empty result
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, sign, hash-object, public-key-credential, bufferout, result-shape
+  - repair hint: Check generic Crypto Template Sign result shape: without BufferOut the signed data is returned, while with BufferOut the signed data is stored to the output cellblock and the method result is empty.
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.2.txt, core/5.6.4.9.3.1.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt
+- `sign-bufferout-result-tight-doc-4b6aa5888f` [needs_review] sign-bufferout-result-tight-doc
+  - internal name: Sign with BufferOut cannot return signed bytes: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, sign, hash-object, public-key-credential, bufferout, result-shape
+  - repair hint: Check generic Crypto Template Sign result shape: without BufferOut the signed data is returned, while with BufferOut the signed data is stored to the output cellblock and the method result is empty.
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.2.txt, core/5.6.4.9.3.1.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt
+- `sign-bufferout-result-tight-doc-890f60fc40` [needs_review] sign-bufferout-result-tight-doc
+  - internal name: Sign without BufferOut may return signed bytes
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, sign, hash-object, public-key-credential, bufferout, result-shape
+  - repair hint: Check generic Crypto Template Sign result shape: without BufferOut the signed data is returned, while with BufferOut the signed data is stored to the output cellblock and the method result is empty.
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.2.txt, core/5.6.4.9.3.1.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt
+- `sp-lifecycle-state-enum-doc-aab216f083` [needs_review] sp-lifecycle-state-enum-doc
+  - internal name: SP LifeCycleState Get accepts Issued and rejects reserved Core gap: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: sp-lifecycle-state-enum-doc
+  - evidence: core/5.1.3.46.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt, opal/5.2.3.txt
+- `sp-lifecycle-state-enum-doc-bc0ca41a4b` [needs_review] sp-lifecycle-state-enum-doc
+  - internal name: SP LifeCycleState Get accepts Issued and rejects reserved Core gap: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sp-lifecycle-state-enum-doc
+  - evidence: core/5.1.3.46.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt, opal/5.2.3.txt
+- `sp-lifecycle-state-enum-doc-786efd9c4c` [needs_review] sp-lifecycle-state-enum-doc
+  - internal name: SP LifeCycleState Get accepts Manufactured and rejects reserved Opal top value: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: sp-lifecycle-state-enum-doc
+  - evidence: core/5.1.3.46.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt, opal/5.2.3.txt
+- `sp-lifecycle-state-enum-doc-7c2aba2204` [needs_review] sp-lifecycle-state-enum-doc
+  - internal name: SP LifeCycleState Get accepts Manufactured and rejects reserved Opal top value: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sp-lifecycle-state-enum-doc
+  - evidence: core/5.1.3.46.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt, opal/5.2.3.txt
+- `sp-lifecycle-state-enum-doc-a0ddf33e3a` [needs_review] sp-lifecycle-state-enum-doc
+  - internal name: SP LifeCycleState Get rejects boolean lifecycle coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: sp-lifecycle-state-enum-doc
+  - evidence: core/5.1.3.46.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt, opal/5.2.3.txt
+- `sp-lifecycle-state-enum-doc-8a57077b67` [needs_review] sp-lifecycle-state-enum-doc
+  - internal name: SP LifeCycleState Get rejects boolean lifecycle coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sp-lifecycle-state-enum-doc
+  - evidence: core/5.1.3.46.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt, opal/5.2.3.txt
+- `sp-frozen-get-type-doc-3865620604` [needs_review] sp-frozen-get-type-doc
+  - internal name: SP Frozen Get accepts boolean and rejects arbitrary text: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: sp-table, get, typed-return, uid, bytes, uinteger, frozen, boolean, lifecycle
+  - repair hint: Check SP successful Get return typing: UID is uid/bytes_8, Bytes is uinteger_8, LifeCycleState is an enum, and Frozen is boolean.
+  - evidence: core/5.1.3.10.txt, core/5.1.3.81.txt, core/5.1.3.97.txt, core/5.4.2.4.txt, core/5.4.2.4.1.txt, core/5.4.2.4.6.txt, core/5.4.2.4.8.txt
+- `sp-frozen-get-type-doc-933e393c9b` [needs_review] sp-frozen-get-type-doc
+  - internal name: SP Frozen Get accepts boolean and rejects arbitrary text: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sp-table, get, typed-return, uid, bytes, uinteger, frozen, boolean, lifecycle
+  - repair hint: Check SP successful Get return typing: UID is uid/bytes_8, Bytes is uinteger_8, LifeCycleState is an enum, and Frozen is boolean.
+  - evidence: core/5.1.3.10.txt, core/5.1.3.81.txt, core/5.1.3.97.txt, core/5.4.2.4.txt, core/5.4.2.4.1.txt, core/5.4.2.4.6.txt, core/5.4.2.4.8.txt
+- `sp-frozen-get-type-doc-b645b59ca3` [needs_review] sp-frozen-get-type-doc
+  - internal name: SP UID Get accepts uid bytes_8 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: sp-table, get, typed-return, uid, bytes, uinteger, frozen, boolean, lifecycle
+  - repair hint: Check SP successful Get return typing: UID is uid/bytes_8, Bytes is uinteger_8, LifeCycleState is an enum, and Frozen is boolean.
+  - evidence: core/5.1.3.10.txt, core/5.1.3.81.txt, core/5.1.3.97.txt, core/5.4.2.4.txt, core/5.4.2.4.1.txt, core/5.4.2.4.6.txt, core/5.4.2.4.8.txt
+- `sp-frozen-get-type-doc-d2cdce0726` [needs_review] sp-frozen-get-type-doc
+  - internal name: SP UID Get accepts uid bytes_8 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sp-table, get, typed-return, uid, bytes, uinteger, frozen, boolean, lifecycle
+  - repair hint: Check SP successful Get return typing: UID is uid/bytes_8, Bytes is uinteger_8, LifeCycleState is an enum, and Frozen is boolean.
+  - evidence: core/5.1.3.10.txt, core/5.1.3.81.txt, core/5.1.3.97.txt, core/5.4.2.4.txt, core/5.4.2.4.1.txt, core/5.4.2.4.6.txt, core/5.4.2.4.8.txt
+- `sp-frozen-get-type-doc-6321c9d9d3` [needs_review] sp-frozen-get-type-doc
+  - internal name: SP Bytes Get accepts uinteger_8 and rejects boolean coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: sp-table, get, typed-return, uid, bytes, uinteger, frozen, boolean, lifecycle
+  - repair hint: Check SP successful Get return typing: UID is uid/bytes_8, Bytes is uinteger_8, LifeCycleState is an enum, and Frozen is boolean.
+  - evidence: core/5.1.3.10.txt, core/5.1.3.81.txt, core/5.1.3.97.txt, core/5.4.2.4.txt, core/5.4.2.4.1.txt, core/5.4.2.4.6.txt, core/5.4.2.4.8.txt
+- `sp-frozen-get-type-doc-13dd0ac746` [needs_review] sp-frozen-get-type-doc
+  - internal name: SP Bytes Get accepts uinteger_8 and rejects boolean coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sp-table, get, typed-return, uid, bytes, uinteger, frozen, boolean, lifecycle
+  - repair hint: Check SP successful Get return typing: UID is uid/bytes_8, Bytes is uinteger_8, LifeCycleState is an enum, and Frozen is boolean.
+  - evidence: core/5.1.3.10.txt, core/5.1.3.81.txt, core/5.1.3.97.txt, core/5.4.2.4.txt, core/5.4.2.4.1.txt, core/5.4.2.4.6.txt, core/5.4.2.4.8.txt
+- `tperinfo-get-types-doc-fd2338c1fc` [needs_review] tperinfo-get-types-doc
+  - internal name: TPerInfo GUDID Get accepts bytes_12 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: tperinfo, get, typed-return, uid, gudid, bytes-12, uinteger, programmatic-reset, boolean
+  - repair hint: Check TPerInfo successful Get return typing: UID is uid/bytes_8, GUDID is bytes_12, Bytes/Generation/FirmwareVersion/ProtocolVersion/SpaceForIssuance are uinteger_8 or uinteger_4, and Opal ProgrammaticResetEnable is boolean. The table is readable by Anybody, but success cannot carry malformed typed cells.
+  - evidence: core/5.1.3.txt, core/5.1.3.10.txt, core/5.1.3.16.txt, core/5.1.3.81.txt, core/5.1.3.82.txt, core/5.1.3.93.txt, core/5.1.3.97.txt, core/5.4.2.1.txt, core/5.4.2.1.1.txt, core/5.4.2.1.3.txt, opal/4.2.3.1.txt
+- `tperinfo-get-types-doc-842564bb47` [needs_review] tperinfo-get-types-doc
+  - internal name: TPerInfo GUDID Get accepts bytes_12 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: tperinfo, get, typed-return, uid, gudid, bytes-12, uinteger, programmatic-reset, boolean
+  - repair hint: Check TPerInfo successful Get return typing: UID is uid/bytes_8, GUDID is bytes_12, Bytes/Generation/FirmwareVersion/ProtocolVersion/SpaceForIssuance are uinteger_8 or uinteger_4, and Opal ProgrammaticResetEnable is boolean. The table is readable by Anybody, but success cannot carry malformed typed cells.
+  - evidence: core/5.1.3.txt, core/5.1.3.10.txt, core/5.1.3.16.txt, core/5.1.3.81.txt, core/5.1.3.82.txt, core/5.1.3.93.txt, core/5.1.3.97.txt, core/5.4.2.1.txt, core/5.4.2.1.1.txt, core/5.4.2.1.3.txt, opal/4.2.3.1.txt
+- `tperinfo-get-types-doc-85c5cd7d94` [needs_review] tperinfo-get-types-doc
+  - internal name: TPerInfo UID Get accepts uid bytes_8 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: tperinfo, get, typed-return, uid, gudid, bytes-12, uinteger, programmatic-reset, boolean
+  - repair hint: Check TPerInfo successful Get return typing: UID is uid/bytes_8, GUDID is bytes_12, Bytes/Generation/FirmwareVersion/ProtocolVersion/SpaceForIssuance are uinteger_8 or uinteger_4, and Opal ProgrammaticResetEnable is boolean. The table is readable by Anybody, but success cannot carry malformed typed cells.
+  - evidence: core/5.1.3.txt, core/5.1.3.10.txt, core/5.1.3.16.txt, core/5.1.3.81.txt, core/5.1.3.82.txt, core/5.1.3.93.txt, core/5.1.3.97.txt, core/5.4.2.1.txt, core/5.4.2.1.1.txt, core/5.4.2.1.3.txt, opal/4.2.3.1.txt
+- `tperinfo-get-types-doc-2d51764553` [needs_review] tperinfo-get-types-doc
+  - internal name: TPerInfo UID Get accepts uid bytes_8 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: tperinfo, get, typed-return, uid, gudid, bytes-12, uinteger, programmatic-reset, boolean
+  - repair hint: Check TPerInfo successful Get return typing: UID is uid/bytes_8, GUDID is bytes_12, Bytes/Generation/FirmwareVersion/ProtocolVersion/SpaceForIssuance are uinteger_8 or uinteger_4, and Opal ProgrammaticResetEnable is boolean. The table is readable by Anybody, but success cannot carry malformed typed cells.
+  - evidence: core/5.1.3.txt, core/5.1.3.10.txt, core/5.1.3.16.txt, core/5.1.3.81.txt, core/5.1.3.82.txt, core/5.1.3.93.txt, core/5.1.3.97.txt, core/5.4.2.1.txt, core/5.4.2.1.1.txt, core/5.4.2.1.3.txt, opal/4.2.3.1.txt
+- `tperinfo-get-types-doc-d3886fa9e2` [needs_review] tperinfo-get-types-doc
+  - internal name: TPerInfo ProgrammaticResetEnable Get accepts boolean and rejects text: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: tperinfo, get, typed-return, uid, gudid, bytes-12, uinteger, programmatic-reset, boolean
+  - repair hint: Check TPerInfo successful Get return typing: UID is uid/bytes_8, GUDID is bytes_12, Bytes/Generation/FirmwareVersion/ProtocolVersion/SpaceForIssuance are uinteger_8 or uinteger_4, and Opal ProgrammaticResetEnable is boolean. The table is readable by Anybody, but success cannot carry malformed typed cells.
+  - evidence: core/5.1.3.txt, core/5.1.3.10.txt, core/5.1.3.16.txt, core/5.1.3.81.txt, core/5.1.3.82.txt, core/5.1.3.93.txt, core/5.1.3.97.txt, core/5.4.2.1.txt, core/5.4.2.1.1.txt, core/5.4.2.1.3.txt, opal/4.2.3.1.txt
+- `tperinfo-get-types-doc-cdc2f46237` [needs_review] tperinfo-get-types-doc
+  - internal name: TPerInfo ProgrammaticResetEnable Get accepts boolean and rejects text: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: tperinfo, get, typed-return, uid, gudid, bytes-12, uinteger, programmatic-reset, boolean
+  - repair hint: Check TPerInfo successful Get return typing: UID is uid/bytes_8, GUDID is bytes_12, Bytes/Generation/FirmwareVersion/ProtocolVersion/SpaceForIssuance are uinteger_8 or uinteger_4, and Opal ProgrammaticResetEnable is boolean. The table is readable by Anybody, but success cannot carry malformed typed cells.
+  - evidence: core/5.1.3.txt, core/5.1.3.10.txt, core/5.1.3.16.txt, core/5.1.3.81.txt, core/5.1.3.82.txt, core/5.1.3.93.txt, core/5.1.3.97.txt, core/5.4.2.1.txt, core/5.4.2.1.1.txt, core/5.4.2.1.3.txt, opal/4.2.3.1.txt
+- `tperinfo-get-types-doc-bae554ceb8` [needs_review] tperinfo-get-types-doc
+  - internal name: TPerInfo Bytes Get accepts uinteger_8 and rejects boolean coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: tperinfo, get, typed-return, uid, gudid, bytes-12, uinteger, programmatic-reset, boolean
+  - repair hint: Check TPerInfo successful Get return typing: UID is uid/bytes_8, GUDID is bytes_12, Bytes/Generation/FirmwareVersion/ProtocolVersion/SpaceForIssuance are uinteger_8 or uinteger_4, and Opal ProgrammaticResetEnable is boolean. The table is readable by Anybody, but success cannot carry malformed typed cells.
+  - evidence: core/5.1.3.txt, core/5.1.3.10.txt, core/5.1.3.16.txt, core/5.1.3.81.txt, core/5.1.3.82.txt, core/5.1.3.93.txt, core/5.1.3.97.txt, core/5.4.2.1.txt, core/5.4.2.1.1.txt, core/5.4.2.1.3.txt, opal/4.2.3.1.txt
+- `tperinfo-get-types-doc-2b86278e06` [needs_review] tperinfo-get-types-doc
+  - internal name: TPerInfo Bytes Get accepts uinteger_8 and rejects boolean coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: tperinfo, get, typed-return, uid, gudid, bytes-12, uinteger, programmatic-reset, boolean
+  - repair hint: Check TPerInfo successful Get return typing: UID is uid/bytes_8, GUDID is bytes_12, Bytes/Generation/FirmwareVersion/ProtocolVersion/SpaceForIssuance are uinteger_8 or uinteger_4, and Opal ProgrammaticResetEnable is boolean. The table is readable by Anybody, but success cannot carry malformed typed cells.
+  - evidence: core/5.1.3.txt, core/5.1.3.10.txt, core/5.1.3.16.txt, core/5.1.3.81.txt, core/5.1.3.82.txt, core/5.1.3.93.txt, core/5.1.3.97.txt, core/5.4.2.1.txt, core/5.4.2.1.1.txt, core/5.4.2.1.3.txt, opal/4.2.3.1.txt
+- `tperinfo-get-types-doc-e30a9375df` [needs_review] tperinfo-get-types-doc
+  - internal name: TPerInfo ProtocolVersion Get accepts uinteger_4 and rejects negative value: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: tperinfo, get, typed-return, uid, gudid, bytes-12, uinteger, programmatic-reset, boolean
+  - repair hint: Check TPerInfo successful Get return typing: UID is uid/bytes_8, GUDID is bytes_12, Bytes/Generation/FirmwareVersion/ProtocolVersion/SpaceForIssuance are uinteger_8 or uinteger_4, and Opal ProgrammaticResetEnable is boolean. The table is readable by Anybody, but success cannot carry malformed typed cells.
+  - evidence: core/5.1.3.txt, core/5.1.3.10.txt, core/5.1.3.16.txt, core/5.1.3.81.txt, core/5.1.3.82.txt, core/5.1.3.93.txt, core/5.1.3.97.txt, core/5.4.2.1.txt, core/5.4.2.1.1.txt, core/5.4.2.1.3.txt, opal/4.2.3.1.txt
+- `tperinfo-get-types-doc-7aac0e2016` [needs_review] tperinfo-get-types-doc
+  - internal name: TPerInfo ProtocolVersion Get accepts uinteger_4 and rejects negative value: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: tperinfo, get, typed-return, uid, gudid, bytes-12, uinteger, programmatic-reset, boolean
+  - repair hint: Check TPerInfo successful Get return typing: UID is uid/bytes_8, GUDID is bytes_12, Bytes/Generation/FirmwareVersion/ProtocolVersion/SpaceForIssuance are uinteger_8 or uinteger_4, and Opal ProgrammaticResetEnable is boolean. The table is readable by Anybody, but success cannot carry malformed typed cells.
+  - evidence: core/5.1.3.txt, core/5.1.3.10.txt, core/5.1.3.16.txt, core/5.1.3.81.txt, core/5.1.3.82.txt, core/5.1.3.93.txt, core/5.1.3.97.txt, core/5.4.2.1.txt, core/5.4.2.1.1.txt, core/5.4.2.1.3.txt, opal/4.2.3.1.txt
+- `random-count-uinteger-tight-doc-a9748f5539` [quarantine_concerns] random-count-uinteger-tight-doc
+  - internal name: Random raw positional Count True is not a uinteger: impossible success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: crypto-template, random, count, uinteger, parameter-type, return-values
+  - repair hint: Check that Random.Count is a uinteger value: booleans must not be accepted through Python integer coercion, while numeric Count values remain valid.
+  - evidence: core/5.6.4.1.txt, core/5.6.4.1.1.txt, core/5.1.3.82.txt, opal/4.2.9.1.txt, opal/4.3.4.1.txt
+  - random_count_uinteger_a: FAIL conf=0.97 concerns=The trajectory encodes args as a raw boolean rather than the usual required/optional structure, but the case name and evidence identify it as positional Count true.
+  - random_count_uinteger_b: FAIL conf=0.97 concerns=-
+  - random_count_uinteger_c: FAIL conf=0.98 concerns=-
+- `cpin-setpackage-invalidates-pin-doc-38844f18e4` [quarantine_concerns] cpin-setpackage-invalidates-pin-doc
+  - internal name: SetPackage on C_PIN_User1 invalidates old PIN for later StartSession: correct status
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: credential-package, setpackage, c-pin, pin-state, authenticate, startsession
+  - repair hint: Check SetPackage on a C_PIN credential as a credential-material replacement: it resets Tries like other C_PIN modification methods and must invalidate the previously known PIN so later StartSession/Authenticate with the old proof cannot be accepted.
+  - evidence: core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.4.1.1.2.txt, core/5.3.2.12.txt
+  - cpin_setpackage_a: PASS conf=0.9 concerns=-
+  - cpin_setpackage_b: PASS conf=0.93 concerns=-
+  - cpin_setpackage_c: PASS conf=0.94 concerns=-
+  - setpackage_a: PASS conf=0.93 concerns=The package contents are opaque, so the exact replacement PIN is not identified, but the successful C_PIN SetPackage is enough to show the old PIN should not be accepted.
+  - setpackage_b: PASS conf=0.92 concerns=-
+  - setpackage_c: PASS conf=0.95 concerns=-
+- `cpin-setpackage-invalidates-pin-doc-ae277e40a6` [quarantine_concerns] cpin-setpackage-invalidates-pin-doc
+  - internal name: SetPackage on C_PIN_User1 invalidates old PIN for later StartSession: impossible success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: credential-package, setpackage, c-pin, pin-state, authenticate, startsession
+  - repair hint: Check SetPackage on a C_PIN credential as a credential-material replacement: it resets Tries like other C_PIN modification methods and must invalidate the previously known PIN so later StartSession/Authenticate with the old proof cannot be accepted.
+  - evidence: core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.4.1.1.2.txt, core/5.3.2.12.txt
+  - cpin_setpackage_a: FAIL conf=0.9 concerns=-
+  - cpin_setpackage_b: FAIL conf=0.93 concerns=-
+  - cpin_setpackage_c: FAIL conf=0.94 concerns=-
+  - setpackage_a: FAIL conf=0.93 concerns=The package contents are opaque, so the exact replacement PIN is not identified, but treating the previous userpin as still valid conflicts with the SetPackage/PIN-modification evidence.
+  - setpackage_b: FAIL conf=0.92 concerns=-
+  - setpackage_c: FAIL conf=0.95 concerns=-
+- `cpin-setpackage-invalidates-pin-doc-df9064c6ac` [quarantine_concerns] cpin-setpackage-invalidates-pin-doc
+  - internal name: SetPackage on C_PIN_User1 makes old PIN Authenticate return false: correct return value
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: credential-package, setpackage, c-pin, pin-state, authenticate, startsession
+  - repair hint: Check SetPackage on a C_PIN credential as a credential-material replacement: it resets Tries like other C_PIN modification methods and must invalidate the previously known PIN so later StartSession/Authenticate with the old proof cannot be accepted.
+  - evidence: core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.4.1.1.2.txt, core/5.3.2.12.txt
+  - cpin_setpackage_a: PASS conf=0.88 concerns=-
+  - cpin_setpackage_b: PASS conf=0.91 concerns=-
+  - cpin_setpackage_c: PASS conf=0.92 concerns=-
+  - setpackage_a: PASS conf=0.9 concerns=The snippets do not spell out Authenticate's return-value shape, but the trajectory uses SUCCESS with [false] to represent a failed authentication rather than accepting the old PIN.
+  - setpackage_b: PASS conf=0.88 concerns=-
+  - setpackage_c: PASS conf=0.9 concerns=-
+- `cpin-setpackage-invalidates-pin-doc-8ec4f4b25a` [quarantine_concerns] cpin-setpackage-invalidates-pin-doc
+  - internal name: SetPackage on C_PIN_User1 makes old PIN Authenticate return false: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: credential-package, setpackage, c-pin, pin-state, authenticate, startsession
+  - repair hint: Check SetPackage on a C_PIN credential as a credential-material replacement: it resets Tries like other C_PIN modification methods and must invalidate the previously known PIN so later StartSession/Authenticate with the old proof cannot be accepted.
+  - evidence: core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.4.1.1.2.txt, core/5.3.2.12.txt
+  - cpin_setpackage_a: FAIL conf=0.88 concerns=-
+  - cpin_setpackage_b: FAIL conf=0.91 concerns=-
+  - cpin_setpackage_c: FAIL conf=0.93 concerns=-
+  - setpackage_a: FAIL conf=0.93 concerns=The package contents are opaque, so the exact replacement PIN is not identified, but a true authentication result for the previous PIN is inconsistent with SetPackage changing the credential material.
+  - setpackage_b: FAIL conf=0.9 concerns=-
+  - setpackage_c: FAIL conf=0.95 concerns=-
+- `secretprotect-get-cells-tight-doc-9b6ac51031` [needs_review] secretprotect-get-cells-tight-doc
+  - internal name: SecretProtect ProtectMechanisms Get rejects boolean protect_types coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: secretprotect, get, protected-key-material, k-aes, table-ref, column-number, protect-types, optional-row-safe-fail
+  - repair hint: Check concrete Opal SecretProtect row Get validation without assuming both optional rows exist: a SUCCESS response for the K_AES_128/K_AES_256 SecretProtect rows must identify the K_AES table, Key column 0x03, and a protect_types value rather than C_PIN, the opposite K_AES table, Mode column 0x04, booleans, or out-of-range protection values.
+  - evidence: core/5.3.2.8.txt, core/5.3.2.8.2.txt, core/5.3.2.8.3.txt, core/5.3.2.8.4.txt, core/5.1.3.64.txt, core/5.3.4.1.1.txt, core/5.7.2.3.txt, core/5.7.2.3.4.txt, core/5.7.2.3.5.txt, core/5.7.2.4.txt, core/5.7.2.4.4.txt, core/5.7.2.4.5.txt, opal/4.3.1.10.txt, opal/4.3.5.5.txt
+- `secretprotect-get-cells-tight-doc-ba3d54bb72` [needs_review] secretprotect-get-cells-tight-doc
+  - internal name: SecretProtect ProtectMechanisms Get rejects boolean protect_types coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: secretprotect, get, protected-key-material, k-aes, table-ref, column-number, protect-types, optional-row-safe-fail
+  - repair hint: Check concrete Opal SecretProtect row Get validation without assuming both optional rows exist: a SUCCESS response for the K_AES_128/K_AES_256 SecretProtect rows must identify the K_AES table, Key column 0x03, and a protect_types value rather than C_PIN, the opposite K_AES table, Mode column 0x04, booleans, or out-of-range protection values.
+  - evidence: core/5.3.2.8.txt, core/5.3.2.8.2.txt, core/5.3.2.8.3.txt, core/5.3.2.8.4.txt, core/5.1.3.64.txt, core/5.3.4.1.1.txt, core/5.7.2.3.txt, core/5.7.2.3.4.txt, core/5.7.2.3.5.txt, core/5.7.2.4.txt, core/5.7.2.4.4.txt, core/5.7.2.4.5.txt, opal/4.3.1.10.txt, opal/4.3.5.5.txt
+- `secretprotect-get-cells-tight-doc-1d33ee6f7e` [needs_review] secretprotect-get-cells-tight-doc
+  - internal name: SecretProtect ProtectMechanisms Get rejects out-of-range protect_types value: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: secretprotect, get, protected-key-material, k-aes, table-ref, column-number, protect-types, optional-row-safe-fail
+  - repair hint: Check concrete Opal SecretProtect row Get validation without assuming both optional rows exist: a SUCCESS response for the K_AES_128/K_AES_256 SecretProtect rows must identify the K_AES table, Key column 0x03, and a protect_types value rather than C_PIN, the opposite K_AES table, Mode column 0x04, booleans, or out-of-range protection values.
+  - evidence: core/5.3.2.8.txt, core/5.3.2.8.2.txt, core/5.3.2.8.3.txt, core/5.3.2.8.4.txt, core/5.1.3.64.txt, core/5.3.4.1.1.txt, core/5.7.2.3.txt, core/5.7.2.3.4.txt, core/5.7.2.3.5.txt, core/5.7.2.4.txt, core/5.7.2.4.4.txt, core/5.7.2.4.5.txt, opal/4.3.1.10.txt, opal/4.3.5.5.txt
+- `secretprotect-get-cells-tight-doc-d336c9111e` [needs_review] secretprotect-get-cells-tight-doc
+  - internal name: SecretProtect ProtectMechanisms Get rejects out-of-range protect_types value: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: secretprotect, get, protected-key-material, k-aes, table-ref, column-number, protect-types, optional-row-safe-fail
+  - repair hint: Check concrete Opal SecretProtect row Get validation without assuming both optional rows exist: a SUCCESS response for the K_AES_128/K_AES_256 SecretProtect rows must identify the K_AES table, Key column 0x03, and a protect_types value rather than C_PIN, the opposite K_AES table, Mode column 0x04, booleans, or out-of-range protection values.
+  - evidence: core/5.3.2.8.txt, core/5.3.2.8.2.txt, core/5.3.2.8.3.txt, core/5.3.2.8.4.txt, core/5.1.3.64.txt, core/5.3.4.1.1.txt, core/5.7.2.3.txt, core/5.7.2.3.4.txt, core/5.7.2.3.5.txt, core/5.7.2.4.txt, core/5.7.2.4.4.txt, core/5.7.2.4.5.txt, opal/4.3.1.10.txt, opal/4.3.5.5.txt
+- `readonly-explicit-nonpersistence-long-do-557861de4a` [quarantine_disagreement] readonly-explicit-nonpersistence-long-doc
+  - internal name: Read-only ACE Set cannot persist DataStore User1 read grant
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: read-only-session, nonpersistence, set, datastore, locking, ace, c-pin, authority, long-trajectory
+  - repair hint: Check that successful-looking explicit host changes made in a Write=False session cannot become permanent SP state. C_PIN Tries and AddLog have documented read-only exceptions; DataStore bytes, Locking cells, ACE BooleanExpr, C_PIN PIN, and Authority Uses/Enabled do not.
+  - evidence: core/2.3.1.txt, core/3.3.7.1.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.7.txt, core/5.3.3.7.2.1.txt, core/5.3.4.1.1.2.txt, core/5.3.4.2.6.txt, core/5.3.4.3.3.txt, core/5.7.2.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt, opal/4.3.5.2.txt, opal/4.3.8.1.txt
+  - readonly_nonpersist_a: PASS conf=0.92 concerns=-
+  - readonly_nonpersist_b: FAIL conf=0.97 concerns=-
+  - readonly_nonpersist_c: FAIL conf=0.96 concerns=-
+- `readonly-explicit-nonpersistence-long-do-6f05137d93` [quarantine_disagreement] readonly-explicit-nonpersistence-long-doc
+  - internal name: Read-only Authority Uses Set cannot persist to reopen limit-reached User1
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: read-only-session, nonpersistence, set, datastore, locking, ace, c-pin, authority, long-trajectory
+  - repair hint: Check that successful-looking explicit host changes made in a Write=False session cannot become permanent SP state. C_PIN Tries and AddLog have documented read-only exceptions; DataStore bytes, Locking cells, ACE BooleanExpr, C_PIN PIN, and Authority Uses/Enabled do not.
+  - evidence: core/2.3.1.txt, core/3.3.7.1.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.7.txt, core/5.3.3.7.2.1.txt, core/5.3.4.1.1.2.txt, core/5.3.4.2.6.txt, core/5.3.4.3.3.txt, core/5.7.2.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt, opal/4.3.5.2.txt, opal/4.3.8.1.txt
+  - readonly_nonpersist_a: PASS conf=0.82 concerns=-
+  - readonly_nonpersist_b: FAIL conf=0.97 concerns=-
+  - readonly_nonpersist_c: FAIL conf=0.97 concerns=-
+- `datastore-sparse-fill-doc-25d98e253f` [quarantine_disagreement] datastore-sparse-fill-doc
+  - internal name: Personalized Get ACE blocks later Admin sparse payload read: correct return value
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: datastore, byte-table, offset, sparse-write, partial-overwrite, ace, long-trajectory
+  - repair hint: Check sparse DataStore writes followed by gap-filling writes: only fully known requested byte ranges should be compared exactly, partial overwrites preserve other offsets, unauthorized Set attempts do not fill gaps, and later ACE changes expose the current filled payload.
+  - evidence: core/5.3.3.6.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.3.4.3.3.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt, opal/5.1.1.2.txt
+  - datastore_ace_fix_a: PASS conf=0.99 concerns=-
+  - datastore_ace_fix_b: PASS conf=0.99 concerns=-
+  - datastore_ace_fix_c: FAIL conf=0.99 concerns=-
+- `datastore-sparse-fill-doc-1f3d6b78ca` [quarantine_disagreement] datastore-sparse-fill-doc
+  - internal name: Personalized Get ACE blocks later Admin sparse payload read: impossible return value
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: datastore, byte-table, offset, sparse-write, partial-overwrite, ace, long-trajectory
+  - repair hint: Check sparse DataStore writes followed by gap-filling writes: only fully known requested byte ranges should be compared exactly, partial overwrites preserve other offsets, unauthorized Set attempts do not fill gaps, and later ACE changes expose the current filled payload.
+  - evidence: core/5.3.3.6.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.3.4.3.3.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt, opal/5.1.1.2.txt
+  - datastore_ace_fix_a: FAIL conf=0.99 concerns=-
+  - datastore_ace_fix_b: FAIL conf=0.99 concerns=-
+  - datastore_ace_fix_c: PASS conf=0.99 concerns=-
+- `byte-table-row-bounds-doc-c5a65f6d92` [quarantine_concerns] byte-table-row-bounds-doc
+  - internal name: DataStore Get negative startRow fails: correct status
+  - author label: PASS
+  - reason: 4 review(s) recorded concerns
+  - concepts: byte-table, cellblock, row-number, uinteger, datastore, mbr, invalid-parameter
+  - repair hint: Check byte-table row address validation: Cellblock startRow/endRow and Set Where.Row/startRow are RowNumber/uinteger values, so negative or non-uinteger row addresses are invalid and cannot succeed or mutate byte-table contents.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.8.1.txt
+  - byte_row_bounds_a: PASS conf=0.82 concerns=The provided snippets do not specify the payload, if any, accompanying a failed Get, so this label is based on the failure status required by the row-bounds rule.
+  - byte_row_bounds_b: PASS conf=0.94 concerns=-
+  - byte_row_bounds_c: PASS conf=0.84 concerns=The supplied evidence does not spell out failure-result payload shape; the decision is based on the failing status for the invalid cellblock.
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.92 concerns=-
+  - scope_batch_c: PASS conf=0.82 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-row-bounds-doc-e20bf3a920` [quarantine_concerns] byte-table-row-bounds-doc
+  - internal name: DataStore Get negative endRow fails: correct status
+  - author label: PASS
+  - reason: 4 review(s) recorded concerns
+  - concepts: byte-table, cellblock, row-number, uinteger, datastore, mbr, invalid-parameter
+  - repair hint: Check byte-table row address validation: Cellblock startRow/endRow and Set Where.Row/startRow are RowNumber/uinteger values, so negative or non-uinteger row addresses are invalid and cannot succeed or mutate byte-table contents.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.8.1.txt
+  - byte_row_bounds_a: PASS conf=0.82 concerns=The provided snippets do not specify the payload, if any, accompanying a failed Get, so this label is based on the failure status required by the row-bounds rule.
+  - byte_row_bounds_b: PASS conf=0.94 concerns=-
+  - byte_row_bounds_c: PASS conf=0.84 concerns=The supplied evidence does not spell out failure-result payload shape; the decision is based on the failing status for the invalid cellblock.
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.92 concerns=-
+  - scope_batch_c: PASS conf=0.82 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-row-bounds-doc-a5b70e65d5` [quarantine_concerns] byte-table-row-bounds-doc
+  - internal name: MBR byte-table Get negative startRow fails: correct status
+  - author label: PASS
+  - reason: 4 review(s) recorded concerns
+  - concepts: byte-table, cellblock, row-number, uinteger, datastore, mbr, invalid-parameter
+  - repair hint: Check byte-table row address validation: Cellblock startRow/endRow and Set Where.Row/startRow are RowNumber/uinteger values, so negative or non-uinteger row addresses are invalid and cannot succeed or mutate byte-table contents.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.8.1.txt
+  - byte_row_bounds_a: PASS conf=0.82 concerns=The snippets establish the required failure status; they do not define whether a failed Get may include a returned byte payload.
+  - byte_row_bounds_b: PASS conf=0.9 concerns=-
+  - byte_row_bounds_c: PASS conf=0.83 concerns=The supplied evidence does not spell out failure-result payload shape; the decision is based on the failing status for the invalid cellblock.
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.92 concerns=-
+  - scope_batch_c: PASS conf=0.82 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-row-bounds-doc-5615b00f7c` [quarantine_concerns] byte-table-row-bounds-doc
+  - internal name: DataStore Get boolean startRow fails: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: byte-table, cellblock, row-number, uinteger, datastore, mbr, invalid-parameter
+  - repair hint: Check byte-table row address validation: Cellblock startRow/endRow and Set Where.Row/startRow are RowNumber/uinteger values, so negative or non-uinteger row addresses are invalid and cannot succeed or mutate byte-table contents.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.8.1.txt
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.92 concerns=-
+  - scope_batch_c: PASS conf=0.8 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-observed-rows-bounds-doc-a7835e2ce8` [quarantine_concerns] byte-table-observed-rows-bounds-doc
+  - internal name: DataStore Get at observed Rows boundary fails: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: byte-table, table-descriptor, rows, cellblock, datastore, mbr, invalid-parameter
+  - repair hint: Check observed byte-table descriptor Rows values: after a Table descriptor Get reports actual Rows=N for MBR/DataStore, row N and later are out of bounds for byte-table Get/Set, and failed Set must not mutate tracked bytes.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.2.3.txt, core/5.3.2.3.8.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+  - observed_rows_bounds_a: PASS conf=0.94 concerns=-
+  - observed_rows_bounds_b: PASS conf=0.99 concerns=-
+  - observed_rows_bounds_c: PASS conf=0.94 concerns=-
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.93 concerns=-
+  - scope_batch_c: PASS conf=0.88 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-observed-rows-bounds-doc-9e412ae975` [quarantine_concerns] byte-table-observed-rows-bounds-doc
+  - internal name: MBR Get at observed Rows boundary fails: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: byte-table, table-descriptor, rows, cellblock, datastore, mbr, invalid-parameter
+  - repair hint: Check observed byte-table descriptor Rows values: after a Table descriptor Get reports actual Rows=N for MBR/DataStore, row N and later are out of bounds for byte-table Get/Set, and failed Set must not mutate tracked bytes.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.2.3.txt, core/5.3.2.3.8.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+  - observed_rows_bounds_a: PASS conf=0.94 concerns=-
+  - observed_rows_bounds_b: PASS conf=0.99 concerns=-
+  - observed_rows_bounds_c: PASS conf=0.94 concerns=-
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.93 concerns=-
+  - scope_batch_c: PASS conf=0.88 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-observed-rows-bounds-doc-e0a10272ee` [quarantine_concerns] byte-table-observed-rows-bounds-doc
+  - internal name: DataStore Get crossing observed Rows boundary fails: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: byte-table, table-descriptor, rows, cellblock, datastore, mbr, invalid-parameter
+  - repair hint: Check observed byte-table descriptor Rows values: after a Table descriptor Get reports actual Rows=N for MBR/DataStore, row N and later are out of bounds for byte-table Get/Set, and failed Set must not mutate tracked bytes.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.2.3.txt, core/5.3.2.3.8.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.93 concerns=-
+  - scope_batch_c: PASS conf=0.87 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-observed-rows-bounds-doc-5bec7c0f9b` [quarantine_concerns] byte-table-observed-rows-bounds-doc
+  - internal name: MBR Get crossing observed Rows boundary fails: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: byte-table, table-descriptor, rows, cellblock, datastore, mbr, invalid-parameter
+  - repair hint: Check observed byte-table descriptor Rows values: after a Table descriptor Get reports actual Rows=N for MBR/DataStore, row N and later are out of bounds for byte-table Get/Set, and failed Set must not mutate tracked bytes.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.2.3.txt, core/5.3.2.3.8.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.93 concerns=-
+  - scope_batch_c: PASS conf=0.87 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `datastore-boundary-window-doc-f9aa45afe0` [quarantine_disagreement] datastore-boundary-window-doc
+  - internal name: DataStore byte-table Get with Cellblock Table component fails: correct status
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: datastore, byte-table, rows-boundary, cellblock-defaults, offset, failed-set, postcondition
+  - repair hint: Check DataStore byte-table boundary windows: last observed row is valid for one-byte Set/Get, writes crossing Rows are invalid and non-mutating, omitted startRow defaults to zero, and byte-table Get must omit a Table component.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.2.3.8.txt, core/5.3.3.6.2.1.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.8.1.txt
+  - datastore_boundary_a: FAIL conf=0.86 concerns=-
+  - datastore_boundary_b: PASS conf=0.88 concerns=Return data on a failed Get is not described in the snippets, so this label is based on the required failure status.
+  - datastore_boundary_c: PASS conf=0.86 concerns=The failure response includes a byte return value, but the supplied evidence is explicit about the required failure status and does not state a separate return-value rule for failed Get.
+- `get-cellblock-doc-8c03888143` [quarantine_concerns] get-cellblock-doc
+  - internal name: DataStore byte-table Get with Cellblock endColumn component fails: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: table-methods, get, cellblock, byte-table, object-table, object-method
+  - repair hint: Check Cellblock context rules: object methods omit Table/startRow/endRow, table methods omit Table, object-table Get requires startRow and omits endRow, and byte-table Get omits column components.
+  - evidence: core/5.1.4.2.3.txt, core/5.3.3.6.txt, core/5.3.3.6.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.6.2.2.txt, core/5.3.3.6.3.txt, core/5.3.4.2.2.txt, core/5.7.2.1.txt, core/5.3.2.12.txt, opal/4.3.5.1.txt, opal/4.3.8.1.txt, opal/4.3.1.8.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+  - new_highscore_a: PASS conf=0.8 concerns=Failure status is well supported; the row also shows a byte return on the failing command, which the embedded snippets do not define explicitly.
+  - new_highscore_b: PASS conf=0.86 concerns=The target also carries a byte return value on a failing method; the cited snippets establish failure but not an error payload shape.
+  - new_highscore_c: PASS conf=0.94 concerns=-
+- `datastore-no-values-granularity-tight-do-0613834f08` [quarantine_disagreement] datastore-no-values-granularity-tight-doc
+  - internal name: DataStore no-Values Set at unaligned row still succeeds as no-op: correct success
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: datastore, byte-table, set, values-omission, mandatory-granularity, no-op-set, postcondition
+  - repair hint: Check byte-table Set with omitted Values after observing MandatoryWriteGranularity: it succeeds with no effect and must not be mistaken for an unaligned payload write based on Where/startRow strings.
+  - evidence: core/5.3.3.7.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.6.2.1.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/5.3.1.1.2.txt
+  - datastore_no_values_a: PASS conf=0.82 concerns=MandatoryWriteGranularity also mentions the Where start offset, so startRow 2 creates some ambiguity when Values is omitted; I read the no-Values no-op rule as controlling because no byte length exists to set.
+  - datastore_no_values_b: PASS conf=0.9 concerns=-
+  - datastore_no_values_c: FAIL conf=0.82 concerns=The evidence defines y as the length of the Values parameter, which is absent here; however x is still the Set start offset and fails the stated alignment requirement.
+- `datastore-no-values-granularity-tight-do-7b5af3c681` [quarantine_disagreement] datastore-no-values-granularity-tight-doc
+  - internal name: DataStore no-Values Set at unaligned row still succeeds as no-op: impossible error
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: datastore, byte-table, set, values-omission, mandatory-granularity, no-op-set, postcondition
+  - repair hint: Check byte-table Set with omitted Values after observing MandatoryWriteGranularity: it succeeds with no effect and must not be mistaken for an unaligned payload write based on Where/startRow strings.
+  - evidence: core/5.3.3.7.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.6.2.1.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/5.3.1.1.2.txt
+  - datastore_no_values_a: FAIL conf=0.82 concerns=MandatoryWriteGranularity also mentions alignment of the Where start offset, so the unaligned startRow 2 case is not perfectly explicit; I treat the no-Values no-op rule as controlling.
+  - datastore_no_values_b: FAIL conf=0.9 concerns=-
+  - datastore_no_values_c: PASS conf=0.82 concerns=The packet also says omitting Values alone must not cause failure; this label treats the independent unaligned Where parameter as making the invocation not otherwise correct.
+- `datastore-no-values-granularity-tight-do-fd0f8420fb` [quarantine_concerns] datastore-no-values-granularity-tight-doc
+  - internal name: DataStore no-Values unaligned-row Set leaves payload unchanged: correct return value
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: datastore, byte-table, set, values-omission, mandatory-granularity, no-op-set, postcondition
+  - repair hint: Check byte-table Set with omitted Values after observing MandatoryWriteGranularity: it succeeds with no effect and must not be mistaken for an unaligned payload write based on Where/startRow strings.
+  - evidence: core/5.3.3.7.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.6.2.1.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/5.3.1.1.2.txt
+  - datastore_no_values_a: PASS conf=0.84 concerns=The prior no-Values Set used startRow 2, whose interaction with MandatoryWriteGranularity is somewhat ambiguous, but once treated as a successful no-op it should not mutate data.
+  - datastore_no_values_b: PASS conf=0.9 concerns=-
+  - datastore_no_values_c: PASS conf=0.8 concerns=The preceding no-Values Set used unaligned startRow 2, which is independently questionable under MandatoryWriteGranularity; the target Get result itself shows no mutation.
+- `datastore-no-values-granularity-tight-do-fcd470572b` [quarantine_concerns] datastore-no-values-granularity-tight-doc
+  - internal name: DataStore no-Values unaligned-row Set leaves payload unchanged: impossible return value
+  - author label: FAIL
+  - reason: 2 review(s) recorded concerns
+  - concepts: datastore, byte-table, set, values-omission, mandatory-granularity, no-op-set, postcondition
+  - repair hint: Check byte-table Set with omitted Values after observing MandatoryWriteGranularity: it succeeds with no effect and must not be mistaken for an unaligned payload write based on Where/startRow strings.
+  - evidence: core/5.3.3.7.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.6.2.1.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/5.3.1.1.2.txt
+  - datastore_no_values_a: FAIL conf=0.84 concerns=The prior no-Values Set used startRow 2, whose granularity interaction is somewhat ambiguous, but no mutation is still required for any successful no-Values Set.
+  - datastore_no_values_b: FAIL conf=0.9 concerns=-
+  - datastore_no_values_c: FAIL conf=0.9 concerns=The preceding no-Values Set used unaligned startRow 2, but even if the Set were accepted, it still must not mutate DataStore bytes when Values is omitted.
+- `get-set-absent-object-doc-7b090c68f2` [needs_review] get-set-absent-object-doc
+  - internal name: Get on absent object UID 0000000000000000 cannot succeed
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, get, set, object-existence, invalid-invoking-id
+  - repair hint: Check basic Get/Set object-existence rules: success is impossible when the InvokingID is a null or all-ones UID that cannot identify an existing table/object.
+  - evidence: core/5.3.3.6.txt, core/5.3.3.6.3.txt, core/5.3.3.7.txt, core/5.3.3.7.4.txt
+- `get-set-absent-object-doc-8865479a1c` [needs_review] get-set-absent-object-doc
+  - internal name: Get on absent object UID FFFFFFFFFFFFFFFF cannot succeed
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, get, set, object-existence, invalid-invoking-id
+  - repair hint: Check basic Get/Set object-existence rules: success is impossible when the InvokingID is a null or all-ones UID that cannot identify an existing table/object.
+  - evidence: core/5.3.3.6.txt, core/5.3.3.6.3.txt, core/5.3.3.7.txt, core/5.3.3.7.4.txt
+- `get-set-absent-object-doc-ec2759e697` [needs_review] get-set-absent-object-doc
+  - internal name: Set on absent object UID 0000000000000000 cannot succeed
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, get, set, object-existence, invalid-invoking-id
+  - repair hint: Check basic Get/Set object-existence rules: success is impossible when the InvokingID is a null or all-ones UID that cannot identify an existing table/object.
+  - evidence: core/5.3.3.6.txt, core/5.3.3.6.3.txt, core/5.3.3.7.txt, core/5.3.3.7.4.txt
+- `get-set-absent-object-doc-f2c37c1954` [needs_review] get-set-absent-object-doc
+  - internal name: Set on absent object UID FFFFFFFFFFFFFFFF cannot succeed
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, get, set, object-existence, invalid-invoking-id
+  - repair hint: Check basic Get/Set object-existence rules: success is impossible when the InvokingID is a null or all-ones UID that cannot identify an existing table/object.
+  - evidence: core/5.3.3.6.txt, core/5.3.3.6.3.txt, core/5.3.3.7.txt, core/5.3.3.7.4.txt
+- `delete-absent-object-doc-2b83879a70` [needs_review] delete-absent-object-doc
+  - internal name: Delete on absent object UID 0000000000000000 cannot succeed
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, delete, object-existence, invalid-invoking-id
+  - repair hint: Check basic Delete object-existence rules: success is impossible when the InvokingID is a null or all-ones UID that cannot identify an existing object.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.txt, core/5.3.3.3.2.txt
+- `delete-absent-object-doc-4004fc0d39` [needs_review] delete-absent-object-doc
+  - internal name: Delete on absent object UID FFFFFFFFFFFFFFFF cannot succeed
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, delete, object-existence, invalid-invoking-id
+  - repair hint: Check basic Delete object-existence rules: success is impossible when the InvokingID is a null or all-ones UID that cannot identify an existing object.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.txt, core/5.3.3.3.2.txt
+- `reset-doc-a3a6b1f205` [quarantine_concerns] reset-doc
+  - internal name: LockOnReset containing power reset locks write range: correct status
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: reset, locking-range, lock-on-reset, host-io
+  - repair hint: Check reset type normalization and whether LockOnReset turns the stored ReadLocked/WriteLocked cells on for matching reset types.
+  - evidence: core/5.7.2.2.10.txt
+  - agent_eta2: PASS conf=0.82 concerns=The packet excerpt does not explicitly define reset type value 0 as PowerCycle or state the exact host Write failure status for a locked range.
+  - agent_iota2: PASS conf=0.85 concerns=The snippet does not define numeric reset-type code 0 or prescribe the exact error status for a write while WriteLocked is true.
+  - agent_theta2: PASS conf=0.88 concerns=The provided snippet establishes LockOnReset behavior but does not spell out the numeric reset-type mapping or the exact status code expected for a locked Write.
+- `reset-doc-38a4d44f44` [quarantine_concerns] reset-doc
+  - internal name: LockOnReset containing power reset locks write range: impossible success
+  - author label: FAIL
+  - reason: 3 review(s) recorded concerns
+  - concepts: reset, locking-range, lock-on-reset, host-io
+  - repair hint: Check reset type normalization and whether LockOnReset turns the stored ReadLocked/WriteLocked cells on for matching reset types.
+  - evidence: core/5.7.2.2.10.txt
+  - agent_eta2: FAIL conf=0.82 concerns=The packet excerpt does not explicitly define reset type value 0 as PowerCycle or state the exact host Write failure status for a locked range.
+  - agent_iota2: FAIL conf=0.85 concerns=The snippet does not define numeric reset-type code 0 or the exact failure code, but the trajectory's LockOnReset value is the only cited reset trigger and conflicts with SUCCESS.
+  - agent_theta2: FAIL conf=0.9 concerns=The provided snippet establishes LockOnReset behavior but does not spell out the numeric reset-type mapping for value 0.
+- `locking-rowvalues-encoding-long-tight-do-a0309e3035` [quarantine_concerns] locking-rowvalues-encoding-long-tight-doc
+  - internal name: Locking Set explicit RowValues list with names may be out of order: correct return value
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: locking-range, object-table, set, values, rowvalues, named-columns, raw-args, lockonreset, host-io, postcondition
+  - repair hint: Check that equivalent object-table Set RowValues encodings update Locking cells identically: top-level Values, explicit RowValues, nested Values.RowValues, and raw tuple forms must all preserve column identity, LockOnReset values, and later host-I/O effects.
+  - evidence: core/5.3.3.7.txt, core/5.3.3.7.2.txt, core/5.3.3.7.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, opal/4.3.5.4.txt, opal/5.1.1.2.txt
+  - reviewer_a: PASS conf=0.95 concerns=-
+  - locking_rowvalues_encoding_b: PASS conf=0.88 concerns=The packet represents RowValues as a top-level optional argument rather than nested under Values; I treated it as the explicit RowValues option described by the evidence.
+  - locking_rowvalues_encoding_c: PASS conf=0.94 concerns=-
+- `locking-rowvalues-encoding-long-tight-do-334125b2d7` [quarantine_concerns] locking-rowvalues-encoding-long-tight-doc
+  - internal name: Locking Set explicit RowValues list with names may be out of order: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: locking-range, object-table, set, values, rowvalues, named-columns, raw-args, lockonreset, host-io, postcondition
+  - repair hint: Check that equivalent object-table Set RowValues encodings update Locking cells identically: top-level Values, explicit RowValues, nested Values.RowValues, and raw tuple forms must all preserve column identity, LockOnReset values, and later host-I/O effects.
+  - evidence: core/5.3.3.7.txt, core/5.3.3.7.2.txt, core/5.3.3.7.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, opal/4.3.5.4.txt, opal/5.1.1.2.txt
+  - reviewer_a: FAIL conf=0.98 concerns=-
+  - locking_rowvalues_encoding_b: FAIL conf=0.94 concerns=Same representation ambiguity as the paired top-level RowValues case, but even accepting that encoding the final response is inconsistent.
+  - locking_rowvalues_encoding_c: FAIL conf=0.97 concerns=-
+- `locking-rowvalues-encoding-long-tight-do-bb05a8b1ae` [quarantine_concerns] locking-rowvalues-encoding-long-tight-doc
+  - internal name: Locking raw Values tuple named write lock blocks host write: correct status
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: locking-range, object-table, set, values, rowvalues, named-columns, raw-args, lockonreset, host-io, postcondition
+  - repair hint: Check that equivalent object-table Set RowValues encodings update Locking cells identically: top-level Values, explicit RowValues, nested Values.RowValues, and raw tuple forms must all preserve column identity, LockOnReset values, and later host-I/O effects.
+  - evidence: core/5.3.3.7.txt, core/5.3.3.7.2.txt, core/5.3.3.7.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, opal/4.3.5.4.txt, opal/5.1.1.2.txt
+  - reviewer_a: PASS conf=0.86 concerns=The source snippet establishes that the write must not be allowed, but does not specify the exact status code for a rejected host Write; the non-SUCCESS outcome is treated as compliant.
+  - locking_rowvalues_encoding_b: PASS conf=0.86 concerns=The evidence states the write must not be allowed but does not specify the exact host I/O error status; I treated INVALID_PARAMETER as an acceptable rejection rather than requiring a particular failure code.
+  - locking_rowvalues_encoding_c: PASS conf=0.84 concerns=The provided snippets require the write to be disallowed but do not specify the exact host I/O error status; INVALID_PARAMETER is treated here as a non-successful denial.
+- `locking-rowvalues-encoding-long-tight-do-75e312bc36` [quarantine_concerns] locking-rowvalues-encoding-long-tight-doc
+  - internal name: Locking raw Values tuple named write lock blocks host write: impossible success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: locking-range, object-table, set, values, rowvalues, named-columns, raw-args, lockonreset, host-io, postcondition
+  - repair hint: Check that equivalent object-table Set RowValues encodings update Locking cells identically: top-level Values, explicit RowValues, nested Values.RowValues, and raw tuple forms must all preserve column identity, LockOnReset values, and later host-I/O effects.
+  - evidence: core/5.3.3.7.txt, core/5.3.3.7.2.txt, core/5.3.3.7.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, opal/4.3.5.4.txt, opal/5.1.1.2.txt
+  - reviewer_a: FAIL conf=0.9 concerns=-
+  - locking_rowvalues_encoding_b: FAIL conf=0.93 concerns=-
+  - locking_rowvalues_encoding_c: FAIL conf=0.9 concerns=The snippets do not specify the exact failure status for a disallowed host write, but SUCCESS is inconsistent with the required denial.
+- `locking-rowvalues-encoding-long-tight-do-a1d978e610` [quarantine_disagreement] locking-rowvalues-encoding-long-tight-doc
+  - internal name: Locking raw RowValues numeric LockOnReset relocks after PowerCycle: correct return value
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: locking-range, object-table, set, values, rowvalues, named-columns, raw-args, lockonreset, host-io, postcondition
+  - repair hint: Check that equivalent object-table Set RowValues encodings update Locking cells identically: top-level Values, explicit RowValues, nested Values.RowValues, and raw tuple forms must all preserve column identity, LockOnReset values, and later host-I/O effects.
+  - evidence: core/5.3.3.7.txt, core/5.3.3.7.2.txt, core/5.3.3.7.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, opal/4.3.5.4.txt, opal/5.1.1.2.txt
+  - reviewer_a: PASS conf=0.84 concerns=The snippet says LockOnReset enumerates reset types that set ReadLocked and WriteLocked true, but the packet evidence does not spell out the numeric mapping between PowerCycle and reset type 0.
+  - locking_rowvalues_encoding_b: FAIL conf=0.95 concerns=The packet uses a raw tuple RowValues representation; accepting that representation, the returned values are still inconsistent.
+  - locking_rowvalues_encoding_c: FAIL conf=0.97 concerns=-
+- `locking-rowvalues-encoding-long-tight-do-192271370c` [quarantine_disagreement] locking-rowvalues-encoding-long-tight-doc
+  - internal name: Locking raw RowValues numeric LockOnReset relocks after PowerCycle: impossible return value
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: locking-range, object-table, set, values, rowvalues, named-columns, raw-args, lockonreset, host-io, postcondition
+  - repair hint: Check that equivalent object-table Set RowValues encodings update Locking cells identically: top-level Values, explicit RowValues, nested Values.RowValues, and raw tuple forms must all preserve column identity, LockOnReset values, and later host-I/O effects.
+  - evidence: core/5.3.3.7.txt, core/5.3.3.7.2.txt, core/5.3.3.7.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, opal/4.3.5.4.txt, opal/5.1.1.2.txt
+  - reviewer_a: FAIL conf=0.84 concerns=The snippet says LockOnReset enumerates reset types that set ReadLocked and WriteLocked true, but the packet evidence does not spell out the numeric mapping between PowerCycle and reset type 0.
+  - locking_rowvalues_encoding_b: PASS conf=0.9 concerns=The raw tuple encoding is not the prose form used in the snippets, but the packet evidence frames it as RowValues and the response matches the successful Set.
+  - locking_rowvalues_encoding_c: PASS conf=0.95 concerns=-
+- `locking-set-state-transition-doc-eb6d5e9731` [quarantine_disagreement] locking-set-state-transition-doc
+  - internal name: Set LockOnReset nonempty then matching reset locks cells: correct return value
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: locking-range, lock-on-reset, readlocked, writelocked, set, state-machine
+  - repair hint: Check direct Set-driven Locking state transitions: changing LockOnReset must not mutate Locked cells, changing Locked must not mutate LockOnReset, and disabling the lock feature makes locked cells ineffective for host I/O.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.2.txt, opal/4.3.5.2.txt
+  - p: PASS conf=0.95 concerns=Assumes the trajectory value [0] denotes the Power Cycle reset type, consistent with the included Opal preconfiguration snippet.
+  - q: FAIL conf=0.98 concerns=-
+  - r: FAIL conf=0.98 concerns=-
+- `locking-set-state-transition-doc-3b0422c6e0` [quarantine_disagreement] locking-set-state-transition-doc
+  - internal name: Set LockOnReset nonempty then matching reset locks cells: impossible return value
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: locking-range, lock-on-reset, readlocked, writelocked, set, state-machine
+  - repair hint: Check direct Set-driven Locking state transitions: changing LockOnReset must not mutate Locked cells, changing Locked must not mutate LockOnReset, and disabling the lock feature makes locked cells ineffective for host I/O.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.2.txt, opal/4.3.5.2.txt
+  - p: FAIL conf=0.95 concerns=Assumes the trajectory value [0] denotes the Power Cycle reset type, consistent with the included Opal preconfiguration snippet.
+  - q: PASS conf=0.98 concerns=-
+  - r: PASS conf=0.98 concerns=-
+- `locking-multi-range-reset-clean-doc-261ad36c4b` [quarantine_concerns] locking-multi-range-reset-clean-doc
+  - internal name: PowerCycle-locked first range rejects host write while second range is unlocked: impossible success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: reset, locking-range, multiple-ranges, lock-on-reset, reset-types, stored-lock-cells, host-io, level0-discovery, long-trajectory
+  - repair hint: Check that matching LockOnReset reset types set the stored ReadLocked and WriteLocked cells true for that row, while ReadLockEnabled/WriteLockEnabled only control whether those stored cells affect host I/O and Level 0 Locked.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.7.1.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.txt, opal/4.3.5.2.1.1.txt, opal/4.3.5.2.1.2.txt, opal/4.3.5.2.2.txt
+  - multi_range_reset_clean_ab: FAIL conf=0.94 concerns=-
+  - multi_range_reset_clean_ac: FAIL conf=0.96 concerns=The evidence establishes SUCCESS is impossible; it does not require this review to select a concrete data-protection status code.
+  - multi_range_reset_clean_ad: FAIL conf=0.95 concerns=-
+- `locking-multi-range-reset-clean-doc-a5ec41cc7d` [quarantine_concerns] locking-multi-range-reset-clean-doc
+  - internal name: PowerCycle leaves empty-LockOnReset second range writable: impossible error
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: reset, locking-range, multiple-ranges, lock-on-reset, reset-types, stored-lock-cells, host-io, level0-discovery, long-trajectory
+  - repair hint: Check that matching LockOnReset reset types set the stored ReadLocked and WriteLocked cells true for that row, while ReadLockEnabled/WriteLockEnabled only control whether those stored cells affect host I/O and Level 0 Locked.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.7.1.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.txt, opal/4.3.5.2.1.1.txt, opal/4.3.5.2.1.2.txt, opal/4.3.5.2.2.txt
+  - multi_range_reset_clean_ab: FAIL conf=0.93 concerns=-
+  - multi_range_reset_clean_ac: FAIL conf=0.94 concerns=The source proves the lock state should not block the write; it does not otherwise analyze unrelated transport-level command errors, but none are indicated in the trajectory.
+  - multi_range_reset_clean_ad: FAIL conf=0.94 concerns=-
+- `locking-multi-range-reset-clean-doc-433194e7f7` [quarantine_concerns] locking-multi-range-reset-clean-doc
+  - internal name: Programmatic reset leaves power-only first range writable: impossible error
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: reset, locking-range, multiple-ranges, lock-on-reset, reset-types, stored-lock-cells, host-io, level0-discovery, long-trajectory
+  - repair hint: Check that matching LockOnReset reset types set the stored ReadLocked and WriteLocked cells true for that row, while ReadLockEnabled/WriteLockEnabled only control whether those stored cells affect host I/O and Level 0 Locked.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.7.1.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.txt, opal/4.3.5.2.1.1.txt, opal/4.3.5.2.1.2.txt, opal/4.3.5.2.2.txt
+  - multi_range_reset_clean_ab: FAIL conf=0.94 concerns=-
+  - multi_range_reset_clean_ac: FAIL conf=0.94 concerns=This judges the lock-state compliance only; the trajectory shows no other basis for an INVALID_PARAMETER response.
+  - multi_range_reset_clean_ad: FAIL conf=0.94 concerns=-
+- `locking-multi-range-reset-clean-doc-d9400079df` [quarantine_concerns] locking-multi-range-reset-clean-doc
+  - internal name: Programmatic reset locks second range against host write: impossible success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: reset, locking-range, multiple-ranges, lock-on-reset, reset-types, stored-lock-cells, host-io, level0-discovery, long-trajectory
+  - repair hint: Check that matching LockOnReset reset types set the stored ReadLocked and WriteLocked cells true for that row, while ReadLockEnabled/WriteLockEnabled only control whether those stored cells affect host I/O and Level 0 Locked.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.7.1.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.txt, opal/4.3.5.2.1.1.txt, opal/4.3.5.2.1.2.txt, opal/4.3.5.2.2.txt
+  - multi_range_reset_clean_ab: FAIL conf=0.96 concerns=-
+  - multi_range_reset_clean_ac: FAIL conf=0.96 concerns=The evidence supports rejecting SUCCESS without requiring a particular error status code.
+  - multi_range_reset_clean_ad: FAIL conf=0.95 concerns=-
+- `locking-hotplug-reset-boundary-doc-87a1b9ac10` [quarantine_concerns] locking-hotplug-reset-boundary-doc
+  - internal name: HotPlug aborts open Locking session before stale-session Get
+  - author label: FAIL
+  - reason: 2 review(s) recorded concerns
+  - concepts: reset, hotplug, session-abort, lock-on-reset, state-observation, host-io
+  - repair hint: Check that HotPlug is reset_types value 2 and an interface TCG reset event: it aborts open sessions, but a LockOnReset set containing only Power Cycle does not set ReadLocked/WriteLocked true.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, opal/3.3.5.1.txt, opal/3.3.5.2.txt, opal/4.3.5.2.2.txt
+  - locking_hotplug_a: FAIL conf=0.86 concerns=The packet snippets do not include the general method/session validity rule, so this relies on the reset evidence that all open sessions are aborted.
+  - locking_hotplug_b: FAIL conf=0.88 concerns=-
+  - locking_hotplug_c: FAIL conf=0.84 concerns=The packet evidence does not include a separate general rule for method invocation after an aborted session, so this relies on the explicit session-abort reset rule.
+- `data-removal-interrupted-bit-doc-d14ca120e9` [quarantine_disagreement] data-removal-interrupted-bit-doc
+  - internal name: Fresh Data Removal Feature descriptor rejects named Interrupted alias set: correct return value
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: level0-discovery, data-removal, feature-descriptor, interrupted-bit, genkey
+  - repair hint: Check the Supported Data Removal Mechanism descriptor Interrupted bit: absent an interrupted Revert/RevertSP/GenKey, and after a successful data-removal operation completes, the bit must be zero.
+  - evidence: opal/3.1.1.txt, opal/3.1.1.6.txt, opal/3.1.1.6.1.txt, opal/3.1.1.6.2.txt, opal/3.1.1.6.3.txt, opal/5.1.2.3.txt, opal/5.1.3.4.txt
+  - data_removal_interrupt_a: PASS conf=0.7 concerns=The packet uses the shortened field name OperationInterrupted rather than the descriptor/Table 9 name Data Removal Operation Interrupted; if exact response-field naming is required, this would be noncompliant.
+  - data_removal_interrupt_b: PASS conf=0.7 concerns=The response names the field OperationInterrupted rather than the spec's Data Removal Operation Interrupted parameter, so the structural mapping is slightly ambiguous.
+  - data_removal_interrupt_c: FAIL conf=0.68 concerns=If OperationInterrupted is an accepted alias in this test harness, the zero value would otherwise match the no-interruption trajectory; the packet sources only name Data Removal Operation Interrupted.
+- `locking-reencrypt-enum-type-tight-doc-7a1d3eaed7` [quarantine_concerns] locking-reencrypt-enum-type-tight-doc
+  - internal name: Locking ReEncryptRequest START_req succeeds from IDLE: correct success
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: locking-range, re-encryption, enum-type, reset-types, adv-key-mode, cont-on-reset, set
+  - repair hint: Check Locking re-encryption control column types: ReEncryptRequest and AdvKeyMode are enumeration values, ContOnReset is a reset set, and boolean tokens must not be silently coerced to enum/reset values.
+  - evidence: core/5.1.3.6.txt, core/5.1.3.65.txt, core/5.1.3.67.txt, core/5.7.2.2.txt, core/5.7.2.2.14.txt, core/5.7.2.2.15.txt, core/5.7.2.2.17.txt, core/5.7.3.7.1.txt, core/5.7.3.7.4.txt, core/5.7.3.7.5.txt
+  - locking_reencrypt_enum_a: PASS conf=0.93 concerns=The trajectory does not explicitly read ReEncryptState before the request, so IDLE is inferred from the fresh Locking row setup and lack of prior transitions.
+  - locking_reencrypt_enum_b: PASS conf=0.96 concerns=The snippets do not explicitly show the created row's ReEncryptState value, so IDLE is inferred from the case trajectory and name rather than directly observed.
+  - locking_reencrypt_enum_c: PASS conf=0.92 concerns=Trajectory does not explicitly show a Get of ReEncryptState, but the case trajectory creates a fresh Locking row and the case is framed as START_req from IDLE.
+- `locking-reencrypt-enum-type-tight-doc-77b5480a0d` [quarantine_concerns] locking-reencrypt-enum-type-tight-doc
+  - internal name: Locking ReEncryptRequest START_req succeeds from IDLE: impossible error
+  - author label: FAIL
+  - reason: 3 review(s) recorded concerns
+  - concepts: locking-range, re-encryption, enum-type, reset-types, adv-key-mode, cont-on-reset, set
+  - repair hint: Check Locking re-encryption control column types: ReEncryptRequest and AdvKeyMode are enumeration values, ContOnReset is a reset set, and boolean tokens must not be silently coerced to enum/reset values.
+  - evidence: core/5.1.3.6.txt, core/5.1.3.65.txt, core/5.1.3.67.txt, core/5.7.2.2.txt, core/5.7.2.2.14.txt, core/5.7.2.2.15.txt, core/5.7.2.2.17.txt, core/5.7.3.7.1.txt, core/5.7.3.7.4.txt, core/5.7.3.7.5.txt
+  - locking_reencrypt_enum_a: FAIL conf=0.93 concerns=The trajectory does not explicitly read ReEncryptState before the request, so IDLE is inferred from the fresh Locking row setup and lack of prior transitions.
+  - locking_reencrypt_enum_b: FAIL conf=0.96 concerns=The snippets do not explicitly show the created row's ReEncryptState value, so IDLE is inferred from the case trajectory and name rather than directly observed.
+  - locking_reencrypt_enum_c: FAIL conf=0.92 concerns=Trajectory does not explicitly show a Get of ReEncryptState, but the case trajectory creates a fresh Locking row and the case is framed as START_req from IDLE.
+- `lockinginfo-readonly-doc-c489c15671` [needs_review] lockinginfo-readonly-doc
+  - internal name: Host cannot modify LockingInfo KeysAvailableCfg: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-info, object-table, set, read-only-column, host-modifiability
+  - repair hint: Check that LockingInfo object-table rows reject host Set attempts on read-only configuration columns, including MaxReEncryptions.
+  - evidence: core/5.7.2.1.txt, core/5.7.2.1.1.txt, core/5.7.2.1.2.txt, core/5.7.2.1.3.txt, core/5.7.2.1.4.txt, core/5.7.2.1.5.txt, core/5.7.2.1.6.txt, core/5.7.2.1.7.txt, core/5.1.3.43.txt
+- `lockinginfo-encryptsupport-enum-doc-e1982864d3` [needs_review] lockinginfo-encryptsupport-enum-doc
+  - internal name: LockingInfo EncryptSupport Get accepts None and rejects reserved enc_supported: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: lockinginfo-encryptsupport-enum-doc
+  - evidence: core/5.1.3.30.txt, core/5.7.2.1.txt, core/5.7.2.1.4.txt
+- `lockinginfo-encryptsupport-enum-doc-e49afaf2ea` [needs_review] lockinginfo-encryptsupport-enum-doc
+  - internal name: LockingInfo EncryptSupport Get accepts None and rejects reserved enc_supported: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: lockinginfo-encryptsupport-enum-doc
+  - evidence: core/5.1.3.30.txt, core/5.7.2.1.txt, core/5.7.2.1.4.txt
+- `lockinginfo-encryptsupport-enum-doc-69a3eb6a9e` [needs_review] lockinginfo-encryptsupport-enum-doc
+  - internal name: LockingInfo EncryptSupport Get accepts Media Encryption and rejects boolean coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: lockinginfo-encryptsupport-enum-doc
+  - evidence: core/5.1.3.30.txt, core/5.7.2.1.txt, core/5.7.2.1.4.txt
+- `lockinginfo-encryptsupport-enum-doc-291f36a909` [needs_review] lockinginfo-encryptsupport-enum-doc
+  - internal name: LockingInfo EncryptSupport Get accepts Media Encryption and rejects boolean coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: lockinginfo-encryptsupport-enum-doc
+  - evidence: core/5.1.3.30.txt, core/5.7.2.1.txt, core/5.7.2.1.4.txt
+- `lockinginfo-get-types-doc-0a1f5c1254` [needs_review] lockinginfo-get-types-doc
+  - internal name: LockingInfo UID Get accepts uid bytes_8 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-info, get, typed-return, uid, uinteger, maxranges, max-reencryptions
+  - repair hint: Check LockingInfo successful Get return typing: UID is uid/bytes_8 while Version, MaxRanges, and MaxReEncryptions are uinteger_4 values. These cells are readable configuration data but cannot carry malformed typed values.
+  - evidence: core/5.1.3.81.txt, core/5.1.3.93.txt, core/5.7.2.1.txt, core/5.7.2.1.1.txt, core/5.7.2.1.3.txt, core/5.7.2.1.5.txt, core/5.7.2.1.6.txt
+- `lockinginfo-get-types-doc-dda1de8e1e` [needs_review] lockinginfo-get-types-doc
+  - internal name: LockingInfo UID Get accepts uid bytes_8 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-info, get, typed-return, uid, uinteger, maxranges, max-reencryptions
+  - repair hint: Check LockingInfo successful Get return typing: UID is uid/bytes_8 while Version, MaxRanges, and MaxReEncryptions are uinteger_4 values. These cells are readable configuration data but cannot carry malformed typed values.
+  - evidence: core/5.1.3.81.txt, core/5.1.3.93.txt, core/5.7.2.1.txt, core/5.7.2.1.1.txt, core/5.7.2.1.3.txt, core/5.7.2.1.5.txt, core/5.7.2.1.6.txt
+- `lockinginfo-get-types-doc-c847fc0daf` [needs_review] lockinginfo-get-types-doc
+  - internal name: LockingInfo MaxRanges Get accepts uinteger_4 and rejects boolean coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-info, get, typed-return, uid, uinteger, maxranges, max-reencryptions
+  - repair hint: Check LockingInfo successful Get return typing: UID is uid/bytes_8 while Version, MaxRanges, and MaxReEncryptions are uinteger_4 values. These cells are readable configuration data but cannot carry malformed typed values.
+  - evidence: core/5.1.3.81.txt, core/5.1.3.93.txt, core/5.7.2.1.txt, core/5.7.2.1.1.txt, core/5.7.2.1.3.txt, core/5.7.2.1.5.txt, core/5.7.2.1.6.txt
+- `lockinginfo-get-types-doc-b3aa6ae96b` [needs_review] lockinginfo-get-types-doc
+  - internal name: LockingInfo MaxRanges Get accepts uinteger_4 and rejects boolean coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-info, get, typed-return, uid, uinteger, maxranges, max-reencryptions
+  - repair hint: Check LockingInfo successful Get return typing: UID is uid/bytes_8 while Version, MaxRanges, and MaxReEncryptions are uinteger_4 values. These cells are readable configuration data but cannot carry malformed typed values.
+  - evidence: core/5.1.3.81.txt, core/5.1.3.93.txt, core/5.7.2.1.txt, core/5.7.2.1.1.txt, core/5.7.2.1.3.txt, core/5.7.2.1.5.txt, core/5.7.2.1.6.txt
+- `lockinginfo-get-types-doc-0d7170ac50` [needs_review] lockinginfo-get-types-doc
+  - internal name: LockingInfo MaxReEncryptions Get accepts uinteger_4 and rejects negative value: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-info, get, typed-return, uid, uinteger, maxranges, max-reencryptions
+  - repair hint: Check LockingInfo successful Get return typing: UID is uid/bytes_8 while Version, MaxRanges, and MaxReEncryptions are uinteger_4 values. These cells are readable configuration data but cannot carry malformed typed values.
+  - evidence: core/5.1.3.81.txt, core/5.1.3.93.txt, core/5.7.2.1.txt, core/5.7.2.1.1.txt, core/5.7.2.1.3.txt, core/5.7.2.1.5.txt, core/5.7.2.1.6.txt
+- `lockinginfo-get-types-doc-4c96641f8f` [needs_review] lockinginfo-get-types-doc
+  - internal name: LockingInfo MaxReEncryptions Get accepts uinteger_4 and rejects negative value: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-info, get, typed-return, uid, uinteger, maxranges, max-reencryptions
+  - repair hint: Check LockingInfo successful Get return typing: UID is uid/bytes_8 while Version, MaxRanges, and MaxReEncryptions are uinteger_4 values. These cells are readable configuration data but cannot carry malformed typed values.
+  - evidence: core/5.1.3.81.txt, core/5.1.3.93.txt, core/5.7.2.1.txt, core/5.7.2.1.1.txt, core/5.7.2.1.3.txt, core/5.7.2.1.5.txt, core/5.7.2.1.6.txt
+- `reencrypt-status-enum-doc-88728e441d` [quarantine_concerns] reencrypt-status-enum-doc
+  - internal name: LastReEncStat Get accepts named Success and rejects high reserved value: correct return value
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: locking-range, reencryption, general-status, last-reenc-stat, reserved-enum, get-postcondition
+  - repair hint: Check returned enum values for LastReEncStat and GeneralStatus: last_reenc_stat values 4-7 are reserved, and gen_status values 7-31 are reserved even when the column is otherwise valid in PAUSED/PENDING states.
+  - evidence: core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.7.2.2.19.txt, core/5.7.2.2.20.txt
+  - reencrypt_status_enum_a: PASS conf=0.8 concerns=The target uses the associated value name "Success" instead of the numeric enum value; treated as compliant because the trajectory represents other enums by names as well.
+  - reencrypt_status_enum_b: PASS conf=0.88 concerns=-
+  - reencrypt_status_enum_c: PASS conf=0.9 concerns=-
+- `reencrypt-status-enum-doc-55404770cc` [quarantine_concerns] reencrypt-status-enum-doc
+  - internal name: GeneralStatus Get accepts active pause status and rejects reserved value: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: locking-range, reencryption, general-status, last-reenc-stat, reserved-enum, get-postcondition
+  - repair hint: Check returned enum values for LastReEncStat and GeneralStatus: last_reenc_stat values 4-7 are reserved, and gen_status values 7-31 are reserved even when the column is otherwise valid in PAUSED/PENDING states.
+  - evidence: core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.7.2.2.19.txt, core/5.7.2.2.20.txt
+  - reencrypt_status_enum_a: FAIL conf=0.95 concerns=-
+  - reencrypt_status_enum_b: FAIL conf=0.95 concerns=-
+  - reencrypt_status_enum_c: FAIL conf=0.86 concerns=The source also states values 0-31 are valid for the PAUSED state; I interpret that as the PAUSED numeric range, not permission to use entries separately marked reserved.
+- `locking-verify-mode-enum-doc-d2cb17a010` [needs_review] locking-verify-mode-enum-doc
+  - internal name: Locking VerifyMode accepts verify-enabled enum value: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, verify-mode, reserved-enum, set, get-postcondition
+  - repair hint: Check Locking VerifyMode enum validation; valid values are 0 No verify and 1 Verify enabled, while 2-7 are reserved and cannot be accepted in successful Set or Get results.
+  - evidence: core/5.1.3.98.txt, core/5.7.2.2.16.txt, core/5.7.3.7.5.txt
+- `locking-verify-mode-enum-doc-5e322f5c33` [needs_review] locking-verify-mode-enum-doc
+  - internal name: Locking VerifyMode accepts verify-enabled enum value: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, verify-mode, reserved-enum, set, get-postcondition
+  - repair hint: Check Locking VerifyMode enum validation; valid values are 0 No verify and 1 Verify enabled, while 2-7 are reserved and cannot be accepted in successful Set or Get results.
+  - evidence: core/5.1.3.98.txt, core/5.7.2.2.16.txt, core/5.7.3.7.5.txt
+- `locking-verify-mode-enum-doc-0b504c7abf` [needs_review] locking-verify-mode-enum-doc
+  - internal name: Locking VerifyMode rejects reserved enum value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, verify-mode, reserved-enum, set, get-postcondition
+  - repair hint: Check Locking VerifyMode enum validation; valid values are 0 No verify and 1 Verify enabled, while 2-7 are reserved and cannot be accepted in successful Set or Get results.
+  - evidence: core/5.1.3.98.txt, core/5.7.2.2.16.txt, core/5.7.3.7.5.txt
+- `locking-verify-mode-enum-doc-0562948698` [needs_review] locking-verify-mode-enum-doc
+  - internal name: Locking VerifyMode rejects reserved enum value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, verify-mode, reserved-enum, set, get-postcondition
+  - repair hint: Check Locking VerifyMode enum validation; valid values are 0 No verify and 1 Verify enabled, while 2-7 are reserved and cannot be accepted in successful Set or Get results.
+  - evidence: core/5.1.3.98.txt, core/5.7.2.2.16.txt, core/5.7.3.7.5.txt
+- `locking-verify-mode-enum-doc-8035d08ee5` [needs_review] locking-verify-mode-enum-doc
+  - internal name: VerifyMode Get accepts no-verify enum and rejects reserved value: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, verify-mode, reserved-enum, set, get-postcondition
+  - repair hint: Check Locking VerifyMode enum validation; valid values are 0 No verify and 1 Verify enabled, while 2-7 are reserved and cannot be accepted in successful Set or Get results.
+  - evidence: core/5.1.3.98.txt, core/5.7.2.2.16.txt, core/5.7.3.7.5.txt
+- `locking-verify-mode-enum-doc-5959efde1d` [needs_review] locking-verify-mode-enum-doc
+  - internal name: VerifyMode Get accepts no-verify enum and rejects reserved value: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, verify-mode, reserved-enum, set, get-postcondition
+  - repair hint: Check Locking VerifyMode enum validation; valid values are 0 No verify and 1 Verify enabled, while 2-7 are reserved and cannot be accepted in successful Set or Get results.
+  - evidence: core/5.1.3.98.txt, core/5.7.2.2.16.txt, core/5.7.3.7.5.txt
+- `crsa-padding-type-enum-doc-4160d0874a` [needs_review] crsa-padding-type-enum-doc
+  - internal name: C_RSA Format accepts RSAES-OAEP padding_type: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: c-rsa, credential, padding-type, reserved-enum, set, get-postcondition
+  - repair hint: Check C_RSA Format column padding_type validation; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.62.txt, core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-padding-type-enum-doc-ca56d22c18` [needs_review] crsa-padding-type-enum-doc
+  - internal name: C_RSA Format accepts RSAES-OAEP padding_type: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: c-rsa, credential, padding-type, reserved-enum, set, get-postcondition
+  - repair hint: Check C_RSA Format column padding_type validation; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.62.txt, core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-padding-type-enum-doc-3a91df6c07` [needs_review] crsa-padding-type-enum-doc
+  - internal name: C_RSA Format rejects reserved padding_type: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: c-rsa, credential, padding-type, reserved-enum, set, get-postcondition
+  - repair hint: Check C_RSA Format column padding_type validation; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.62.txt, core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-padding-type-enum-doc-9982e10765` [needs_review] crsa-padding-type-enum-doc
+  - internal name: C_RSA Format rejects reserved padding_type: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: c-rsa, credential, padding-type, reserved-enum, set, get-postcondition
+  - repair hint: Check C_RSA Format column padding_type validation; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.62.txt, core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-padding-type-enum-doc-44b74b8713` [needs_review] crsa-padding-type-enum-doc
+  - internal name: C_RSA Format rejects boolean padding_type coercion: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: c-rsa, credential, padding-type, reserved-enum, set, get-postcondition
+  - repair hint: Check C_RSA Format column padding_type validation; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.62.txt, core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-padding-type-enum-doc-43a22aabca` [needs_review] crsa-padding-type-enum-doc
+  - internal name: C_RSA Format rejects boolean padding_type coercion: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: c-rsa, credential, padding-type, reserved-enum, set, get-postcondition
+  - repair hint: Check C_RSA Format column padding_type validation; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.62.txt, core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-padding-type-enum-doc-7999634f6e` [needs_review] crsa-padding-type-enum-doc
+  - internal name: C_RSA Format Get accepts defined padding and rejects reserved value: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: c-rsa, credential, padding-type, reserved-enum, set, get-postcondition
+  - repair hint: Check C_RSA Format column padding_type validation; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.62.txt, core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-padding-type-enum-doc-e50741534a` [needs_review] crsa-padding-type-enum-doc
+  - internal name: C_RSA Format Get accepts defined padding and rejects reserved value: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: c-rsa, credential, padding-type, reserved-enum, set, get-postcondition
+  - repair hint: Check C_RSA Format column padding_type validation; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.62.txt, core/5.3.2.13.txt, core/5.3.2.14.txt
+- `credential-hash-protocol-enum-doc-a523ade102` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_RSA Hash accepts SHA-512 hash_protocol: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-86d0631d14` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_RSA Hash accepts SHA-512 hash_protocol: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-14320eaaef` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_RSA Hash rejects reserved hash_protocol: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-b3a06b6b4d` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_RSA Hash rejects reserved hash_protocol: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-89444298e0` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_AES Hash accepts SHA-512 hash_protocol: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-cb8bdda4d0` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_AES Hash accepts SHA-512 hash_protocol: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-e2a0aa28fa` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_AES Hash rejects reserved hash_protocol: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-649002598e` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_AES Hash rejects reserved hash_protocol: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-435315b660` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_EC Hash accepts SHA-512 hash_protocol: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-dce5d76c8f` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_EC Hash accepts SHA-512 hash_protocol: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-13c14165a3` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_EC Hash rejects reserved hash_protocol: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-3bbf563905` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_EC Hash rejects reserved hash_protocol: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-92abbcd6c5` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_HMAC Hash accepts SHA-512 hash_protocol: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-024152b256` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_HMAC Hash accepts SHA-512 hash_protocol: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-e0a789fe91` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_HMAC Hash rejects reserved hash_protocol: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-7b81fd157f` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_HMAC Hash rejects reserved hash_protocol: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-5c9c8211bf` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_AES Hash rejects boolean hash_protocol coercion: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-24356da541` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_AES Hash rejects boolean hash_protocol coercion: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-dbce9419f1` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_HMAC Hash Get accepts defined hash and rejects reserved value: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `credential-hash-protocol-enum-doc-385208f765` [needs_review] credential-hash-protocol-enum-doc
+  - internal name: C_HMAC Hash Get accepts defined hash and rejects reserved value: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, hash-protocol, reserved-enum, set, get-postcondition, crypto-template
+  - repair hint: Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.
+  - evidence: core/5.1.3.35.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.20.txt, core/5.3.2.27.txt
+- `enum-bool-coercion-doc-38e76987c4` [needs_review] enum-bool-coercion-doc
+  - internal name: C_RSA Format Get rejects boolean padding_type coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: enum, typed-return, boolean-coercion, credential, media-key, locking-range, get-postcondition
+  - repair hint: Check enum typed return cells: booleans must not be accepted as numeric enum aliases for hash_protocol, padding_type, symmetric_mode_media, verify_mode, last_reenc_stat, or gen_status.
+  - evidence: core/3.2.1.4.txt, core/5.1.3.35.txt, core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.1.3.62.txt, core/5.1.3.73.txt, core/5.1.3.98.txt, core/5.3.2.13.txt, core/5.3.2.26.txt, core/5.7.2.2.txt, core/5.7.2.4.txt
+- `enum-bool-coercion-doc-2908d1c290` [needs_review] enum-bool-coercion-doc
+  - internal name: C_RSA Format Get rejects boolean padding_type coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: enum, typed-return, boolean-coercion, credential, media-key, locking-range, get-postcondition
+  - repair hint: Check enum typed return cells: booleans must not be accepted as numeric enum aliases for hash_protocol, padding_type, symmetric_mode_media, verify_mode, last_reenc_stat, or gen_status.
+  - evidence: core/3.2.1.4.txt, core/5.1.3.35.txt, core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.1.3.62.txt, core/5.1.3.73.txt, core/5.1.3.98.txt, core/5.3.2.13.txt, core/5.3.2.26.txt, core/5.7.2.2.txt, core/5.7.2.4.txt
+- `enum-bool-coercion-doc-cdf90c4b47` [needs_review] enum-bool-coercion-doc
+  - internal name: C_HMAC Hash Get rejects boolean hash_protocol coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: enum, typed-return, boolean-coercion, credential, media-key, locking-range, get-postcondition
+  - repair hint: Check enum typed return cells: booleans must not be accepted as numeric enum aliases for hash_protocol, padding_type, symmetric_mode_media, verify_mode, last_reenc_stat, or gen_status.
+  - evidence: core/3.2.1.4.txt, core/5.1.3.35.txt, core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.1.3.62.txt, core/5.1.3.73.txt, core/5.1.3.98.txt, core/5.3.2.13.txt, core/5.3.2.26.txt, core/5.7.2.2.txt, core/5.7.2.4.txt
+- `enum-bool-coercion-doc-543a893d2e` [needs_review] enum-bool-coercion-doc
+  - internal name: C_HMAC Hash Get rejects boolean hash_protocol coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: enum, typed-return, boolean-coercion, credential, media-key, locking-range, get-postcondition
+  - repair hint: Check enum typed return cells: booleans must not be accepted as numeric enum aliases for hash_protocol, padding_type, symmetric_mode_media, verify_mode, last_reenc_stat, or gen_status.
+  - evidence: core/3.2.1.4.txt, core/5.1.3.35.txt, core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.1.3.62.txt, core/5.1.3.73.txt, core/5.1.3.98.txt, core/5.3.2.13.txt, core/5.3.2.26.txt, core/5.7.2.2.txt, core/5.7.2.4.txt
+- `enum-bool-coercion-doc-dbba652775` [needs_review] enum-bool-coercion-doc
+  - internal name: K_AES Mode Get rejects boolean symmetric_mode_media coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: enum, typed-return, boolean-coercion, credential, media-key, locking-range, get-postcondition
+  - repair hint: Check enum typed return cells: booleans must not be accepted as numeric enum aliases for hash_protocol, padding_type, symmetric_mode_media, verify_mode, last_reenc_stat, or gen_status.
+  - evidence: core/3.2.1.4.txt, core/5.1.3.35.txt, core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.1.3.62.txt, core/5.1.3.73.txt, core/5.1.3.98.txt, core/5.3.2.13.txt, core/5.3.2.26.txt, core/5.7.2.2.txt, core/5.7.2.4.txt
+- `enum-bool-coercion-doc-18ae13fe10` [needs_review] enum-bool-coercion-doc
+  - internal name: K_AES Mode Get rejects boolean symmetric_mode_media coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: enum, typed-return, boolean-coercion, credential, media-key, locking-range, get-postcondition
+  - repair hint: Check enum typed return cells: booleans must not be accepted as numeric enum aliases for hash_protocol, padding_type, symmetric_mode_media, verify_mode, last_reenc_stat, or gen_status.
+  - evidence: core/3.2.1.4.txt, core/5.1.3.35.txt, core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.1.3.62.txt, core/5.1.3.73.txt, core/5.1.3.98.txt, core/5.3.2.13.txt, core/5.3.2.26.txt, core/5.7.2.2.txt, core/5.7.2.4.txt
+- `enum-bool-coercion-doc-486a508dff` [needs_review] enum-bool-coercion-doc
+  - internal name: Locking VerifyMode Get rejects boolean verify_mode coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: enum, typed-return, boolean-coercion, credential, media-key, locking-range, get-postcondition
+  - repair hint: Check enum typed return cells: booleans must not be accepted as numeric enum aliases for hash_protocol, padding_type, symmetric_mode_media, verify_mode, last_reenc_stat, or gen_status.
+  - evidence: core/3.2.1.4.txt, core/5.1.3.35.txt, core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.1.3.62.txt, core/5.1.3.73.txt, core/5.1.3.98.txt, core/5.3.2.13.txt, core/5.3.2.26.txt, core/5.7.2.2.txt, core/5.7.2.4.txt
+- `enum-bool-coercion-doc-27d6415c82` [needs_review] enum-bool-coercion-doc
+  - internal name: Locking VerifyMode Get rejects boolean verify_mode coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: enum, typed-return, boolean-coercion, credential, media-key, locking-range, get-postcondition
+  - repair hint: Check enum typed return cells: booleans must not be accepted as numeric enum aliases for hash_protocol, padding_type, symmetric_mode_media, verify_mode, last_reenc_stat, or gen_status.
+  - evidence: core/3.2.1.4.txt, core/5.1.3.35.txt, core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.1.3.62.txt, core/5.1.3.73.txt, core/5.1.3.98.txt, core/5.3.2.13.txt, core/5.3.2.26.txt, core/5.7.2.2.txt, core/5.7.2.4.txt
+- `enum-bool-coercion-doc-d59ed1d8dc` [needs_review] enum-bool-coercion-doc
+  - internal name: Locking LastReEncStat Get rejects boolean enum coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: enum, typed-return, boolean-coercion, credential, media-key, locking-range, get-postcondition
+  - repair hint: Check enum typed return cells: booleans must not be accepted as numeric enum aliases for hash_protocol, padding_type, symmetric_mode_media, verify_mode, last_reenc_stat, or gen_status.
+  - evidence: core/3.2.1.4.txt, core/5.1.3.35.txt, core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.1.3.62.txt, core/5.1.3.73.txt, core/5.1.3.98.txt, core/5.3.2.13.txt, core/5.3.2.26.txt, core/5.7.2.2.txt, core/5.7.2.4.txt
+- `enum-bool-coercion-doc-7720aee2fc` [needs_review] enum-bool-coercion-doc
+  - internal name: Locking LastReEncStat Get rejects boolean enum coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: enum, typed-return, boolean-coercion, credential, media-key, locking-range, get-postcondition
+  - repair hint: Check enum typed return cells: booleans must not be accepted as numeric enum aliases for hash_protocol, padding_type, symmetric_mode_media, verify_mode, last_reenc_stat, or gen_status.
+  - evidence: core/3.2.1.4.txt, core/5.1.3.35.txt, core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.1.3.62.txt, core/5.1.3.73.txt, core/5.1.3.98.txt, core/5.3.2.13.txt, core/5.3.2.26.txt, core/5.7.2.2.txt, core/5.7.2.4.txt
+- `enum-bool-coercion-doc-05b3f7fce5` [needs_review] enum-bool-coercion-doc
+  - internal name: Locking GeneralStatus Get rejects boolean gen_status coercion: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: enum, typed-return, boolean-coercion, credential, media-key, locking-range, get-postcondition
+  - repair hint: Check enum typed return cells: booleans must not be accepted as numeric enum aliases for hash_protocol, padding_type, symmetric_mode_media, verify_mode, last_reenc_stat, or gen_status.
+  - evidence: core/3.2.1.4.txt, core/5.1.3.35.txt, core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.1.3.62.txt, core/5.1.3.73.txt, core/5.1.3.98.txt, core/5.3.2.13.txt, core/5.3.2.26.txt, core/5.7.2.2.txt, core/5.7.2.4.txt
+- `enum-bool-coercion-doc-59402b838d` [needs_review] enum-bool-coercion-doc
+  - internal name: Locking GeneralStatus Get rejects boolean gen_status coercion: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: enum, typed-return, boolean-coercion, credential, media-key, locking-range, get-postcondition
+  - repair hint: Check enum typed return cells: booleans must not be accepted as numeric enum aliases for hash_protocol, padding_type, symmetric_mode_media, verify_mode, last_reenc_stat, or gen_status.
+  - evidence: core/3.2.1.4.txt, core/5.1.3.35.txt, core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.1.3.62.txt, core/5.1.3.73.txt, core/5.1.3.98.txt, core/5.3.2.13.txt, core/5.3.2.26.txt, core/5.7.2.2.txt, core/5.7.2.4.txt
+- `caes-mode-feedback-doc-6433d147e7` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES_128 Mode accepts defined symmetric_mode: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-0b8fe75d4a` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES_128 Mode accepts defined symmetric_mode: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-69cdac726f` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES_128 Mode rejects reserved symmetric_mode: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-0adcf82efa` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES_128 Mode rejects reserved symmetric_mode: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-f22dd1396b` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES_256 Mode accepts defined symmetric_mode: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-a943c28c27` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES_256 Mode accepts defined symmetric_mode: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-411811f8b9` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES_256 Mode rejects reserved symmetric_mode: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-e1569c7f6e` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES_256 Mode rejects reserved symmetric_mode: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-dc60fde1e0` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES Mode rejects boolean symmetric_mode coercion: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-90fa6c2d97` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES Mode rejects boolean symmetric_mode coercion: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-60a24ec22e` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES CFB FeedbackSize rejects zero: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-ebd598c0e8` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES CFB FeedbackSize rejects zero: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-ddf3dea8f2` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES CFB FeedbackSize rejects value above AES block length: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-cf27837f2a` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES CFB FeedbackSize rejects value above AES block length: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-e797dad652` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES Mode Get accepts defined mode and rejects reserved mode: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-960b9e2a01` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES Mode Get accepts defined mode and rejects reserved mode: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-a5f689b950` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES FeedbackSize Get rejects boolean uinteger: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-mode-feedback-doc-ed4d92eadd` [needs_review] caes-mode-feedback-doc
+  - internal name: C_AES FeedbackSize Get rejects boolean uinteger: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-mode-feedback-doc
+  - evidence: core/5.1.3.31.txt, core/5.1.3.72.txt, core/5.3.2.15.txt, core/5.3.2.16.txt
+- `caes-fixed-bytes-doc-e4417e3240` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES_128 Key accepts bytes_16: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-0c0cfbeee2` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES_128 Key accepts bytes_16: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-cb95f029ad` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES_128 Key rejects short bytes_16: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-cad4f4c421` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES_128 Key rejects short bytes_16: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-53e10e27da` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES_256 Key accepts bytes_32: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-9551724683` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES_256 Key accepts bytes_32: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-0189d08d59` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES_256 Key rejects bytes_16 in bytes_32 column: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-2e379cb6d7` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES_256 Key rejects bytes_16 in bytes_32 column: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-39cd5dc900` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES ResidualData rejects boolean bytes_16 coercion: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-7ea70aa361` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES ResidualData rejects boolean bytes_16 coercion: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-68dc38f2a6` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES ResidualData Get accepts bytes_16 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-4a6d1a5181` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES ResidualData Get accepts bytes_16 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-3104e982e0` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES_256 Key Get accepts bytes_32 and rejects bytes_16: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `caes-fixed-bytes-doc-635dbbeb4f` [needs_review] caes-fixed-bytes-doc
+  - internal name: C_AES_256 Key Get accepts bytes_32 and rejects bytes_16: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: caes-fixed-bytes-doc
+  - evidence: core/5.1.3.15.txt, core/5.1.3.17.txt, core/5.1.3.19.txt, core/5.1.3.41.txt, core/5.1.3.42.txt, core/5.3.2.15.txt, core/5.3.2.15.4.txt, core/5.3.2.15.7.txt, core/5.3.2.16.txt, core/5.3.2.16.4.txt, core/5.3.2.16.7.txt
+- `chmac-fixed-bytes-doc-df3d01aef2` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_160 Key accepts fixed bytes_20: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-5220e00383` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_160 Key accepts fixed bytes_20: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-0d0ec60efc` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_160 Key rejects short fixed bytes_20: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-2982ffc6b1` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_160 Key rejects short fixed bytes_20: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-0d2fe048a1` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-c6474c043a` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_160 Key Get accepts bytes_20 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-251c8c7c2e` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_256 Key accepts fixed bytes_32: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-13ba8a298e` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_256 Key accepts fixed bytes_32: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-eb82098468` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_256 Key rejects short fixed bytes_32: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-d50994abdc` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_256 Key rejects short fixed bytes_32: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-f1a6c35f12` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_256 Key Get accepts bytes_32 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-4e52b2df65` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_256 Key Get accepts bytes_32 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-8cf5d180ce` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_384 Key accepts fixed bytes_48: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-bf3ee71994` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_384 Key accepts fixed bytes_48: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-228de954d3` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_384 Key rejects short fixed bytes_48: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-24be85e914` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_384 Key rejects short fixed bytes_48: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-404a50a470` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_384 Key Get accepts bytes_48 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-66ddc32f1d` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_384 Key Get accepts bytes_48 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-6605ded705` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_512 Key accepts fixed bytes_64: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-b1fe00e05b` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_512 Key accepts fixed bytes_64: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-eff4aaed65` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_512 Key rejects short fixed bytes_64: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-b820f3a343` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_512 Key rejects short fixed bytes_64: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-0309d42395` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_512 Key Get accepts bytes_64 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `chmac-fixed-bytes-doc-43a2467779` [needs_review] chmac-fixed-bytes-doc
+  - internal name: C_HMAC_512 Key Get accepts bytes_64 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, c-hmac, fixed-bytes, key-material, set, get-postcondition
+  - repair hint: Check C_HMAC Key column fixed-byte validation: C_HMAC_160/256/384/512 keys must be exactly bytes_20/32/48/64 on successful Set and returned Get cells.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt
+- `hsha-fixed-bytes-doc-adc82953b4` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_1 Proof Get accepts bytes_20 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-8419affed4` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_1 Proof Get accepts bytes_20 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-8727a1106f` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_1 Accumulator Get accepts bytes_20 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-0e1e678e56` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_1 Accumulator Get accepts bytes_20 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-133782157f` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_256 Proof Get accepts bytes_32 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-0d80954cfe` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_256 Proof Get accepts bytes_32 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-4d12e4683d` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_256 Accumulator Get accepts bytes_32 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-fdd50fdfdb` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_256 Accumulator Get accepts bytes_32 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-72a8e7f398` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_384 Proof Get accepts bytes_48 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-b9c8088dca` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_384 Proof Get accepts bytes_48 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-7fe0deb6cc` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_384 Accumulator Get accepts bytes_48 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-67d4e8db94` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_384 Accumulator Get accepts bytes_48 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-dc3ef753e8` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_512 Proof Get accepts bytes_64 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-e5a5876d99` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_512 Proof Get accepts bytes_64 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-91be6a52fc` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_512 Accumulator Get accepts bytes_64 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-d387d21987` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_512 Accumulator Get accepts bytes_64 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `opal-admin-issuesp-unsupported-doc-9c927e80fe` [quarantine_concerns] opal-admin-issuesp-unsupported-doc
+  - internal name: Opal Admin SP IssueSP unsupported despite Core Admin Template method: correct status
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: methodid, admin-sp, opal-ssc, issuesp, unsupported-method, access-control
+  - repair hint: Check Opal Admin SP method universe: Core Admin Template describes IssueSP for non-fixed SP issuance, but Opal Admin Template support is limited to the MethodID rows listed in Opal Table 21; IssueSP success or GetACL success for ThisSP/IssueSP must be rejected.
+  - evidence: core/3.4.3.1.txt, core/5.3.2.6.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, core/5.4.3.1.txt, core/5.4.4.3.1.txt, core/5.4.5.1.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/5.2.1.2.txt
+  - issuesp_unsupported_a: PASS conf=0.9 concerns=-
+  - issuesp_unsupported_b: PASS conf=0.86 concerns=Evidence establishes IssueSP is unsupported in Opal Admin SP, but snippets do not specify the exact status code for invoking an unsupported method.
+  - issuesp_unsupported_c: PASS conf=0.88 concerns=-
+- `opal-admin-issuesp-unsupported-doc-5230514b35` [quarantine_concerns] opal-admin-issuesp-unsupported-doc
+  - internal name: Opal Admin SP IssueSP GetACL association does not exist: correct status
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: methodid, admin-sp, opal-ssc, issuesp, unsupported-method, access-control
+  - repair hint: Check Opal Admin SP method universe: Core Admin Template describes IssueSP for non-fixed SP issuance, but Opal Admin Template support is limited to the MethodID rows listed in Opal Table 21; IssueSP success or GetACL success for ThisSP/IssueSP must be rejected.
+  - evidence: core/3.4.3.1.txt, core/5.3.2.6.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, core/5.4.3.1.txt, core/5.4.4.3.1.txt, core/5.4.5.1.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/5.2.1.2.txt
+  - issuesp_unsupported_a: PASS conf=0.93 concerns=-
+  - issuesp_unsupported_b: PASS conf=0.88 concerns=The snippets specify that GetACL fails for a nonexistent combination but do not pin the required failure status to NOT_AUTHORIZED.
+  - issuesp_unsupported_c: PASS conf=0.87 concerns=-
+- `opal-clock-template-unsupported-doc-5c187af63a` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP does not expose Clock Template method GetClock: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-5995d24ca6` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP has no ClockTime GetClock GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-68f0abacc3` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP does not expose Clock Template method ResetClock: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-30139ef3e0` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP has no ClockTime ResetClock GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-1969c5fe8e` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP does not expose Clock Template method SetClockHigh: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-2177efe09a` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP has no ClockTime SetClockHigh GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-b462c133b4` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP does not expose Clock Template method SetLagHigh: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-c2271af372` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP has no ClockTime SetLagHigh GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-1e1be9d0b7` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP does not expose Clock Template method SetClockLow: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-f800487ef7` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP has no ClockTime SetClockLow GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-ed77b8d238` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP does not expose Clock Template method SetLagLow: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-83dde1b08a` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP has no ClockTime SetLagLow GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-2a749eb666` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP does not expose Clock Template method IncrementCounter: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-ca81db20b8` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Admin SP has no ClockTime IncrementCounter GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-12529106d5` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP does not expose Clock Template method GetClock: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-22d7bf483d` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP has no ClockTime GetClock GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-6200a53b0d` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP does not expose Clock Template method ResetClock: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-8518931b7d` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP has no ClockTime ResetClock GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-e0711f26bb` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP does not expose Clock Template method SetClockHigh: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-c8c25b4137` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP has no ClockTime SetClockHigh GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-076527aa68` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP does not expose Clock Template method SetLagHigh: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-e39f012a86` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP has no ClockTime SetLagHigh GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-f9da10d75b` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP does not expose Clock Template method SetClockLow: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-af1036edca` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP has no ClockTime SetClockLow GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-9a9c098bfa` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP does not expose Clock Template method SetLagLow: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-0b44143ff6` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP has no ClockTime SetLagLow GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-d880c5b6cf` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP does not expose Clock Template method IncrementCounter: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `opal-clock-template-unsupported-doc-c2cae92c0f` [needs_review] opal-clock-template-unsupported-doc
+  - internal name: Opal Locking SP has no ClockTime IncrementCounter GetACL association: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: clock-template, methodid, access-control, getacl, opal-ssc, unsupported-method, setclock, setlag, timer-mode, high-trust-low-trust
+  - repair hint: Check Opal Admin/Locking SP method and AccessControl association universes before implementing optional Clock Template state: Clock Template methods and high/low trust rules are defined by Core, but Opal's mandatory Admin/Locking MethodID rows do not include SetClock*/SetLag*/GetClock/ResetClock/IncrementCounter, nor their GetACL associations.
+  - evidence: core/5.1.3.23.txt, core/5.1.3.24.txt, core/5.1.3.27.txt, core/5.1.3.28.txt, core/5.1.3.29.txt, core/5.1.3.32.txt, core/5.1.3.33.txt, core/5.1.3.36.txt, core/5.1.3.37.txt, core/5.1.3.44.txt, core/5.1.3.56.txt, core/5.1.3.57.txt, core/5.1.3.58.txt, core/5.1.3.59.txt, core/5.1.3.68.txt, core/5.1.3.69.txt, core/5.1.3.99.txt, core/5.1.3.100.txt, core/5.1.4.2.4.txt, core/5.5.2.txt, core/5.5.3.1.txt, core/5.5.3.1.1.txt, core/5.5.3.1.2.txt, core/5.5.3.1.3.txt, core/5.5.3.1.4.txt, core/5.5.3.1.5.txt, core/5.5.3.1.6.txt, core/5.5.3.1.7.txt, core/5.5.3.1.8.txt, core/5.5.3.1.9.txt, core/5.5.3.1.10.txt, core/5.5.3.1.11.txt, core/5.5.4.1.txt, core/5.5.4.1.1.3.txt, core/5.5.4.1.2.txt, core/5.5.4.2.txt, core/5.5.4.2.1.1.txt, core/5.5.4.2.2.txt, core/5.5.4.3.txt, core/5.5.4.3.2.1.txt, core/5.5.4.3.3.txt, core/5.5.4.4.txt, core/5.5.4.4.1.txt, core/5.5.4.4.2.1.txt, core/5.5.4.5.txt, core/5.5.4.5.1.txt, core/5.5.4.5.2.txt, core/5.5.4.5.2.1.txt, core/5.5.4.5.3.txt, core/5.5.4.6.txt, core/5.5.4.6.1.txt, core/5.5.4.6.2.1.txt, core/5.5.4.7.txt, core/5.5.4.7.2.txt, core/5.5.5.1.1.txt, core/5.5.5.1.2.txt, core/5.5.5.1.3.txt, core/5.5.5.1.txt, core/5.5.5.2.txt, core/5.5.5.3.txt, core/5.5.5.4.txt, core/5.5.5.6.txt, core/5.5.5.7.txt, core/5.5.5.8.txt, opal/4.2.1.4.txt, opal/4.2.4.txt, opal/4.3.1.5.txt, opal/4.3.2.txt
+- `admin-revert-sid-doc-c65dde4739` [quarantine_concerns] admin-revert-sid-doc
+  - internal name: AdminSP Revert with SID behavior FF invalidates pre-revert SID PIN: correct status
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: lifecycle, adminsp-revert, sid-msid, session-abort, data-removal
+  - repair hint: Check AdminSP Revert read-write requirement, empty result shape, immediate session abort, C_PIN_SID reset behavior after SID authentication, and user-data removal.
+  - evidence: opal/3.1.1.5.txt, opal/4.2.1.8.txt, opal/5.1.2.txt, opal/5.1.2.1.txt, opal/5.1.2.2.txt, opal/5.1.2.2.1.txt, opal/5.2.2.2.2.txt, opal/5.2.2.3.1.txt, core/5.3.2.12.txt, core/5.3.4.1.2.3.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt
+  - admin_revert_vu_s: PASS conf=0.86 concerns=The exact post-revert vendor-unique PIN is not observable in the packet, but rejecting the pre-revert value is consistent with the required change to a VU value.
+  - admin_revert_vu_t: PASS conf=0.9 concerns=The exact vendor-unique value is not observable, but the target only asserts that the prior SID no longer authenticates.
+  - admin_revert_vu_u: PASS conf=0.86 concerns=The exact vendor-unique replacement value is not observable from the packet, but preserving the old value would conflict with the documented change behavior.
+- `admin-revert-sid-doc-9a4d8b6182` [quarantine_concerns] admin-revert-sid-doc
+  - internal name: AdminSP Revert with SID behavior FF invalidates pre-revert SID PIN: impossible success
+  - author label: FAIL
+  - reason: 3 review(s) recorded concerns
+  - concepts: lifecycle, adminsp-revert, sid-msid, session-abort, data-removal
+  - repair hint: Check AdminSP Revert read-write requirement, empty result shape, immediate session abort, C_PIN_SID reset behavior after SID authentication, and user-data removal.
+  - evidence: opal/3.1.1.5.txt, opal/4.2.1.8.txt, opal/5.1.2.txt, opal/5.1.2.1.txt, opal/5.1.2.2.txt, opal/5.1.2.2.1.txt, opal/5.2.2.2.2.txt, opal/5.2.2.3.1.txt, core/5.3.2.12.txt, core/5.3.4.1.2.3.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt
+  - admin_revert_vu_s: FAIL conf=0.88 concerns=The packet cannot reveal the generated VU PIN, but treating the unchanged pre-revert host challenge as valid conflicts with the required change after successful revert.
+  - admin_revert_vu_t: FAIL conf=0.93 concerns=The exact vendor-unique value is not observable, but treating the pre-revert SID as still valid contradicts the required post-revert change.
+  - admin_revert_vu_u: FAIL conf=0.86 concerns=The replacement is vendor-unique, but the evidence frames "new" as the prior host-set PIN and the descriptor says the value changes on revert.
+- `admin-revert-sid-doc-75de41a56f` [quarantine_concerns] admin-revert-sid-doc
+  - internal name: Failed AdminSP Revert with SID behavior FF preserves pre-revert SID PIN: correct success
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: lifecycle, adminsp-revert, sid-msid, session-abort, data-removal
+  - repair hint: Check AdminSP Revert read-write requirement, empty result shape, immediate session abort, C_PIN_SID reset behavior after SID authentication, and user-data removal.
+  - evidence: opal/3.1.1.5.txt, opal/4.2.1.8.txt, opal/5.1.2.txt, opal/5.1.2.1.txt, opal/5.1.2.2.txt, opal/5.1.2.2.1.txt, opal/5.2.2.2.2.txt, opal/5.2.2.3.1.txt, core/5.3.2.12.txt, core/5.3.4.1.2.3.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt
+  - admin_revert_vu_s: PASS conf=0.92 concerns=-
+  - admin_revert_vu_t: PASS conf=0.88 concerns=The packet does not state the reason for Revert failure, but the cited effects are conditioned on successful invocation.
+  - admin_revert_vu_u: PASS conf=0.94 concerns=-
+- `admin-revert-sid-doc-5f02e95094` [quarantine_concerns] admin-revert-sid-doc
+  - internal name: Failed AdminSP Revert with SID behavior FF preserves pre-revert SID PIN: impossible error
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: lifecycle, adminsp-revert, sid-msid, session-abort, data-removal
+  - repair hint: Check AdminSP Revert read-write requirement, empty result shape, immediate session abort, C_PIN_SID reset behavior after SID authentication, and user-data removal.
+  - evidence: opal/3.1.1.5.txt, opal/4.2.1.8.txt, opal/5.1.2.txt, opal/5.1.2.1.txt, opal/5.1.2.2.txt, opal/5.1.2.2.1.txt, opal/5.2.2.2.2.txt, opal/5.2.2.3.1.txt, core/5.3.2.12.txt, core/5.3.4.1.2.3.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt
+  - admin_revert_vu_s: FAIL conf=0.93 concerns=-
+  - admin_revert_vu_t: FAIL conf=0.88 concerns=The packet does not state the reason for Revert failure, but the cited post-revert effects are explicitly conditioned on success.
+  - admin_revert_vu_u: FAIL conf=0.94 concerns=-
+- `admin-revert-sid-doc-49975b4d33` [quarantine_concerns] admin-revert-sid-doc
+  - internal name: AdminSP Revert removes old user data when Locking SP was active
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: lifecycle, adminsp-revert, sid-msid, session-abort, data-removal
+  - repair hint: Check AdminSP Revert read-write requirement, empty result shape, immediate session abort, C_PIN_SID reset behavior after SID authentication, and user-data removal.
+  - evidence: opal/3.1.1.5.txt, opal/4.2.1.8.txt, opal/5.1.2.txt, opal/5.1.2.1.txt, opal/5.1.2.2.txt, opal/5.1.2.2.1.txt, opal/5.2.2.2.2.txt, opal/5.2.2.3.1.txt, core/5.3.2.12.txt, core/5.3.4.1.2.3.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt
+  - admin_revert_a: FAIL conf=0.96 concerns=-
+  - admin_revert_b: FAIL conf=0.94 concerns=-
+  - admin_revert_c: FAIL conf=0.94 concerns=-
+  - admin_revert_vu_s: FAIL conf=0.94 concerns=-
+  - admin_revert_vu_t: FAIL conf=0.97 concerns=-
+  - admin_revert_vu_u: FAIL conf=0.92 concerns=The packet shows an Activate success but does not spell out the resulting lifecycle state; the best reading is that the Locking SP was no longer Manufactured-Inactive before Revert.
+- `admin-revert-locking-clean-doc-5dbca6fde8` [quarantine_concerns] admin-revert-locking-clean-doc
+  - internal name: AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: lifecycle, adminsp-revert, locking-sp, manufactured-state, data-removal
+  - repair hint: Check clean Admin SP Revert traces where the Locking SP is explicitly observed Manufactured after Activate before Revert removes user data and returns Locking functionality to Manufactured-Inactive.
+  - evidence: opal/5.1.1.2.txt, opal/5.1.2.txt, opal/5.1.2.2.txt, opal/5.2.2.1.txt, opal/5.2.2.2.1.txt, opal/5.2.2.2.2.txt, opal/5.2.2.3.1.txt, opal/5.2.2.3.2.txt, opal/3.1.1.3.1.txt
+  - admin_revert_clean_v: PASS conf=0.94 concerns=The cited snippets require that sessions cannot be opened to Manufactured-Inactive SPs but do not mandate the exact failure status code.
+  - admin_revert_clean_w: PASS conf=0.9 concerns=-
+  - admin_revert_clean_x: PASS conf=0.93 concerns=Spec states sessions cannot be opened but does not name the exact failure status; NOT_AUTHORIZED is treated as an acceptable refusal.
+- `locking-lifecycle-disabled-frozen-doc-aa805d9d70` [quarantine_disagreement] locking-lifecycle-disabled-frozen-doc
+  - internal name: SP table Get Frozen true blocks later Locking StartSession: correct status
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, session-startup
+  - repair hint: Check Locking SP Issued-Disabled and Issued-Frozen state behavior: Frozen rejects new sessions with SP_FROZEN, Disabled still allows session startup plus Authenticate/DeleteSP/control-session/re-enable Set, and all other in-SP method invocations fail with SP_DISABLED.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.txt, core/5.3.5.1.txt, core/5.4.5.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.5.6.txt, core/5.5.6.1.txt, core/5.6.6.txt, core/5.6.6.1.txt, core/5.7.4.txt, core/5.7.4.1.txt, core/5.8.5.txt, core/5.8.5.1.txt, opal/4.2.3.3.txt
+  - lifecycle_m: FAIL conf=0.96 concerns=-
+  - lifecycle_n: PASS conf=0.95 concerns=-
+  - lifecycle_o: PASS conf=0.9 concerns=The packet shows Frozen via a prior Get rather than the visible operation that set it.
+- `locking-lifecycle-disabled-frozen-doc-2e949c370b` [quarantine_disagreement] locking-lifecycle-disabled-frozen-doc
+  - internal name: SP table Get Frozen true blocks later Locking StartSession: impossible success
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, session-startup
+  - repair hint: Check Locking SP Issued-Disabled and Issued-Frozen state behavior: Frozen rejects new sessions with SP_FROZEN, Disabled still allows session startup plus Authenticate/DeleteSP/control-session/re-enable Set, and all other in-SP method invocations fail with SP_DISABLED.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.txt, core/5.3.5.1.txt, core/5.4.5.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.5.6.txt, core/5.5.6.1.txt, core/5.6.6.txt, core/5.6.6.1.txt, core/5.7.4.txt, core/5.7.4.1.txt, core/5.8.5.txt, core/5.8.5.1.txt, opal/4.2.3.3.txt
+  - lifecycle_m: PASS conf=0.96 concerns=-
+  - lifecycle_n: FAIL conf=0.95 concerns=-
+  - lifecycle_o: FAIL conf=0.9 concerns=The packet shows Frozen via a prior Get rather than the visible operation that set it.
+- `locking-lifecycle-disabled-frozen-doc-c38869189a` [quarantine_concerns] locking-lifecycle-disabled-frozen-doc
+  - internal name: Disabled Locking SP Get fails with SP_DISABLED: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, session-startup
+  - repair hint: Check Locking SP Issued-Disabled and Issued-Frozen state behavior: Frozen rejects new sessions with SP_FROZEN, Disabled still allows session startup plus Authenticate/DeleteSP/control-session/re-enable Set, and all other in-SP method invocations fail with SP_DISABLED.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.txt, core/5.3.5.1.txt, core/5.4.5.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.5.6.txt, core/5.5.6.1.txt, core/5.6.6.txt, core/5.6.6.1.txt, core/5.7.4.txt, core/5.7.4.1.txt, core/5.8.5.txt, core/5.8.5.1.txt, opal/4.2.3.3.txt
+  - lifecycle_m: PASS conf=0.86 concerns=The failure response includes returned cell values; the provided snippets establish the required failure status but do not specify failure payload shape.
+  - lifecycle_n: PASS conf=0.78 concerns=The failure response also includes normal Get values; the provided lifecycle snippets constrain the required status but do not explicitly define failure return payloads.
+  - lifecycle_o: PASS conf=0.95 concerns=-
+- `locking-lifecycle-disabled-frozen-doc-7da9bf4eec` [quarantine_concerns] locking-lifecycle-disabled-frozen-doc
+  - internal name: Disabled Locking SP SPInfo Enabled false Set is not a re-enable operation: correct status
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, session-startup
+  - repair hint: Check Locking SP Issued-Disabled and Issued-Frozen state behavior: Frozen rejects new sessions with SP_FROZEN, Disabled still allows session startup plus Authenticate/DeleteSP/control-session/re-enable Set, and all other in-SP method invocations fail with SP_DISABLED.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.txt, core/5.3.5.1.txt, core/5.4.5.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.5.6.txt, core/5.5.6.1.txt, core/5.6.6.txt, core/5.6.6.1.txt, core/5.7.4.txt, core/5.7.4.1.txt, core/5.8.5.txt, core/5.8.5.1.txt, opal/4.2.3.3.txt
+  - lifecycle_m: PASS conf=0.82 concerns=The snippets say Set on the Enabled column functions, but surrounding text frames the exception as methods directly related to re-enabling.
+  - lifecycle_n: PASS conf=0.9 concerns=Section 4.5.2 lists Set on the Enabled column, but surrounding text and 5.3.5.1 frame the exception as re-enabling, so setting False is treated as non-permitted.
+  - lifecycle_o: PASS conf=0.84 concerns=The snippets say 'Set on the Enabled column' in one place but clarify 'used to re-enable' in the Base lifecycle text.
+- `locking-lifecycle-disabled-frozen-doc-bd8d7b62d8` [quarantine_concerns] locking-lifecycle-disabled-frozen-doc
+  - internal name: Disabled Locking SP SPInfo Enabled false Set is not a re-enable operation: impossible success
+  - author label: FAIL
+  - reason: 3 review(s) recorded concerns
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, session-startup
+  - repair hint: Check Locking SP Issued-Disabled and Issued-Frozen state behavior: Frozen rejects new sessions with SP_FROZEN, Disabled still allows session startup plus Authenticate/DeleteSP/control-session/re-enable Set, and all other in-SP method invocations fail with SP_DISABLED.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.txt, core/5.3.5.1.txt, core/5.4.5.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.5.6.txt, core/5.5.6.1.txt, core/5.6.6.txt, core/5.6.6.1.txt, core/5.7.4.txt, core/5.7.4.1.txt, core/5.8.5.txt, core/5.8.5.1.txt, opal/4.2.3.3.txt
+  - lifecycle_m: FAIL conf=0.82 concerns=The Enabled-column exception is phrased broadly in one sentence, but the lifecycle sections describe it as the Set method used to re-enable.
+  - lifecycle_n: FAIL conf=0.9 concerns=Section 4.5.2's bullet says Set on Enabled, but its surrounding text and 5.3.5.1 identify the permitted Set as re-enabling.
+  - lifecycle_o: FAIL conf=0.84 concerns=The snippets say 'Set on the Enabled column' in one place but clarify 'used to re-enable' in the Base lifecycle text.
+- `locking-lifecycle-disabled-frozen-doc-5be4148875` [quarantine_concerns] locking-lifecycle-disabled-frozen-doc
+  - internal name: Clearing Frozen while still Disabled makes startup normal but in-session Get SP_DISABLED: correct status
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, session-startup
+  - repair hint: Check Locking SP Issued-Disabled and Issued-Frozen state behavior: Frozen rejects new sessions with SP_FROZEN, Disabled still allows session startup plus Authenticate/DeleteSP/control-session/re-enable Set, and all other in-SP method invocations fail with SP_DISABLED.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.txt, core/5.3.5.1.txt, core/5.4.5.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.5.6.txt, core/5.5.6.1.txt, core/5.6.6.txt, core/5.6.6.1.txt, core/5.7.4.txt, core/5.7.4.1.txt, core/5.8.5.txt, core/5.8.5.1.txt, opal/4.2.3.3.txt
+  - lifecycle_m: PASS conf=0.86 concerns=The failure response includes returned cell values; the provided snippets establish the required failure status but do not specify failure payload shape.
+  - lifecycle_n: PASS conf=0.78 concerns=The failure response also includes normal Get values; the provided lifecycle snippets constrain the required status but do not explicitly define failure return payloads.
+  - lifecycle_o: PASS conf=0.78 concerns=The response includes Get data despite the failure status; the lifecycle evidence primarily fixes the status requirement.
+- `locking-lifecycle-disabled-frozen-clean--7bff874ce4` [quarantine_concerns] locking-lifecycle-disabled-frozen-clean-doc
+  - internal name: Disabled then re-enabled Locking SP permits GetFreeRows again: correct success
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, method-blocking
+  - repair hint: Check clean Disabled/Frozen lifecycle rework cases that avoid unsourced failure payload assertions: disabled in-SP non-exception methods may return SP_DISABLED with an empty payload, while Frozen controls only new session startup.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.txt, core/5.3.5.1.txt, core/5.4.5.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.5.6.txt, core/5.5.6.1.txt, core/5.6.6.txt, core/5.6.6.1.txt, core/5.7.4.txt, core/5.7.4.1.txt, core/5.8.5.txt, core/5.8.5.1.txt, opal/4.2.3.3.txt
+  - lifecycle_clean_p: PASS conf=0.94 concerns=The evidence does not spell out GetFreeRows result contents, but the lifecycle state no longer requires SP_DISABLED.
+  - lifecycle_clean_q: PASS conf=0.93 concerns=-
+  - lifecycle_clean_r: PASS conf=0.95 concerns=-
+- `locking-lifecycle-disabled-frozen-clean--6f4cd6b395` [quarantine_concerns] locking-lifecycle-disabled-frozen-clean-doc
+  - internal name: Disabled then re-enabled Locking SP permits GetFreeRows again: impossible error
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, method-blocking
+  - repair hint: Check clean Disabled/Frozen lifecycle rework cases that avoid unsourced failure payload assertions: disabled in-SP non-exception methods may return SP_DISABLED with an empty payload, while Frozen controls only new session startup.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.txt, core/5.3.5.1.txt, core/5.4.5.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.5.6.txt, core/5.5.6.1.txt, core/5.6.6.txt, core/5.6.6.1.txt, core/5.7.4.txt, core/5.7.4.1.txt, core/5.8.5.txt, core/5.8.5.1.txt, opal/4.2.3.3.txt
+  - lifecycle_clean_p: FAIL conf=0.94 concerns=The packet evidence supports lifecycle compliance for SUCCESS after re-enable; it does not independently validate the returned row count.
+  - lifecycle_clean_q: FAIL conf=0.93 concerns=-
+  - lifecycle_clean_r: FAIL conf=0.95 concerns=-
+- `type-column-metadata-table-doc-bb4c2e96e6` [needs_review] type-column-metadata-table-doc
+  - internal name: Type Size Set cannot accept host modification success: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: metadata-table, column-table, type-table, type-size, readonly, get-acl, set
+  - repair hint: Check Column/Type metadata-table recognition and Type.Size immutability: Type.Size is TPer-calculated, CreateRow must not specify it, and host Set of Size cannot succeed.
+  - evidence: core/3.2.1.1.txt, core/3.2.1.2.txt, core/5.1.1.txt, core/5.1.3.38.txt, core/5.1.3.39.txt, core/5.1.3.40.txt, core/5.1.3.7.txt, core/5.1.3.25.txt, core/5.1.3.76.txt, core/5.1.3.77.txt, core/5.1.3.79.txt, core/5.1.3.80.txt, core/5.1.3.83.txt, core/5.1.3.84.txt, core/5.1.3.85.txt, core/5.1.3.86.txt, core/5.1.3.87.txt, core/5.1.3.88.txt, core/5.1.3.89.txt, core/5.1.3.90.txt, core/5.1.3.91.txt, core/5.1.3.92.txt, core/5.1.3.94.txt, core/5.1.3.95.txt, core/5.1.3.96.txt, core/5.3.2.4.txt, core/5.3.2.4.3.txt, core/5.3.2.4.5.txt, core/5.3.2.4.7.txt, core/5.3.2.4.8.txt, core/5.3.2.4.9.txt, core/5.3.2.5.txt, core/5.3.2.5.5.txt, opal/4.3.1.4.txt
+- `type-column-metadata-table-doc-0ba50fb542` [needs_review] type-column-metadata-table-doc
+  - internal name: Type Size Set cannot accept host modification success: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: metadata-table, column-table, type-table, type-size, readonly, get-acl, set
+  - repair hint: Check Column/Type metadata-table recognition and Type.Size immutability: Type.Size is TPer-calculated, CreateRow must not specify it, and host Set of Size cannot succeed.
+  - evidence: core/3.2.1.1.txt, core/3.2.1.2.txt, core/5.1.1.txt, core/5.1.3.38.txt, core/5.1.3.39.txt, core/5.1.3.40.txt, core/5.1.3.7.txt, core/5.1.3.25.txt, core/5.1.3.76.txt, core/5.1.3.77.txt, core/5.1.3.79.txt, core/5.1.3.80.txt, core/5.1.3.83.txt, core/5.1.3.84.txt, core/5.1.3.85.txt, core/5.1.3.86.txt, core/5.1.3.87.txt, core/5.1.3.88.txt, core/5.1.3.89.txt, core/5.1.3.90.txt, core/5.1.3.91.txt, core/5.1.3.92.txt, core/5.1.3.94.txt, core/5.1.3.95.txt, core/5.1.3.96.txt, core/5.3.2.4.txt, core/5.3.2.4.3.txt, core/5.3.2.4.5.txt, core/5.3.2.4.7.txt, core/5.3.2.4.8.txt, core/5.3.2.4.9.txt, core/5.3.2.5.txt, core/5.3.2.5.5.txt, opal/4.3.1.4.txt
+- `type-column-metadata-table-doc-54a9957fa1` [needs_review] type-column-metadata-table-doc
+  - internal name: Type CreateRow cannot specify TPer-calculated Size: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: metadata-table, column-table, type-table, type-size, readonly, get-acl, set
+  - repair hint: Check Column/Type metadata-table recognition and Type.Size immutability: Type.Size is TPer-calculated, CreateRow must not specify it, and host Set of Size cannot succeed.
+  - evidence: core/3.2.1.1.txt, core/3.2.1.2.txt, core/5.1.1.txt, core/5.1.3.38.txt, core/5.1.3.39.txt, core/5.1.3.40.txt, core/5.1.3.7.txt, core/5.1.3.25.txt, core/5.1.3.76.txt, core/5.1.3.77.txt, core/5.1.3.79.txt, core/5.1.3.80.txt, core/5.1.3.83.txt, core/5.1.3.84.txt, core/5.1.3.85.txt, core/5.1.3.86.txt, core/5.1.3.87.txt, core/5.1.3.88.txt, core/5.1.3.89.txt, core/5.1.3.90.txt, core/5.1.3.91.txt, core/5.1.3.92.txt, core/5.1.3.94.txt, core/5.1.3.95.txt, core/5.1.3.96.txt, core/5.3.2.4.txt, core/5.3.2.4.3.txt, core/5.3.2.4.5.txt, core/5.3.2.4.7.txt, core/5.3.2.4.8.txt, core/5.3.2.4.9.txt, core/5.3.2.5.txt, core/5.3.2.5.5.txt, opal/4.3.1.4.txt
+- `type-column-metadata-table-doc-ef95c21591` [needs_review] type-column-metadata-table-doc
+  - internal name: Type CreateRow cannot specify TPer-calculated Size: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: metadata-table, column-table, type-table, type-size, readonly, get-acl, set
+  - repair hint: Check Column/Type metadata-table recognition and Type.Size immutability: Type.Size is TPer-calculated, CreateRow must not specify it, and host Set of Size cannot succeed.
+  - evidence: core/3.2.1.1.txt, core/3.2.1.2.txt, core/5.1.1.txt, core/5.1.3.38.txt, core/5.1.3.39.txt, core/5.1.3.40.txt, core/5.1.3.7.txt, core/5.1.3.25.txt, core/5.1.3.76.txt, core/5.1.3.77.txt, core/5.1.3.79.txt, core/5.1.3.80.txt, core/5.1.3.83.txt, core/5.1.3.84.txt, core/5.1.3.85.txt, core/5.1.3.86.txt, core/5.1.3.87.txt, core/5.1.3.88.txt, core/5.1.3.89.txt, core/5.1.3.90.txt, core/5.1.3.91.txt, core/5.1.3.92.txt, core/5.1.3.94.txt, core/5.1.3.95.txt, core/5.1.3.96.txt, core/5.3.2.4.txt, core/5.3.2.4.3.txt, core/5.3.2.4.5.txt, core/5.3.2.4.7.txt, core/5.3.2.4.8.txt, core/5.3.2.4.9.txt, core/5.3.2.5.txt, core/5.3.2.5.5.txt, opal/4.3.1.4.txt
+- `type-column-metadata-table-doc-529ea71a41` [needs_review] type-column-metadata-table-doc
+  - internal name: Type table Set association is not an ordinary host-modifiable metadata-table ACL
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: metadata-table, column-table, type-table, type-size, readonly, get-acl, set
+  - repair hint: Check Column/Type metadata-table recognition and Type.Size immutability: Type.Size is TPer-calculated, CreateRow must not specify it, and host Set of Size cannot succeed.
+  - evidence: core/3.2.1.1.txt, core/3.2.1.2.txt, core/5.1.1.txt, core/5.1.3.38.txt, core/5.1.3.39.txt, core/5.1.3.40.txt, core/5.1.3.7.txt, core/5.1.3.25.txt, core/5.1.3.76.txt, core/5.1.3.77.txt, core/5.1.3.79.txt, core/5.1.3.80.txt, core/5.1.3.83.txt, core/5.1.3.84.txt, core/5.1.3.85.txt, core/5.1.3.86.txt, core/5.1.3.87.txt, core/5.1.3.88.txt, core/5.1.3.89.txt, core/5.1.3.90.txt, core/5.1.3.91.txt, core/5.1.3.92.txt, core/5.1.3.94.txt, core/5.1.3.95.txt, core/5.1.3.96.txt, core/5.3.2.4.txt, core/5.3.2.4.3.txt, core/5.3.2.4.5.txt, core/5.3.2.4.7.txt, core/5.3.2.4.8.txt, core/5.3.2.4.9.txt, core/5.3.2.5.txt, core/5.3.2.5.5.txt, opal/4.3.1.4.txt
+- `type-column-metadata-table-doc-0e36791d70` [needs_review] type-column-metadata-table-doc
+  - internal name: Column table CreateRow association is not exposed as ordinary host row creation
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: metadata-table, column-table, type-table, type-size, readonly, get-acl, set
+  - repair hint: Check Column/Type metadata-table recognition and Type.Size immutability: Type.Size is TPer-calculated, CreateRow must not specify it, and host Set of Size cannot succeed.
+  - evidence: core/3.2.1.1.txt, core/3.2.1.2.txt, core/5.1.1.txt, core/5.1.3.38.txt, core/5.1.3.39.txt, core/5.1.3.40.txt, core/5.1.3.7.txt, core/5.1.3.25.txt, core/5.1.3.76.txt, core/5.1.3.77.txt, core/5.1.3.79.txt, core/5.1.3.80.txt, core/5.1.3.83.txt, core/5.1.3.84.txt, core/5.1.3.85.txt, core/5.1.3.86.txt, core/5.1.3.87.txt, core/5.1.3.88.txt, core/5.1.3.89.txt, core/5.1.3.90.txt, core/5.1.3.91.txt, core/5.1.3.92.txt, core/5.1.3.94.txt, core/5.1.3.95.txt, core/5.1.3.96.txt, core/5.3.2.4.txt, core/5.3.2.4.3.txt, core/5.3.2.4.5.txt, core/5.3.2.4.7.txt, core/5.3.2.4.8.txt, core/5.3.2.4.9.txt, core/5.3.2.5.txt, core/5.3.2.5.5.txt, opal/4.3.1.4.txt
+- `created-table-addace-removeace-state-doc-5671d65586` [quarantine_disagreement] created-table-addace-removeace-state-doc
+  - internal name: Created table duplicate AddACE recognizes numeric ACE alias
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: table-methods, create-table, getsetacl, access-control, addace, removeace, stateful-acl
+  - repair hint: Check that successful AddACE/RemoveACE on created-table AccessControl associations update runtime ACL state: a dynamically added ACE cannot be added again until a successful RemoveACE removes it, and both methods return empty result lists on success.
+  - evidence: core/5.3.3.2.3.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.1.txt, core/5.1.5.2.txt
+  - j: PASS conf=0.72 concerns=The snippets state AddACE fails if the ACE does not exist in the ACE table, but the provided evidence does not independently establish whether ACE 0000000800000002 exists.
+  - k: FAIL conf=0.72 concerns=The evidence snippets do not explicitly map 0000000800000002 to ACE_Admin; if it were a distinct existing ACE, the target success could be compliant.
+  - l: FAIL conf=0.82 concerns=The evidence does not explicitly define the symbolic ACE_Admin to numeric UID mapping, so this depends on treating the UID as the same ACE alias used in the trajectory.
+- `created-table-addace-removeace-state-doc-b8f353c71d` [quarantine_concerns] created-table-addace-removeace-state-doc
+  - internal name: Created table failed nonexistent AddACE does not poison later valid AddACE
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-table, getsetacl, access-control, addace, removeace, stateful-acl
+  - repair hint: Check that successful AddACE/RemoveACE on created-table AccessControl associations update runtime ACL state: a dynamically added ACE cannot be added again until a successful RemoveACE removes it, and both methods return empty result lists on success.
+  - evidence: core/5.3.3.2.3.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.1.txt, core/5.1.5.2.txt
+  - j: PASS conf=0.9 concerns=The snippets do not spell out state effects of a failed AddACE, but treating a failed method as not mutating the ACL is necessary for the stated AddACE failure semantics.
+  - k: PASS conf=0.93 concerns=-
+  - l: PASS conf=0.94 concerns=-
+- `created-row-accesscontrol-doc-8bd83cb85b` [quarantine_concerns] created-row-accesscontrol-doc
+  - internal name: Deleting second created row preserves first row direct Get
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete-row, access-control, getacl, created-object
+  - repair hint: Check that successful CreateRow records created row object AccessControl associations, GetACL on the created row's object method returns a non-empty ACE uidref list, and successful DeleteRow removes the row's AccessControl associations without deleting other row associations.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - created_row_direct_cleanup_a: PASS conf=0.95 concerns=-
+  - created_row_direct_cleanup_b: PASS conf=0.88 concerns=The provided snippets establish row creation and deletion scope but do not include the Basic Get result-format section.
+  - created_row_direct_cleanup_c: PASS conf=0.93 concerns=-
+- `created-row-delete-object-acl-doc-eb7cfba149` [quarantine_concerns] created-row-delete-object-acl-doc
+  - internal name: Delete object on created row removes row GetACL association
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete, access-control, created-object, unique-columns
+  - repair hint: Check that Delete invoked directly on a created row object returns an empty list, removes that row's value/unique-column occupancy and AccessControl rows, rejects stale row-object associations, and preserves sibling row state.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.1.txt, core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - aq: FAIL conf=0.98 concerns=-
+  - ar: FAIL conf=0.97 concerns=-
+  - as: FAIL conf=0.98 concerns=-
+  - created_row_delete_object_direct_a: FAIL conf=0.97 concerns=-
+  - created_row_delete_object_direct_b: FAIL conf=0.96 concerns=The exact failure status for a missing access-control association is not specified in the snippets, but stale SUCCESS is contradicted by the deletion rule.
+  - created_row_delete_object_direct_c: FAIL conf=0.96 concerns=-
+- `created-row-delete-object-acl-doc-43b06140b1` [quarantine_concerns] created-row-delete-object-acl-doc
+  - internal name: Delete object of both created rows rejects stale first row GetACL success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete, access-control, created-object, unique-columns
+  - repair hint: Check that Delete invoked directly on a created row object returns an empty list, removes that row's value/unique-column occupancy and AccessControl rows, rejects stale row-object associations, and preserves sibling row state.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.1.txt, core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - aq: FAIL conf=0.98 concerns=-
+  - ar: FAIL conf=0.98 concerns=-
+  - as: FAIL conf=0.98 concerns=-
+  - created_row_delete_object_direct_a: FAIL conf=0.97 concerns=-
+  - created_row_delete_object_direct_b: FAIL conf=0.96 concerns=The snippets do not name the required status for querying a deleted association, but returning the old ACL as SUCCESS is not compliant.
+  - created_row_delete_object_direct_c: FAIL conf=0.96 concerns=-
+- `created-row-delete-object-acl-doc-fb270d40ad` [quarantine_concerns] created-row-delete-object-acl-doc
+  - internal name: Delete object of both created rows rejects stale second row GetACL success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete, access-control, created-object, unique-columns
+  - repair hint: Check that Delete invoked directly on a created row object returns an empty list, removes that row's value/unique-column occupancy and AccessControl rows, rejects stale row-object associations, and preserves sibling row state.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.1.txt, core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - aq: FAIL conf=0.98 concerns=-
+  - ar: FAIL conf=0.98 concerns=-
+  - as: FAIL conf=0.98 concerns=-
+  - created_row_delete_object_direct_a: FAIL conf=0.97 concerns=-
+  - created_row_delete_object_direct_b: FAIL conf=0.96 concerns=The snippets do not name the required status for querying a deleted association, but returning the old ACL as SUCCESS is not compliant.
+  - created_row_delete_object_direct_c: FAIL conf=0.96 concerns=-
+- `created-row-delete-object-acl-doc-bf73d8bf94` [quarantine_concerns] created-row-delete-object-acl-doc
+  - internal name: Delete object on created row rejects second stale Delete success
+  - author label: FAIL
+  - reason: 2 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete, access-control, created-object, unique-columns
+  - repair hint: Check that Delete invoked directly on a created row object returns an empty list, removes that row's value/unique-column occupancy and AccessControl rows, rejects stale row-object associations, and preserves sibling row state.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.1.txt, core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - aq: FAIL conf=0.97 concerns=-
+  - ar: FAIL conf=0.94 concerns=-
+  - as: FAIL conf=0.94 concerns=-
+  - created_row_delete_object_direct_a: FAIL conf=0.88 concerns=The snippets do not specify the exact failure status for invoking Delete on an already deleted UID, but SUCCESS is inconsistent with the stated deletion semantics.
+  - created_row_delete_object_direct_b: FAIL conf=0.97 concerns=The snippets do not specify the exact status for invoking Delete on a deleted object, but a second SUCCESS is not supported.
+  - created_row_delete_object_direct_c: FAIL conf=0.91 concerns=-
+- `created-row-delete-object-acl-doc-71bdc12d09` [quarantine_concerns] created-row-delete-object-acl-doc
+  - internal name: Delete object on created row releases that row unique value
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete, access-control, created-object, unique-columns
+  - repair hint: Check that Delete invoked directly on a created row object returns an empty list, removes that row's value/unique-column occupancy and AccessControl rows, rejects stale row-object associations, and preserves sibling row state.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.1.txt, core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - aq: PASS conf=0.95 concerns=-
+  - ar: PASS conf=0.94 concerns=-
+  - as: PASS conf=0.93 concerns=-
+  - created_row_delete_object_direct_a: PASS conf=0.9 concerns=This relies on the raw table definition and case setup identifying column 1 as the unique value being tested.
+  - created_row_delete_object_direct_b: PASS conf=0.92 concerns=-
+  - created_row_delete_object_direct_c: PASS conf=0.94 concerns=-
+- `created-row-delete-object-acl-doc-59f1302c92` [quarantine_concerns] created-row-delete-object-acl-doc
+  - internal name: Delete object on sibling created row does not release surviving row unique value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete, access-control, created-object, unique-columns
+  - repair hint: Check that Delete invoked directly on a created row object returns an empty list, removes that row's value/unique-column occupancy and AccessControl rows, rejects stale row-object associations, and preserves sibling row state.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.1.txt, core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - aq: FAIL conf=0.96 concerns=-
+  - ar: FAIL conf=0.94 concerns=-
+  - as: FAIL conf=0.94 concerns=-
+  - created_row_delete_object_direct_a: FAIL conf=0.9 concerns=This relies on the raw table definition and case setup identifying column 1 as the unique value being tested.
+  - created_row_delete_object_direct_b: FAIL conf=0.92 concerns=-
+  - created_row_delete_object_direct_c: FAIL conf=0.93 concerns=-
+- `created-table-removeace-failure-doc-830f9bade3` [quarantine_disagreement] created-table-removeace-failure-doc
+  - internal name: Created table RemoveACE rejects nonexistent ACE success
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: table-methods, create-table, getsetacl, access-control, removeace, meta-acl, return-values
+  - repair hint: Check RemoveACE on created-table AccessControl associations: GetSetACL must authorize RemoveACEACL, nonexistent ACE references cannot succeed, and successful RemoveACE returns an empty result list.
+  - evidence: core/5.3.3.2.3.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.1.txt, core/5.1.5.2.txt
+  - m: FAIL conf=0.86 concerns=The snippets do not explicitly name the required status code for this failure condition.
+  - n: FAIL conf=0.88 concerns=The snippets state failure when the ACE does not exist, but do not spell out the exact status code for that failure.
+  - o: PASS conf=0.78 concerns=The evidence does not explicitly state whether removing an ACE that is not currently in the target ACL is a no-op success or should fail; this label relies on the enumerated RemoveACE failure list.
+- `created-table-removeace-failure-doc-82a6d96810` [quarantine_disagreement] created-table-removeace-failure-doc
+  - internal name: Created table RemoveACE nonexistent ACE may return INVALID_PARAMETER
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: table-methods, create-table, getsetacl, access-control, removeace, meta-acl, return-values
+  - repair hint: Check RemoveACE on created-table AccessControl associations: GetSetACL must authorize RemoveACEACL, nonexistent ACE references cannot succeed, and successful RemoveACE returns an empty result list.
+  - evidence: core/5.3.3.2.3.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.1.txt, core/5.1.5.2.txt
+  - m: PASS conf=0.82 concerns=The evidence establishes failure but does not specify that INVALID_PARAMETER, rather than another non-success code, is the only required status.
+  - n: PASS conf=0.86 concerns=The snippets justify failure but do not explicitly identify INVALID_PARAMETER as the required status for a nonexistent ACE.
+  - o: FAIL conf=0.76 concerns=Same ambiguity as the paired case: the snippets do not expressly say what status applies if the ACE is absent from the target ACL, so confidence is limited.
+- `created-table-removeace-failure-doc-e0f0d13f1b` [quarantine_concerns] created-table-removeace-failure-doc
+  - internal name: Created table empty GetSetACL rejects RemoveACE success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-table, getsetacl, access-control, removeace, meta-acl, return-values
+  - repair hint: Check RemoveACE on created-table AccessControl associations: GetSetACL must authorize RemoveACEACL, nonexistent ACE references cannot succeed, and successful RemoveACE returns an empty result list.
+  - evidence: core/5.3.3.2.3.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.1.txt, core/5.1.5.2.txt
+  - m: FAIL conf=0.9 concerns=This assumes an empty GetSetACL leaves the RemoveACEACL unsatisfied, consistent with the provided rule summary and NOT_AUTHORIZED snippet.
+  - n: FAIL conf=0.93 concerns=-
+  - o: FAIL conf=0.97 concerns=-
+- `created-table-delete-acl-doc-e1be4004ed` [quarantine_low_confidence] created-table-delete-acl-doc
+  - internal name: DeleteRow of created table descriptor releases table Name CommonName
+  - author label: PASS
+  - reason: 3 review(s) below confidence 0.75
+  - concepts: table-methods, create-table, delete-row, access-control, table-deletion, state-tracking
+  - repair hint: Check that deleting a created table descriptor removes the created table, descriptor, rows, name reservation, direct object methods, and associated AccessControl rows for both the table UID and descriptor UID.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.4.2.1.txt, core/5.3.4.2.1.txt, core/5.3.4.2.4.txt, core/5.3.4.2.5.txt, core/5.3.3.13.txt, core/5.1.5.2.txt
+  - created_table_delete_acl_a: PASS conf=0.74 concerns=Embedded evidence does not explicitly state NewTableName reuse rules; label assumes no cited rule forbids reuse after the prior table and descriptor were deleted.
+  - created_table_delete_acl_b: PASS conf=0.86 concerns=-
+  - created_table_delete_acl_c: PASS conf=0.72 concerns=Embedded snippets do not define NewTableName uniqueness or reuse policy, so compliance of name reuse is inferred from deletion of the prior table and lack of contrary evidence.
+  - created_table_delete_acl_direct_a: PASS conf=0.86 concerns=-
+  - created_table_delete_acl_direct_b: PASS conf=0.72 concerns=The snippets do not define NewTableName or CommonName uniqueness/reuse policy, so compliance of name reuse is inferred from deletion of the prior table and absence of contrary evidence.
+  - created_table_delete_acl_direct_c: PASS conf=0.76 concerns=The snippets do not explicitly state NewTableName or CommonName reuse rules, so this relies on deletion removing the prior table and no cited contrary rule.
+- `addace-acl-state-doc-a33c44e738` [quarantine_concerns] addace-acl-state-doc
+  - internal name: Admin SP SPInfo Get AddACE rejects nonexistent ACE uidref success
+  - author label: FAIL
+  - reason: 2 review(s) recorded concerns
+  - concepts: access-control, addace, acl-column, stateful-acl, duplicate-ace, ace-existence
+  - repair hint: Check that successful AddACE mutates the AccessControl ACL state and that later AddACE rejects duplicate or nonexistent ACE references.
+  - evidence: core/5.3.3.14.txt, core/5.3.3.14.1.txt, core/5.3.3.14.2.txt, core/5.3.3.14.3.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt
+  - addace_acl_state_a: FAIL conf=0.84 concerns=The evidence snippet establishes the preconfigured ACE rows but may not prove that no implementation-specific ACE rows exist beyond the shown table; best label is FAIL based on the provided packet.
+  - addace_acl_state_b: FAIL conf=0.92 concerns=The supplied ACE table snippet may not be a complete universal proof of every possible ACE row, but the packet's rule summary and evidence identify the preconfigured ACEs relevant here and do not support this UID.
+  - addace_acl_state_c: FAIL conf=0.94 concerns=-
+- `locking-range-accesscontrol-cleanup-doc-cb982c8ff9` [quarantine_concerns] locking-range-accesscontrol-cleanup-doc
+  - internal name: Created Locking Range2 GetACL can succeed before DeleteRow
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: locking-range, delete-row, delete, access-control, association-cleanup, object-lifecycle
+  - repair hint: Check Locking range object deletion side effects: DeleteRow/Delete of a non-global Locking object removes the object's AccessControl associations, so later GetACL/AddACE/RemoveACE/DeleteMethod or direct object methods on that deleted range cannot report SUCCESS.
+  - evidence: core/5.3.2.7.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.3.13.3.1.txt
+  - range_cleanup_a: PASS conf=0.95 concerns=-
+  - range_cleanup_b: PASS conf=0.92 concerns=-
+  - range_cleanup_c: PASS conf=0.85 concerns=The snippets do not enumerate the Locking object's default method set, so this depends on Get being one of the permitted default methods.
+- `locking-range-accesscontrol-cleanup-doc-ca686a9c23` [quarantine_concerns] locking-range-accesscontrol-cleanup-doc
+  - internal name: DeleteRow of Locking Range2 preserves sibling Range4 GetACL association
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: locking-range, delete-row, delete, access-control, association-cleanup, object-lifecycle
+  - repair hint: Check Locking range object deletion side effects: DeleteRow/Delete of a non-global Locking object removes the object's AccessControl associations, so later GetACL/AddACE/RemoveACE/DeleteMethod or direct object methods on that deleted range cannot report SUCCESS.
+  - evidence: core/5.3.2.7.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.3.13.3.1.txt
+  - range_cleanup_a: PASS conf=0.94 concerns=-
+  - range_cleanup_b: PASS conf=0.93 concerns=-
+  - range_cleanup_c: PASS conf=0.86 concerns=The snippets do not enumerate Locking default methods, so this assumes Get is one of Range4's default method associations created at row creation.
+- `locking-range-accesscontrol-cleanup-doc-4a43fd2909` [quarantine_concerns] locking-range-accesscontrol-cleanup-doc
+  - internal name: DeleteRow of locked Locking Range5 removes the deleted range's host-read lock effect
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: locking-range, delete-row, delete, access-control, association-cleanup, object-lifecycle
+  - repair hint: Check Locking range object deletion side effects: DeleteRow/Delete of a non-global Locking object removes the object's AccessControl associations, so later GetACL/AddACE/RemoveACE/DeleteMethod or direct object methods on that deleted range cannot report SUCCESS.
+  - evidence: core/5.3.2.7.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.3.13.3.1.txt
+  - range_cleanup_a: PASS conf=0.78 concerns=The provided snippets do not include the detailed Locking-range host-read enforcement rules, so the lock-effect conclusion is inferred from successful deletion of the row.
+  - range_cleanup_b: PASS conf=0.82 concerns=The packet does not include a direct host-I/O locking semantics snippet, so this relies on the object deletion evidence rather than an explicit Read rule.
+  - range_cleanup_c: PASS conf=0.76 concerns=The provided snippets cover row deletion and AccessControl cleanup, but they do not directly specify host I/O behavior or Locking read-lock enforcement after a range row is deleted.
+- `accesscontrol-logto-default-doc-5943dc1308` [quarantine_low_confidence] accesscontrol-logto-default-doc
+  - internal name: Direct AccessControl Get reports empty issued DataStore Get LogTo: correct return value
+  - author label: PASS
+  - reason: 2 review(s) below confidence 0.75
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration
+  - repair hint: Check direct AccessControl.Get for issued-row LogTo cells: Opal preconfigures issued AccessControl rows with empty LogTo/default-log behavior, so a successful Get of column 0x0E cannot return an arbitrary LogList uidref.
+  - evidence: core/5.1.3.47.txt, core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_a: PASS conf=0.96 concerns=-
+  - accesscontrol_logto_b: PASS conf=0.72 concerns=The snippets establish LogTo semantics and default/empty preconfiguration, but do not explicitly map target AccessControl row UID 000000070003FC00 to the named DataStore Get association; the default-log rule alone also does not prove an encoding without the preconfiguration row.
+  - accesscontrol_logto_c: PASS conf=0.72 concerns=The embedded source snippets establish LogTo/default-log semantics, but do not visibly include the DataStore Get AccessControl preconfiguration row or map UID 000000070003FC00 to that association.
+- `accesscontrol-logto-default-doc-600f446260` [quarantine_low_confidence] accesscontrol-logto-default-doc
+  - internal name: Direct AccessControl Get reports empty issued DataStore Get LogTo: impossible return value
+  - author label: FAIL
+  - reason: 2 review(s) below confidence 0.75
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration
+  - repair hint: Check direct AccessControl.Get for issued-row LogTo cells: Opal preconfigures issued AccessControl rows with empty LogTo/default-log behavior, so a successful Get of column 0x0E cannot return an arbitrary LogList uidref.
+  - evidence: core/5.1.3.47.txt, core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_a: FAIL conf=0.96 concerns=-
+  - accesscontrol_logto_b: FAIL conf=0.72 concerns=The snippets establish LogTo semantics and default/empty preconfiguration, but do not explicitly map target AccessControl row UID 000000070003FC00 to the named DataStore Get association; the default-log rule alone also does not prove an encoding without the preconfiguration row.
+  - accesscontrol_logto_c: FAIL conf=0.72 concerns=The embedded source snippets establish LogTo/default-log semantics, but do not visibly include the DataStore Get AccessControl preconfiguration row or map UID 000000070003FC00 to that association.
+- `accesscontrol-logto-default-doc-ed5e36333f` [quarantine_low_confidence] accesscontrol-logto-default-doc
+  - internal name: Direct AccessControl Get reports empty issued DataStore Set LogTo: correct return value
+  - author label: PASS
+  - reason: 2 review(s) below confidence 0.75
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration
+  - repair hint: Check direct AccessControl.Get for issued-row LogTo cells: Opal preconfigures issued AccessControl rows with empty LogTo/default-log behavior, so a successful Get of column 0x0E cannot return an arbitrary LogList uidref.
+  - evidence: core/5.1.3.47.txt, core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_a: PASS conf=0.96 concerns=-
+  - accesscontrol_logto_b: PASS conf=0.72 concerns=The snippets establish LogTo semantics and default/empty preconfiguration, but do not explicitly map target AccessControl row UID 000000070003FC01 to the named DataStore Set association; the default-log rule alone also does not prove an encoding without the preconfiguration row.
+  - accesscontrol_logto_c: PASS conf=0.72 concerns=The embedded source snippets establish LogTo/default-log semantics, but do not visibly include the DataStore Set AccessControl preconfiguration row or map UID 000000070003FC01 to that association.
+- `accesscontrol-logto-default-doc-6cb1c839f2` [quarantine_low_confidence] accesscontrol-logto-default-doc
+  - internal name: Direct AccessControl Get reports empty issued DataStore Set LogTo: impossible return value
+  - author label: FAIL
+  - reason: 2 review(s) below confidence 0.75
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration
+  - repair hint: Check direct AccessControl.Get for issued-row LogTo cells: Opal preconfigures issued AccessControl rows with empty LogTo/default-log behavior, so a successful Get of column 0x0E cannot return an arbitrary LogList uidref.
+  - evidence: core/5.1.3.47.txt, core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_a: FAIL conf=0.96 concerns=-
+  - accesscontrol_logto_b: FAIL conf=0.72 concerns=The snippets establish LogTo semantics and default/empty preconfiguration, but do not explicitly map target AccessControl row UID 000000070003FC01 to the named DataStore Set association; the default-log rule alone also does not prove an encoding without the preconfiguration row.
+  - accesscontrol_logto_c: FAIL conf=0.72 concerns=The embedded source snippets establish LogTo/default-log semantics, but do not visibly include the DataStore Set AccessControl preconfiguration row or map UID 000000070003FC01 to that association.
+- `accesscontrol-logto-default-doc-e27fcc2159` [quarantine_concerns] accesscontrol-logto-default-doc
+  - internal name: Direct AccessControl Get reports empty issued C_PIN_User1 Set LogTo: correct return value
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration
+  - repair hint: Check direct AccessControl.Get for issued-row LogTo cells: Opal preconfigures issued AccessControl rows with empty LogTo/default-log behavior, so a successful Get of column 0x0E cannot return an arbitrary LogList uidref.
+  - evidence: core/5.1.3.47.txt, core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_a: PASS conf=0.96 concerns=-
+  - accesscontrol_logto_b: PASS conf=0.8 concerns=The C_PIN_User1 Set preconfiguration row is visible with LogTo empty, but the snippets do not explicitly map target AccessControl row UID 000000070003A801 to that association.
+  - accesscontrol_logto_c: PASS conf=0.94 concerns=-
+- `accesscontrol-logto-default-doc-419d010df3` [quarantine_concerns] accesscontrol-logto-default-doc
+  - internal name: Direct AccessControl Get reports empty issued C_PIN_User1 Set LogTo: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration
+  - repair hint: Check direct AccessControl.Get for issued-row LogTo cells: Opal preconfigures issued AccessControl rows with empty LogTo/default-log behavior, so a successful Get of column 0x0E cannot return an arbitrary LogList uidref.
+  - evidence: core/5.1.3.47.txt, core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_a: FAIL conf=0.96 concerns=-
+  - accesscontrol_logto_b: FAIL conf=0.8 concerns=The C_PIN_User1 Set preconfiguration row is visible with LogTo empty, but the snippets do not explicitly map target AccessControl row UID 000000070003A801 to that association.
+  - accesscontrol_logto_c: FAIL conf=0.94 concerns=-
+- `accesscontrol-logto-default-doc-4672ae053e` [quarantine_concerns] accesscontrol-logto-default-doc
+  - internal name: Direct AccessControl Get reports empty issued MBRControl Set LogTo: correct return value
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration
+  - repair hint: Check direct AccessControl.Get for issued-row LogTo cells: Opal preconfigures issued AccessControl rows with empty LogTo/default-log behavior, so a successful Get of column 0x0E cannot return an arbitrary LogList uidref.
+  - evidence: core/5.1.3.47.txt, core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_a: PASS conf=0.96 concerns=-
+  - accesscontrol_logto_b: PASS conf=0.8 concerns=The MBRControl Set preconfiguration row is visible with LogTo empty, but the snippets do not explicitly map target AccessControl row UID 000000070003F800 to that association.
+  - accesscontrol_logto_c: PASS conf=0.95 concerns=-
+- `accesscontrol-logto-default-doc-84b082a1ab` [quarantine_concerns] accesscontrol-logto-default-doc
+  - internal name: Direct AccessControl Get reports empty issued MBRControl Set LogTo: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration
+  - repair hint: Check direct AccessControl.Get for issued-row LogTo cells: Opal preconfigures issued AccessControl rows with empty LogTo/default-log behavior, so a successful Get of column 0x0E cannot return an arbitrary LogList uidref.
+  - evidence: core/5.1.3.47.txt, core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_a: FAIL conf=0.96 concerns=-
+  - accesscontrol_logto_b: FAIL conf=0.8 concerns=The MBRControl Set preconfiguration row is visible with LogTo empty, but the snippets do not explicitly map target AccessControl row UID 000000070003F800 to that association.
+  - accesscontrol_logto_c: FAIL conf=0.95 concerns=-
+- `accesscontrol-logto-default-doc-8af2624bef` [quarantine_concerns] accesscontrol-logto-default-doc
+  - internal name: Direct AccessControl Get reports empty issued MBRControl Get LogTo: correct return value
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration
+  - repair hint: Check direct AccessControl.Get for issued-row LogTo cells: Opal preconfigures issued AccessControl rows with empty LogTo/default-log behavior, so a successful Get of column 0x0E cannot return an arbitrary LogList uidref.
+  - evidence: core/5.1.3.47.txt, core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_a: PASS conf=0.96 concerns=-
+  - accesscontrol_logto_b: PASS conf=0.8 concerns=The MBRControl Get preconfiguration row is visible with LogTo empty, but the snippets do not explicitly map target AccessControl row UID 000000070003F801 to that association.
+  - accesscontrol_logto_c: PASS conf=0.95 concerns=-
+- `accesscontrol-logto-default-doc-de93b5c197` [quarantine_concerns] accesscontrol-logto-default-doc
+  - internal name: Direct AccessControl Get reports empty issued MBRControl Get LogTo: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration
+  - repair hint: Check direct AccessControl.Get for issued-row LogTo cells: Opal preconfigures issued AccessControl rows with empty LogTo/default-log behavior, so a successful Get of column 0x0E cannot return an arbitrary LogList uidref.
+  - evidence: core/5.1.3.47.txt, core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_a: FAIL conf=0.96 concerns=-
+  - accesscontrol_logto_b: FAIL conf=0.8 concerns=The MBRControl Get preconfiguration row is visible with LogTo empty, but the snippets do not explicitly map target AccessControl row UID 000000070003F801 to that association.
+  - accesscontrol_logto_c: FAIL conf=0.95 concerns=-
+- `accesscontrol-logto-self-identifying-tig-ce4818da7c` [quarantine_low_confidence] accesscontrol-logto-self-identifying-tight-doc
+  - internal name: Self-identifying AccessControl row for DataStore Get has empty issued LogTo: correct return value
+  - author label: PASS
+  - reason: 2 review(s) below confidence 0.75
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration, self-identifying-row
+  - repair hint: Check direct AccessControl.Get over a mixed metadata range: the unreadable ACL cell must be omitted, while the returned InvokingID/MethodID self-identifies the issued association whose LogTo cell must remain empty/default.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.3.4.3.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_self_a: PASS conf=0.74 concerns=The exact DataStore row is elided from the Opal snippet, so this relies on the embedded rule summary plus the core default-log evidence.
+  - accesscontrol_logto_self_b: PASS conf=0.86 concerns=-
+  - accesscontrol_logto_self_c: PASS conf=0.74 concerns=The embedded Opal table snippet is truncated before the DataStore rows, so the DataStore-specific row is supported by the packet rule summary plus general default-log evidence rather than a visible row excerpt.
+- `accesscontrol-logto-self-identifying-tig-1ba4993089` [quarantine_low_confidence] accesscontrol-logto-self-identifying-tight-doc
+  - internal name: Self-identifying AccessControl row for DataStore Get has empty issued LogTo: impossible return value
+  - author label: FAIL
+  - reason: 2 review(s) below confidence 0.75
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration, self-identifying-row
+  - repair hint: Check direct AccessControl.Get over a mixed metadata range: the unreadable ACL cell must be omitted, while the returned InvokingID/MethodID self-identifies the issued association whose LogTo cell must remain empty/default.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.3.4.3.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_self_a: FAIL conf=0.74 concerns=The exact DataStore row is elided from the Opal snippet, so this relies on the embedded rule summary plus the core default-log evidence.
+  - accesscontrol_logto_self_b: FAIL conf=0.86 concerns=-
+  - accesscontrol_logto_self_c: FAIL conf=0.74 concerns=The embedded Opal table snippet is truncated before the DataStore rows, so the DataStore-specific row is supported by the packet rule summary plus general default-log evidence rather than a visible row excerpt.
+- `accesscontrol-logto-self-identifying-tig-55769deeab` [quarantine_low_confidence] accesscontrol-logto-self-identifying-tight-doc
+  - internal name: Self-identifying AccessControl row for DataStore Set has empty issued LogTo: correct return value
+  - author label: PASS
+  - reason: 2 review(s) below confidence 0.75
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration, self-identifying-row
+  - repair hint: Check direct AccessControl.Get over a mixed metadata range: the unreadable ACL cell must be omitted, while the returned InvokingID/MethodID self-identifies the issued association whose LogTo cell must remain empty/default.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.3.4.3.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_self_a: PASS conf=0.74 concerns=The exact DataStore row is elided from the Opal snippet, so this relies on the embedded rule summary plus the core default-log evidence.
+  - accesscontrol_logto_self_b: PASS conf=0.86 concerns=-
+  - accesscontrol_logto_self_c: PASS conf=0.74 concerns=The embedded Opal table snippet is truncated before the DataStore rows, so the DataStore-specific row is supported by the packet rule summary plus general default-log evidence rather than a visible row excerpt.
+- `accesscontrol-logto-self-identifying-tig-f31a65fde5` [quarantine_low_confidence] accesscontrol-logto-self-identifying-tight-doc
+  - internal name: Self-identifying AccessControl row for DataStore Set has empty issued LogTo: impossible return value
+  - author label: FAIL
+  - reason: 2 review(s) below confidence 0.75
+  - concepts: access-control, direct-get, log-template, logto, issued-row, preconfiguration, self-identifying-row
+  - repair hint: Check direct AccessControl.Get over a mixed metadata range: the unreadable ACL cell must be omitted, while the returned InvokingID/MethodID self-identifies the issued association whose LogTo cell must remain empty/default.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.15.txt, core/5.3.4.3.txt, core/5.8.4.1.txt, core/5.8.4.5.txt, opal/4.3.1.6.txt
+  - accesscontrol_logto_self_a: FAIL conf=0.74 concerns=The exact DataStore row is elided from the Opal snippet, so this relies on the embedded rule summary plus the core default-log evidence.
+  - accesscontrol_logto_self_b: FAIL conf=0.86 concerns=-
+  - accesscontrol_logto_self_c: FAIL conf=0.74 concerns=The embedded Opal table snippet is truncated before the DataStore rows, so the DataStore-specific row is supported by the packet rule summary plus general default-log evidence rather than a visible row excerpt.
+- `accesscontrol-identity-method-split-tigh-6d5bc1ff9b` [quarantine_low_confidence] accesscontrol-identity-method-split-tight-doc
+  - internal name: Direct AccessControl Get self-identifies MBRControl Get not Set: correct return value
+  - author label: PASS
+  - reason: 1 review(s) below confidence 0.75
+  - concepts: access-control, direct-get, invokingid, methodid, method-split, mbrcontrol, getacl
+  - repair hint: Check AccessControl identity-only direct Get: known issued rows must return the exact InvokingID/MethodID pair, especially same-object MBRControl.Get versus MBRControl.Set rows with different ACLs.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.2.txt, core/5.3.2.7.3.txt, core/5.3.2.7.5.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.6.txt
+  - identity_split_a: PASS conf=0.93 concerns=-
+  - identity_split_b: PASS conf=0.72 concerns=The packet evidence identifies the MBRControl.Get and MBRControl.Set rows and their ACLs, but does not explicitly print the UID-to-row mapping for AccessControl row 000000070003F801; this label relies on the trajectory's implied target-row convention.
+  - identity_split_c: PASS conf=0.86 concerns=The packet evidence shows the MBRControl Get/Set associations but does not explicitly map AccessControl row UID 000000070003F801 to the Get association.
+- `accesscontrol-identity-method-split-tigh-42c0e89c6e` [quarantine_low_confidence] accesscontrol-identity-method-split-tight-doc
+  - internal name: Direct AccessControl Get self-identifies MBRControl Get not Set: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) below confidence 0.75
+  - concepts: access-control, direct-get, invokingid, methodid, method-split, mbrcontrol, getacl
+  - repair hint: Check AccessControl identity-only direct Get: known issued rows must return the exact InvokingID/MethodID pair, especially same-object MBRControl.Get versus MBRControl.Set rows with different ACLs.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.2.txt, core/5.3.2.7.3.txt, core/5.3.2.7.5.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.6.txt
+  - identity_split_a: FAIL conf=0.93 concerns=-
+  - identity_split_b: FAIL conf=0.72 concerns=The packet evidence does not explicitly print the UID-to-row mapping for 000000070003F801, so this depends on the trajectory's implied target-row convention.
+  - identity_split_c: FAIL conf=0.86 concerns=The packet evidence shows the MBRControl Get/Set associations but does not explicitly map AccessControl row UID 000000070003F801 to the Get association.
+- `accesscontrol-identity-method-split-tigh-1012a7a7a4` [quarantine_low_confidence] accesscontrol-identity-method-split-tight-doc
+  - internal name: Direct AccessControl Get self-identifies MBRControl Set not Get: correct return value
+  - author label: PASS
+  - reason: 1 review(s) below confidence 0.75
+  - concepts: access-control, direct-get, invokingid, methodid, method-split, mbrcontrol, getacl
+  - repair hint: Check AccessControl identity-only direct Get: known issued rows must return the exact InvokingID/MethodID pair, especially same-object MBRControl.Get versus MBRControl.Set rows with different ACLs.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.2.txt, core/5.3.2.7.3.txt, core/5.3.2.7.5.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.6.txt
+  - identity_split_a: PASS conf=0.93 concerns=-
+  - identity_split_b: PASS conf=0.72 concerns=The packet evidence does not explicitly print the UID-to-row mapping for 000000070003F800, so this label relies on the trajectory's implied target-row convention.
+  - identity_split_c: PASS conf=0.86 concerns=The packet evidence shows the MBRControl Get/Set associations but does not explicitly map AccessControl row UID 000000070003F800 to the Set association.
+- `accesscontrol-identity-method-split-tigh-cc7cad5b69` [quarantine_low_confidence] accesscontrol-identity-method-split-tight-doc
+  - internal name: Direct AccessControl Get self-identifies MBRControl Set not Get: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) below confidence 0.75
+  - concepts: access-control, direct-get, invokingid, methodid, method-split, mbrcontrol, getacl
+  - repair hint: Check AccessControl identity-only direct Get: known issued rows must return the exact InvokingID/MethodID pair, especially same-object MBRControl.Get versus MBRControl.Set rows with different ACLs.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.2.txt, core/5.3.2.7.3.txt, core/5.3.2.7.5.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.6.txt
+  - identity_split_a: FAIL conf=0.93 concerns=-
+  - identity_split_b: FAIL conf=0.72 concerns=The packet evidence does not explicitly print the UID-to-row mapping for 000000070003F800, so this depends on the trajectory's implied target-row convention.
+  - identity_split_c: FAIL conf=0.86 concerns=The packet evidence shows the MBRControl Get/Set associations but does not explicitly map AccessControl row UID 000000070003F800 to the Set association.
+- `accesscontrol-pattern-direct-identity-ti-d551986749` [needs_review] accesscontrol-pattern-direct-identity-tight-doc
+  - internal name: Direct AccessControl Get self-identifies C_PIN User2 Set association: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: accesscontrol-pattern-direct-identity-tight-doc
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.2.txt, core/5.3.2.7.3.txt, core/5.3.2.7.5.txt, core/5.3.3.6.txt, core/5.3.4.2.2.txt, core/5.3.4.3.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt, opal/4.3.5.5.txt
+- `accesscontrol-pattern-direct-identity-ti-5d644bc2fe` [needs_review] accesscontrol-pattern-direct-identity-tight-doc
+  - internal name: Direct AccessControl Get self-identifies C_PIN User2 Set association: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: accesscontrol-pattern-direct-identity-tight-doc
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.2.txt, core/5.3.2.7.3.txt, core/5.3.2.7.5.txt, core/5.3.3.6.txt, core/5.3.4.2.2.txt, core/5.3.4.3.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt, opal/4.3.5.5.txt
+- `accesscontrol-pattern-direct-identity-ti-b869593406` [needs_review] accesscontrol-pattern-direct-identity-tight-doc
+  - internal name: Direct AccessControl Get self-identifies K AES 256 Range1 GenKey association: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: accesscontrol-pattern-direct-identity-tight-doc
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.2.txt, core/5.3.2.7.3.txt, core/5.3.2.7.5.txt, core/5.3.3.6.txt, core/5.3.4.2.2.txt, core/5.3.4.3.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt, opal/4.3.5.5.txt
+- `accesscontrol-pattern-direct-identity-ti-05ac85331a` [needs_review] accesscontrol-pattern-direct-identity-tight-doc
+  - internal name: Direct AccessControl Get self-identifies K AES 256 Range1 GenKey association: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: accesscontrol-pattern-direct-identity-tight-doc
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.2.txt, core/5.3.2.7.3.txt, core/5.3.2.7.5.txt, core/5.3.3.6.txt, core/5.3.4.2.2.txt, core/5.3.4.3.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt, opal/4.3.5.5.txt
+- `locking-accesscontrol-logalways-doc-c7c48913df` [needs_review] locking-accesscontrol-logalways-doc
+  - internal name: Direct AccessControl Get reports LogAlways for Locking_GlobalRange Set: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, direct-get, log-template, log-select, locking-range, set, default-logging
+  - repair hint: Check Locking Template default logging for concrete Locking object Set associations: AccessControl Log column should be LogAlways for Locking range Set rows, while unrelated issued rows keep their documented empty/default logging.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.6.txt, core/5.1.3.49.txt, core/5.7.3.8.txt, opal/4.3.1.6.txt, opal/4.3.5.2.txt
+- `locking-accesscontrol-logalways-doc-021ba9797e` [needs_review] locking-accesscontrol-logalways-doc
+  - internal name: Direct AccessControl Get reports LogAlways for Locking_GlobalRange Set: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, direct-get, log-template, log-select, locking-range, set, default-logging
+  - repair hint: Check Locking Template default logging for concrete Locking object Set associations: AccessControl Log column should be LogAlways for Locking range Set rows, while unrelated issued rows keep their documented empty/default logging.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.6.txt, core/5.1.3.49.txt, core/5.7.3.8.txt, opal/4.3.1.6.txt, opal/4.3.5.2.txt
+- `locking-accesscontrol-logalways-doc-34bad179e9` [needs_review] locking-accesscontrol-logalways-doc
+  - internal name: Direct AccessControl Get reports LogAlways for Locking_Range1 Set: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, direct-get, log-template, log-select, locking-range, set, default-logging
+  - repair hint: Check Locking Template default logging for concrete Locking object Set associations: AccessControl Log column should be LogAlways for Locking range Set rows, while unrelated issued rows keep their documented empty/default logging.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.6.txt, core/5.1.3.49.txt, core/5.7.3.8.txt, opal/4.3.1.6.txt, opal/4.3.5.2.txt
+- `locking-accesscontrol-logalways-doc-44da070d35` [needs_review] locking-accesscontrol-logalways-doc
+  - internal name: Direct AccessControl Get reports LogAlways for Locking_Range1 Set: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, direct-get, log-template, log-select, locking-range, set, default-logging
+  - repair hint: Check Locking Template default logging for concrete Locking object Set associations: AccessControl Log column should be LogAlways for Locking range Set rows, while unrelated issued rows keep their documented empty/default logging.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.6.txt, core/5.1.3.49.txt, core/5.7.3.8.txt, opal/4.3.1.6.txt, opal/4.3.5.2.txt
+- `locking-accesscontrol-logalways-doc-cdaa5f11ad` [needs_review] locking-accesscontrol-logalways-doc
+  - internal name: Direct AccessControl Get reports LogAlways for Locking_Range2 Set: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, direct-get, log-template, log-select, locking-range, set, default-logging
+  - repair hint: Check Locking Template default logging for concrete Locking object Set associations: AccessControl Log column should be LogAlways for Locking range Set rows, while unrelated issued rows keep their documented empty/default logging.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.6.txt, core/5.1.3.49.txt, core/5.7.3.8.txt, opal/4.3.1.6.txt, opal/4.3.5.2.txt
+- `locking-accesscontrol-logalways-doc-31977ca7c9` [needs_review] locking-accesscontrol-logalways-doc
+  - internal name: Direct AccessControl Get reports LogAlways for Locking_Range2 Set: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, direct-get, log-template, log-select, locking-range, set, default-logging
+  - repair hint: Check Locking Template default logging for concrete Locking object Set associations: AccessControl Log column should be LogAlways for Locking range Set rows, while unrelated issued rows keep their documented empty/default logging.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.6.txt, core/5.1.3.49.txt, core/5.7.3.8.txt, opal/4.3.1.6.txt, opal/4.3.5.2.txt
+- `getacl-representation-equivalence-doc-e2e545456c` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Admin SP C_PIN SID GetACL normalizes object/method UID dictionaries: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-cd2cfd7592` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Admin SP C_PIN SID GetACL normalizes object/method UID dictionaries: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-6bd992354a` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Admin SP C_PIN SID GetACL normalizes snake-case UID args: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-3fae975c46` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Admin SP C_PIN SID GetACL normalizes snake-case UID args: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-d869457e5f` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Admin SP Authority Admin1 Set GetACL normalizes singleton wrappers: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-5b4b0a0007` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Admin SP Authority Admin1 Set GetACL normalizes singleton wrappers: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-e9f7093027` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Locking SP Authority User2 Set GetACL normalizes alternate argument names: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-2b4584dece` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Locking SP Authority User2 Set GetACL normalizes alternate argument names: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-59e933fc20` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Locking SP Authority User2 Set GetACL normalizes target and method UID args: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-82cfbf8e7d` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Locking SP Authority User2 Set GetACL normalizes target and method UID args: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-56fd8e88aa` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Locking SP K AES Range1 GenKey GetACL normalizes typed UID refs: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-1b1463310b` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Locking SP K AES Range1 GenKey GetACL normalizes typed UID refs: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-6a1be7b0ae` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Locking SP Range1 GetACL normalizes symbolic dict refs: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-representation-equivalence-doc-203d1cf098` [needs_review] getacl-representation-equivalence-doc
+  - internal name: Locking SP Range1 GetACL normalizes symbolic dict refs: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, invokingid, methodid, uidref, object-ref, method-ref, parser-equivalence, exact-return-list
+  - repair hint: Check representation-equivalent GetACL parameters: InvokingID and MethodID may arrive as symbols, UID strings, typed dicts, or singleton wrappers, but they must resolve to the same concrete AccessControl row and exact ACE uidref list.
+  - evidence: core/3.2.4.1.txt, core/5.1.3.54.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-locking-table-next-exact-acl-doc-9e5d335415` [quarantine_concerns] getacl-locking-table-next-exact-acl-doc
+  - internal name: Locking SP Locking table Next GetACL returns Anybody ACE: correct return value
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: access-control, getacl, acl-column, commonname-vs-acl, locking-sp, table-next, exact-return-list
+  - repair hint: Check Locking SP table-level Next associations: Table.Next and SPTemplatesTable.Next have CommonName ACE_Anybody but empty ACL, while LockingTable.Next has ACL ACE_Anybody.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+  - D: PASS conf=0.9 concerns=The Opal source snippet is truncated before the specific Locking table row, so this relies on the included rule summary plus the target association identifying a table row.
+  - E: PASS conf=0.94 concerns=The displayed AccessControl snippet is truncated before the Locking table row, so this relies on the included rule summary and case evidence for that exact preconfiguration.
+  - F: PASS conf=0.9 concerns=The provided opal/4.3.1.6 snippet is truncated before the specific Locking table row, so this relies on the included rule summary for that exact row.
+- `getacl-locking-table-next-exact-acl-doc-6ee5f95ddd` [quarantine_concerns] getacl-locking-table-next-exact-acl-doc
+  - internal name: Locking SP Locking table Next GetACL returns Anybody ACE: impossible return value
+  - author label: FAIL
+  - reason: 3 review(s) recorded concerns
+  - concepts: access-control, getacl, acl-column, commonname-vs-acl, locking-sp, table-next, exact-return-list
+  - repair hint: Check Locking SP table-level Next associations: Table.Next and SPTemplatesTable.Next have CommonName ACE_Anybody but empty ACL, while LockingTable.Next has ACL ACE_Anybody.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+  - D: FAIL conf=0.9 concerns=The Opal source snippet is truncated before the specific Locking table row, so this relies on the included rule summary plus the target association identifying a table row.
+  - E: FAIL conf=0.94 concerns=The displayed AccessControl snippet is truncated before the Locking table row, so this relies on the included rule summary and case evidence for that exact preconfiguration.
+  - F: FAIL conf=0.9 concerns=The provided opal/4.3.1.6 snippet is truncated before the specific Locking table row, so this relies on the included rule summary for that exact row.
+- `ace-kaes-set-crosscheck-long-doc-a8ff40fadc` [quarantine_low_confidence] ace-kaes-set-crosscheck-long-doc
+  - internal name: Locking SP ACE K AES 256 Range1 GenKey Set GetACL returns BooleanExpression Set ACE: correct return value
+  - author label: PASS
+  - reason: 1 review(s) below confidence 0.75
+  - concepts: ace, k-aes, accesscontrol, getacl, booleanexpr, columns, personalization, long-trajectory
+  - repair hint: Check the boundary between an ACE object's Set association and the target method association it protects: K_AES GenKey ACE rows have BooleanExpr/Columns cells from Opal, ACE.Set may personalize BooleanExpr, but GetACL for the ACE object's Set method still returns ACE_ACE_Set_BooleanExpression while GetACL for the K_AES key object's GenKey method still returns the K_AES GenKey ACE.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.6.txt, core/5.3.3.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+  - ace_kaes_set_crosscheck_a: PASS conf=0.74 concerns=The cited opal/4.3.1.6 snippet shows the general ACE-object Set pattern and exact B0 00 ACE Set row, but I did not find the exact 000000080003B801 AccessControl Set row in the packet evidence.
+  - ace_kaes_set_crosscheck_b: PASS conf=0.82 concerns=The official Opal AccessControl snippet embedded in the todo record is abbreviated around some K_AES ACE Set rows, so the specific 000000080003B801 Set association is not fully visible as a source row.
+  - ace_kaes_set_crosscheck_c: PASS conf=0.92 concerns=-
+- `ace-kaes-set-crosscheck-long-doc-6bb1e964c0` [quarantine_low_confidence] ace-kaes-set-crosscheck-long-doc
+  - internal name: Locking SP ACE K AES 256 Range1 GenKey Set GetACL returns BooleanExpression Set ACE: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) below confidence 0.75
+  - concepts: ace, k-aes, accesscontrol, getacl, booleanexpr, columns, personalization, long-trajectory
+  - repair hint: Check the boundary between an ACE object's Set association and the target method association it protects: K_AES GenKey ACE rows have BooleanExpr/Columns cells from Opal, ACE.Set may personalize BooleanExpr, but GetACL for the ACE object's Set method still returns ACE_ACE_Set_BooleanExpression while GetACL for the K_AES key object's GenKey method still returns the K_AES GenKey ACE.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.6.txt, core/5.3.3.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+  - ace_kaes_set_crosscheck_a: FAIL conf=0.74 concerns=The cited opal/4.3.1.6 snippet does not directly expose the exact 000000080003B801 AccessControl Set row, so the exact-row evidence for this particular UID is weaker than for B0 00.
+  - ace_kaes_set_crosscheck_b: FAIL conf=0.82 concerns=The official Opal AccessControl snippet embedded in the todo record is abbreviated around some K_AES ACE Set rows, so the specific 000000080003B801 Set association is not fully visible as a source row.
+  - ace_kaes_set_crosscheck_c: FAIL conf=0.92 concerns=-
+- `ace-kaes-set-crosscheck-long-doc-05ddf6637a` [quarantine_low_confidence] ace-kaes-set-crosscheck-long-doc
+  - internal name: Personalized K AES 128 GlobalRange ACE does not replace key GenKey GetACL: correct return value
+  - author label: PASS
+  - reason: 1 review(s) below confidence 0.75
+  - concepts: ace, k-aes, accesscontrol, getacl, booleanexpr, columns, personalization, long-trajectory
+  - repair hint: Check the boundary between an ACE object's Set association and the target method association it protects: K_AES GenKey ACE rows have BooleanExpr/Columns cells from Opal, ACE.Set may personalize BooleanExpr, but GetACL for the ACE object's Set method still returns ACE_ACE_Set_BooleanExpression while GetACL for the K_AES key object's GenKey method still returns the K_AES GenKey ACE.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.6.txt, core/5.3.3.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+  - ace_kaes_set_crosscheck_a: PASS conf=0.68 concerns=The packet's cited opal/4.3.1.6 snippet does not directly show a K_AES_128_GlobalRange_Key/GenKey AccessControl row; the label relies on the packet rule summary and the documented ACE row in opal/4.3.1.7 rather than exact visible GenKey association evidence.
+  - ace_kaes_set_crosscheck_b: PASS conf=0.78 concerns=The embedded official Opal AccessControl excerpt does not directly show a K_AES_128_GlobalRange_Key/GenKey row; the Set-vs-GenKey association distinction is only summarized in the packet evidence, not fully visible as a cited source row.
+  - ace_kaes_set_crosscheck_c: PASS conf=0.8 concerns=The embedded evidence establishes the K_AES GenKey ACE row and ACE BooleanExpr mutability, but the direct AccessControl row for K_AES_128_GlobalRange_Key GenKey is not as explicit in the cited snippets; label follows the packet's association distinction.
+- `ace-kaes-set-crosscheck-long-doc-8706949389` [quarantine_low_confidence] ace-kaes-set-crosscheck-long-doc
+  - internal name: Personalized K AES 128 GlobalRange ACE does not replace key GenKey GetACL: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) below confidence 0.75
+  - concepts: ace, k-aes, accesscontrol, getacl, booleanexpr, columns, personalization, long-trajectory
+  - repair hint: Check the boundary between an ACE object's Set association and the target method association it protects: K_AES GenKey ACE rows have BooleanExpr/Columns cells from Opal, ACE.Set may personalize BooleanExpr, but GetACL for the ACE object's Set method still returns ACE_ACE_Set_BooleanExpression while GetACL for the K_AES key object's GenKey method still returns the K_AES GenKey ACE.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.6.txt, core/5.3.3.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+  - ace_kaes_set_crosscheck_a: FAIL conf=0.68 concerns=The packet's cited opal/4.3.1.6 snippet does not directly show the K_AES_128_GlobalRange_Key/GenKey AccessControl row, so the exact association evidence is weak even though the ACE-vs-key distinction is the intended rule.
+  - ace_kaes_set_crosscheck_b: FAIL conf=0.78 concerns=The embedded official Opal AccessControl excerpt does not directly show a K_AES_128_GlobalRange_Key/GenKey row; the Set-vs-GenKey association distinction is only summarized in the packet evidence, not fully visible as a cited source row.
+  - ace_kaes_set_crosscheck_c: FAIL conf=0.8 concerns=The cited snippets make the ACE Set versus K_AES GenKey distinction plausible, but the exact K_AES key-object GenKey AccessControl row is not directly visible enough for maximum confidence.
+- `acl-revertsp-meta-doc-3e1c20f87c` [quarantine_disagreement] acl-revertsp-meta-doc
+  - internal name: Locking SP ThisSP RevertSP GetACLACL ACE_Admin returns NOT_AUTHORIZED without Admin
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: access-control, meta-acl, locking-sp, revertsp, getacl, not-authorized
+  - repair hint: Check the Locking SP AccessControl row for ThisSP/RevertSP: GetACLACL is ACE_Admin, AddACEACL/RemoveACEACL/DeleteMethodACL are empty, and the concrete InvokingID is ThisSP rather than a LockingSP display alias.
+  - evidence: core/5.3.4.3.txt, core/5.3.4.3.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.3.14.1.txt, core/5.3.3.15.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.3.txt
+  - acl_revertsp_a: PASS conf=0.96 concerns=-
+  - acl_revertsp_b: PASS conf=0.97 concerns=-
+  - acl_revertsp_c: PASS conf=0.97 concerns=-
+  - getacl_missing_assoc_a: PASS conf=0.94 concerns=-
+  - getacl_missing_assoc_b: PASS conf=0.98 concerns=-
+  - getacl_missing_assoc_c: PASS conf=0.96 concerns=-
+  - revertsp_identity_a: FAIL conf=0.91 concerns=-
+  - revertsp_identity_b: PASS conf=0.97 concerns=-
+  - revertsp_identity_c: PASS conf=0.94 concerns=-
+- `acl-revertsp-meta-doc-0889cbaa19` [quarantine_disagreement] acl-revertsp-meta-doc
+  - internal name: Locking SP ThisSP RevertSP GetACLACL ACE_Admin rejects unauthenticated GetACL success
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: access-control, meta-acl, locking-sp, revertsp, getacl, not-authorized
+  - repair hint: Check the Locking SP AccessControl row for ThisSP/RevertSP: GetACLACL is ACE_Admin, AddACEACL/RemoveACEACL/DeleteMethodACL are empty, and the concrete InvokingID is ThisSP rather than a LockingSP display alias.
+  - evidence: core/5.3.4.3.txt, core/5.3.4.3.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.3.14.1.txt, core/5.3.3.15.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.3.txt
+  - acl_revertsp_a: FAIL conf=0.96 concerns=-
+  - acl_revertsp_b: FAIL conf=0.97 concerns=-
+  - acl_revertsp_c: FAIL conf=0.97 concerns=-
+  - getacl_missing_assoc_a: FAIL conf=0.94 concerns=-
+  - getacl_missing_assoc_b: FAIL conf=0.99 concerns=-
+  - getacl_missing_assoc_c: FAIL conf=0.96 concerns=-
+  - revertsp_identity_a: PASS conf=0.93 concerns=-
+  - revertsp_identity_b: FAIL conf=0.97 concerns=-
+  - revertsp_identity_c: FAIL conf=0.94 concerns=-
+- `acl-revertsp-meta-doc-b9fcffd54b` [quarantine_concerns] acl-revertsp-meta-doc
+  - internal name: Locking SP ThisSP RevertSP GetACL succeeds as Admin and returns ACE list
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: access-control, meta-acl, locking-sp, revertsp, getacl, not-authorized
+  - repair hint: Check the Locking SP AccessControl row for ThisSP/RevertSP: GetACLACL is ACE_Admin, AddACEACL/RemoveACEACL/DeleteMethodACL are empty, and the concrete InvokingID is ThisSP rather than a LockingSP display alias.
+  - evidence: core/5.3.4.3.txt, core/5.3.4.3.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.3.14.1.txt, core/5.3.3.15.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.3.txt
+  - acl_revertsp_a: PASS conf=0.94 concerns=-
+  - acl_revertsp_b: PASS conf=0.94 concerns=-
+  - acl_revertsp_c: PASS conf=0.95 concerns=-
+  - getacl_missing_assoc_a: PASS conf=0.94 concerns=-
+  - getacl_missing_assoc_b: PASS conf=0.96 concerns=-
+  - getacl_missing_assoc_c: PASS conf=0.94 concerns=-
+  - revertsp_identity_a: PASS conf=0.93 concerns=-
+  - revertsp_identity_b: PASS conf=0.9 concerns=The snippets do not separately spell out the numeric Admin authority UID; this relies on the trajectory's authenticated Admin session and the provided rule summary.
+  - revertsp_identity_c: PASS conf=0.92 concerns=-
+- `genkey-doc-b719388487` [quarantine_concerns] genkey-doc
+  - internal name: ReEncryptState busy blocks range-key GenKey: correct status
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: genkey, c-pin, media-key, reencryption, method-parameters
+  - repair hint: Check GenKey parameter validation, C_PIN PinLength limits, range-key ownership, and ReEncryptState gating.
+  - evidence: core/5.7.2.2.12.txt
+  - agent_kappa2: PASS conf=0.86 concerns=The packet does not explicitly decode the Locking column value or show the ReEncryptState name in the trajectory, so the association is inferred from the provided NextKey snippet and target object.
+  - agent_lambda2: PASS conf=0.78 concerns=The snippet does not explicitly define Locking column 12 or value 2, so the connection to non-IDLE ReEncryptState is inferred from the packet trajectory context.
+  - agent_mu2: PASS conf=0.78 concerns=The trajectory does not show ReEncryptState directly, so this treats the prior NextKey update as the packet evidence that the non-IDLE re-encryption restriction applies.
+- `genkey-doc-4df1b343af` [quarantine_concerns] genkey-doc
+  - internal name: ReEncryptState busy blocks range-key GenKey: impossible success
+  - author label: FAIL
+  - reason: 3 review(s) recorded concerns
+  - concepts: genkey, c-pin, media-key, reencryption, method-parameters
+  - repair hint: Check GenKey parameter validation, C_PIN PinLength limits, range-key ownership, and ReEncryptState gating.
+  - evidence: core/5.7.2.2.12.txt
+  - agent_kappa2: FAIL conf=0.86 concerns=The packet does not explicitly decode the Locking column value or show the ReEncryptState name in the trajectory, so the association is inferred from the provided NextKey snippet and target object.
+  - agent_lambda2: FAIL conf=0.78 concerns=The snippet does not explicitly define Locking column 12 or value 2, so the connection to non-IDLE ReEncryptState is inferred from the packet trajectory context.
+  - agent_mu2: FAIL conf=0.78 concerns=The trajectory does not show ReEncryptState directly, so this treats the prior NextKey update as the packet evidence that the non-IDLE re-encryption restriction applies.
+
+## How To Add Reviews
+
+1. Generate blind packets:
+
+```bash
+python tools/label_consensus.py export --reviewer agent_alpha
+```
+
+2. Give `analysis/label_reviews/agent_alpha.todo.jsonl` to an independent agent.
+3. The agent writes completed labels to `analysis/label_reviews/agent_alpha.jsonl`.
+4. Re-run:
+
+```bash
+python tools/label_consensus.py report
+```
+
+5. Run sourced tests with the gate only after enough accepted cases exist:
+
+```bash
+python tools/run_sourced_edges.py --consensus-gate
+```

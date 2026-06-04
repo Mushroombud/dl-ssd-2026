@@ -1,0 +1,1 @@
+{"kind": "normative_text", "rule_id": "5.1.2.3:text:001", "section": "5.1.2.3", "source": "- 5.1.2.3 Interrupted Revert The Revert method and complete implementation of necessary background operations MAY be aborted due to any reset condition, including power loss.", "status": "candidate_for_review", "title": "Interrupted Revert"}

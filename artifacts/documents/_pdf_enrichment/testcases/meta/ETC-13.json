@@ -1,0 +1,23 @@
+{
+  "added_blocks": 3,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/ETC-13.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 1042,
+  "family": "testcases",
+  "pages": [
+    84,
+    85
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 3,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/ETC-13.jsonl",
+  "section": "ETC-13",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/ETC-13.jsonl",
+  "title": "Malformed ComPacket Header – Regular Session"
+}

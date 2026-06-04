@@ -1,0 +1,23 @@
+{
+  "added_blocks": 5,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/3.1.1.5.md",
+  "existing_chars": 6309,
+  "existing_path": "artifacts/documents/opal/3.1.1.5.txt",
+  "extracted_chars": 2834,
+  "family": "opal",
+  "pages": [
+    23,
+    24
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 0,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/3.1.1.5.jsonl",
+  "section": "3.1.1.5",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 1,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/3.1.1.5.jsonl",
+  "title": "Opal SSC V2 Feature (Feature Code = 0x0203)"
+}

@@ -1,0 +1,60 @@
+# SPF-10 Byte Table Access Granularity
+
+This test case only applies to the following SSCs:
+- 1) Opal 2.00
+- 2) Opal 2.01
+- 3) Opal 2.02
+- 4) Opalite 1.00
+- 5) Pyrite 1.00
+- 6) Pyrite 2.00
+- 7) Pyrite 2.01
+- 8) Ruby 1.00
+- 1) Confirm the MandatoryWriteGranularity column value of the DataStore table > 1. If the MandatoryWriteGranularity column value = 1, do not perform the test and the Test Suite SHALL mark the result as NA.
+- 1) Invoke the StartSession method with SPID = Locking SP UID and HostSigningAuthority = Admin1 authority UID
+- 2) Invoke the Get method on the DataStore object in the Table table to retrieve the MandatoryWriteGranularity column value
+- 3) Invoke the Set method to write the DataStore table with a number of 0s = a non-zero multiple of the MandatoryWriteGranularity column value
+- SPF-11: Stack Reset Notes Start of informative comment Reference SD vendor documentation to determine whether the command is supported. End of informative comment
+- SPF-12: TPer Reset
+This test case only applies to the following SSCs:
+- 1) Opal 2.00
+- 2) Opal 2.01
+- 3) Opal 2.02
+- 4) Opalite 1.00
+- 5) Pyrite 1.00
+- 6) Pyrite 2.00
+- 7) Pyrite 2.01
+- 8) Ruby 1.00
+- 1) ProgrammaticResetEnable set to TRUE
+- 2) Locking_GlobalRange has ReadLocked and WriteLocked columns set to FALSE
+- 3) Locking_GlobalRange has ReadLockEnabled and WriteLockEnabled columns are set to TRUE
+- 4) LockOnReset column value includes Programmatic
+- 5) For Pyrite 1.00, 2.00 and 2.01, and Ruby 1.00, if the MBR Shadowing feature is supported, then the Enable column value of the MBRControl table = FALSE
+- 6) For Opal 1.00, 2.00, 2.01 and 2.02, and Opalite 1.00, the Enable column value of the MBRControl table = FALSE
+- 1) Invoke the StartSession method with SPID = Locking SP UID and HostSigningAuthority = Admin1 authority UID
+- 2) Issue the TPER_ RESET command
+- 3) Invoke the StartSession method with SPID = Locking SP UID and HostSigningAuthority = Admin1 authority UID
+- 4) Invoke the Get method on the Locking_GlobalRange ReadLocked and WriteLocked columns
+- 5) CLOSE_SESSION
+- 6) Write the MAGIC_PATTERN over an ARBITRARILY_VARYING_LBA_RANGE
+- 7) Read from the same ARBITRARILY_VARYING_LBA_RANGE as in Step #6
+- 2) The Get method in step #4 returns values of TRUE
+- 3) The Write command in Step #5 returns a Data Protection Error
+- 4) The Read command in Step #6 returns a Data Protection Error
+This test case applies to all other SSCs supported by this specification only if the MBR Shadowing feature is supported.
+- 1) ProgrammaticResetEnable column is set to TRUE
+- 2) Locking_GlobalRange has ReadLockEnabled and WriteLockEnabled columns are set to FALSE
+- 3) DoneOnReset column value includes Programmatic
+- 4) Done column is set to TRUE
+- 5) First 64 logical blocks of MBR table have been set with MAGIC_PATTERN
+- 6) If the MBR Shadowing feature is supported, the Enable column value of the MBRControl table = TRUE
+- 1) Write 0s to 64 logical blocks beginning at LBA 0
+- 2) Issue the TPER_RESET command
+- 3) Write 1s to 64 logical blocks beginning at LBA 0
+- 4) Read 64 logical blocks beginning at LBA 0
+- 5) Invoke the StartSession method with SPID = Locking SP UID and HostSigningAuthority = Admin1 authority UID.
+- 6) Invoke the Get method on the MBRControl Done column
+- 1) Steps #1-2 SUCCEED
+- 2) The Write command in Step #3 returns a Data Protection Error
+- 3) The Read command in Step #4 returns data that matches the MAGIC_PATTERN
+- 4) Steps #5-6 SUCCEED
+- 5) The Get method in step #6 returns the value of FALSE

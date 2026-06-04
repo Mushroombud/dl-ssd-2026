@@ -1,0 +1,24 @@
+# SPF-19 Block SID Authentication
+
+- 1) Opalite 1.00
+- 2) Pyrite 1.00
+- 3) Pyrite 2.00
+- 4) Pyrite 2.01
+- 5) Ruby 1.00
+- 6) Opal 2.02
+- 7) All other SSCs supported by this specification, if the Block SID Feature Set is implemented
+- 1) Issue IF-SEND with the following parameters: a. Protocol ID = 0x02 b. ComID = 0x0005 c. Hardware Reset bit in Clear Events field = 1
+- 2) Invoke the StartSession method with SPID = Admin SP UID and HostSigningAuthority = SID authority UID.
+- 3) Issue an IF-RECV Level 0 Discovery with the following conditions:
+- 4) Trigger a TCG Storage Hardware Reset on the SD
+- 5) Invoke the StartSession method with SPID = Admin SP UID and HostSigningAuthority = SID authority UID.
+- 6) Issue IF-SEND with the following parameters:
+- 7) Invoke the StartSession method with SPID = Admin SP UID and HostSigningAuthority = SID authority UID.
+- 8) Issue an IF-RECV Level 0 Discovery with the following conditions: a. Security Protocol = 1 b. Security Protocol Specific = 0x0001 c. Transfer Length is a value large enough to retrieve the entire response data of Level 0 Discovery
+- 9) Power cycle the SD
+- 10) Invoke the StartSession method with SPID = Admin SP UID and HostSigningAuthority = SID authority UID.
+- 1) Steps #1 and #3-10 SUCCEED
+- 2) The StartSession method in step #2 results in a SyncSession method with a status code of NOT_AUTHORIZED
+- 3) The Hardware Reset field in the Block SID Authentication Feature Descriptor in the Level 0 Discovery response returned in #3 = 1
+- 4) The StartSession method in step #7 results in a SyncSession method with a status code of NOT_AUTHORIZED
+- 5) The Hardware Reset field in the Block SID Authentication Feature Descriptor in the Level 0 Discovery response returned in #8 = 0

@@ -1,0 +1,918 @@
+# Label Consensus Report
+
+Generated: 2026-05-26T22:52:52
+
+## Policy
+
+- Minimum independent reviewers: 3
+- Minimum reviewer confidence: 0.8
+- Review directory: `analysis/label_reviews`
+- Author labels are not counted as independent reviews.
+- Case names and author labels are hidden in default review exports to reduce label leakage.
+
+## Summary
+
+- accepted: 2828
+- quarantine_author_disagreement: 2
+- quarantine_concerns: 54
+- quarantine_disagreement: 13
+- quarantine_low_confidence: 13
+
+## Non-Accepted Cases
+
+- `locking-doc-b851c105a8` [quarantine_low_confidence] locking-doc
+  - internal name: ReadLocked true causes data protection error when MBR is inactive: correct status
+  - author label: PASS
+  - reason: 1 review(s) below confidence 0.8
+  - concepts: host-io, locking-range, read-write-lock, range-boundary
+  - repair hint: Check host Read/Write expected behavior against effective locking ranges and ReadLockEnabled/WriteLockEnabled gating.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.8.txt, core/5.7.3.2.txt
+  - agent_nu2: PASS conf=0.9 concerns=-
+  - agent_omicron2: PASS conf=0.78 concerns=The trajectory does not state MBR Control state, and the target uses INVALID_PARAMETER rather than the snippet's literal Data Protection Error.
+  - agent_xi2: PASS conf=0.9 concerns=-
+- `locking-doc-d50b5ce5c2` [quarantine_concerns] locking-doc
+  - internal name: ReadLocked true causes data protection error when MBR is inactive: impossible success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: host-io, locking-range, read-write-lock, range-boundary
+  - repair hint: Check host Read/Write expected behavior against effective locking ranges and ReadLockEnabled/WriteLockEnabled gating.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.8.txt, core/5.7.3.2.txt
+  - agent_nu2: FAIL conf=0.94 concerns=-
+  - agent_omicron2: FAIL conf=0.86 concerns=MBR Control state is not shown, but no shown table row matches SUCCESS with no returned data for this locked read.
+  - agent_xi2: FAIL conf=0.9 concerns=-
+- `locking-doc-0a2dedce7e` [quarantine_concerns] locking-doc
+  - internal name: MBR inactive mixed read-lock boundary is data protection error: correct status
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: host-io, locking-range, read-write-lock, range-boundary
+  - repair hint: Check host Read/Write expected behavior against effective locking ranges and ReadLockEnabled/WriteLockEnabled gating.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.8.txt, core/5.7.3.2.txt
+  - agent_delta: PASS conf=0.9 concerns=-
+  - agent_epsilon: PASS conf=0.96 concerns=-
+  - agent_nu2: PASS conf=0.93 concerns=-
+  - agent_omicron2: PASS conf=0.86 concerns=The target uses INVALID_PARAMETER rather than the snippet's literal Data Protection Error.
+  - agent_xi2: PASS conf=0.88 concerns=-
+  - agent_zeta: PASS conf=0.93 concerns=-
+- `locking-doc-da4c2809f3` [quarantine_concerns] locking-doc
+  - internal name: WriteLocked true causes data protection error: correct status
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: host-io, locking-range, read-write-lock, range-boundary
+  - repair hint: Check host Read/Write expected behavior against effective locking ranges and ReadLockEnabled/WriteLockEnabled gating.
+  - evidence: core/5.7.2.2.7.txt, core/5.7.2.2.9.txt, core/5.7.3.2.txt
+  - agent_nu2: PASS conf=0.94 concerns=-
+  - agent_omicron2: PASS conf=0.87 concerns=The target uses INVALID_PARAMETER rather than the snippet's literal Data Protection Error.
+  - agent_xi2: PASS conf=0.9 concerns=-
+- `locking-doc-baeee0d5e5` [quarantine_concerns] locking-doc
+  - internal name: MBR inactive mixed write-lock boundary is data protection error: correct status
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: host-io, locking-range, read-write-lock, range-boundary
+  - repair hint: Check host Read/Write expected behavior against effective locking ranges and ReadLockEnabled/WriteLockEnabled gating.
+  - evidence: core/5.7.2.2.7.txt, core/5.7.2.2.9.txt, core/5.7.3.2.txt
+  - agent_delta: PASS conf=0.88 concerns=-
+  - agent_epsilon: PASS conf=0.95 concerns=-
+  - agent_nu2: PASS conf=0.93 concerns=-
+  - agent_omicron2: PASS conf=0.82 concerns=Assumes the boundary-crossing request is the Mixed row; the target also uses INVALID_PARAMETER rather than the snippet's literal Data Protection Error.
+  - agent_xi2: PASS conf=0.88 concerns=-
+  - agent_zeta: PASS conf=0.92 concerns=-
+- `mbr-doc-6de85002a7` [quarantine_author_disagreement] mbr-doc
+  - internal name: MBR active read inside shadow must not return old user data
+  - author label: FAIL
+  - reason: reviewer consensus PASS disagrees with author label FAIL
+  - concepts: host-io, mbr-shadowing, locking-range, table-230-231
+  - repair hint: Check MBRControl Enable/Done, LBA relation to the MBR region, mixed locking ranges, and read-result comparators.
+  - evidence: core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, core/5.7.3.2.txt
+  - agent_alpha: PASS conf=0.86 concerns=-
+  - agent_beta: PASS conf=0.92 concerns=-
+  - agent_gamma: PASS conf=0.76 concerns=The packet does not show the actual MBR-table contents, so the specific AA payload cannot be independently verified.
+- `mbr-table-doc-16a62ffe0e` [quarantine_low_confidence] mbr-table-doc
+  - internal name: Done true disables MBR table payload shadowing
+  - author label: PASS
+  - reason: 1 review(s) below confidence 0.8
+  - concepts: host-io, mbr-shadowing, mbr-table, byte-table, payload-provenance
+  - repair hint: Check that successful authenticated MBR byte-table Set records the table payload and active MBR shadow reads return that payload, not prior user media data.
+  - evidence: core/5.7.3.6.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt
+  - mbr_table_a: PASS conf=1.0 concerns=-
+  - mbr_table_b: PASS conf=1.0 concerns=-
+  - mbr_table_c: PASS conf=0.75 concerns=The snippets do not explicitly state the exact post-Done read source, but they do define active shadowing only as Enable true and Done false.
+- `mbr-table-doc-f330655a4b` [quarantine_low_confidence] mbr-table-doc
+  - internal name: Unauthenticated MBR table Set cannot modify payload: correct status
+  - author label: PASS
+  - reason: 1 review(s) below confidence 0.8
+  - concepts: host-io, mbr-shadowing, mbr-table, byte-table, payload-provenance
+  - repair hint: Check that successful authenticated MBR byte-table Set records the table payload and active MBR shadow reads return that payload, not prior user media data.
+  - evidence: core/5.7.3.6.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt
+  - mbr_table_a: PASS conf=1.0 concerns=-
+  - mbr_table_b: PASS conf=0.75 concerns=The snippet states the authorization requirement but does not define the exact error code mapping, so confidence is medium rather than high.
+  - mbr_table_c: PASS conf=1.0 concerns=-
+- `ace-get-preconfig-cells-doc-eb108b7799` [quarantine_concerns] ace-get-preconfig-cells-doc
+  - internal name: ACE_C_PIN_User1_Set_PIN Get returns preconfigured Admins OR User1 expression: correct return value
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: ace, get, preconfiguration, booleanexpr, columns, personalization, state-observation
+  - repair hint: Check that authorized ACE.Get validates returned BooleanExpr and Columns cells against Opal preconfiguration, while a successful BooleanExpr Set changes the later observable BooleanExpr instead of leaving the default value in force.
+  - evidence: core/5.1.3.2.txt, core/5.1.3.3.txt, core/5.3.2.9.txt, core/5.3.3.6.txt, core/5.3.4.2.2.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.2.1.6.txt, opal/4.3.1.7.txt, opal/4.3.8.1.txt
+  - ace_get_preconfig_a: PASS conf=0.99 concerns=-
+  - ace_get_preconfig_b: PASS conf=0.9 concerns=The document row includes the *ACE1 annotation, but the snippet explains it as a support note rather than an ACE expression element.
+  - ace_get_preconfig_c: PASS conf=0.93 concerns=The source note marks supported BooleanExpr values with *ACE1, but the returned value is one of the specified supported values.
+- `ace-get-preconfig-cells-doc-7e83181090` [quarantine_concerns] ace-get-preconfig-cells-doc
+  - internal name: ACE_DataStore_Get_All Get follows personalized BooleanExpr: correct return value
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: ace, get, preconfiguration, booleanexpr, columns, personalization, state-observation
+  - repair hint: Check that authorized ACE.Get validates returned BooleanExpr and Columns cells against Opal preconfiguration, while a successful BooleanExpr Set changes the later observable BooleanExpr instead of leaving the default value in force.
+  - evidence: core/5.1.3.2.txt, core/5.1.3.3.txt, core/5.3.2.9.txt, core/5.3.3.6.txt, core/5.3.4.2.2.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.2.1.6.txt, opal/4.3.1.7.txt, opal/4.3.8.1.txt
+  - ace_get_preconfig_a: PASS conf=0.98 concerns=-
+  - ace_get_preconfig_b: PASS conf=0.94 concerns=The Set value is shown as the User1 UID while the Get renders it symbolically as User1; this appears to be the same authority representation.
+  - ace_get_preconfig_c: PASS conf=0.9 concerns=The trajectory encodes User1 as its UID in Set and as a symbolic name in Get, which I treat as equivalent based on the authority reference evidence.
+- `ace-get-preconfig-cells-doc-e570c05a49` [quarantine_concerns] ace-get-preconfig-cells-doc
+  - internal name: ACE_DataStore_Get_All Get follows personalized BooleanExpr: impossible return value
+  - author label: FAIL
+  - reason: 2 review(s) recorded concerns
+  - concepts: ace, get, preconfiguration, booleanexpr, columns, personalization, state-observation
+  - repair hint: Check that authorized ACE.Get validates returned BooleanExpr and Columns cells against Opal preconfiguration, while a successful BooleanExpr Set changes the later observable BooleanExpr instead of leaving the default value in force.
+  - evidence: core/5.1.3.2.txt, core/5.1.3.3.txt, core/5.3.2.9.txt, core/5.3.3.6.txt, core/5.3.4.2.2.txt, core/5.3.4.3.2.txt, core/5.3.4.3.3.txt, opal/4.2.1.6.txt, opal/4.3.1.7.txt, opal/4.3.8.1.txt
+  - ace_get_preconfig_a: FAIL conf=0.98 concerns=-
+  - ace_get_preconfig_b: FAIL conf=0.95 concerns=The Set value is provided as a UID and the Get value symbolically, but the UID corresponds to the User1 authority in the packet context.
+  - ace_get_preconfig_c: FAIL conf=0.9 concerns=The Set uses the User1 UID while the expected readable form may be symbolic, but either way Admins does not reflect the successful modification.
+- `cpin-setpackage-invalidates-pin-doc-38844f18e4` [quarantine_concerns] cpin-setpackage-invalidates-pin-doc
+  - internal name: SetPackage on C_PIN_User1 invalidates old PIN for later StartSession: correct status
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: credential-package, setpackage, c-pin, pin-state, authenticate, startsession
+  - repair hint: Check SetPackage on a C_PIN credential as a credential-material replacement: it resets Tries like other C_PIN modification methods and must invalidate the previously known PIN so later StartSession/Authenticate with the old proof cannot be accepted.
+  - evidence: core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.4.1.1.2.txt, core/5.3.2.12.txt
+  - setpackage_a: PASS conf=0.93 concerns=The package contents are opaque, so the exact replacement PIN is not identified, but the successful C_PIN SetPackage is enough to show the old PIN should not be accepted.
+  - setpackage_b: PASS conf=0.92 concerns=-
+  - setpackage_c: PASS conf=0.95 concerns=-
+- `cpin-setpackage-invalidates-pin-doc-ae277e40a6` [quarantine_concerns] cpin-setpackage-invalidates-pin-doc
+  - internal name: SetPackage on C_PIN_User1 invalidates old PIN for later StartSession: impossible success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: credential-package, setpackage, c-pin, pin-state, authenticate, startsession
+  - repair hint: Check SetPackage on a C_PIN credential as a credential-material replacement: it resets Tries like other C_PIN modification methods and must invalidate the previously known PIN so later StartSession/Authenticate with the old proof cannot be accepted.
+  - evidence: core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.4.1.1.2.txt, core/5.3.2.12.txt
+  - setpackage_a: FAIL conf=0.93 concerns=The package contents are opaque, so the exact replacement PIN is not identified, but treating the previous userpin as still valid conflicts with the SetPackage/PIN-modification evidence.
+  - setpackage_b: FAIL conf=0.92 concerns=-
+  - setpackage_c: FAIL conf=0.95 concerns=-
+- `cpin-setpackage-invalidates-pin-doc-df9064c6ac` [quarantine_concerns] cpin-setpackage-invalidates-pin-doc
+  - internal name: SetPackage on C_PIN_User1 makes old PIN Authenticate return false: correct return value
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: credential-package, setpackage, c-pin, pin-state, authenticate, startsession
+  - repair hint: Check SetPackage on a C_PIN credential as a credential-material replacement: it resets Tries like other C_PIN modification methods and must invalidate the previously known PIN so later StartSession/Authenticate with the old proof cannot be accepted.
+  - evidence: core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.4.1.1.2.txt, core/5.3.2.12.txt
+  - setpackage_a: PASS conf=0.9 concerns=The snippets do not spell out Authenticate's return-value shape, but the trajectory uses SUCCESS with [false] to represent a failed authentication rather than accepting the old PIN.
+  - setpackage_b: PASS conf=0.88 concerns=-
+  - setpackage_c: PASS conf=0.9 concerns=-
+- `cpin-setpackage-invalidates-pin-doc-8ec4f4b25a` [quarantine_concerns] cpin-setpackage-invalidates-pin-doc
+  - internal name: SetPackage on C_PIN_User1 makes old PIN Authenticate return false: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: credential-package, setpackage, c-pin, pin-state, authenticate, startsession
+  - repair hint: Check SetPackage on a C_PIN credential as a credential-material replacement: it resets Tries like other C_PIN modification methods and must invalidate the previously known PIN so later StartSession/Authenticate with the old proof cannot be accepted.
+  - evidence: core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.4.1.1.2.txt, core/5.3.2.12.txt
+  - setpackage_a: FAIL conf=0.93 concerns=The package contents are opaque, so the exact replacement PIN is not identified, but a true authentication result for the previous PIN is inconsistent with SetPackage changing the credential material.
+  - setpackage_b: FAIL conf=0.9 concerns=-
+  - setpackage_c: FAIL conf=0.95 concerns=-
+- `datastore-sparse-fill-doc-25d98e253f` [quarantine_disagreement] datastore-sparse-fill-doc
+  - internal name: Personalized Get ACE blocks later Admin sparse payload read: correct return value
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: datastore, byte-table, offset, sparse-write, partial-overwrite, ace, long-trajectory
+  - repair hint: Check sparse DataStore writes followed by gap-filling writes: only fully known requested byte ranges should be compared exactly, partial overwrites preserve other offsets, unauthorized Set attempts do not fill gaps, and later ACE changes expose the current filled payload.
+  - evidence: core/5.3.3.6.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.3.4.3.3.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt, opal/5.1.1.2.txt
+  - datastore_ace_fix_a: PASS conf=0.99 concerns=-
+  - datastore_ace_fix_b: PASS conf=0.99 concerns=-
+  - datastore_ace_fix_c: FAIL conf=0.99 concerns=-
+- `datastore-sparse-fill-doc-1f3d6b78ca` [quarantine_disagreement] datastore-sparse-fill-doc
+  - internal name: Personalized Get ACE blocks later Admin sparse payload read: impossible return value
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: datastore, byte-table, offset, sparse-write, partial-overwrite, ace, long-trajectory
+  - repair hint: Check sparse DataStore writes followed by gap-filling writes: only fully known requested byte ranges should be compared exactly, partial overwrites preserve other offsets, unauthorized Set attempts do not fill gaps, and later ACE changes expose the current filled payload.
+  - evidence: core/5.3.3.6.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.3.4.3.3.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt, opal/5.1.1.2.txt
+  - datastore_ace_fix_a: FAIL conf=0.99 concerns=-
+  - datastore_ace_fix_b: FAIL conf=0.99 concerns=-
+  - datastore_ace_fix_c: PASS conf=0.99 concerns=-
+- `byte-table-row-bounds-doc-c5a65f6d92` [quarantine_concerns] byte-table-row-bounds-doc
+  - internal name: DataStore Get negative startRow fails: correct status
+  - author label: PASS
+  - reason: 4 review(s) recorded concerns
+  - concepts: byte-table, cellblock, row-number, uinteger, datastore, mbr, invalid-parameter
+  - repair hint: Check byte-table row address validation: Cellblock startRow/endRow and Set Where.Row/startRow are RowNumber/uinteger values, so negative or non-uinteger row addresses are invalid and cannot succeed or mutate byte-table contents.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.8.1.txt
+  - byte_row_bounds_a: PASS conf=0.82 concerns=The provided snippets do not specify the payload, if any, accompanying a failed Get, so this label is based on the failure status required by the row-bounds rule.
+  - byte_row_bounds_b: PASS conf=0.94 concerns=-
+  - byte_row_bounds_c: PASS conf=0.84 concerns=The supplied evidence does not spell out failure-result payload shape; the decision is based on the failing status for the invalid cellblock.
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.92 concerns=-
+  - scope_batch_c: PASS conf=0.82 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-row-bounds-doc-e20bf3a920` [quarantine_concerns] byte-table-row-bounds-doc
+  - internal name: DataStore Get negative endRow fails: correct status
+  - author label: PASS
+  - reason: 4 review(s) recorded concerns
+  - concepts: byte-table, cellblock, row-number, uinteger, datastore, mbr, invalid-parameter
+  - repair hint: Check byte-table row address validation: Cellblock startRow/endRow and Set Where.Row/startRow are RowNumber/uinteger values, so negative or non-uinteger row addresses are invalid and cannot succeed or mutate byte-table contents.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.8.1.txt
+  - byte_row_bounds_a: PASS conf=0.82 concerns=The provided snippets do not specify the payload, if any, accompanying a failed Get, so this label is based on the failure status required by the row-bounds rule.
+  - byte_row_bounds_b: PASS conf=0.94 concerns=-
+  - byte_row_bounds_c: PASS conf=0.84 concerns=The supplied evidence does not spell out failure-result payload shape; the decision is based on the failing status for the invalid cellblock.
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.92 concerns=-
+  - scope_batch_c: PASS conf=0.82 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-row-bounds-doc-a5b70e65d5` [quarantine_concerns] byte-table-row-bounds-doc
+  - internal name: MBR byte-table Get negative startRow fails: correct status
+  - author label: PASS
+  - reason: 4 review(s) recorded concerns
+  - concepts: byte-table, cellblock, row-number, uinteger, datastore, mbr, invalid-parameter
+  - repair hint: Check byte-table row address validation: Cellblock startRow/endRow and Set Where.Row/startRow are RowNumber/uinteger values, so negative or non-uinteger row addresses are invalid and cannot succeed or mutate byte-table contents.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.8.1.txt
+  - byte_row_bounds_a: PASS conf=0.82 concerns=The snippets establish the required failure status; they do not define whether a failed Get may include a returned byte payload.
+  - byte_row_bounds_b: PASS conf=0.9 concerns=-
+  - byte_row_bounds_c: PASS conf=0.83 concerns=The supplied evidence does not spell out failure-result payload shape; the decision is based on the failing status for the invalid cellblock.
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.92 concerns=-
+  - scope_batch_c: PASS conf=0.82 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-row-bounds-doc-5615b00f7c` [quarantine_concerns] byte-table-row-bounds-doc
+  - internal name: DataStore Get boolean startRow fails: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: byte-table, cellblock, row-number, uinteger, datastore, mbr, invalid-parameter
+  - repair hint: Check byte-table row address validation: Cellblock startRow/endRow and Set Where.Row/startRow are RowNumber/uinteger values, so negative or non-uinteger row addresses are invalid and cannot succeed or mutate byte-table contents.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.8.1.txt
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.92 concerns=-
+  - scope_batch_c: PASS conf=0.8 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-observed-rows-bounds-doc-a7835e2ce8` [quarantine_concerns] byte-table-observed-rows-bounds-doc
+  - internal name: DataStore Get at observed Rows boundary fails: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: byte-table, table-descriptor, rows, cellblock, datastore, mbr, invalid-parameter
+  - repair hint: Check observed byte-table descriptor Rows values: after a Table descriptor Get reports actual Rows=N for MBR/DataStore, row N and later are out of bounds for byte-table Get/Set, and failed Set must not mutate tracked bytes.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.2.3.txt, core/5.3.2.3.8.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+  - observed_rows_bounds_a: PASS conf=0.94 concerns=-
+  - observed_rows_bounds_b: PASS conf=0.99 concerns=-
+  - observed_rows_bounds_c: PASS conf=0.94 concerns=-
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.93 concerns=-
+  - scope_batch_c: PASS conf=0.88 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-observed-rows-bounds-doc-9e412ae975` [quarantine_concerns] byte-table-observed-rows-bounds-doc
+  - internal name: MBR Get at observed Rows boundary fails: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: byte-table, table-descriptor, rows, cellblock, datastore, mbr, invalid-parameter
+  - repair hint: Check observed byte-table descriptor Rows values: after a Table descriptor Get reports actual Rows=N for MBR/DataStore, row N and later are out of bounds for byte-table Get/Set, and failed Set must not mutate tracked bytes.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.2.3.txt, core/5.3.2.3.8.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+  - observed_rows_bounds_a: PASS conf=0.94 concerns=-
+  - observed_rows_bounds_b: PASS conf=0.99 concerns=-
+  - observed_rows_bounds_c: PASS conf=0.94 concerns=-
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.93 concerns=-
+  - scope_batch_c: PASS conf=0.88 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-observed-rows-bounds-doc-e0a10272ee` [quarantine_concerns] byte-table-observed-rows-bounds-doc
+  - internal name: DataStore Get crossing observed Rows boundary fails: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: byte-table, table-descriptor, rows, cellblock, datastore, mbr, invalid-parameter
+  - repair hint: Check observed byte-table descriptor Rows values: after a Table descriptor Get reports actual Rows=N for MBR/DataStore, row N and later are out of bounds for byte-table Get/Set, and failed Set must not mutate tracked bytes.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.2.3.txt, core/5.3.2.3.8.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.93 concerns=-
+  - scope_batch_c: PASS conf=0.87 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `byte-table-observed-rows-bounds-doc-5bec7c0f9b` [quarantine_concerns] byte-table-observed-rows-bounds-doc
+  - internal name: MBR Get crossing observed Rows boundary fails: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: byte-table, table-descriptor, rows, cellblock, datastore, mbr, invalid-parameter
+  - repair hint: Check observed byte-table descriptor Rows values: after a Table descriptor Get reports actual Rows=N for MBR/DataStore, row N and later are out of bounds for byte-table Get/Set, and failed Set must not mutate tracked bytes.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.2.3.txt, core/5.3.2.3.8.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+  - scope_batch_a: PASS conf=0.9 concerns=Snippet establishes failure; it does not specify failure return payload details.
+  - scope_batch_b: PASS conf=0.93 concerns=-
+  - scope_batch_c: PASS conf=0.87 concerns=The snippets do not specify whether a failed Get may include a byte payload, so this is based on the failure status.
+- `datastore-boundary-window-doc-f9aa45afe0` [quarantine_disagreement] datastore-boundary-window-doc
+  - internal name: DataStore byte-table Get with Cellblock Table component fails: correct status
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: datastore, byte-table, rows-boundary, cellblock-defaults, offset, failed-set, postcondition
+  - repair hint: Check DataStore byte-table boundary windows: last observed row is valid for one-byte Set/Get, writes crossing Rows are invalid and non-mutating, omitted startRow defaults to zero, and byte-table Get must omit a Table component.
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.2.3.8.txt, core/5.3.3.6.2.1.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.8.1.txt
+  - datastore_boundary_a: FAIL conf=0.86 concerns=-
+  - datastore_boundary_b: PASS conf=0.88 concerns=Return data on a failed Get is not described in the snippets, so this label is based on the required failure status.
+  - datastore_boundary_c: PASS conf=0.86 concerns=The failure response includes a byte return value, but the supplied evidence is explicit about the required failure status and does not state a separate return-value rule for failed Get.
+- `get-cellblock-doc-8c03888143` [quarantine_concerns] get-cellblock-doc
+  - internal name: DataStore byte-table Get with Cellblock endColumn component fails: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: table-methods, get, cellblock, byte-table, object-table, object-method
+  - repair hint: Check Cellblock context rules: object methods omit Table/startRow/endRow, table methods omit Table, object-table Get requires startRow and omits endRow, and byte-table Get omits column components.
+  - evidence: core/5.1.4.2.3.txt, core/5.3.3.6.txt, core/5.3.3.6.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.6.2.2.txt, core/5.3.3.6.3.txt, core/5.3.4.2.2.txt, core/5.7.2.1.txt, core/5.3.2.12.txt, opal/4.3.5.1.txt, opal/4.3.8.1.txt, opal/4.3.1.8.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+  - new_highscore_a: PASS conf=0.8 concerns=Failure status is well supported; the row also shows a byte return on the failing command, which the embedded snippets do not define explicitly.
+  - new_highscore_b: PASS conf=0.86 concerns=The target also carries a byte return value on a failing method; the cited snippets establish failure but not an error payload shape.
+  - new_highscore_c: PASS conf=0.94 concerns=-
+- `reset-doc-a3a6b1f205` [quarantine_concerns] reset-doc
+  - internal name: LockOnReset containing power reset locks write range: correct status
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: reset, locking-range, lock-on-reset, host-io
+  - repair hint: Check reset type normalization and whether LockOnReset turns the stored ReadLocked/WriteLocked cells on for matching reset types.
+  - evidence: core/5.7.2.2.10.txt
+  - agent_eta2: PASS conf=0.82 concerns=The packet excerpt does not explicitly define reset type value 0 as PowerCycle or state the exact host Write failure status for a locked range.
+  - agent_iota2: PASS conf=0.85 concerns=The snippet does not define numeric reset-type code 0 or prescribe the exact error status for a write while WriteLocked is true.
+  - agent_theta2: PASS conf=0.88 concerns=The provided snippet establishes LockOnReset behavior but does not spell out the numeric reset-type mapping or the exact status code expected for a locked Write.
+- `reset-doc-38a4d44f44` [quarantine_concerns] reset-doc
+  - internal name: LockOnReset containing power reset locks write range: impossible success
+  - author label: FAIL
+  - reason: 3 review(s) recorded concerns
+  - concepts: reset, locking-range, lock-on-reset, host-io
+  - repair hint: Check reset type normalization and whether LockOnReset turns the stored ReadLocked/WriteLocked cells on for matching reset types.
+  - evidence: core/5.7.2.2.10.txt
+  - agent_eta2: FAIL conf=0.82 concerns=The packet excerpt does not explicitly define reset type value 0 as PowerCycle or state the exact host Write failure status for a locked range.
+  - agent_iota2: FAIL conf=0.85 concerns=The snippet does not define numeric reset-type code 0 or the exact failure code, but the trajectory's LockOnReset value is the only cited reset trigger and conflicts with SUCCESS.
+  - agent_theta2: FAIL conf=0.9 concerns=The provided snippet establishes LockOnReset behavior but does not spell out the numeric reset-type mapping for value 0.
+- `locking-set-state-transition-doc-eb6d5e9731` [quarantine_disagreement] locking-set-state-transition-doc
+  - internal name: Set LockOnReset nonempty then matching reset locks cells: correct return value
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: locking-range, lock-on-reset, readlocked, writelocked, set, state-machine
+  - repair hint: Check direct Set-driven Locking state transitions: changing LockOnReset must not mutate Locked cells, changing Locked must not mutate LockOnReset, and disabling the lock feature makes locked cells ineffective for host I/O.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.2.txt, opal/4.3.5.2.txt
+  - p: PASS conf=0.95 concerns=Assumes the trajectory value [0] denotes the Power Cycle reset type, consistent with the included Opal preconfiguration snippet.
+  - q: FAIL conf=0.98 concerns=-
+  - r: FAIL conf=0.98 concerns=-
+- `locking-set-state-transition-doc-3b0422c6e0` [quarantine_disagreement] locking-set-state-transition-doc
+  - internal name: Set LockOnReset nonempty then matching reset locks cells: impossible return value
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: locking-range, lock-on-reset, readlocked, writelocked, set, state-machine
+  - repair hint: Check direct Set-driven Locking state transitions: changing LockOnReset must not mutate Locked cells, changing Locked must not mutate LockOnReset, and disabling the lock feature makes locked cells ineffective for host I/O.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.2.txt, opal/4.3.5.2.txt
+  - p: FAIL conf=0.95 concerns=Assumes the trajectory value [0] denotes the Power Cycle reset type, consistent with the included Opal preconfiguration snippet.
+  - q: PASS conf=0.98 concerns=-
+  - r: PASS conf=0.98 concerns=-
+- `locking-multi-range-reset-clean-doc-261ad36c4b` [quarantine_concerns] locking-multi-range-reset-clean-doc
+  - internal name: PowerCycle-locked first range rejects host write while second range is unlocked: impossible success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: reset, locking-range, multiple-ranges, lock-on-reset, reset-types, stored-lock-cells, host-io, level0-discovery, long-trajectory
+  - repair hint: Check that matching LockOnReset reset types set the stored ReadLocked and WriteLocked cells true for that row, while ReadLockEnabled/WriteLockEnabled only control whether those stored cells affect host I/O and Level 0 Locked.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.7.1.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.txt, opal/4.3.5.2.1.1.txt, opal/4.3.5.2.1.2.txt, opal/4.3.5.2.2.txt
+  - multi_range_reset_clean_ab: FAIL conf=0.94 concerns=-
+  - multi_range_reset_clean_ac: FAIL conf=0.96 concerns=The evidence establishes SUCCESS is impossible; it does not require this review to select a concrete data-protection status code.
+  - multi_range_reset_clean_ad: FAIL conf=0.95 concerns=-
+- `locking-multi-range-reset-clean-doc-a5ec41cc7d` [quarantine_concerns] locking-multi-range-reset-clean-doc
+  - internal name: PowerCycle leaves empty-LockOnReset second range writable: impossible error
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: reset, locking-range, multiple-ranges, lock-on-reset, reset-types, stored-lock-cells, host-io, level0-discovery, long-trajectory
+  - repair hint: Check that matching LockOnReset reset types set the stored ReadLocked and WriteLocked cells true for that row, while ReadLockEnabled/WriteLockEnabled only control whether those stored cells affect host I/O and Level 0 Locked.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.7.1.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.txt, opal/4.3.5.2.1.1.txt, opal/4.3.5.2.1.2.txt, opal/4.3.5.2.2.txt
+  - multi_range_reset_clean_ab: FAIL conf=0.93 concerns=-
+  - multi_range_reset_clean_ac: FAIL conf=0.94 concerns=The source proves the lock state should not block the write; it does not otherwise analyze unrelated transport-level command errors, but none are indicated in the trajectory.
+  - multi_range_reset_clean_ad: FAIL conf=0.94 concerns=-
+- `locking-multi-range-reset-clean-doc-433194e7f7` [quarantine_concerns] locking-multi-range-reset-clean-doc
+  - internal name: Programmatic reset leaves power-only first range writable: impossible error
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: reset, locking-range, multiple-ranges, lock-on-reset, reset-types, stored-lock-cells, host-io, level0-discovery, long-trajectory
+  - repair hint: Check that matching LockOnReset reset types set the stored ReadLocked and WriteLocked cells true for that row, while ReadLockEnabled/WriteLockEnabled only control whether those stored cells affect host I/O and Level 0 Locked.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.7.1.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.txt, opal/4.3.5.2.1.1.txt, opal/4.3.5.2.1.2.txt, opal/4.3.5.2.2.txt
+  - multi_range_reset_clean_ab: FAIL conf=0.94 concerns=-
+  - multi_range_reset_clean_ac: FAIL conf=0.94 concerns=This judges the lock-state compliance only; the trajectory shows no other basis for an INVALID_PARAMETER response.
+  - multi_range_reset_clean_ad: FAIL conf=0.94 concerns=-
+- `locking-multi-range-reset-clean-doc-d9400079df` [quarantine_concerns] locking-multi-range-reset-clean-doc
+  - internal name: Programmatic reset locks second range against host write: impossible success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: reset, locking-range, multiple-ranges, lock-on-reset, reset-types, stored-lock-cells, host-io, level0-discovery, long-trajectory
+  - repair hint: Check that matching LockOnReset reset types set the stored ReadLocked and WriteLocked cells true for that row, while ReadLockEnabled/WriteLockEnabled only control whether those stored cells affect host I/O and Level 0 Locked.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.7.1.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.txt, opal/4.3.5.2.1.1.txt, opal/4.3.5.2.1.2.txt, opal/4.3.5.2.2.txt
+  - multi_range_reset_clean_ab: FAIL conf=0.96 concerns=-
+  - multi_range_reset_clean_ac: FAIL conf=0.96 concerns=The evidence supports rejecting SUCCESS without requiring a particular error status code.
+  - multi_range_reset_clean_ad: FAIL conf=0.95 concerns=-
+- `locking-hotplug-reset-boundary-doc-87a1b9ac10` [quarantine_concerns] locking-hotplug-reset-boundary-doc
+  - internal name: HotPlug aborts open Locking session before stale-session Get
+  - author label: FAIL
+  - reason: 2 review(s) recorded concerns
+  - concepts: reset, hotplug, session-abort, lock-on-reset, state-observation, host-io
+  - repair hint: Check that HotPlug is reset_types value 2 and an interface TCG reset event: it aborts open sessions, but a LockOnReset set containing only Power Cycle does not set ReadLocked/WriteLocked true.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, opal/3.3.5.1.txt, opal/3.3.5.2.txt, opal/4.3.5.2.2.txt
+  - locking_hotplug_a: FAIL conf=0.86 concerns=The packet snippets do not include the general method/session validity rule, so this relies on the reset evidence that all open sessions are aborted.
+  - locking_hotplug_b: FAIL conf=0.88 concerns=-
+  - locking_hotplug_c: FAIL conf=0.84 concerns=The packet evidence does not include a separate general rule for method invocation after an aborted session, so this relies on the explicit session-abort reset rule.
+- `data-removal-interrupted-bit-doc-d14ca120e9` [quarantine_disagreement] data-removal-interrupted-bit-doc
+  - internal name: Fresh Data Removal Feature descriptor rejects named Interrupted alias set: correct return value
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: level0-discovery, data-removal, feature-descriptor, interrupted-bit, genkey
+  - repair hint: Check the Supported Data Removal Mechanism descriptor Interrupted bit: absent an interrupted Revert/RevertSP/GenKey, and after a successful data-removal operation completes, the bit must be zero.
+  - evidence: opal/3.1.1.6.txt, opal/3.1.1.6.1.txt, opal/3.1.1.6.2.txt, opal/3.1.1.6.3.txt, opal/5.1.2.3.txt, opal/5.1.3.4.txt
+  - data_removal_interrupt_a: PASS conf=0.7 concerns=The packet uses the shortened field name OperationInterrupted rather than the descriptor/Table 9 name Data Removal Operation Interrupted; if exact response-field naming is required, this would be noncompliant.
+  - data_removal_interrupt_b: PASS conf=0.7 concerns=The response names the field OperationInterrupted rather than the spec's Data Removal Operation Interrupted parameter, so the structural mapping is slightly ambiguous.
+  - data_removal_interrupt_c: FAIL conf=0.68 concerns=If OperationInterrupted is an accepted alias in this test harness, the zero value would otherwise match the no-interruption trajectory; the packet sources only name Data Removal Operation Interrupted.
+- `reencrypt-status-enum-doc-88728e441d` [quarantine_concerns] reencrypt-status-enum-doc
+  - internal name: LastReEncStat Get accepts named Success and rejects high reserved value: correct return value
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: locking-range, reencryption, general-status, last-reenc-stat, reserved-enum, get-postcondition
+  - repair hint: Check returned enum values for LastReEncStat and GeneralStatus: last_reenc_stat values 4-7 are reserved, and gen_status values 7-31 are reserved even when the column is otherwise valid in PAUSED/PENDING states.
+  - evidence: core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.7.2.2.19.txt, core/5.7.2.2.20.txt
+  - reencrypt_status_enum_a: PASS conf=0.8 concerns=The target uses the associated value name "Success" instead of the numeric enum value; treated as compliant because the trajectory represents other enums by names as well.
+  - reencrypt_status_enum_b: PASS conf=0.88 concerns=-
+  - reencrypt_status_enum_c: PASS conf=0.9 concerns=-
+- `reencrypt-status-enum-doc-55404770cc` [quarantine_concerns] reencrypt-status-enum-doc
+  - internal name: GeneralStatus Get accepts active pause status and rejects reserved value: impossible return value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: locking-range, reencryption, general-status, last-reenc-stat, reserved-enum, get-postcondition
+  - repair hint: Check returned enum values for LastReEncStat and GeneralStatus: last_reenc_stat values 4-7 are reserved, and gen_status values 7-31 are reserved even when the column is otherwise valid in PAUSED/PENDING states.
+  - evidence: core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.7.2.2.19.txt, core/5.7.2.2.20.txt
+  - reencrypt_status_enum_a: FAIL conf=0.95 concerns=-
+  - reencrypt_status_enum_b: FAIL conf=0.95 concerns=-
+  - reencrypt_status_enum_c: FAIL conf=0.86 concerns=The source also states values 0-31 are valid for the PAUSED state; I interpret that as the PAUSED numeric range, not permission to use entries separately marked reserved.
+- `admin-revert-sid-doc-c65dde4739` [quarantine_concerns] admin-revert-sid-doc
+  - internal name: AdminSP Revert with SID behavior FF invalidates pre-revert SID PIN: correct status
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: lifecycle, adminsp-revert, sid-msid, session-abort, data-removal
+  - repair hint: Check AdminSP Revert read-write requirement, empty result shape, immediate session abort, C_PIN_SID reset behavior after SID authentication, and user-data removal.
+  - evidence: opal/3.1.1.5.txt, opal/4.2.1.8.txt, opal/5.1.2.txt, opal/5.1.2.1.txt, opal/5.1.2.2.txt, opal/5.1.2.2.1.txt, opal/5.2.2.2.2.txt, opal/5.2.2.3.1.txt, core/5.3.2.12.txt, core/5.3.4.1.2.3.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt
+  - admin_revert_vu_s: PASS conf=0.86 concerns=The exact post-revert vendor-unique PIN is not observable in the packet, but rejecting the pre-revert value is consistent with the required change to a VU value.
+  - admin_revert_vu_t: PASS conf=0.9 concerns=The exact vendor-unique value is not observable, but the target only asserts that the prior SID no longer authenticates.
+  - admin_revert_vu_u: PASS conf=0.86 concerns=The exact vendor-unique replacement value is not observable from the packet, but preserving the old value would conflict with the documented change behavior.
+- `admin-revert-sid-doc-9a4d8b6182` [quarantine_concerns] admin-revert-sid-doc
+  - internal name: AdminSP Revert with SID behavior FF invalidates pre-revert SID PIN: impossible success
+  - author label: FAIL
+  - reason: 3 review(s) recorded concerns
+  - concepts: lifecycle, adminsp-revert, sid-msid, session-abort, data-removal
+  - repair hint: Check AdminSP Revert read-write requirement, empty result shape, immediate session abort, C_PIN_SID reset behavior after SID authentication, and user-data removal.
+  - evidence: opal/3.1.1.5.txt, opal/4.2.1.8.txt, opal/5.1.2.txt, opal/5.1.2.1.txt, opal/5.1.2.2.txt, opal/5.1.2.2.1.txt, opal/5.2.2.2.2.txt, opal/5.2.2.3.1.txt, core/5.3.2.12.txt, core/5.3.4.1.2.3.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt
+  - admin_revert_vu_s: FAIL conf=0.88 concerns=The packet cannot reveal the generated VU PIN, but treating the unchanged pre-revert host challenge as valid conflicts with the required change after successful revert.
+  - admin_revert_vu_t: FAIL conf=0.93 concerns=The exact vendor-unique value is not observable, but treating the pre-revert SID as still valid contradicts the required post-revert change.
+  - admin_revert_vu_u: FAIL conf=0.86 concerns=The replacement is vendor-unique, but the evidence frames "new" as the prior host-set PIN and the descriptor says the value changes on revert.
+- `admin-revert-sid-doc-75de41a56f` [quarantine_concerns] admin-revert-sid-doc
+  - internal name: Failed AdminSP Revert with SID behavior FF preserves pre-revert SID PIN: correct success
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: lifecycle, adminsp-revert, sid-msid, session-abort, data-removal
+  - repair hint: Check AdminSP Revert read-write requirement, empty result shape, immediate session abort, C_PIN_SID reset behavior after SID authentication, and user-data removal.
+  - evidence: opal/3.1.1.5.txt, opal/4.2.1.8.txt, opal/5.1.2.txt, opal/5.1.2.1.txt, opal/5.1.2.2.txt, opal/5.1.2.2.1.txt, opal/5.2.2.2.2.txt, opal/5.2.2.3.1.txt, core/5.3.2.12.txt, core/5.3.4.1.2.3.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt
+  - admin_revert_vu_s: PASS conf=0.92 concerns=-
+  - admin_revert_vu_t: PASS conf=0.88 concerns=The packet does not state the reason for Revert failure, but the cited effects are conditioned on successful invocation.
+  - admin_revert_vu_u: PASS conf=0.94 concerns=-
+- `admin-revert-sid-doc-5f02e95094` [quarantine_concerns] admin-revert-sid-doc
+  - internal name: Failed AdminSP Revert with SID behavior FF preserves pre-revert SID PIN: impossible error
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: lifecycle, adminsp-revert, sid-msid, session-abort, data-removal
+  - repair hint: Check AdminSP Revert read-write requirement, empty result shape, immediate session abort, C_PIN_SID reset behavior after SID authentication, and user-data removal.
+  - evidence: opal/3.1.1.5.txt, opal/4.2.1.8.txt, opal/5.1.2.txt, opal/5.1.2.1.txt, opal/5.1.2.2.txt, opal/5.1.2.2.1.txt, opal/5.2.2.2.2.txt, opal/5.2.2.3.1.txt, core/5.3.2.12.txt, core/5.3.4.1.2.3.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt
+  - admin_revert_vu_s: FAIL conf=0.93 concerns=-
+  - admin_revert_vu_t: FAIL conf=0.88 concerns=The packet does not state the reason for Revert failure, but the cited post-revert effects are explicitly conditioned on success.
+  - admin_revert_vu_u: FAIL conf=0.94 concerns=-
+- `admin-revert-sid-doc-49975b4d33` [quarantine_concerns] admin-revert-sid-doc
+  - internal name: AdminSP Revert removes old user data when Locking SP was active
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: lifecycle, adminsp-revert, sid-msid, session-abort, data-removal
+  - repair hint: Check AdminSP Revert read-write requirement, empty result shape, immediate session abort, C_PIN_SID reset behavior after SID authentication, and user-data removal.
+  - evidence: opal/3.1.1.5.txt, opal/4.2.1.8.txt, opal/5.1.2.txt, opal/5.1.2.1.txt, opal/5.1.2.2.txt, opal/5.1.2.2.1.txt, opal/5.2.2.2.2.txt, opal/5.2.2.3.1.txt, core/5.3.2.12.txt, core/5.3.4.1.2.3.txt, core/5.4.2.4.txt, core/5.4.2.4.7.txt
+  - admin_revert_a: FAIL conf=0.96 concerns=-
+  - admin_revert_b: FAIL conf=0.94 concerns=-
+  - admin_revert_c: FAIL conf=0.94 concerns=-
+  - admin_revert_vu_s: FAIL conf=0.94 concerns=-
+  - admin_revert_vu_t: FAIL conf=0.97 concerns=-
+  - admin_revert_vu_u: FAIL conf=0.92 concerns=The packet shows an Activate success but does not spell out the resulting lifecycle state; the best reading is that the Locking SP was no longer Manufactured-Inactive before Revert.
+- `admin-revert-locking-clean-doc-5dbca6fde8` [quarantine_concerns] admin-revert-locking-clean-doc
+  - internal name: AdminSP Revert after explicit Manufactured Locking SP blocks later Locking StartSession: correct status
+  - author label: PASS
+  - reason: 2 review(s) recorded concerns
+  - concepts: lifecycle, adminsp-revert, locking-sp, manufactured-state, data-removal
+  - repair hint: Check clean Admin SP Revert traces where the Locking SP is explicitly observed Manufactured after Activate before Revert removes user data and returns Locking functionality to Manufactured-Inactive.
+  - evidence: opal/5.1.1.2.txt, opal/5.1.2.txt, opal/5.1.2.2.txt, opal/5.2.2.1.txt, opal/5.2.2.2.1.txt, opal/5.2.2.2.2.txt, opal/5.2.2.3.1.txt, opal/5.2.2.3.2.txt, opal/3.1.1.3.1.txt
+  - admin_revert_clean_v: PASS conf=0.94 concerns=The cited snippets require that sessions cannot be opened to Manufactured-Inactive SPs but do not mandate the exact failure status code.
+  - admin_revert_clean_w: PASS conf=0.9 concerns=-
+  - admin_revert_clean_x: PASS conf=0.93 concerns=Spec states sessions cannot be opened but does not name the exact failure status; NOT_AUTHORIZED is treated as an acceptable refusal.
+- `locking-lifecycle-disabled-frozen-doc-aa805d9d70` [quarantine_disagreement] locking-lifecycle-disabled-frozen-doc
+  - internal name: SP table Get Frozen true blocks later Locking StartSession: correct status
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, session-startup
+  - repair hint: Check Locking SP Issued-Disabled and Issued-Frozen state behavior: Frozen rejects new sessions with SP_FROZEN, Disabled still allows session startup plus Authenticate/DeleteSP/control-session/re-enable Set, and all other in-SP method invocations fail with SP_DISABLED.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.1.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.7.4.1.txt, opal/4.2.3.3.txt
+  - lifecycle_m: FAIL conf=0.96 concerns=-
+  - lifecycle_n: PASS conf=0.95 concerns=-
+  - lifecycle_o: PASS conf=0.9 concerns=The packet shows Frozen via a prior Get rather than the visible operation that set it.
+- `locking-lifecycle-disabled-frozen-doc-2e949c370b` [quarantine_disagreement] locking-lifecycle-disabled-frozen-doc
+  - internal name: SP table Get Frozen true blocks later Locking StartSession: impossible success
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, session-startup
+  - repair hint: Check Locking SP Issued-Disabled and Issued-Frozen state behavior: Frozen rejects new sessions with SP_FROZEN, Disabled still allows session startup plus Authenticate/DeleteSP/control-session/re-enable Set, and all other in-SP method invocations fail with SP_DISABLED.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.1.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.7.4.1.txt, opal/4.2.3.3.txt
+  - lifecycle_m: PASS conf=0.96 concerns=-
+  - lifecycle_n: FAIL conf=0.95 concerns=-
+  - lifecycle_o: FAIL conf=0.9 concerns=The packet shows Frozen via a prior Get rather than the visible operation that set it.
+- `locking-lifecycle-disabled-frozen-doc-c38869189a` [quarantine_low_confidence] locking-lifecycle-disabled-frozen-doc
+  - internal name: Disabled Locking SP Get fails with SP_DISABLED: correct status
+  - author label: PASS
+  - reason: 1 review(s) below confidence 0.8
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, session-startup
+  - repair hint: Check Locking SP Issued-Disabled and Issued-Frozen state behavior: Frozen rejects new sessions with SP_FROZEN, Disabled still allows session startup plus Authenticate/DeleteSP/control-session/re-enable Set, and all other in-SP method invocations fail with SP_DISABLED.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.1.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.7.4.1.txt, opal/4.2.3.3.txt
+  - lifecycle_m: PASS conf=0.86 concerns=The failure response includes returned cell values; the provided snippets establish the required failure status but do not specify failure payload shape.
+  - lifecycle_n: PASS conf=0.78 concerns=The failure response also includes normal Get values; the provided lifecycle snippets constrain the required status but do not explicitly define failure return payloads.
+  - lifecycle_o: PASS conf=0.95 concerns=-
+- `locking-lifecycle-disabled-frozen-doc-7da9bf4eec` [quarantine_concerns] locking-lifecycle-disabled-frozen-doc
+  - internal name: Disabled Locking SP SPInfo Enabled false Set is not a re-enable operation: correct status
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, session-startup
+  - repair hint: Check Locking SP Issued-Disabled and Issued-Frozen state behavior: Frozen rejects new sessions with SP_FROZEN, Disabled still allows session startup plus Authenticate/DeleteSP/control-session/re-enable Set, and all other in-SP method invocations fail with SP_DISABLED.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.1.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.7.4.1.txt, opal/4.2.3.3.txt
+  - lifecycle_m: PASS conf=0.82 concerns=The snippets say Set on the Enabled column functions, but surrounding text frames the exception as methods directly related to re-enabling.
+  - lifecycle_n: PASS conf=0.9 concerns=Section 4.5.2 lists Set on the Enabled column, but surrounding text and 5.3.5.1 frame the exception as re-enabling, so setting False is treated as non-permitted.
+  - lifecycle_o: PASS conf=0.84 concerns=The snippets say 'Set on the Enabled column' in one place but clarify 'used to re-enable' in the Base lifecycle text.
+- `locking-lifecycle-disabled-frozen-doc-bd8d7b62d8` [quarantine_concerns] locking-lifecycle-disabled-frozen-doc
+  - internal name: Disabled Locking SP SPInfo Enabled false Set is not a re-enable operation: impossible success
+  - author label: FAIL
+  - reason: 3 review(s) recorded concerns
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, session-startup
+  - repair hint: Check Locking SP Issued-Disabled and Issued-Frozen state behavior: Frozen rejects new sessions with SP_FROZEN, Disabled still allows session startup plus Authenticate/DeleteSP/control-session/re-enable Set, and all other in-SP method invocations fail with SP_DISABLED.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.1.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.7.4.1.txt, opal/4.2.3.3.txt
+  - lifecycle_m: FAIL conf=0.82 concerns=The Enabled-column exception is phrased broadly in one sentence, but the lifecycle sections describe it as the Set method used to re-enable.
+  - lifecycle_n: FAIL conf=0.9 concerns=Section 4.5.2's bullet says Set on Enabled, but its surrounding text and 5.3.5.1 identify the permitted Set as re-enabling.
+  - lifecycle_o: FAIL conf=0.84 concerns=The snippets say 'Set on the Enabled column' in one place but clarify 'used to re-enable' in the Base lifecycle text.
+- `locking-lifecycle-disabled-frozen-doc-5be4148875` [quarantine_low_confidence] locking-lifecycle-disabled-frozen-doc
+  - internal name: Clearing Frozen while still Disabled makes startup normal but in-session Get SP_DISABLED: correct status
+  - author label: PASS
+  - reason: 2 review(s) below confidence 0.8
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, session-startup
+  - repair hint: Check Locking SP Issued-Disabled and Issued-Frozen state behavior: Frozen rejects new sessions with SP_FROZEN, Disabled still allows session startup plus Authenticate/DeleteSP/control-session/re-enable Set, and all other in-SP method invocations fail with SP_DISABLED.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.1.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.7.4.1.txt, opal/4.2.3.3.txt
+  - lifecycle_m: PASS conf=0.86 concerns=The failure response includes returned cell values; the provided snippets establish the required failure status but do not specify failure payload shape.
+  - lifecycle_n: PASS conf=0.78 concerns=The failure response also includes normal Get values; the provided lifecycle snippets constrain the required status but do not explicitly define failure return payloads.
+  - lifecycle_o: PASS conf=0.78 concerns=The response includes Get data despite the failure status; the lifecycle evidence primarily fixes the status requirement.
+- `locking-lifecycle-disabled-frozen-clean--7bff874ce4` [quarantine_concerns] locking-lifecycle-disabled-frozen-clean-doc
+  - internal name: Disabled then re-enabled Locking SP permits GetFreeRows again: correct success
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, method-blocking
+  - repair hint: Check clean Disabled/Frozen lifecycle rework cases that avoid unsourced failure payload assertions: disabled in-SP non-exception methods may return SP_DISABLED with an empty payload, while Frozen controls only new session startup.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.1.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.7.4.1.txt, opal/4.2.3.3.txt
+  - lifecycle_clean_p: PASS conf=0.94 concerns=The evidence does not spell out GetFreeRows result contents, but the lifecycle state no longer requires SP_DISABLED.
+  - lifecycle_clean_q: PASS conf=0.93 concerns=-
+  - lifecycle_clean_r: PASS conf=0.95 concerns=-
+- `locking-lifecycle-disabled-frozen-clean--6f4cd6b395` [quarantine_concerns] locking-lifecycle-disabled-frozen-clean-doc
+  - internal name: Disabled then re-enabled Locking SP permits GetFreeRows again: impossible error
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: lifecycle, locking-sp, disabled-sp, frozen-sp, status-code, method-blocking
+  - repair hint: Check clean Disabled/Frozen lifecycle rework cases that avoid unsourced failure payload assertions: disabled in-SP non-exception methods may return SP_DISABLED with an empty payload, while Frozen controls only new session startup.
+  - evidence: core/4.5.2.txt, core/4.5.3.txt, core/4.5.4.txt, core/5.1.5.5.txt, core/5.1.5.6.txt, core/5.3.2.1.txt, core/5.3.2.1.7.txt, core/5.3.5.1.txt, core/5.4.2.4.txt, core/5.4.2.4.8.txt, core/5.7.4.1.txt, opal/4.2.3.3.txt
+  - lifecycle_clean_p: FAIL conf=0.94 concerns=The packet evidence supports lifecycle compliance for SUCCESS after re-enable; it does not independently validate the returned row count.
+  - lifecycle_clean_q: FAIL conf=0.93 concerns=-
+  - lifecycle_clean_r: FAIL conf=0.95 concerns=-
+- `created-table-addace-removeace-state-doc-5671d65586` [quarantine_disagreement] created-table-addace-removeace-state-doc
+  - internal name: Created table duplicate AddACE recognizes numeric ACE alias
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: table-methods, create-table, getsetacl, access-control, addace, removeace, stateful-acl
+  - repair hint: Check that successful AddACE/RemoveACE on created-table AccessControl associations update runtime ACL state: a dynamically added ACE cannot be added again until a successful RemoveACE removes it, and both methods return empty result lists on success.
+  - evidence: core/5.3.3.2.3.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.1.txt, core/5.1.5.2.txt
+  - j: PASS conf=0.72 concerns=The snippets state AddACE fails if the ACE does not exist in the ACE table, but the provided evidence does not independently establish whether ACE 0000000800000002 exists.
+  - k: FAIL conf=0.72 concerns=The evidence snippets do not explicitly map 0000000800000002 to ACE_Admin; if it were a distinct existing ACE, the target success could be compliant.
+  - l: FAIL conf=0.82 concerns=The evidence does not explicitly define the symbolic ACE_Admin to numeric UID mapping, so this depends on treating the UID as the same ACE alias used in the trajectory.
+- `created-table-addace-removeace-state-doc-b8f353c71d` [quarantine_concerns] created-table-addace-removeace-state-doc
+  - internal name: Created table failed nonexistent AddACE does not poison later valid AddACE
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-table, getsetacl, access-control, addace, removeace, stateful-acl
+  - repair hint: Check that successful AddACE/RemoveACE on created-table AccessControl associations update runtime ACL state: a dynamically added ACE cannot be added again until a successful RemoveACE removes it, and both methods return empty result lists on success.
+  - evidence: core/5.3.3.2.3.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.1.txt, core/5.1.5.2.txt
+  - j: PASS conf=0.9 concerns=The snippets do not spell out state effects of a failed AddACE, but treating a failed method as not mutating the ACL is necessary for the stated AddACE failure semantics.
+  - k: PASS conf=0.93 concerns=-
+  - l: PASS conf=0.94 concerns=-
+- `created-row-accesscontrol-doc-8bd83cb85b` [quarantine_concerns] created-row-accesscontrol-doc
+  - internal name: Deleting second created row preserves first row direct Get
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete-row, access-control, getacl, created-object
+  - repair hint: Check that successful CreateRow records created row object AccessControl associations, GetACL on the created row's object method returns a non-empty ACE uidref list, and successful DeleteRow removes the row's AccessControl associations without deleting other row associations.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - created_row_direct_cleanup_a: PASS conf=0.95 concerns=-
+  - created_row_direct_cleanup_b: PASS conf=0.88 concerns=The provided snippets establish row creation and deletion scope but do not include the Basic Get result-format section.
+  - created_row_direct_cleanup_c: PASS conf=0.93 concerns=-
+- `created-row-delete-object-acl-doc-eb7cfba149` [quarantine_concerns] created-row-delete-object-acl-doc
+  - internal name: Delete object on created row removes row GetACL association
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete, access-control, created-object, unique-columns
+  - repair hint: Check that Delete invoked directly on a created row object returns an empty list, removes that row's value/unique-column occupancy and AccessControl rows, rejects stale row-object associations, and preserves sibling row state.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.1.txt, core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - aq: FAIL conf=0.98 concerns=-
+  - ar: FAIL conf=0.97 concerns=-
+  - as: FAIL conf=0.98 concerns=-
+  - created_row_delete_object_direct_a: FAIL conf=0.97 concerns=-
+  - created_row_delete_object_direct_b: FAIL conf=0.96 concerns=The exact failure status for a missing access-control association is not specified in the snippets, but stale SUCCESS is contradicted by the deletion rule.
+  - created_row_delete_object_direct_c: FAIL conf=0.96 concerns=-
+- `created-row-delete-object-acl-doc-43b06140b1` [quarantine_concerns] created-row-delete-object-acl-doc
+  - internal name: Delete object of both created rows rejects stale first row GetACL success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete, access-control, created-object, unique-columns
+  - repair hint: Check that Delete invoked directly on a created row object returns an empty list, removes that row's value/unique-column occupancy and AccessControl rows, rejects stale row-object associations, and preserves sibling row state.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.1.txt, core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - aq: FAIL conf=0.98 concerns=-
+  - ar: FAIL conf=0.98 concerns=-
+  - as: FAIL conf=0.98 concerns=-
+  - created_row_delete_object_direct_a: FAIL conf=0.97 concerns=-
+  - created_row_delete_object_direct_b: FAIL conf=0.96 concerns=The snippets do not name the required status for querying a deleted association, but returning the old ACL as SUCCESS is not compliant.
+  - created_row_delete_object_direct_c: FAIL conf=0.96 concerns=-
+- `created-row-delete-object-acl-doc-fb270d40ad` [quarantine_concerns] created-row-delete-object-acl-doc
+  - internal name: Delete object of both created rows rejects stale second row GetACL success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete, access-control, created-object, unique-columns
+  - repair hint: Check that Delete invoked directly on a created row object returns an empty list, removes that row's value/unique-column occupancy and AccessControl rows, rejects stale row-object associations, and preserves sibling row state.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.1.txt, core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - aq: FAIL conf=0.98 concerns=-
+  - ar: FAIL conf=0.98 concerns=-
+  - as: FAIL conf=0.98 concerns=-
+  - created_row_delete_object_direct_a: FAIL conf=0.97 concerns=-
+  - created_row_delete_object_direct_b: FAIL conf=0.96 concerns=The snippets do not name the required status for querying a deleted association, but returning the old ACL as SUCCESS is not compliant.
+  - created_row_delete_object_direct_c: FAIL conf=0.96 concerns=-
+- `created-row-delete-object-acl-doc-bf73d8bf94` [quarantine_concerns] created-row-delete-object-acl-doc
+  - internal name: Delete object on created row rejects second stale Delete success
+  - author label: FAIL
+  - reason: 2 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete, access-control, created-object, unique-columns
+  - repair hint: Check that Delete invoked directly on a created row object returns an empty list, removes that row's value/unique-column occupancy and AccessControl rows, rejects stale row-object associations, and preserves sibling row state.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.1.txt, core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - aq: FAIL conf=0.97 concerns=-
+  - ar: FAIL conf=0.94 concerns=-
+  - as: FAIL conf=0.94 concerns=-
+  - created_row_delete_object_direct_a: FAIL conf=0.88 concerns=The snippets do not specify the exact failure status for invoking Delete on an already deleted UID, but SUCCESS is inconsistent with the stated deletion semantics.
+  - created_row_delete_object_direct_b: FAIL conf=0.97 concerns=The snippets do not specify the exact status for invoking Delete on a deleted object, but a second SUCCESS is not supported.
+  - created_row_delete_object_direct_c: FAIL conf=0.91 concerns=-
+- `created-row-delete-object-acl-doc-71bdc12d09` [quarantine_concerns] created-row-delete-object-acl-doc
+  - internal name: Delete object on created row releases that row unique value
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete, access-control, created-object, unique-columns
+  - repair hint: Check that Delete invoked directly on a created row object returns an empty list, removes that row's value/unique-column occupancy and AccessControl rows, rejects stale row-object associations, and preserves sibling row state.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.1.txt, core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - aq: PASS conf=0.95 concerns=-
+  - ar: PASS conf=0.94 concerns=-
+  - as: PASS conf=0.93 concerns=-
+  - created_row_delete_object_direct_a: PASS conf=0.9 concerns=This relies on the raw table definition and case setup identifying column 1 as the unique value being tested.
+  - created_row_delete_object_direct_b: PASS conf=0.92 concerns=-
+  - created_row_delete_object_direct_c: PASS conf=0.94 concerns=-
+- `created-row-delete-object-acl-doc-59f1302c92` [quarantine_concerns] created-row-delete-object-acl-doc
+  - internal name: Delete object on sibling created row does not release surviving row unique value
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-row, delete, access-control, created-object, unique-columns
+  - repair hint: Check that Delete invoked directly on a created row object returns an empty list, removes that row's value/unique-column occupancy and AccessControl rows, rejects stale row-object associations, and preserves sibling row state.
+  - evidence: core/5.3.3.3.txt, core/5.3.3.3.1.1.txt, core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+  - aq: FAIL conf=0.96 concerns=-
+  - ar: FAIL conf=0.94 concerns=-
+  - as: FAIL conf=0.94 concerns=-
+  - created_row_delete_object_direct_a: FAIL conf=0.9 concerns=This relies on the raw table definition and case setup identifying column 1 as the unique value being tested.
+  - created_row_delete_object_direct_b: FAIL conf=0.92 concerns=-
+  - created_row_delete_object_direct_c: FAIL conf=0.93 concerns=-
+- `created-table-removeace-failure-doc-830f9bade3` [quarantine_disagreement] created-table-removeace-failure-doc
+  - internal name: Created table RemoveACE rejects nonexistent ACE success
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: table-methods, create-table, getsetacl, access-control, removeace, meta-acl, return-values
+  - repair hint: Check RemoveACE on created-table AccessControl associations: GetSetACL must authorize RemoveACEACL, nonexistent ACE references cannot succeed, and successful RemoveACE returns an empty result list.
+  - evidence: core/5.3.3.2.3.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.1.txt, core/5.1.5.2.txt
+  - m: FAIL conf=0.86 concerns=The snippets do not explicitly name the required status code for this failure condition.
+  - n: FAIL conf=0.88 concerns=The snippets state failure when the ACE does not exist, but do not spell out the exact status code for that failure.
+  - o: PASS conf=0.78 concerns=The evidence does not explicitly state whether removing an ACE that is not currently in the target ACL is a no-op success or should fail; this label relies on the enumerated RemoveACE failure list.
+- `created-table-removeace-failure-doc-82a6d96810` [quarantine_disagreement] created-table-removeace-failure-doc
+  - internal name: Created table RemoveACE nonexistent ACE may return INVALID_PARAMETER
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: table-methods, create-table, getsetacl, access-control, removeace, meta-acl, return-values
+  - repair hint: Check RemoveACE on created-table AccessControl associations: GetSetACL must authorize RemoveACEACL, nonexistent ACE references cannot succeed, and successful RemoveACE returns an empty result list.
+  - evidence: core/5.3.3.2.3.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.1.txt, core/5.1.5.2.txt
+  - m: PASS conf=0.82 concerns=The evidence establishes failure but does not specify that INVALID_PARAMETER, rather than another non-success code, is the only required status.
+  - n: PASS conf=0.86 concerns=The snippets justify failure but do not explicitly identify INVALID_PARAMETER as the required status for a nonexistent ACE.
+  - o: FAIL conf=0.76 concerns=Same ambiguity as the paired case: the snippets do not expressly say what status applies if the ACE is absent from the target ACL, so confidence is limited.
+- `created-table-removeace-failure-doc-e0f0d13f1b` [quarantine_concerns] created-table-removeace-failure-doc
+  - internal name: Created table empty GetSetACL rejects RemoveACE success
+  - author label: FAIL
+  - reason: 1 review(s) recorded concerns
+  - concepts: table-methods, create-table, getsetacl, access-control, removeace, meta-acl, return-values
+  - repair hint: Check RemoveACE on created-table AccessControl associations: GetSetACL must authorize RemoveACEACL, nonexistent ACE references cannot succeed, and successful RemoveACE returns an empty result list.
+  - evidence: core/5.3.3.2.3.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.1.txt, core/5.1.5.2.txt
+  - m: FAIL conf=0.9 concerns=This assumes an empty GetSetACL leaves the RemoveACEACL unsatisfied, consistent with the provided rule summary and NOT_AUTHORIZED snippet.
+  - n: FAIL conf=0.93 concerns=-
+  - o: FAIL conf=0.97 concerns=-
+- `created-table-delete-acl-doc-e1be4004ed` [quarantine_low_confidence] created-table-delete-acl-doc
+  - internal name: DeleteRow of created table descriptor releases table Name CommonName
+  - author label: PASS
+  - reason: 4 review(s) below confidence 0.8
+  - concepts: table-methods, create-table, delete-row, access-control, table-deletion, state-tracking
+  - repair hint: Check that deleting a created table descriptor removes the created table, descriptor, rows, name reservation, direct object methods, and associated AccessControl rows for both the table UID and descriptor UID.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.4.2.1.txt, core/5.3.4.2.1.txt, core/5.3.4.2.4.txt, core/5.3.4.2.5.txt, core/5.3.3.13.txt, core/5.1.5.2.txt
+  - created_table_delete_acl_a: PASS conf=0.74 concerns=Embedded evidence does not explicitly state NewTableName reuse rules; label assumes no cited rule forbids reuse after the prior table and descriptor were deleted.
+  - created_table_delete_acl_b: PASS conf=0.86 concerns=-
+  - created_table_delete_acl_c: PASS conf=0.72 concerns=Embedded snippets do not define NewTableName uniqueness or reuse policy, so compliance of name reuse is inferred from deletion of the prior table and lack of contrary evidence.
+  - created_table_delete_acl_direct_a: PASS conf=0.86 concerns=-
+  - created_table_delete_acl_direct_b: PASS conf=0.72 concerns=The snippets do not define NewTableName or CommonName uniqueness/reuse policy, so compliance of name reuse is inferred from deletion of the prior table and absence of contrary evidence.
+  - created_table_delete_acl_direct_c: PASS conf=0.76 concerns=The snippets do not explicitly state NewTableName or CommonName reuse rules, so this relies on deletion removing the prior table and no cited contrary rule.
+- `addace-acl-state-doc-a33c44e738` [quarantine_concerns] addace-acl-state-doc
+  - internal name: Admin SP SPInfo Get AddACE rejects nonexistent ACE uidref success
+  - author label: FAIL
+  - reason: 2 review(s) recorded concerns
+  - concepts: access-control, addace, acl-column, stateful-acl, duplicate-ace, ace-existence
+  - repair hint: Check that successful AddACE mutates the AccessControl ACL state and that later AddACE rejects duplicate or nonexistent ACE references.
+  - evidence: core/5.3.3.14.txt, core/5.3.3.14.1.txt, core/5.3.3.14.2.txt, core/5.3.3.14.3.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.4.3.1.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt
+  - addace_acl_state_a: FAIL conf=0.84 concerns=The evidence snippet establishes the preconfigured ACE rows but may not prove that no implementation-specific ACE rows exist beyond the shown table; best label is FAIL based on the provided packet.
+  - addace_acl_state_b: FAIL conf=0.92 concerns=The supplied ACE table snippet may not be a complete universal proof of every possible ACE row, but the packet's rule summary and evidence identify the preconfigured ACEs relevant here and do not support this UID.
+  - addace_acl_state_c: FAIL conf=0.94 concerns=-
+- `locking-range-accesscontrol-cleanup-doc-cb982c8ff9` [quarantine_concerns] locking-range-accesscontrol-cleanup-doc
+  - internal name: Created Locking Range2 GetACL can succeed before DeleteRow
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: locking-range, delete-row, delete, access-control, association-cleanup, object-lifecycle
+  - repair hint: Check Locking range object deletion side effects: DeleteRow/Delete of a non-global Locking object removes the object's AccessControl associations, so later GetACL/AddACE/RemoveACE/DeleteMethod or direct object methods on that deleted range cannot report SUCCESS.
+  - evidence: core/5.3.2.7.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.3.13.3.1.txt
+  - range_cleanup_a: PASS conf=0.95 concerns=-
+  - range_cleanup_b: PASS conf=0.92 concerns=-
+  - range_cleanup_c: PASS conf=0.85 concerns=The snippets do not enumerate the Locking object's default method set, so this depends on Get being one of the permitted default methods.
+- `locking-range-accesscontrol-cleanup-doc-ca686a9c23` [quarantine_concerns] locking-range-accesscontrol-cleanup-doc
+  - internal name: DeleteRow of Locking Range2 preserves sibling Range4 GetACL association
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: locking-range, delete-row, delete, access-control, association-cleanup, object-lifecycle
+  - repair hint: Check Locking range object deletion side effects: DeleteRow/Delete of a non-global Locking object removes the object's AccessControl associations, so later GetACL/AddACE/RemoveACE/DeleteMethod or direct object methods on that deleted range cannot report SUCCESS.
+  - evidence: core/5.3.2.7.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.3.13.3.1.txt
+  - range_cleanup_a: PASS conf=0.94 concerns=-
+  - range_cleanup_b: PASS conf=0.93 concerns=-
+  - range_cleanup_c: PASS conf=0.86 concerns=The snippets do not enumerate Locking default methods, so this assumes Get is one of Range4's default method associations created at row creation.
+- `locking-range-accesscontrol-cleanup-doc-4a43fd2909` [quarantine_low_confidence] locking-range-accesscontrol-cleanup-doc
+  - internal name: DeleteRow of locked Locking Range5 removes the deleted range's host-read lock effect
+  - author label: PASS
+  - reason: 2 review(s) below confidence 0.8
+  - concepts: locking-range, delete-row, delete, access-control, association-cleanup, object-lifecycle
+  - repair hint: Check Locking range object deletion side effects: DeleteRow/Delete of a non-global Locking object removes the object's AccessControl associations, so later GetACL/AddACE/RemoveACE/DeleteMethod or direct object methods on that deleted range cannot report SUCCESS.
+  - evidence: core/5.3.2.7.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.3.13.3.1.txt
+  - range_cleanup_a: PASS conf=0.78 concerns=The provided snippets do not include the detailed Locking-range host-read enforcement rules, so the lock-effect conclusion is inferred from successful deletion of the row.
+  - range_cleanup_b: PASS conf=0.82 concerns=The packet does not include a direct host-I/O locking semantics snippet, so this relies on the object deletion evidence rather than an explicit Read rule.
+  - range_cleanup_c: PASS conf=0.76 concerns=The provided snippets cover row deletion and AccessControl cleanup, but they do not directly specify host I/O behavior or Locking read-lock enforcement after a range row is deleted.
+- `accesscontrol-sp-method-scope-doc-8d8f7019fb` [quarantine_low_confidence] accesscontrol-sp-method-scope-doc
+  - internal name: DataStore Authenticate GetACL association does not exist: correct status
+  - author label: PASS
+  - reason: 1 review(s) below confidence 0.8
+  - concepts: access-control, getacl, method-association, thissp, authenticate, random, getfreespace, createtable, deletesp, byte-table
+  - repair hint: Check that AccessControl associations are concrete InvokingID/MethodID rows: ThisSP SP-method rows do not imply associations on DataStore, MBR, AdminSP, LockingSP, or other parseable display aliases.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.1.txt, core/5.3.3.2.txt, core/5.3.3.9.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, core/5.3.4.1.14.txt, opal/4.3.1.6.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+  - scope_batch_a: PASS conf=0.86 concerns=Evidence requires failure but does not pin the exact failure status.
+  - scope_batch_b: PASS conf=0.96 concerns=-
+  - scope_batch_c: PASS conf=0.78 concerns=The snippets establish failure for the missing combination but do not pin the exact non-SUCCESS status.
+- `accesscontrol-sp-method-scope-doc-7d2a053a2e` [quarantine_low_confidence] accesscontrol-sp-method-scope-doc
+  - internal name: DataStore Random GetACL association does not exist: correct status
+  - author label: PASS
+  - reason: 1 review(s) below confidence 0.8
+  - concepts: access-control, getacl, method-association, thissp, authenticate, random, getfreespace, createtable, deletesp, byte-table
+  - repair hint: Check that AccessControl associations are concrete InvokingID/MethodID rows: ThisSP SP-method rows do not imply associations on DataStore, MBR, AdminSP, LockingSP, or other parseable display aliases.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.1.txt, core/5.3.3.2.txt, core/5.3.3.9.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, core/5.3.4.1.14.txt, opal/4.3.1.6.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+  - scope_batch_a: PASS conf=0.86 concerns=Evidence requires failure but does not pin the exact failure status.
+  - scope_batch_b: PASS conf=0.96 concerns=-
+  - scope_batch_c: PASS conf=0.78 concerns=The snippets establish failure for the missing combination but do not pin the exact non-SUCCESS status.
+- `accesscontrol-sp-method-scope-doc-9387a91aa2` [quarantine_low_confidence] accesscontrol-sp-method-scope-doc
+  - internal name: MBR Authenticate GetACL association does not exist: correct status
+  - author label: PASS
+  - reason: 1 review(s) below confidence 0.8
+  - concepts: access-control, getacl, method-association, thissp, authenticate, random, getfreespace, createtable, deletesp, byte-table
+  - repair hint: Check that AccessControl associations are concrete InvokingID/MethodID rows: ThisSP SP-method rows do not imply associations on DataStore, MBR, AdminSP, LockingSP, or other parseable display aliases.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.1.txt, core/5.3.3.2.txt, core/5.3.3.9.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, core/5.3.4.1.14.txt, opal/4.3.1.6.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+  - scope_batch_a: PASS conf=0.86 concerns=Evidence requires failure but does not pin the exact failure status.
+  - scope_batch_b: PASS conf=0.96 concerns=-
+  - scope_batch_c: PASS conf=0.78 concerns=The snippets establish failure for the missing combination but do not pin the exact non-SUCCESS status.
+- `accesscontrol-sp-method-scope-doc-64c0c8b5b9` [quarantine_low_confidence] accesscontrol-sp-method-scope-doc
+  - internal name: MBR Random GetACL association does not exist: correct status
+  - author label: PASS
+  - reason: 1 review(s) below confidence 0.8
+  - concepts: access-control, getacl, method-association, thissp, authenticate, random, getfreespace, createtable, deletesp, byte-table
+  - repair hint: Check that AccessControl associations are concrete InvokingID/MethodID rows: ThisSP SP-method rows do not imply associations on DataStore, MBR, AdminSP, LockingSP, or other parseable display aliases.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.1.txt, core/5.3.3.2.txt, core/5.3.3.9.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, core/5.3.4.1.14.txt, opal/4.3.1.6.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+  - scope_batch_a: PASS conf=0.86 concerns=Evidence requires failure but does not pin the exact failure status.
+  - scope_batch_b: PASS conf=0.96 concerns=-
+  - scope_batch_c: PASS conf=0.78 concerns=The snippets establish failure for the missing combination but do not pin the exact non-SUCCESS status.
+- `getacl-locking-table-next-exact-acl-doc-9e5d335415` [quarantine_concerns] getacl-locking-table-next-exact-acl-doc
+  - internal name: Locking SP Locking table Next GetACL returns Anybody ACE: correct return value
+  - author label: PASS
+  - reason: 3 review(s) recorded concerns
+  - concepts: access-control, getacl, acl-column, commonname-vs-acl, locking-sp, table-next, exact-return-list
+  - repair hint: Check Locking SP table-level Next associations: Table.Next and SPTemplatesTable.Next have CommonName ACE_Anybody but empty ACL, while LockingTable.Next has ACL ACE_Anybody.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+  - D: PASS conf=0.9 concerns=The Opal source snippet is truncated before the specific Locking table row, so this relies on the included rule summary plus the target association identifying a table row.
+  - E: PASS conf=0.94 concerns=The displayed AccessControl snippet is truncated before the Locking table row, so this relies on the included rule summary and case evidence for that exact preconfiguration.
+  - F: PASS conf=0.9 concerns=The provided opal/4.3.1.6 snippet is truncated before the specific Locking table row, so this relies on the included rule summary for that exact row.
+- `getacl-locking-table-next-exact-acl-doc-6ee5f95ddd` [quarantine_concerns] getacl-locking-table-next-exact-acl-doc
+  - internal name: Locking SP Locking table Next GetACL returns Anybody ACE: impossible return value
+  - author label: FAIL
+  - reason: 3 review(s) recorded concerns
+  - concepts: access-control, getacl, acl-column, commonname-vs-acl, locking-sp, table-next, exact-return-list
+  - repair hint: Check Locking SP table-level Next associations: Table.Next and SPTemplatesTable.Next have CommonName ACE_Anybody but empty ACL, while LockingTable.Next has ACL ACE_Anybody.
+  - evidence: core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+  - D: FAIL conf=0.9 concerns=The Opal source snippet is truncated before the specific Locking table row, so this relies on the included rule summary plus the target association identifying a table row.
+  - E: FAIL conf=0.94 concerns=The displayed AccessControl snippet is truncated before the Locking table row, so this relies on the included rule summary and case evidence for that exact preconfiguration.
+  - F: FAIL conf=0.9 concerns=The provided opal/4.3.1.6 snippet is truncated before the specific Locking table row, so this relies on the included rule summary for that exact row.
+- `acl-revertsp-meta-doc-3e1c20f87c` [quarantine_disagreement] acl-revertsp-meta-doc
+  - internal name: Locking SP ThisSP RevertSP GetACLACL ACE_Admin returns NOT_AUTHORIZED without Admin
+  - author label: PASS
+  - reason: reviewers disagree with each other
+  - concepts: access-control, meta-acl, locking-sp, revertsp, getacl, not-authorized
+  - repair hint: Check the Locking SP AccessControl row for ThisSP/RevertSP: GetACLACL is ACE_Admin, AddACEACL/RemoveACEACL/DeleteMethodACL are empty, and the concrete InvokingID is ThisSP rather than a LockingSP display alias.
+  - evidence: core/5.3.4.3.txt, core/5.3.4.3.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.3.14.1.txt, core/5.3.3.15.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.3.txt
+  - acl_revertsp_a: PASS conf=0.96 concerns=-
+  - acl_revertsp_b: PASS conf=0.97 concerns=-
+  - acl_revertsp_c: PASS conf=0.97 concerns=-
+  - revertsp_identity_a: FAIL conf=0.91 concerns=-
+  - revertsp_identity_b: PASS conf=0.97 concerns=-
+  - revertsp_identity_c: PASS conf=0.94 concerns=-
+- `acl-revertsp-meta-doc-0889cbaa19` [quarantine_disagreement] acl-revertsp-meta-doc
+  - internal name: Locking SP ThisSP RevertSP GetACLACL ACE_Admin rejects unauthenticated GetACL success
+  - author label: FAIL
+  - reason: reviewers disagree with each other
+  - concepts: access-control, meta-acl, locking-sp, revertsp, getacl, not-authorized
+  - repair hint: Check the Locking SP AccessControl row for ThisSP/RevertSP: GetACLACL is ACE_Admin, AddACEACL/RemoveACEACL/DeleteMethodACL are empty, and the concrete InvokingID is ThisSP rather than a LockingSP display alias.
+  - evidence: core/5.3.4.3.txt, core/5.3.4.3.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.3.14.1.txt, core/5.3.3.15.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.3.txt
+  - acl_revertsp_a: FAIL conf=0.96 concerns=-
+  - acl_revertsp_b: FAIL conf=0.97 concerns=-
+  - acl_revertsp_c: FAIL conf=0.97 concerns=-
+  - revertsp_identity_a: PASS conf=0.93 concerns=-
+  - revertsp_identity_b: FAIL conf=0.97 concerns=-
+  - revertsp_identity_c: FAIL conf=0.94 concerns=-
+- `acl-revertsp-meta-doc-b9fcffd54b` [quarantine_concerns] acl-revertsp-meta-doc
+  - internal name: Locking SP ThisSP RevertSP GetACL succeeds as Admin and returns ACE list
+  - author label: PASS
+  - reason: 1 review(s) recorded concerns
+  - concepts: access-control, meta-acl, locking-sp, revertsp, getacl, not-authorized
+  - repair hint: Check the Locking SP AccessControl row for ThisSP/RevertSP: GetACLACL is ACE_Admin, AddACEACL/RemoveACEACL/DeleteMethodACL are empty, and the concrete InvokingID is ThisSP rather than a LockingSP display alias.
+  - evidence: core/5.3.4.3.txt, core/5.3.4.3.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.3.14.1.txt, core/5.3.3.15.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.3.txt
+  - acl_revertsp_a: PASS conf=0.94 concerns=-
+  - acl_revertsp_b: PASS conf=0.94 concerns=-
+  - acl_revertsp_c: PASS conf=0.95 concerns=-
+  - revertsp_identity_a: PASS conf=0.93 concerns=-
+  - revertsp_identity_b: PASS conf=0.9 concerns=The snippets do not separately spell out the numeric Admin authority UID; this relies on the trajectory's authenticated Admin session and the provided rule summary.
+  - revertsp_identity_c: PASS conf=0.92 concerns=-
+- `acl-revertsp-meta-doc-82963a109c` [quarantine_author_disagreement] acl-revertsp-meta-doc
+  - internal name: Locking SP LockingSP RevertSP GetACL association does not exist: correct status
+  - author label: PASS
+  - reason: reviewer consensus FAIL disagrees with author label PASS
+  - concepts: access-control, meta-acl, locking-sp, revertsp, getacl, not-authorized
+  - repair hint: Check the Locking SP AccessControl row for ThisSP/RevertSP: GetACLACL is ACE_Admin, AddACEACL/RemoveACEACL/DeleteMethodACL are empty, and the concrete InvokingID is ThisSP rather than a LockingSP display alias.
+  - evidence: core/5.3.4.3.txt, core/5.3.4.3.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.3.14.1.txt, core/5.3.3.15.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.3.txt
+  - revertsp_identity_a: FAIL conf=0.95 concerns=-
+  - revertsp_identity_b: FAIL conf=0.94 concerns=-
+  - revertsp_identity_c: FAIL conf=0.86 concerns=There is some surface ambiguity because LockingSP is not the canonical ThisSP uidref for an SP method, but the supplied NOT_AUTHORIZED rule covers a missing association.
+- `genkey-doc-b719388487` [quarantine_low_confidence] genkey-doc
+  - internal name: ReEncryptState busy blocks range-key GenKey: correct status
+  - author label: PASS
+  - reason: 2 review(s) below confidence 0.8
+  - concepts: genkey, c-pin, media-key, reencryption, method-parameters
+  - repair hint: Check GenKey parameter validation, C_PIN PinLength limits, range-key ownership, and ReEncryptState gating.
+  - evidence: core/5.7.2.2.12.txt
+  - agent_kappa2: PASS conf=0.86 concerns=The packet does not explicitly decode the Locking column value or show the ReEncryptState name in the trajectory, so the association is inferred from the provided NextKey snippet and target object.
+  - agent_lambda2: PASS conf=0.78 concerns=The snippet does not explicitly define Locking column 12 or value 2, so the connection to non-IDLE ReEncryptState is inferred from the packet trajectory context.
+  - agent_mu2: PASS conf=0.78 concerns=The trajectory does not show ReEncryptState directly, so this treats the prior NextKey update as the packet evidence that the non-IDLE re-encryption restriction applies.
+- `genkey-doc-4df1b343af` [quarantine_low_confidence] genkey-doc
+  - internal name: ReEncryptState busy blocks range-key GenKey: impossible success
+  - author label: FAIL
+  - reason: 2 review(s) below confidence 0.8
+  - concepts: genkey, c-pin, media-key, reencryption, method-parameters
+  - repair hint: Check GenKey parameter validation, C_PIN PinLength limits, range-key ownership, and ReEncryptState gating.
+  - evidence: core/5.7.2.2.12.txt
+  - agent_kappa2: FAIL conf=0.86 concerns=The packet does not explicitly decode the Locking column value or show the ReEncryptState name in the trajectory, so the association is inferred from the provided NextKey snippet and target object.
+  - agent_lambda2: FAIL conf=0.78 concerns=The snippet does not explicitly define Locking column 12 or value 2, so the connection to non-IDLE ReEncryptState is inferred from the packet trajectory context.
+  - agent_mu2: FAIL conf=0.78 concerns=The trajectory does not show ReEncryptState directly, so this treats the prior NextKey update as the packet evidence that the non-IDLE re-encryption restriction applies.
+
+## How To Add Reviews
+
+1. Generate blind packets:
+
+```bash
+python tools/label_consensus.py export --reviewer agent_alpha
+```
+
+2. Give `analysis/label_reviews/agent_alpha.todo.jsonl` to an independent agent.
+3. The agent writes completed labels to `analysis/label_reviews/agent_alpha.jsonl`.
+4. Re-run:
+
+```bash
+python tools/label_consensus.py report
+```
+
+5. Run sourced tests with the gate only after enough accepted cases exist:
+
+```bash
+python tools/run_sourced_edges.py --consensus-gate
+```

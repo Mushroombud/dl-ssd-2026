@@ -1,0 +1,24 @@
+{
+  "added_blocks": 4,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/ETC-18.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 1336,
+  "family": "testcases",
+  "pages": [
+    88,
+    89,
+    90
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 2,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/ETC-18.jsonl",
+  "section": "ETC-18",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/ETC-18.jsonl",
+  "title": "RevertSP – GlobalRange Locked"
+}

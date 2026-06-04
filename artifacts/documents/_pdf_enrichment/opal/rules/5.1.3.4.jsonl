@@ -1,0 +1,1 @@
+{"kind": "normative_text", "rule_id": "5.1.3.4:text:001", "section": "5.1.3.4", "source": "- 5.1.3.4 Interrupted RevertSP The RevertSP method and complete implementation of the necessary background operations MAY be aborted due to any reset condition, including power loss.", "status": "candidate_for_review", "title": "Interrupted RevertSP"}

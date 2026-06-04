@@ -1,0 +1,1 @@
+{"bounding_box": [156.72, 124.98, 455.34, 216.0], "number_of_columns": 4, "number_of_rows": 2, "page": 88, "rows": [["UID", "Enable", "Done", "DoneOnReset"], ["00 00 08 03 00 00 00 01", "False", "False", "Power Cycle *MC1"]], "section": "4.3.5.2.2", "table_index": 1, "text": "UID Enable Done DoneOnReset 00 00 08 03 00 00 00 01 False False Power Cycle *MC1"}

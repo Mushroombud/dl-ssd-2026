@@ -1,0 +1,22 @@
+{
+  "added_blocks": 4,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/ETC-21.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 602,
+  "family": "testcases",
+  "pages": [
+    90
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 1,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/ETC-21.jsonl",
+  "section": "ETC-21",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/ETC-21.jsonl",
+  "title": "StartSession with Incorrect HostChallenge Notes Start of informative comment None End of informative comment"
+}

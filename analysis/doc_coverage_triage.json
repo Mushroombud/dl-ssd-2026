@@ -1,0 +1,873 @@
+{
+  "manual": {
+    "_example/path.txt": {
+      "reason": "Explain why this official section does not need a direct sourced test yet.",
+      "status": "informative|out_of_scope|duplicate|covered_indirectly|deferred"
+    },
+    "core/1.1.txt": {
+      "reason": "Scope and Audience is explicitly informative prose describing the purpose and intended audience of the Core specification. It does not define a concrete SP method response, table cell invariant, or lifecycle transition beyond concepts covered by narrower normative sections.",
+      "status": "informative"
+    },
+    "core/1.2.txt": {
+      "reason": "Key Words defines RFC-style interpretation language for the Core specification. It supports all normative sections but is not itself a testable method/table rule.",
+      "status": "informative"
+    },
+    "core/1.3.txt": {
+      "reason": "References lists external specifications and contains no standalone protocol behavior.",
+      "status": "informative"
+    },
+    "core/1.4.1.txt": {
+      "reason": "Global Terminology defines shared vocabulary such as ACE, ACL, SP, Method, Table, Template, and Transaction. Testable behavior is covered by concrete normative sections that use these terms.",
+      "status": "informative"
+    },
+    "core/2.2.1.txt": {
+      "reason": "MCTP is a security architecture concept section, not a concrete TPer method/table/status rule in the current dataset.",
+      "status": "informative"
+    },
+    "core/2.2.3.txt": {
+      "reason": "Trusted Peripheral describes the TPer concept at architectural level. Concrete TPer feature, Properties, session, and storage behavior is covered by narrower sections.",
+      "status": "informative"
+    },
+    "core/2.3.2.txt": {
+      "reason": "SP Issuance & Personalization Overview is high-level architecture. Concrete IssueSP, lifecycle, authority, and Opal unsupported-issuance behavior is covered or deferred in narrower sections.",
+      "status": "informative"
+    },
+    "core/2.3.3.txt": {
+      "reason": "Security Subsystem Classes Overview explains how SSC companion documents constrain Core capabilities. Concrete Opal/Admin/Locking mandatory and excluded behavior is tested from Opal and method/table-specific source sections.",
+      "status": "informative"
+    },
+    "core/2.3.4.txt": {
+      "reason": "Preliminary Architectural Components is an architectural overview of SPs, tables, ACE/ACLs, and authorities. Concrete ACE/ACL, table, and authority behavior is covered by the narrower table/method sections.",
+      "status": "informative"
+    },
+    "core/3.2.1.3.txt": {
+      "reason": "Messaging Data Types is a parent/overview for encoding formats. Concrete token and type constraints are represented by specific subsections.",
+      "status": "informative"
+    },
+    "core/3.2.1.txt": {
+      "reason": "Document Data Formats is an overview parent for stream/table/UID encodings. Testable encoding constraints are tracked in the concrete subsection shards.",
+      "status": "informative"
+    },
+    "core/3.2.2.2.txt": {
+      "reason": "Endianness defines binary encoding convention for the stream format. The sourced-edge harness operates after decoding and does not assert byte-order serialization.",
+      "status": "informative"
+    },
+    "core/3.2.2.3.1.1.txt": {
+      "reason": "Tiny atoms are raw token encodings. They need token parser fixtures rather than decoded method trajectories.",
+      "status": "deferred"
+    },
+    "core/3.2.2.3.1.2.txt": {
+      "reason": "Short atoms are raw stream-token encodings. The current sourced-edge harness consumes already-decoded values, so byte-level atom parsing and B/S-bit violations require a token-stream fixture.",
+      "status": "deferred"
+    },
+    "core/3.2.2.3.1.3.txt": {
+      "reason": "Medium atoms are raw stream-token encodings below decoded method records. They should be tested with token parser fixtures rather than method-level trajectories.",
+      "status": "deferred"
+    },
+    "core/3.2.2.3.1.4.txt": {
+      "reason": "Long atoms are raw stream-token encodings below decoded method records. They require byte-stream parser/error fixtures, not SP method response cases.",
+      "status": "deferred"
+    },
+    "core/3.2.2.3.1.5.txt": {
+      "reason": "Empty Atom is a raw token encoding. It is below the decoded method abstraction used by the sourced-edge harness.",
+      "status": "deferred"
+    },
+    "core/3.2.2.3.1.txt": {
+      "reason": "Simple Tokens - Atoms Overview is the parent for raw atom encodings. The current harness receives decoded method values, so atom encoding tests need a stream-token fixture.",
+      "status": "deferred"
+    },
+    "core/3.2.2.3.3.4.txt": {
+      "reason": "Start Transaction is a stream token rule involving transaction nesting, mirrored response tokens, and session abort on transaction-start failure. Current sourced-edge events model completed methods, not transaction-control tokens inside token streams.",
+      "status": "deferred"
+    },
+    "core/3.2.2.3.3.5.txt": {
+      "reason": "End Transaction is a stream token rule involving commit/abort status mirroring and transaction-level abort. It should be tested with a future token-stream/transaction fixture, not a standalone method response case.",
+      "status": "deferred"
+    },
+    "core/3.2.2.3.txt": {
+      "reason": "Tokens is the parent section for raw stream tokens. Current sourced cases operate after token decoding; token legality and atom-size variants need a lower-level stream fixture.",
+      "status": "deferred"
+    },
+    "core/3.2.2.4.1.txt": {
+      "reason": "Invalid Tokens is a token-stream encoding rule. The current harness consumes decoded method records and does not model raw atom/list/name token failures or packet-level session abort behavior.",
+      "status": "deferred"
+    },
+    "core/3.2.2.4.2.txt": {
+      "reason": "Unexpected Tokens describes raw token-order handling and session aborts. It needs a token-stream fixture rather than method-level sourced trajectories.",
+      "status": "deferred"
+    },
+    "core/3.2.3.1.txt": {
+      "reason": "ComPacket/Packet/Subpacket framing and token-spanning constraints are below the decoded method trajectory abstraction. They need a packet-framing fixture rather than method-level sourced edges.",
+      "status": "deferred"
+    },
+    "core/3.2.3.2.1.4.txt": {
+      "reason": "OutstandingData is a ComPacket header field for TPer-to-host IF-RECV framing. It constrains byte counts and polling behavior below the decoded SP method trajectory abstraction, so it needs a packet/interface fixture rather than sourced method cases.",
+      "status": "deferred"
+    },
+    "core/3.2.3.2.1.5.txt": {
+      "reason": "MinTransfer is a ComPacket header field for TPer-to-host transfer sizing. Current sourced edges start from decoded method records and cannot assert IF-RECV transfer length or packet overhead accounting.",
+      "status": "deferred"
+    },
+    "core/3.2.3.2.txt": {
+      "reason": "ComPacket Format is byte-level transport framing. It is outside decoded SP method trajectories and needs packet fixtures.",
+      "status": "deferred"
+    },
+    "core/3.2.3.3.1.2.txt": {
+      "reason": "SeqNumber is a Packet header field used by the ACK/NAK transmission protocol. Current method-level cases cover Properties support flags but not packet sequence-number framing.",
+      "status": "deferred"
+    },
+    "core/3.2.3.3.1.4.txt": {
+      "reason": "AckType is a Packet header ACK/NAK field. It needs packet-level acknowledgement fixtures rather than decoded method trajectories.",
+      "status": "deferred"
+    },
+    "core/3.2.3.3.1.5.txt": {
+      "reason": "Acknowledgement is a Packet header field for transmission acknowledgement. Method-level Properties cases cover whether acknowledgement is supported, while ACK packet values need a packet fixture.",
+      "status": "deferred"
+    },
+    "core/3.2.3.3.txt": {
+      "reason": "Packet Format is raw packet header/framing. The current harness starts from decoded method records and needs a packet fixture for Length, TSN, HSN, SeqNumber, AckType, and acknowledgement fields.",
+      "status": "deferred"
+    },
+    "core/3.2.3.4.1.2.2.txt": {
+      "reason": "Data subpacket Pad is packet-byte formatting. Current cases do not model subpacket padding.",
+      "status": "deferred"
+    },
+    "core/3.2.3.4.1.txt": {
+      "reason": "Data Subpacket Format is packet framing. It requires lower-level packet fixtures.",
+      "status": "deferred"
+    },
+    "core/3.2.3.4.2.txt": {
+      "reason": "Credit Control Subpacket Format is raw flow-control framing. Current SyncSession credit cases model decoded method-level returned properties, not subpacket bytes.",
+      "status": "deferred"
+    },
+    "core/3.2.3.4.txt": {
+      "reason": "Subpacket Formats is a raw packet-framing parent section outside the decoded method trajectory harness.",
+      "status": "deferred"
+    },
+    "core/3.2.3.5.1.2.txt": {
+      "reason": "SeqNumber in the HSN token description only points back to section 3.2.3.3.1.2. Any testable sequence-number encoding behavior should be attached to the canonical token-stream section rather than duplicated here.",
+      "status": "duplicate"
+    },
+    "core/3.2.3.5.1.3.txt": {
+      "reason": "Reserved in the HSN token description only points back to section 3.2.3.3.1.3. It has no independent decoded method-response behavior for the current sourced-edge harness.",
+      "status": "duplicate"
+    },
+    "core/3.2.3.5.2.1.txt": {
+      "reason": "Secure-message IV is encrypted packet formatting. Secure-session startup and crypto method behavior are covered at decoded level, but IV bytes in packet headers require a secure packet fixture.",
+      "status": "deferred"
+    },
+    "core/3.2.3.5.2.2.3.txt": {
+      "reason": "Secure-message Pad is byte-level encrypted packet formatting. Current secure-session cases validate decoded startup/key fields, not encrypted payload padding bytes.",
+      "status": "deferred"
+    },
+    "core/3.2.3.5.txt": {
+      "reason": "Secure Messaging Packet Format is raw packet/subpacket framing. Current sourced cases model decoded method calls and secure-session result fields, not byte-level packet encoding.",
+      "status": "deferred"
+    },
+    "core/3.2.3.txt": {
+      "reason": "ComPackets, Packets, and Subpackets is packet framing. It requires packet-level fixtures; current method trajectory tests begin after packet/token decoding.",
+      "status": "deferred"
+    },
+    "core/3.2.4.2.txt": {
+      "reason": "Method Encoding defines raw token layout for calls, method headers, parameter lists, status lists, and response framing. The sourced-edge corpus uses decoded method records; concrete decoded response-shape rules are covered by method-specific tags, while malformed token-stream tests need a lower-level packet fixture.",
+      "status": "covered_indirectly"
+    },
+    "core/3.2.4.3.txt": {
+      "reason": "Method Result Retrieval Protocol describes the IF-SEND/IF-RECV polling envelope for tokenized method results and points to interface specifications. Concrete method result arity/status rules are covered from method-specific sections.",
+      "status": "informative"
+    },
+    "core/3.2.5.2.txt": {
+      "reason": "Objects defines object-table rows and object-specific ACL concepts. Testable object method and ACL behavior is covered from concrete table, method, and AccessControl sections.",
+      "status": "informative"
+    },
+    "core/3.2.6.txt": {
+      "reason": "Templates is an overview of template-based object/table organization. Concrete Template, SPTemplates, MethodID, Table, and lifecycle behaviors are covered in narrower sections.",
+      "status": "informative"
+    },
+    "core/3.3.1.txt": {
+      "reason": "Communicating With the TPer Through the Interface Protocol is explicitly informative and only illustrates IF-SEND/IF-RECV encapsulation.",
+      "status": "informative"
+    },
+    "core/3.3.2.txt": {
+      "reason": "The ComID section defines interface-layer ComID allocation and multiplexing. Method-level cases cover per-ComID Properties/session reset state, but raw ComID issuance and IF-SEND/IF-RECV routing require an interface-frame fixture.",
+      "status": "deferred"
+    },
+    "core/3.3.3.1.txt": {
+      "reason": "Extended ComID validity, allocation state, IF-SEND discard behavior, and IF-RECV unexpected-ComID handling are interface-layer semantics outside the current method-call trajectory model. Keep for a future interface-event fixture instead of weakening sourced method tests.",
+      "status": "deferred"
+    },
+    "core/3.3.3.2.txt": {
+      "reason": "The inactive/unsupported ComID IF-SEND behavior is an interface command outcome and payload-discard rule. It requires an IF-SEND fixture with ComID allocation state rather than a method trajectory case.",
+      "status": "deferred"
+    },
+    "core/3.3.3.3.txt": {
+      "reason": "The inactive/unsupported ComID IF-RECV behavior is a ComPacket-header payload rule over the interface layer. It needs interface-frame modeling for ExtendedComID, OutstandingData, MinTransfer, and Length.",
+      "status": "deferred"
+    },
+    "core/3.3.3.txt": {
+      "reason": "ComID Management defines interface-layer ComID issuance, inactive/issued/associated states, and GET_COMID command behavior. Current cases cover per-ComID Properties/session reset effects but do not model GET_COMID/ComID command allocation frames.",
+      "status": "deferred"
+    },
+    "core/3.3.4.1.txt": {
+      "reason": "Transport Layer text is an architectural layer description for interfaces. Concrete IF-SEND/IF-RECV and communication-layer behavior is tracked separately.",
+      "status": "informative"
+    },
+    "core/3.3.4.2.txt": {
+      "reason": "Interface Layer routing of Protocol IDs 0x01-0x06 to the TPer is host interface command handling, not an SP method trajectory rule. It belongs with the future interface-event fixture.",
+      "status": "deferred"
+    },
+    "core/3.3.4.3.1.txt": {
+      "reason": "GET_COMID is a communication-layer IF-RECV command with Protocol ID 0x02 and raw Extended ComID payload rules. It requires an interface command fixture that models ComID allocation bytes, not a decoded SP method trajectory.",
+      "status": "deferred"
+    },
+    "core/3.3.4.3.txt": {
+      "reason": "TPer Layer is a communication-layer overview and routing description. Concrete GET_COMID and related payload commands are deferred as raw interface fixtures.",
+      "status": "informative"
+    },
+    "core/3.3.4.4.1.txt": {
+      "reason": "Communication Layer Protocol is Protocol ID 0x02 frame behavior. It belongs with GET_COMID/HANDLE_COMID_REQUEST interface fixtures.",
+      "status": "deferred"
+    },
+    "core/3.3.4.4.txt": {
+      "reason": "Communication Layer is explicitly informative and explains Protocol ID 0x02 ComID management. The concrete VERIFY_COMID_VALID payload rule is tracked separately as deferred for interface-frame modeling.",
+      "status": "informative"
+    },
+    "core/3.3.4.5.txt": {
+      "reason": "Management Layer is a short layer overview pointing to Session Manager methods such as StartSession and Properties. Concrete startup, SyncSession, Properties, and SP_BUSY behavior is covered from the method/status subsections.",
+      "status": "informative"
+    },
+    "core/3.3.4.7.1.txt": {
+      "reason": "HANDLE_COMID_REQUEST is a communication-layer Protocol ID 0x02 command. It belongs with GET_COMID/GET_COMID_RESPONSE raw ComID frame fixtures, not decoded SP method cases.",
+      "status": "deferred"
+    },
+    "core/3.3.4.7.2.txt": {
+      "reason": "GET_COMID_RESPONSE is a communication-layer IF-RECV command and response-length/padding rule. It belongs with future ComID management frame tests rather than method-level sourced edges.",
+      "status": "deferred"
+    },
+    "core/3.3.4.7.3.txt": {
+      "reason": "No Response Available is a communication-layer GET_COMID_RESPONSE state. It requires ComID command/response frame modeling rather than decoded SP method trajectories.",
+      "status": "deferred"
+    },
+    "core/3.3.4.7.4.txt": {
+      "reason": "VERIFY_COMID_VALID is an interface/communication-layer payload command over HANDLE_COMID_REQUEST and GET_COMID_RESPONSE. The current sourced-edge harness models SP method trajectories, not Protocol ID 0x02 ComID command payload bytes or IF-SEND/IF-RECV response frames.",
+      "status": "deferred"
+    },
+    "core/3.3.4.7.txt": {
+      "reason": "Communication Layer Commands is a parent for GET_COMID/HANDLE_COMID_REQUEST/response commands. Concrete command frames are deferred to future interface fixtures.",
+      "status": "deferred"
+    },
+    "core/3.3.4.txt": {
+      "reason": "Protocol Layers is an architectural overview for transport, interface, communication, session, and method layers. Concrete method/session behavior is covered by narrower sections; raw lower-layer behavior is tracked as deferred interface-frame fixtures.",
+      "status": "informative"
+    },
+    "core/3.3.6.1.txt": {
+      "reason": "IF-SEND is an interface command over ComPackets and transfer buffers. The current corpus begins with decoded method records, so IF-SEND command status and payload-discard rules need an interface-frame fixture.",
+      "status": "deferred"
+    },
+    "core/3.3.6.2.2.txt": {
+      "reason": "Data Structure Major Version is an IF-RECV response structure field. Interface data-structure version bytes need interface-frame fixtures.",
+      "status": "deferred"
+    },
+    "core/3.3.6.2.3.txt": {
+      "reason": "Data Structure Minor Version is an IF-RECV response structure field. Interface data-structure version bytes need interface-frame fixtures.",
+      "status": "deferred"
+    },
+    "core/3.3.6.2.txt": {
+      "reason": "IF-RECV is an interface command over ComPacket buffers. Current sourced cases operate after decoded SP/session methods, not interface command framing or transfer buffer behavior.",
+      "status": "deferred"
+    },
+    "core/3.3.6.3.1.1.txt": {
+      "reason": "Feature Code is part of Level 0 descriptor identity. Concrete Geometry, Locking, TPer, Data Removal, and Opal SSC V2 descriptor cases validate feature descriptor codes and shapes.",
+      "status": "covered_indirectly"
+    },
+    "core/3.3.7.1.1.txt": {
+      "reason": "Regular Sessions describes the normal host/TPer session concept and its security/integrity options. Concrete StartSession, SyncSession, EndSession, SP_BUSY, read-only/read-write, and secure startup behavior is covered by method-specific sourced cases.",
+      "status": "covered_indirectly"
+    },
+    "core/3.3.7.3.1.txt": {
+      "reason": "Nested Transactions require token-stream transaction boundaries and rollback/commit state inside a session. The current harness models completed method calls and committed state, so nested transaction rollback needs a future transaction-token fixture.",
+      "status": "deferred"
+    },
+    "core/3.3.7.3.txt": {
+      "reason": "Transactions are token-stream/session-control semantics. The current sourced-edge harness models completed method calls and state after committed methods, not Start/End Transaction tokens, nested transaction rollback, or commit-failure recovery. Keep for a future transaction-token fixture instead of weakening method-level cases.",
+      "status": "deferred"
+    },
+    "core/3.3.8.1.txt": {
+      "reason": "Flow control Introduction is explicitly informative and only distinguishes interface flow control from stream data flow control. Concrete buffer and transfer constraints live in narrower sections.",
+      "status": "informative"
+    },
+    "core/3.3.9.2.txt": {
+      "reason": "Transmission Acknowledgement is ACK/NAK protocol-frame behavior. Method-level Properties cases cover whether ACK/NAK is supported, but packet acknowledgement flow needs a lower-level interface fixture.",
+      "status": "deferred"
+    },
+    "core/3.3.9.3.txt": {
+      "reason": "Transmission Negative Acknowledgement is ACK/NAK protocol-frame behavior and cannot be asserted from decoded method response trajectories.",
+      "status": "deferred"
+    },
+    "core/3.3.txt": {
+      "reason": "This section defines abstract IF-SEND/IF-RECV command blocks and interface-protocol failure behavior. Current coverage operates at decoded SP method/result level and does not yet encode host interface command status.",
+      "status": "deferred"
+    },
+    "core/3.4.1.2.txt": {
+      "reason": "SPs is an architectural overview of Security Providers. Concrete SP lifecycle, session, table, and access-control behavior is covered from narrower sections.",
+      "status": "informative"
+    },
+    "core/3.4.3.txt": {
+      "reason": "SP Issuance, Personalization, and Operational State is an overview parent. Concrete issuance/lifecycle behavior is handled by specific IssueSP and SP lifecycle shards.",
+      "status": "informative"
+    },
+    "core/4.5.5.txt": {
+      "reason": "Failed describes authority or lifecycle state terminology at a high level. Concrete authority enable/credential, SP lifecycle, and failure-status behavior is covered from method/table-specific shards.",
+      "status": "informative"
+    },
+    "core/5.1.4.1.txt": {
+      "reason": "Name representation rules for abstract named values are exercised through decoded named/numeric RowValues, CellBlock, and method parameter cases. Raw abstract-type rendering variants are not a separate response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.1.4.2.10.txt": {
+      "reason": "The lag abstract type shard is a type definition without a current concrete method/table behavior to assert by itself.",
+      "status": "informative"
+    },
+    "core/5.1.4.2.14.txt": {
+      "reason": "row_address is the abstract row selector used by CellBlock/Where and byte-table Get/Set. Concrete row addressing is covered by Get CellBlock, Set Where, DataStore, MBR, and byte-table row-bound cases.",
+      "status": "covered_indirectly"
+    },
+    "core/5.1.4.2.15.txt": {
+      "reason": "row_data is the abstract row value container used by RowValues and object-table Set/Get. Concrete row data behavior is covered by RowValues, Locking, DataStore, and created-row cases.",
+      "status": "covered_indirectly"
+    },
+    "core/5.1.4.2.17.txt": {
+      "reason": "table_sizes is an abstract type used by CreateTable and descriptor sizing rules. Concrete MinSize/MaxSize/CreateTable size validation is already covered by table descriptor and CreateTable sourced cases.",
+      "status": "covered_indirectly"
+    },
+    "core/5.1.4.2.18.txt": {
+      "reason": "uidref underlies object references used throughout AccessControl, MethodID, SPID, and table descriptor cases. Concrete uidref validation is attached to narrower object/method rules.",
+      "status": "covered_indirectly"
+    },
+    "core/5.1.4.2.6.txt": {
+      "reason": "The abstract columns component supports RowValues/CellBlock selection. Concrete column selection behavior is covered by Set RowValues, Get CellBlock, ACE Columns, and Locking/DataStore cases.",
+      "status": "covered_indirectly"
+    },
+    "core/5.1.4.txt": {
+      "reason": "Abstract Types is a parent section introducing type definitions. Individual abstract type ranges and encodings are handled by narrower type shards when behaviorally relevant.",
+      "status": "informative"
+    },
+    "core/5.1.5.1.txt": {
+      "reason": "SUCCESS is the generic method-status definition. Every sourced PASS case exercises SUCCESS under method-specific rules; standalone status-name coverage would add no independent verifier behavior.",
+      "status": "covered_indirectly"
+    },
+    "core/5.1.5.10.txt": {
+      "reason": "INSUFFICIENT_ROWS is a status-code definition. Concrete CreateRow/CreateTable/CreateLog cases already allow or reject INSUFFICIENT_ROWS using the method-specific rules that define associated metadata-row creation.",
+      "status": "covered_indirectly"
+    },
+    "core/5.1.5.12.txt": {
+      "reason": "TPER_MALFUNCTION is a generic method status definition. The offline verifier cannot infer hardware malfunction causes from decoded trajectories; method-specific cases already allow non-success statuses where appropriate.",
+      "status": "covered_indirectly"
+    },
+    "core/5.1.5.13.txt": {
+      "reason": "TRANSACTION_FAILURE is a status-code definition tied to transaction token semantics. Transaction behavior is deferred to future token fixtures; method-level cases already avoid inventing transaction statuses without transaction context.",
+      "status": "covered_indirectly"
+    },
+    "core/5.1.5.14.txt": {
+      "reason": "RESPONSE_OVERFLOW is tied to interface/communication response-buffer limits. Current method-level cases do not model IF-RECV transfer lengths or response overflow frames.",
+      "status": "deferred"
+    },
+    "core/5.1.5.16.txt": {
+      "reason": "FAIL is a generic status definition. Method-specific sourced cases allow or forbid FAIL according to concrete rules; standalone status-name testing adds no independent behavior.",
+      "status": "covered_indirectly"
+    },
+    "core/5.1.5.9.txt": {
+      "reason": "INSUFFICIENT_SPACE is a status-code definition. Concrete create-SP, create-table, create-row, and log/table allocation cases cite their method-specific sections and allow or reject INSUFFICIENT_SPACE where applicable.",
+      "status": "covered_indirectly"
+    },
+    "core/5.1.5.txt": {
+      "reason": "The parent Method Status Codes section is mostly a status-name/value table. Individual status meanings and method-specific status constraints are handled in narrower shards.",
+      "status": "informative"
+    },
+    "core/5.2.1.txt": {
+      "reason": "Communications Overview introduces communication properties and session-manager methods. Concrete Properties and StartSession behavior is covered from narrower sections.",
+      "status": "informative"
+    },
+    "core/5.2.2.1.2.2.txt": {
+      "reason": "HostProperties is the Properties method argument grouping. Concrete host property persistence, per-ComID scoping, and reset behavior are covered by HostProperties sourced tags.",
+      "status": "covered_indirectly"
+    },
+    "core/5.2.2.4.1.1.txt": {
+      "reason": "MaxSubpackets is a communication Properties field that constrains packet/subpacket transfer framing. Current Properties cases cover decoded response constraints, but enforcing subpacket counts needs packet-level fixtures.",
+      "status": "deferred"
+    },
+    "core/5.2.2.4.1.2.txt": {
+      "reason": "MaxPacketSize constrains packet byte framing and IF-SEND/IF-RECV transfer behavior. It requires packet-size fixtures rather than method-level trajectories.",
+      "status": "deferred"
+    },
+    "core/5.2.2.4.1.4.txt": {
+      "reason": "MaxComPacketSize constrains ComPacket size and IF-SEND transfer-length abort behavior. The current harness sees decoded method invocations after packetization, so this requires packet/interface-size fixtures.",
+      "status": "deferred"
+    },
+    "core/5.2.2.4.3.txt": {
+      "reason": "TPer Response for Invalid or Unexpected Token is raw token-stream error behavior. It needs token parser/session abort fixtures rather than decoded method cases.",
+      "status": "deferred"
+    },
+    "core/5.2.3.1.8.txt": {
+      "reason": "HostSigningCert is a supporting parameter definition for certificate attestation. A direct verifier case needs cross-document PresentCertificate and certificate-chain semantics; keep it as supporting evidence rather than a standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.2.3.2.5.txt": {
+      "reason": "SPSigningCert is a supporting optional SyncSession parameter definition. Direct cases require cross-document SP signing authority and certificate presentation evidence; existing SignedHash/SyncSession slices cover the response-signing boundary without asserting certificate-chain content.",
+      "status": "covered_indirectly"
+    },
+    "core/5.2.3.3.4.txt": {
+      "reason": "HostEncryptSessionKey is a supporting StartTrustedSession key-material definition. It should be tested only with the broader secure-messaging key-exchange rule from core/5.3.4.1.9, where the current harness can assert impossible SUCCESS or field presence.",
+      "status": "deferred"
+    },
+    "core/5.2.3.3.5.txt": {
+      "reason": "HostIntegritySessionKey is secure-session key material for StartTrustedSession. It should be tested with a secure messaging/key-exchange fixture, not as a standalone decoded method response rule.",
+      "status": "deferred"
+    },
+    "core/5.2.3.4.4.txt": {
+      "reason": "SPEncryptSessionKey is a supporting SyncTrustedSession key-material definition. It should be tested with the broader secure-messaging key-exchange rule from core/5.3.4.1.9 rather than as a standalone exact-status rule.",
+      "status": "deferred"
+    },
+    "core/5.2.3.4.5.txt": {
+      "reason": "SPIntegritySessionKey is secure-session response key material. It belongs with future secure messaging key-exchange fixtures rather than general method-level sourced edges.",
+      "status": "deferred"
+    },
+    "core/5.2.3.5.txt": {
+      "reason": "CloseSession is a TPer-transmitted session-abort notification. Current session cleanup and abort boundaries are covered by EndSession/reset/session-state cases; direction-specific CloseSession transmission needs richer log direction modeling.",
+      "status": "covered_indirectly"
+    },
+    "core/5.2.3.txt": {
+      "reason": "Section 5.2.3 is explicitly marked Begin/End Informative Content and only points to the concrete StartSession, SyncSession, EC-MQV, and EC-DH subsections.",
+      "status": "informative"
+    },
+    "core/5.3.1.1.txt": {
+      "reason": "Base Template Tables and Methods Overview is explicitly informative and groups table/method families. Concrete table, method, access-control, and credential rules are tested from their specific sections.",
+      "status": "informative"
+    },
+    "core/5.3.2.11.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.11.txt": {
+      "reason": "The Certificates metadata table is a Core Access Control metadata table. The current Opal-focused harness covers certificate byte-table access and certificate-related startup fields, but does not expose a concrete Certificates object-table row universe for direct Get/Set validation.",
+      "status": "deferred"
+    },
+    "core/5.3.2.13.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.14.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.15.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.16.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.17.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.18.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.19.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.21.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.22.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.23.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.24.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.24.3.txt": {
+      "reason": "CommonName column semantics are covered by issued-row/read-only and table metadata cases. This isolated CommonName shard adds no separate method behavior.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.25.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.26.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.27.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.28.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.29.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.4.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.4.6.txt": {
+      "reason": "ColumnNumber is Column-table metadata used by CellBlock/RowValues and metadata read-only cases. Concrete column selection and metadata immutability are already covered.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.5.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.7.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.2.7.4.txt": {
+      "reason": "MethodID.CommonName is covered by MethodID issued-row read-only/preconfiguration cases. Successful host Set of issued MethodID CommonName is already rejected.",
+      "status": "covered_indirectly"
+    },
+    "core/5.3.3.11.3.txt": {
+      "reason": "DeleteMethod Result is a title-only shard. DeleteMethod behavior and result shape are covered from the parent method and argument/fails sections.",
+      "status": "duplicate"
+    },
+    "core/5.3.3.13.3.txt": {
+      "reason": "GetACL Result is a title-only shard. Concrete GetACL status and ACL result behavior is covered from GetACL's full method sections and AccessControl preconfiguration slices.",
+      "status": "duplicate"
+    },
+    "core/5.3.3.14.4.txt": {
+      "reason": "AddACE Result is a title-only shard. AddACE result behavior is covered from the full AddACE method section and access-control rule slices.",
+      "status": "duplicate"
+    },
+    "core/5.3.3.15.4.txt": {
+      "reason": "RemoveACE Result is a title-only shard. RemoveACE result behavior is covered from the full RemoveACE method section and access-control rule slices.",
+      "status": "duplicate"
+    },
+    "core/5.3.3.17.6.txt": {
+      "reason": "GetPackage Result is a result-heading shard. Concrete GetPackage/SetPackage credential package behavior is covered from the full method and argument/failure sections.",
+      "status": "duplicate"
+    },
+    "core/5.3.4.1.txt": {
+      "reason": "This parent shard contains only the Authentication heading. Testable startup and authentication rules live in narrower shards such as core/5.3.4.1.4, core/5.3.4.1.9, core/5.3.4.1.10, core/5.3.4.1.11, core/5.3.4.1.12, and Authenticate result subsections.",
+      "status": "duplicate"
+    },
+    "core/5.4.2.3.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.4.2.3.5.txt": {
+      "reason": "CryptoSuite.Special is a Core CryptoSuite metadata column. Direct validation needs a concrete CryptoSuite row universe, which the current Opal-focused harness does not model.",
+      "status": "deferred"
+    },
+    "core/5.4.2.3.7.txt": {
+      "reason": "CryptoSuite.Variance is a Core cryptographic capability metadata column. The current Opal-focused harness does not expose a concrete CryptoSuite row universe, so direct Variance validation should wait for a metadata-table fixture.",
+      "status": "deferred"
+    },
+    "core/5.4.2.3.txt": {
+      "reason": "CryptoSuite is a Core metadata table for cryptographic capability rows. The current Opal-focused harness has no concrete CryptoSuite table fixture or row universe; method-specific crypto cases cover available crypto methods, while direct CryptoSuite row validation should wait for a metadata-table fixture.",
+      "status": "deferred"
+    },
+    "core/5.4.3.1.1.txt": {
+      "reason": "SPName is an IssueSP/Admin-template parameter. Opal rejects IssueSP as unsupported, while non-Opal issuance naming constraints are deferred to a future issuance fixture.",
+      "status": "covered_indirectly"
+    },
+    "core/5.4.3.1.2.txt": {
+      "reason": "Admin SP table Size is a read-only SP row column. Concrete Admin/Locking SP table read-only cases cover SP-table UID/Name/ORG/EffectiveAuth/DateOfIssue/Bytes/LifeCycleState and related SPInfo size state; direct Size mutation belongs with broader non-Opal IssueSP sizing fixtures.",
+      "status": "covered_indirectly"
+    },
+    "core/5.4.3.1.3.txt": {
+      "reason": "Templates is an IssueSP/Admin-template parameter. Opal IssueSP unsupported and Template/SPTemplates preconfiguration cases cover the current verifier surface; Core issuance composition is deferred.",
+      "status": "covered_indirectly"
+    },
+    "core/5.4.3.1.6.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.4.3.1.7.txt": {
+      "reason": "IssueSP failure causes require a Core Admin SP issuance fixture with existing SP names, template instance counts, and free-space accounting. Opal-specific Admin SP coverage separately rejects IssueSP as unsupported, so this Core issuance shard should wait for a non-Opal issuance model.",
+      "status": "deferred"
+    },
+    "core/5.4.4.1.txt": {
+      "reason": "Templates and Admin SP mixes already-covered TemplateID/read-only descriptor semantics with an Admin-SP issuer-specific Table.Rows authorization rule and issued-SP NULL TemplateID invariant. The remaining uncovered assertions need a focused Admin-template metadata slice rather than parent-section-only coverage.",
+      "status": "deferred"
+    },
+    "core/5.4.4.4.txt": {
+      "reason": "Admin Template Authorities defines default Admin-SP authority classes and TPerExch startup purpose. Existing Authority.Get and StartSession authority-operation cases cover concrete default authority cells and TPerExch/TPerSign role constraints; ORG authority issuance blocks need a non-Opal issuance fixture.",
+      "status": "covered_indirectly"
+    },
+    "core/5.4.4.txt": {
+      "reason": "Descriptions is a parent section for Admin Template descriptions. Concrete Admin SP authorities, sessions, issuance, and lifecycle behavior is covered by narrower shards.",
+      "status": "informative"
+    },
+    "core/5.6.1.txt": {
+      "reason": "Crypto Template Overview is a parent overview. Concrete crypto credential, stream, Sign/Verify/HMAC/Encrypt/Decrypt, and Random rules are covered by narrower sections.",
+      "status": "informative"
+    },
+    "core/5.6.2.txt": {
+      "reason": "Crypto Template Terminology defines vocabulary for crypto methods, streams, credentials, and keys. Concrete crypto stream, BufferOut, enum, and credential method behavior is covered in narrower crypto sections.",
+      "status": "informative"
+    },
+    "core/5.6.3.1.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.1.4.txt": {
+      "reason": "Proof is credential table metadata. C_PIN PIN/Proof and Authenticate/StartSession credential cases cover password proof behavior; direct crypto credential row validation is outside the current row universe.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.1.5.txt": {
+      "reason": "Accumulator is crypto credential stream state. HMAC/Hash stream Init/Finalize cases cover accumulator-visible stream behavior at method level.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.1.6.txt": {
+      "reason": "Signer is a credential-table column used by signing credentials. Concrete Sign/Verify, startup signing-authority, and certificate-present cases cover signer-related behavior at method level; direct credential table metadata rows are not separately modeled.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.2.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.2.4.txt": {
+      "reason": "Proof is supporting credential metadata. Concrete credential proof behavior is covered through Authenticate, StartSession, SetPackage, and C_PIN cases.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.2.5.txt": {
+      "reason": "Accumulator is crypto credential stream state. Stream state cases cover open/closed stream behavior rather than direct credential row reads.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.2.6.txt": {
+      "reason": "Signer is a credential-table column used by symmetric credential metadata. Concrete HMAC/signing and credential method cases cover signer use at method level; direct credential metadata row validation is outside the current Opal row universe.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.3.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.3.4.txt": {
+      "reason": "Proof is supporting credential metadata. Method-level proof handling is covered by credential/authentication cases rather than direct Crypto Template row reads.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.3.5.txt": {
+      "reason": "Accumulator is crypto credential stream state covered indirectly by stream Init/HMAC/Finalize cases.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.3.6.txt": {
+      "reason": "Signer is supporting credential metadata. Current method-level cases cover the signing/verification surfaces that rely on these credentials rather than direct credential-row table reads.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.4.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.4.4.txt": {
+      "reason": "Proof is supporting credential metadata. Direct crypto credential row validation is deferred; decoded proof behavior is covered by authentication/credential cases.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.4.5.txt": {
+      "reason": "Accumulator is crypto credential stream state covered indirectly by stream Init/HMAC/Finalize cases.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.3.4.6.txt": {
+      "reason": "Signer is supporting credential metadata for crypto credentials. Direct row metadata validation is deferred until a concrete Crypto Template row universe is modeled; method-level crypto behavior is already covered.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.4.16.1.1.txt": {
+      "reason": "Verify.Result is the boolean result parameter. Concrete Verify cases assert that successful Verify returns a Boolean result and reject malformed result shapes.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.4.2.1.2.txt": {
+      "reason": "Random.Internal is a parameter definition. Concrete Random method availability and Count/uinteger result-shape cases cover the current verifier surface.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.4.2.2.txt": {
+      "reason": "Random Fails lists object/nonexistent and parameter failure causes. Existing Random Count/uinteger and method-boundary cases cover decoded behavior; hardware entropy failures are not inferable offline.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.4.2.3.1.txt": {
+      "reason": "Random.Result is covered by Random result-shape/count cases. The verifier checks decoded result shape rather than random byte quality.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.4.3.1.txt": {
+      "reason": "This IV parameter definition is supporting evidence for credential crypto method invocation. Concrete method slices cover optional IV handling and method availability from the full Encrypt/Decrypt/Sign/HMAC method sections.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.4.4.1.1.txt": {
+      "reason": "Encrypt.Data is the input bytes parameter. Concrete Encrypt stream and BufferOut cases cover data/result shape after Init and BufferOut choices; byte-level encryption correctness is not asserted by the offline verifier.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.4.6.1.txt": {
+      "reason": "This IV parameter definition is supporting evidence for crypto method invocation. Concrete stream and method slices cover optional IV use from the full method sections rather than this standalone parameter shard.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.4.7.1.1.txt": {
+      "reason": "Decrypt.Data is the input bytes parameter. Concrete Decrypt stream and BufferOut cases cover method availability/result shape; cryptographic transformation contents are outside the current verifier.",
+      "status": "covered_indirectly"
+    },
+    "core/5.6.4.9.1.1.txt": {
+      "reason": "Hash.Data is an input bytes parameter. Hash stream and BufferOut cases cover method availability/result-shape; cryptographic digest contents are not asserted by the offline verifier.",
+      "status": "covered_indirectly"
+    },
+    "core/5.7.1.txt": {
+      "reason": "Locking Template Overview describes access-control, encryption, and re-encryption concepts at a high level. Concrete locking, MBR, K_AES, range, and re-encryption rules are covered from their specific subsection shards.",
+      "status": "informative"
+    },
+    "core/5.7.2.3.2.txt": {
+      "reason": "SecretProtect.Name is preconfigured object metadata. SecretProtect Get and MethodID/AccessControl universe cases cover the exposed Opal behavior.",
+      "status": "covered_indirectly"
+    },
+    "core/5.7.2.3.3.txt": {
+      "reason": "SecretProtect.CommonName is preconfigured metadata. Concrete SecretProtect Get and method-universe cases cover current behavior; isolated display metadata is not a separate response rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.7.2.4.2.txt": {
+      "reason": "K_AES.Name is preconfigured key-object metadata. K_AES Get/GenKey, AccessControl, and issued-row cases cover the model-visible behavior.",
+      "status": "covered_indirectly"
+    },
+    "core/5.7.2.4.3.txt": {
+      "reason": "K_AES.CommonName is preconfigured key-object metadata. K_AES method/access-control cases cover behavior; display metadata alone adds no independent rule.",
+      "status": "covered_indirectly"
+    },
+    "core/5.7.2.txt": {
+      "reason": "Section 5.7.2 is an informative overview listing Locking Template tables. The normative LockingInfo, Locking, MBRControl/MBR, and K_AES row/behavior rules are covered from their concrete subsection shards such as core/5.7.2.2.*, core/5.7.2.5.*, and core/5.7.3.*.",
+      "status": "informative"
+    },
+    "core/5.8.2.2.2.txt": {
+      "reason": "LogList.Name is Log Template metadata. LogList initial-row/read-only and AccessControl logging cases cover current LogList behavior.",
+      "status": "covered_indirectly"
+    },
+    "core/5.8.3.1.4.txt": {
+      "reason": "Log CreateLog Fails belongs to Core Log Template behavior. Existing log CreateLog parameter/size cases cover available decoded behavior, while full log allocation/failure causes need a richer Log Template fixture.",
+      "status": "deferred"
+    },
+    "core/6.1.txt": {
+      "reason": "Required UID Assignments Overview introduces UID assignment tables. Concrete issued-row, MethodID, table descriptor, reserved-UID, and preconfiguration behavior is covered from the narrower UID/table/method shards.",
+      "status": "informative"
+    },
+    "core/6.2.txt": {
+      "reason": "Reserved UID ranges support the MethodID/Table/Type categorization used by issued-row read-only, MethodID preconfiguration, table descriptor, and optional-range existence cases. It is a UID-assignment background rule rather than a standalone method response in the current harness.",
+      "status": "covered_indirectly"
+    },
+    "core/6.3.2.txt": {
+      "reason": "This ECDH KDF appendix text defines cryptographic derivation details for secure messaging. The current verifier checks decoded startup/key-exchange shape but does not compute secure-session KDF outputs.",
+      "status": "deferred"
+    },
+    "opal/1.1.txt": {
+      "reason": "Document Purpose describes the Opal specification's high-level intent and lifecycle/control scope. Concrete Opal lifecycle and method rules are covered from the narrower Opal 4.x and 5.x sections.",
+      "status": "informative"
+    },
+    "opal/1.3.1.txt": {
+      "reason": "Key Words defines RFC-style interpretation language for the Opal document. It supports all normative sections but contains no standalone method/table behavior.",
+      "status": "informative"
+    },
+    "opal/1.3.2.txt": {
+      "reason": "Font Conventions is document formatting guidance, not protocol behavior.",
+      "status": "informative"
+    },
+    "opal/1.3.3.txt": {
+      "reason": "Statement Types describes how Opal prose labels requirements and informative comments. It is document-interpretation guidance rather than a standalone protocol rule.",
+      "status": "informative"
+    },
+    "opal/1.3.4.txt": {
+      "reason": "The Opal preconfiguration legend explains how table shading maps to read-only, writable, fixed, VU, and undefined cells. Concrete cells from the preconfiguration tables are already cited directly by read-only, GetACL, and table-cell cases; the legend itself is supporting evidence rather than a standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "opal/1.3.5.1.txt": {
+      "reason": "Lists Overview describes document/table-list formatting conventions. It does not define a TPer method response, table invariant, status transition, or model state update.",
+      "status": "informative"
+    },
+    "opal/1.3.5.2.txt": {
+      "reason": "Unordered Lists describes document formatting for list rendering. It has no standalone protocol behavior for the verifier.",
+      "status": "informative"
+    },
+    "opal/1.3.5.3.txt": {
+      "reason": "Ordered Lists describes document formatting for list rendering. It has no standalone method, table, status, or state-machine behavior.",
+      "status": "informative"
+    },
+    "opal/1.3.6.txt": {
+      "reason": "Numbering Conventions is document-structure guidance rather than protocol behavior. It does not define a method, status, table value, or state transition to test.",
+      "status": "informative"
+    },
+    "opal/1.3.7.txt": {
+      "reason": "Bit Conventions is document notation guidance. Concrete bit fields are covered by the feature descriptor cases that use them.",
+      "status": "informative"
+    },
+    "opal/1.4.2.txt": {
+      "reason": "Approved References lists external documents and has no standalone protocol behavior.",
+      "status": "informative"
+    },
+    "opal/1.6.txt": {
+      "reason": "Interactions with Other Feature Sets is contextual Opal guidance, not a concrete method/table/status rule by itself.",
+      "status": "informative"
+    },
+    "opal/2.1.txt": {
+      "reason": "Opal SSC Use Cases and Threats describes intended deployment and threat context. It is useful background but contains no standalone method/table/status rule for the verifier.",
+      "status": "informative"
+    },
+    "opal/2.10.txt": {
+      "reason": "Mandatory Feature Sets lists external Opal feature-set requirements such as DataStore/PSID/BlockSID. Current DataStore and SID-related cases cover the implemented verifier surface; external feature-set conformance is not a standalone method response.",
+      "status": "covered_indirectly"
+    },
+    "opal/2.3.txt": {
+      "reason": "Interface Communication Protocol is Opal interface-level guidance. The current harness models decoded SP method trajectories, so IF-SEND/IF-RECV transport semantics need future interface fixtures.",
+      "status": "deferred"
+    },
+    "opal/2.4.txt": {
+      "reason": "Cryptographic Features requires full-disk encryption and AES support at SSC level. Host I/O locking/media-key behavior and K_AES/GenKey cases cover model-visible crypto surfaces; actual encryption strength is outside decoded logs.",
+      "status": "covered_indirectly"
+    },
+    "opal/2.6.txt": {
+      "reason": "Table Management is high-level Opal guidance that the Admin and Locking SPs are preconfigured. Concrete table-management behavior is covered by Opal MethodID, table descriptor, read-only, and unsupported IssueSP/CreateRow/DeleteRow cases.",
+      "status": "informative"
+    },
+    "opal/3.3.1.txt": {
+      "reason": "Opal Communication Properties mostly defines buffer sizing and IF-SEND overflow behavior. Properties response constraints and HostProperties communication minimums are covered in method-level cases; raw IF-SEND transfer-length and RESPONSE_OVERFLOW frame handling requires an interface-frame fixture.",
+      "status": "covered_indirectly"
+    },
+    "opal/3.3.2.txt": {
+      "reason": "Supported Security Protocols is an interface/security-protocol discovery rule. The current harness models decoded TCG Storage method logs, not ATA/NVMe/SCSI security protocol enumeration responses.",
+      "status": "deferred"
+    },
+    "opal/3.3.3.txt": {
+      "reason": "Opal ComIDs defines SSC-specific ComID ranges and management assumptions. Current harness covers method-level ComID-scoped Properties/reset state, not raw ComID allocation commands.",
+      "status": "deferred"
+    },
+    "opal/3.3.4.1.1.txt": {
+      "reason": "Stream Encoding Modifications is a token-support rule for raw stream tokens and B/S bits. The current harness consumes decoded method calls, so unsupported token violations need a token-stream fixture.",
+      "status": "deferred"
+    },
+    "opal/3.3.4.1.2.txt": {
+      "reason": "TCG Packets is Opal stream packet formatting. It requires packet/token fixtures rather than decoded method-level sourced edges.",
+      "status": "deferred"
+    },
+    "opal/3.3.4.1.3.txt": {
+      "reason": "Payload Error Response defines behavior after streaming protocol violations, including payload discard or session abort. This needs packet/token violation fixtures; method-level sourced edges only observe completed decoded method outcomes.",
+      "status": "deferred"
+    },
+    "opal/4.2.6.1.1.txt": {
+      "reason": "This UID column shard is supporting table metadata. Concrete issued-row UID immutability, object identity, table descriptor, MethodID, Authority/C_PIN, AccessControl, and Opal preconfiguration cases cover UID behavior from the narrower table/method rules; this isolated UID column adds no standalone response rule.",
+      "status": "covered_indirectly"
+    },
+    "opal/5.2.1.1.txt": {
+      "reason": "Issued SPs says Opal TPers that support issuance should refer to Core for lifecycle states and management. Opal fixed/manufactured SP behavior and IssueSP unsupported behavior are covered by concrete sourced cases; this shard adds no standalone response rule.",
+      "status": "informative"
+    },
+    "opal/5.2.txt": {
+      "reason": "This parent Life Cycle shard is only a section heading. Testable Opal lifecycle behavior is covered in narrower subsections such as Manufactured SPs, Locking SP RevertSP, Activate, Admin Revert, and lifecycle-state transition shards.",
+      "status": "duplicate"
+    }
+  },
+  "schema": 1
+}

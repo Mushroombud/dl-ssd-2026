@@ -1,0 +1,1 @@
+{"bounding_box": [209.22, 332.1, 402.78, 425.46], "number_of_columns": 2, "number_of_rows": 5, "page": 29, "rows": [["FIELD", "VALUE"], ["Command", "IF-SEND"], ["Protocol ID", "0x02"], ["Transfer Length", "Non-zero"], ["ComID", "0x0004"]], "section": "3.2.2", "table_index": 1, "text": "FIELD VALUE Command IF-SEND Protocol ID 0x02 Transfer Length Non-zero ComID 0x0004"}

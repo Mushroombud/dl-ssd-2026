@@ -1,0 +1,22 @@
+{
+  "added_blocks": 0,
+  "detail_path": "",
+  "existing_chars": 3130,
+  "existing_path": "artifacts/documents/opal/4.3.2.txt",
+  "extracted_chars": 77,
+  "family": "opal",
+  "pages": [
+    84
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "existing shard already contains the extracted detail",
+  "rules": 0,
+  "rules_path": "",
+  "section": "4.3.2",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "skipped",
+  "tables": 0,
+  "tables_path": "",
+  "title": "Base Template Methods"
+}

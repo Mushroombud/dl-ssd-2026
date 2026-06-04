@@ -1,0 +1,22 @@
+{
+  "added_blocks": 1,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/5.2.2.md",
+  "existing_chars": 1362,
+  "existing_path": "artifacts/documents/opal/5.2.2.txt",
+  "extracted_chars": 1380,
+  "family": "opal",
+  "pages": [
+    96
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 1,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/5.2.2.jsonl",
+  "section": "5.2.2",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/5.2.2.jsonl",
+  "title": "Manufactured SP Life Cycle States"
+}

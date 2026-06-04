@@ -1,0 +1,19297 @@
+import unittest
+
+from src.solver import _return_bool, parse_event, predict_trajectory
+
+
+SID = "0000000900000006"
+ADMIN1 = "0000000900010001"
+ADMIN_SP = "0000020500000001"
+LOCKING_SP = "0000020500000002"
+C_PIN_SID = "0000000B00000001"
+SID_INT = int(SID, 16)
+ADMIN1_INT = int(ADMIN1, 16)
+ADMIN_SP_INT = int(ADMIN_SP, 16)
+LOCKING_SP_INT = int(LOCKING_SP, 16)
+
+
+def method_record(method, uid="", name="", status="SUCCESS", required=None, optional=None, return_values=None):
+    return {
+        "input": {
+            "method": {
+                "name": method,
+                "args": {
+                    "required": required or {},
+                    "optional": optional or {},
+                },
+            },
+            "invoking_id": {"uid": uid, "name": name},
+        },
+        "output": {
+            "status_codes": status,
+            "return_values": [] if return_values is None else return_values,
+        },
+    }
+
+
+def raw_method_record(method, uid="", name="", status="SUCCESS", args=None, return_values=None):
+    return {
+        "input": {
+            "method": {
+                "name": method,
+                "args": args,
+            },
+            "invoking_id": {"uid": uid, "name": name},
+        },
+        "output": {
+            "status_codes": status,
+            "return_values": [] if return_values is None else return_values,
+        },
+    }
+
+
+def start_session(spid, authority=None, challenge=None, status="SUCCESS", write=1, extra_optional=None):
+    optional = {}
+    if authority:
+        optional["HostSigningAuthority"] = authority
+    if challenge:
+        optional["HostChallenge"] = challenge
+    if extra_optional:
+        optional.update(extra_optional)
+    return method_record(
+        "StartSession",
+        "00000000000000FF",
+        "Session Manager UID",
+        status,
+        {"SPID": spid, "Write": write},
+        optional,
+        {"required": {"HostSessionID": "00000001", "SPSessionID": "00000001"}, "optional": {}},
+    )
+
+
+def sync_session_return(host_session_id="00000001", sp_session_id="00000001", optional=None):
+    return {
+        "required": {"HostSessionID": host_session_id, "SPSessionID": sp_session_id},
+        "optional": optional or {},
+    }
+
+
+def properties_response(**values):
+    return method_record("Properties", "00000000000000FF", "Session Manager UID", "SUCCESS", return_values=values)
+
+
+HOST_PROPS_INITIAL = {
+    "MaxSubpackets": 1,
+    "MaxPacketSize": 2028,
+    "MaxPackets": 1,
+    "MaxComPacketSize": 2048,
+    "MaxIndTokenSize": 1992,
+    "MaxAggTokenSize": 968,
+    "MaxMethods": 1,
+    "ContinuedTokens": False,
+    "SequenceNumbers": False,
+    "AckNak": False,
+    "Asynchronous": False,
+}
+
+
+def host_properties_record(comid, submitted, returned):
+    return method_record(
+        "Properties",
+        "00000000000000FF",
+        "Session Manager UID",
+        optional={"ComID": comid, "HostProperties": submitted},
+        return_values={"HostProperties": returned},
+    )
+
+
+def host_props_with(**updates):
+    values = dict(HOST_PROPS_INITIAL)
+    values.update(updates)
+    return values
+
+
+def end_session():
+    return method_record("EndSession")
+
+
+def host_write(pattern="8E", lba="80 ~ 87"):
+    return {
+        "input": {"command": "Write", "args": {"LBA": lba, "pattern": pattern}},
+        "output": {"command": "Write"},
+    }
+
+
+def host_read(result, lba="80 ~ 87"):
+    return {
+        "input": {"command": "Read", "args": {"LBA": lba}},
+        "output": {"command": "Read", "args": {"result": result}},
+    }
+
+
+def host_write_status(status, pattern="AA", lba="80 ~ 87"):
+    return {
+        "input": {"command": "Write", "args": {"LBA": lba, "pattern": pattern}},
+        "output": {"command": "Write", "status": status},
+    }
+
+
+def host_read_status(status, lba="80 ~ 87"):
+    return {
+        "input": {"command": "Read", "args": {"LBA": lba}},
+        "output": {"command": "Read", "status": status},
+    }
+
+
+def host_reset(command="PowerCycle", comid=None):
+    args = {}
+    if comid is not None:
+        args["ComID"] = comid
+    return {
+        "input": {"command": command, "args": args},
+        "output": {"command": command, "result": "pass"},
+    }
+
+
+def level0_opal_ssc_v2(behavior=0):
+    return {
+        "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0203", "Feature": "Opal SSC V2"}},
+        "output": {
+            "status": "SUCCESS",
+            "return_values": {
+                "FeatureCode": "0x0203",
+                "FeatureDescriptorVersion": 2,
+                "SSCMinorVersion": 3,
+                "Length": 0x10,
+                "NumberOfComIDs": 1,
+                "RangeCrossingBehavior": behavior,
+                "NumberOfLockingSPAdminAuthorities": 4,
+                "NumberOfLockingSPUserAuthorities": 8,
+                "InitialCPINSIDPINIndicator": 0xFF,
+                "BehaviorOfCPINSIDPINUponTPerRevert": 0x00,
+            },
+        },
+    }
+
+
+def host_write_top_level(pattern="8E", start_lba="0x80", num_blocks=8):
+    return {
+        "type": "Write",
+        "input": {"start_lba": start_lba, "num_blocks": num_blocks, "data": pattern},
+        "output": {"status": "SUCCESS"},
+    }
+
+
+def host_read_top_level(result, start_lba="0x80", num_blocks=8):
+    return {
+        "type": "Read",
+        "input": {"start_lba": start_lba, "num_blocks": num_blocks},
+        "output": {"data": result},
+    }
+
+
+def owned_admin_context():
+    return [
+        start_session(ADMIN_SP),
+        method_record("Get", "0000000B00008402", "C_PIN", return_values=[[{"3": "MSID"}]]),
+        end_session(),
+        start_session(ADMIN_SP, SID, "old"),
+        method_record("Set", "0000000B00000001", "C_PIN", optional={"Values": [{"3": "new"}]}),
+        end_session(),
+    ]
+
+
+def activated_locking_context():
+    return owned_admin_context() + [
+        start_session(ADMIN_SP, SID, "new"),
+        method_record("Activate", "0000020500000002", "SP"),
+        end_session(),
+    ]
+
+
+def adminexch_exchange_context():
+    return owned_admin_context() + [
+        start_session(ADMIN_SP, SID, "new"),
+        method_record(
+            "Get",
+            "0000000900000009",
+            "Authority_AdminExch",
+            return_values={"Enabled": True, "Operation": "Exchange", "Credential": "C_EC_256_AdminExch"},
+        ),
+        end_session(),
+    ]
+
+
+class SolverRuleTests(unittest.TestCase):
+    def test_credential_update_success_controls_later_auth(self):
+        trajectory = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_named_sp_and_authority_are_accepted_in_start_session(self):
+        trajectory = owned_admin_context() + [start_session("AdminSP", "SID", "new")]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_rejects_non_session_manager_target_success(self):
+        record = start_session(ADMIN_SP)
+        record["input"]["invoking_id"] = {"uid": "0000020500000001", "name": "AdminSP"}
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_properties_rejects_non_session_manager_target_success(self):
+        trajectory = [method_record("Properties", "0000020500000001", "AdminSP", "SUCCESS")]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_host_properties_are_tracked_per_comid(self):
+        high = host_props_with(MaxComPacketSize=4096)
+        trajectory = [
+            host_properties_record(1, {"MaxComPacketSize": 4096}, high),
+            host_properties_record(2, {}, HOST_PROPS_INITIAL),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_host_properties_rejects_cross_comid_leak(self):
+        high = host_props_with(MaxComPacketSize=4096)
+        trajectory = [
+            host_properties_record(1, {"MaxComPacketSize": 4096}, high),
+            host_properties_record(2, {}, high),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_host_properties_wrappers_track_per_comid(self):
+        high = host_props_with(MaxComPacketSize=4096)
+        for alias in ("setHostProperties", "hostProperties", "negotiateProperties"):
+            with self.subTest(alias=alias, case="set"):
+                trajectory = [
+                    {"input": {"function": alias, "kwargs": {"ComID": 1, "HostProperties": {"MaxComPacketSize": 4096}}}, "output": {"return": {"HostProperties": high}}},
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+        trajectory = [
+            {"input": {"function": "setHostProperties", "kwargs": {"ComID": 1, "HostProperties": {"MaxComPacketSize": 4096}}}, "output": {"return": {"HostProperties": high}}},
+            {"input": {"function": "getHostProperties", "kwargs": {"ComID": 2}}, "output": {"return": {"HostProperties": HOST_PROPS_INITIAL}}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+        trajectory = [
+            {"input": {"function": "setHostProperties", "kwargs": {"ComID": 1, "HostProperties": {"MaxComPacketSize": 4096}}}, "output": {"return": {"HostProperties": high}}},
+            {"input": {"function": "getHostProperties", "kwargs": {"ComID": 2}}, "output": {"return": {"HostProperties": high}}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_host_properties_domain_request_envelopes_preserve_comid_state(self):
+        high = host_props_with(MaxComPacketSize=4096)
+        for wrapper, payload in (
+            ("hostPropertiesRequest", {"hostPropertiesRequest": {"values": {"ComID": 1, "HostProperties": {"MaxComPacketSize": 4096}}}}),
+            ("propertiesRequest", {"propertiesRequest": {"ComID": 1, "properties": {"MaxComPacketSize": 4096}}}),
+            ("sessionRequest", {"sessionRequest": {"values": {"ComID": 1, "HostProperties": {"MaxComPacketSize": 4096}}}}),
+            ("comIdRequest", {"comIdRequest": {"ComID": 1, "hostProperties": {"MaxComPacketSize": 4096}}}),
+        ):
+            with self.subTest(wrapper=wrapper, case="current"):
+                trajectory = [
+                    {"input": {"function": "setHostProperties", "kwargs": payload}, "output": {"return": {"HostProperties": high}}},
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+            with self.subTest(wrapper=wrapper, case="stale"):
+                trajectory = [
+                    {"input": {"function": "setHostProperties", "kwargs": payload}, "output": {"return": {"HostProperties": HOST_PROPS_INITIAL}}},
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_tper_properties_wrappers_accept_tper_properties(self):
+        for alias in ("getTPerProperties", "readTPerProperties", "fetchTPerProperties", "queryTPerProperties"):
+            with self.subTest(alias=alias):
+                trajectory = [
+                    {"input": {"function": alias}, "output": {"return": {"MaxSessionTimeout": 0, "MinSessionTimeout": 0}}},
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_protocol_stack_reset_resets_only_target_comid_host_properties(self):
+        comid1_high = host_props_with(MaxComPacketSize=4096)
+        comid2_high = host_props_with(MaxPacketSize=4096, MaxComPacketSize=8192)
+        trajectory = [
+            host_properties_record(1, {"MaxComPacketSize": 4096}, comid1_high),
+            host_properties_record(2, {"MaxPacketSize": 4096, "MaxComPacketSize": 8192}, comid2_high),
+            host_reset("ProtocolStackReset", comid=1),
+            host_properties_record(1, {}, HOST_PROPS_INITIAL),
+            host_properties_record(2, {}, comid2_high),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_protocol_stack_reset_rejects_resetting_other_comid_host_properties(self):
+        comid1_high = host_props_with(MaxComPacketSize=4096)
+        comid2_high = host_props_with(MaxPacketSize=4096, MaxComPacketSize=8192)
+        trajectory = [
+            host_properties_record(1, {"MaxComPacketSize": 4096}, comid1_high),
+            host_properties_record(2, {"MaxPacketSize": 4096, "MaxComPacketSize": 8192}, comid2_high),
+            host_reset("ProtocolStackReset", comid=1),
+            host_properties_record(2, {}, HOST_PROPS_INITIAL),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_powercycle_resets_all_comid_host_properties(self):
+        comid1_high = host_props_with(MaxComPacketSize=4096)
+        comid2_high = host_props_with(MaxPacketSize=4096, MaxComPacketSize=8192)
+        trajectory = [
+            host_properties_record(1, {"MaxComPacketSize": 4096}, comid1_high),
+            host_properties_record(2, {"MaxPacketSize": 4096, "MaxComPacketSize": 8192}, comid2_high),
+            host_reset("PowerCycle"),
+            host_properties_record(1, {}, HOST_PROPS_INITIAL),
+            host_properties_record(2, {}, HOST_PROPS_INITIAL),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_powercycle_rejects_preserving_comid_host_properties(self):
+        high = host_props_with(MaxComPacketSize=4096)
+        trajectory = [
+            host_properties_record(1, {"MaxComPacketSize": 4096}, high),
+            host_reset("PowerCycle"),
+            host_properties_record(1, {}, high),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_protocol_stack_reset_preserves_session_on_other_comid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new", extra_optional={"ComID": 1}),
+            host_reset("ProtocolStackReset", comid=2),
+            method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "stillopen"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_protocol_stack_reset_aborts_session_on_same_comid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new", extra_optional={"ComID": 1}),
+            host_reset("ProtocolStackReset", comid=1),
+            method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "stillopen"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_protocol_reset_wrapper_aliases_scope_by_comid(self):
+        for alias in ("protocolReset", "comIdReset", "resetComID", "resetComId", "resetProtocolStack"):
+            with self.subTest(alias=alias):
+                other_comid = owned_admin_context() + [
+                    start_session(ADMIN_SP, SID, "new", extra_optional={"ComID": 1}),
+                    {"input": {"function": alias, "kwargs": {"comid": 2}}, "output": {"return": True}},
+                    method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "stillopen"}]}),
+                ]
+                self.assertEqual(predict_trajectory(other_comid), "PASS")
+                same_comid = owned_admin_context() + [
+                    start_session(ADMIN_SP, SID, "new", extra_optional={"ComID": 1}),
+                    {"input": {"function": alias, "kwargs": {"comid": 1}}, "output": {"return": True}},
+                    method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "stillopen"}]}),
+                ]
+                self.assertEqual(predict_trajectory(same_comid), "FAIL")
+
+    def test_protocol_reset_domain_request_envelopes_scope_by_comid(self):
+        for wrapper in ("resetRequest", "protocolResetRequest", "comIdRequest", "sessionRequest"):
+            payload = {wrapper: {"values": {"type": "ProtocolStackReset", "ComID": 1}}}
+            with self.subTest(wrapper=wrapper, case="same"):
+                same_comid = owned_admin_context() + [
+                    start_session(ADMIN_SP, SID, "new", extra_optional={"ComID": 1}),
+                    {"input": {"function": "protocolReset", "kwargs": payload}, "output": {"return": True}},
+                    method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "stillopen"}]}),
+                ]
+                self.assertEqual(predict_trajectory(same_comid), "FAIL")
+            with self.subTest(wrapper=wrapper, case="other"):
+                other_comid = owned_admin_context() + [
+                    start_session(ADMIN_SP, SID, "new", extra_optional={"ComID": 2}),
+                    {"input": {"function": "protocolReset", "kwargs": payload}, "output": {"return": True}},
+                    method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "stillopen"}]}),
+                ]
+                self.assertEqual(predict_trajectory(other_comid), "PASS")
+
+    def test_protocol_stack_reset_without_session_comid_keeps_legacy_global_abort(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            host_reset("ProtocolStackReset", comid=2),
+            method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "stillopen"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_flat_invoking_uid_properties_args_are_parsed(self):
+        high = host_props_with(MaxComPacketSize=4096)
+        trajectory = [
+            {
+                "input": {
+                    "invoking_uid": "00000000000000FF",
+                    "method": "Properties",
+                    "args": {"ComID": 1, "HostProperties": {"MaxComPacketSize": 4096}},
+                },
+                "output": {"status": "SUCCESS", "values": {"HostProperties": high}},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_smuid_rejects_non_control_method_success(self):
+        trajectory = [method_record("Get", "00000000000000FF", "Session Manager UID", "SUCCESS")]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_smuid_rejects_non_control_method_during_open_session(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", "00000000000000FF", "Session Manager UID", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_method_uid_string_without_name_is_mapped(self):
+        record = method_record("unused", "0000000B00008402", "C_PIN", "SUCCESS", return_values=[[{"3": "MSID"}]])
+        record["input"]["method"] = "0000000600000006"
+        trajectory = [start_session(ADMIN_SP), record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_session_manager_method_uid_without_name_is_mapped(self):
+        record = start_session(ADMIN_SP)
+        record["input"]["method"] = {"uid": "000000000000FF02", "args": record["input"]["method"]["args"]}
+        self.assertEqual(predict_trajectory([record]), "PASS")
+
+    def test_session_manager_properties_uid_without_name_is_mapped(self):
+        record = method_record("unused", "00000000000000FF", "SMUID", "SUCCESS")
+        record["input"]["method"] = {"uid": "000000000000FF01", "args": []}
+        self.assertEqual(predict_trajectory([record]), "PASS")
+
+    def test_start_trusted_session_requires_open_session(self):
+        trajectory = [method_record("StartTrustedSession", "00000000000000FF", "Session Manager UID", "SUCCESS")]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_trusted_session_rejects_non_session_manager_target_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("StartTrustedSession", "0000020500000001", "AdminSP", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_trusted_session_preserves_existing_session(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("StartTrustedSession", "00000000000000FF", "Session Manager UID", "SUCCESS"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "trustedpin"}]}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "trustedpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_trusted_session_rejects_mismatched_host_session_id(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "StartTrustedSession",
+                "00000000000000FF",
+                "Session Manager UID",
+                "SUCCESS",
+                required={"HostSessionID": "00000002", "SPSessionID": "00000001"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_trusted_session_rejects_mismatched_sp_session_id(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "StartTrustedSession",
+                "00000000000000FF",
+                "Session Manager UID",
+                "SUCCESS",
+                required={"HostSessionID": "00000001", "SPSessionID": "00000002"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcg_output_result_is_used_as_status_when_status_field_missing(self):
+        record = method_record("Get", "0000000B00008402", "C_PIN", "SUCCESS", return_values=[[{"3": "MSID"}]])
+        record["output"].pop("status_codes")
+        record["output"]["args"] = {"result": "SUCCESS"}
+        trajectory = [start_session(ADMIN_SP), record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_method_uid_int_without_name_is_mapped(self):
+        record = method_record("unused", "0000000B00008402", "C_PIN", "SUCCESS", return_values=[[{"3": "MSID"}]])
+        record["input"]["method"] = int("0000000600000006", 16)
+        trajectory = [start_session(ADMIN_SP), record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_input_level_args_are_parsed_when_method_is_string(self):
+        record = start_session(ADMIN_SP, SID, "new")
+        args = record["input"]["method"]["args"]
+        record["input"]["method"] = "StartSession"
+        record["input"]["args"] = args
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_end_session_target_is_valid_when_session_open(self):
+        trajectory = [start_session(ADMIN_SP), end_session()]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_end_session_without_open_session_rejects_success(self):
+        trajectory = [end_session()]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_accepts_generic_challenge_field(self):
+        record = start_session("AdminSP", "SID", None)
+        record["input"]["method"]["args"]["optional"]["Challenge"] = "new"
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_accepts_required_authority_field(self):
+        record = start_session(ADMIN_SP, None, "new")
+        record["input"]["method"]["args"]["required"]["HostSigningAuthority"] = SID
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_accepts_named_sequence_args(self):
+        record = raw_method_record(
+            "StartSession",
+            "00000000000000FF",
+            "Session Manager UID",
+            args=[("SPID", ADMIN_SP), ("Write", 1), ("HostSigningAuthority", SID), ("HostChallenge", "new")],
+            return_values=sync_session_return(),
+        )
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_accepts_bytes_required_optional_keys(self):
+        record = raw_method_record(
+            "StartSession",
+            "00000000000000FF",
+            "Session Manager UID",
+            args={
+                b"required": {b"SPID": ADMIN_SP, b"Write": 1},
+                b"optional": {b"HostSigningAuthority": SID, b"HostChallenge": "new"},
+            },
+            return_values=sync_session_return(),
+        )
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_accepts_bytes_challenge_matching_tracked_pin(self):
+        trajectory = owned_admin_context() + [start_session(ADMIN_SP, SID, b"new")]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_success_requires_host_session_id(self):
+        record = start_session(ADMIN_SP)
+        record["output"]["return_values"] = {"required": {"SPSessionID": "00000001"}, "optional": {}}
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_session_success_requires_sp_session_id(self):
+        record = start_session(ADMIN_SP)
+        record["output"]["return_values"] = {"required": {"HostSessionID": "00000001"}, "optional": {}}
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_session_success_echoes_host_session_id(self):
+        record = start_session(ADMIN_SP)
+        record["input"]["method"]["args"]["required"]["HostSessionID"] = "0000002A"
+        record["output"]["return_values"] = sync_session_return(host_session_id="00000001")
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_session_rejects_invalid_host_session_id_type(self):
+        record = start_session(ADMIN_SP)
+        record["input"]["method"]["args"]["required"]["HostSessionID"] = "session-one"
+        record["output"]["return_values"] = sync_session_return(host_session_id="session-one")
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_trusted_session_rejects_boolean_sp_session_id(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record(
+                "StartTrustedSession",
+                "00000000000000FF",
+                "Session Manager UID",
+                required={"HostSessionID": "00000001", "SPSessionID": True},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_rejects_invalid_write_type(self):
+        record = start_session(ADMIN_SP, write=2)
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_session_rejects_boolean_session_timeout(self):
+        record = start_session(ADMIN_SP, extra_optional={"SessionTimeout": True})
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_session_rejects_invalid_initial_credit_type(self):
+        record = start_session(ADMIN_SP, extra_optional={"InitialCredit": "banana"})
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_session_without_signing_credential_forbids_sp_challenge(self):
+        record = start_session(ADMIN_SP)
+        record["output"]["return_values"] = sync_session_return(optional={"SPChallenge": "nonce"})
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_session_password_authority_forbids_sp_challenge(self):
+        record = start_session(ADMIN_SP, SID, "new")
+        record["output"]["return_values"] = sync_session_return(optional={"SPChallenge": "nonce"})
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_without_sp_signing_authority_forbids_signed_hash(self):
+        record = start_session(ADMIN_SP)
+        record["output"]["return_values"] = sync_session_return(optional={"SignedHash": "AA"})
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_session_sid_default_response_sign_null_forbids_sync_signed_hash(self):
+        record = start_session(ADMIN_SP, SID, "new")
+        record["output"]["return_values"] = sync_session_return(optional={"SignedHash": "AA"})
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_exchange_start_session_allows_sp_challenge_and_exchange_cert(self):
+        record = start_session(
+            ADMIN_SP,
+            extra_optional={
+                "HostExchangeAuthority": "AdminExch",
+                "HostChallenge": "host-ephemeral",
+                "HostExchangeCert": "host-static",
+            },
+        )
+        record["output"]["return_values"] = sync_session_return(optional={"SPChallenge": "sp-ephemeral", "SPExchangeCert": "sp-static"})
+        self.assertEqual(predict_trajectory(adminexch_exchange_context() + [record]), "PASS")
+
+    def test_exchange_start_session_requires_sp_exchange_material(self):
+        record = start_session(
+            ADMIN_SP,
+            extra_optional={
+                "HostExchangeAuthority": "AdminExch",
+                "HostChallenge": "host-ephemeral",
+                "HostExchangeCert": "host-static",
+            },
+        )
+        record["output"]["return_values"] = sync_session_return(optional={"SPChallenge": "sp-ephemeral"})
+        self.assertEqual(predict_trajectory(adminexch_exchange_context() + [record]), "FAIL")
+
+    def test_start_trusted_without_start_challenge_forbids_sp_response(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record(
+                "StartTrustedSession",
+                "00000000000000FF",
+                "Session Manager UID",
+                "SUCCESS",
+                required={"HostSessionID": "00000001", "SPSessionID": "00000001"},
+                return_values={"required": {"HostSessionID": "00000001", "SPSessionID": "00000001"}, "optional": {"SPResponse": "resp"}},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_trusted_with_start_challenge_allows_sp_response_shape(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "StartTrustedSession",
+                "00000000000000FF",
+                "Session Manager UID",
+                "SUCCESS",
+                required={"HostSessionID": "00000001", "SPSessionID": "00000001"},
+                return_values={"required": {"HostSessionID": "00000001", "SPSessionID": "00000001"}, "optional": {"SPResponse": "resp"}},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_accepts_authas_tuple_credential(self):
+        record = start_session(ADMIN_SP, None, None)
+        record["input"]["method"]["args"]["optional"]["authAs"] = ("SID", "new")
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_accepts_named_sequence_authas_tuple(self):
+        record = raw_method_record(
+            "StartSession",
+            "00000000000000FF",
+            "Session Manager UID",
+            args=[("SPID", ADMIN_SP), ("Write", 1), ("authAs", ("SID", "new"))],
+            return_values=sync_session_return(),
+        )
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_accepts_tcgstorageapi_positional_args(self):
+        record = raw_method_record(
+            "StartSession",
+            "00000000000000FF",
+            "Session Manager UID",
+            args=[100, ADMIN_SP_INT, 1],
+            return_values=sync_session_return(),
+        )
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_positional_auth_rejects_wrong_challenge_success(self):
+        record = raw_method_record(
+            "StartSession",
+            "00000000000000FF",
+            "Session Manager UID",
+            args=[100, ADMIN_SP_INT, 1, "wrong", SID],
+        )
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_positional_auth_accepts_authority_before_challenge(self):
+        record = raw_method_record(
+            "StartSession",
+            "00000000000000FF",
+            "Session Manager UID",
+            args=[100, ADMIN_SP_INT, 1, SID, "new"],
+            return_values=sync_session_return(),
+        )
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_positional_write_flag_controls_later_set(self):
+        record = raw_method_record(
+            "StartSession",
+            "00000000000000FF",
+            "Session Manager UID",
+            args=[100, ADMIN_SP_INT, 0],
+        )
+        trajectory = [record, method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "new"}]})]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_rejects_class_authority_success(self):
+        record = start_session(ADMIN_SP, "Admins", "new")
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_session_rejects_tpersign_as_host_signing_authority(self):
+        record = start_session(ADMIN_SP, "TPerSign", "nonce")
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_session_rejects_exchange_authority_as_host_signing_authority(self):
+        record = start_session(ADMIN_SP, "AdminExch", "nonce")
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_session_rejects_password_authority_as_host_exchange_authority(self):
+        record = start_session(ADMIN_SP)
+        record["input"]["method"]["args"]["optional"]["HostExchangeAuthority"] = SID
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_start_session_rejects_disabled_adminexch_as_host_exchange_authority(self):
+        record = start_session(ADMIN_SP, status="SUCCESS")
+        record["input"]["method"]["args"]["optional"]["HostExchangeAuthority"] = "AdminExch"
+        self.assertEqual(predict_trajectory([record]), "FAIL")
+
+    def test_disabled_adminexch_authenticate_returns_false_not_true(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record(
+                "Authenticate",
+                "0000000000000001",
+                "ThisSP",
+                status="SUCCESS",
+                required={"Authority": "AdminExch", "Challenge": "proof"},
+                return_values=[True],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_rejects_secure_authority_without_exchange_authorities(self):
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", SID, "Authority", return_values={"6": 1, "13": "0000000000000000"}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_rejects_secure_authority_with_credentialless_sp_exchange(self):
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", SID, "Authority", return_values={"6": 1, "13": "0000000900000009"}),
+            method_record("Get", "0000000900000009", "Authority", return_values={"10": "0000000000000000"}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_rejects_secure_authority_with_cpin_sp_exchange_credential(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", SID, "Authority", return_values={"6": 1, "13": "0000000900000009"}),
+            method_record("Get", "0000000900000009", "Authority", return_values={"10": C_PIN_SID}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_rejects_secure_host_exchange_without_credential(self):
+        record = start_session(ADMIN_SP)
+        record["input"]["method"]["args"]["optional"]["HostExchangeAuthority"] = "0000000900000009"
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", "0000000900000009", "Authority", return_values={"6": 1, "10": "0000000000000000", "13": "0000000000000000"}),
+            end_session(),
+            record,
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_rejects_msid_as_signing_authority(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record("Get", "0000000B00008402", "C_PIN", return_values=[[{"3": "MSID"}]]),
+            end_session(),
+            start_session(ADMIN_SP, "MSID", "MSID"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_addlog_allows_read_only_session_empty_result(self):
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new", write=0),
+            method_record("AddLog", "", "Log", "SUCCESS", required={"LogEntryName": "note", "Data": "AA"}, return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_addlog_rejects_nonempty_success_result(self):
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new", write=0),
+            method_record("AddLog", "", "Log", "SUCCESS", required={"LogEntryName": "note", "Data": "AA"}, return_values=["unexpected"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_addlog_rejects_non_log_target_success(self):
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("AddLog", "0000000B00000000", "C_PIN", "SUCCESS", required={"LogEntryName": "note", "Data": "AA"}, return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_addlog_rejects_data_longer_than_64_bytes(self):
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("AddLog", "", "Log", "SUCCESS", required={"LogEntryName": "note", "Data": "AA" * 65}, return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_putlog_alias_lowers_to_addlog(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "putLog", "kwargs": {"log": "Log1", "name": "Entry1", "data": "AABB", "authAs": ("Admin1", "new")}}, "output": {"return": True}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "putLog", "kwargs": {"log": "Log1", "name": "Entry1", "data": "AABB", "authAs": ("Admin1", "new")}}, "output": {"return": ["unexpected"]}}]),
+            "FAIL",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "putLog", "kwargs": {"log": "Log1", "name": "Entry1", "authAs": ("Admin1", "new")}}, "output": {"return": True}}]),
+            "FAIL",
+        )
+
+    def test_log_entry_rows_are_not_host_modifiable(self):
+        values = (
+            (0, "0000000A000000FF"),
+            (1, "0000000A00000002"),
+            (2, "0000000A00000003"),
+            (3, 7),
+            (4, SID),
+            (5, "SID"),
+            (6, ADMIN1),
+            (7, "Admin1"),
+            (8, 1),
+            (9, 1),
+            (10, 1),
+            (11, 9),
+            (12, "host"),
+            (13, "AA"),
+        )
+        for column, value in values:
+            with self.subTest(column=column):
+                trajectory = [
+                    start_session(ADMIN_SP, SID, "new"),
+                    method_record("Set", "", "Log_Row1", "SUCCESS", optional={"Values": [{str(column): value}]}),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "Log_Row1", "SUCCESS", optional={"Values": [{"MonotonicTime": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_clearlog_flushlog_require_log_target_and_empty_result(self):
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("ClearLog", "", "Log", "SUCCESS", return_values=[]),
+            method_record("FlushLog", "", "Log", "SUCCESS", return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("ClearLog", "", "Log", "SUCCESS", return_values=["unexpected"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("FlushLog", "0000000B00000000", "C_PIN", "SUCCESS", return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_createlog_result_shape_and_duplicate_name(self):
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateLog",
+                "",
+                "LogList",
+                "SUCCESS",
+                required={"NewLogTableName": "Audit", "HighSecurity": False, "MinSize": 2},
+                return_values={"LogListUID": "0000000A02000002", "LogTableUID": "0000000A00000002", "Rows": 2},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateLog",
+                "",
+                "LogList",
+                "SUCCESS",
+                required={"NewLogTableName": "Audit", "HighSecurity": False, "MinSize": 2},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateLog",
+                "",
+                "LogList",
+                "SUCCESS",
+                required={"NewLogTableName": "Audit", "HighSecurity": False, "MinSize": 2},
+                return_values={"LogListUID": "0000000A02000002", "LogTableUID": "0000000A00000002", "Rows": 2},
+            ),
+            method_record(
+                "CreateLog",
+                "",
+                "LogList",
+                "SUCCESS",
+                required={"NewLogTableName": "Audit", "HighSecurity": False, "MinSize": 1},
+                return_values={"LogListUID": "0000000A02000003", "LogTableUID": "0000000A00000003", "Rows": 1},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_createlog_parameter_type_validation(self):
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateLog",
+                "",
+                "LogList",
+                "SUCCESS",
+                required={"NewLogTableName": "Audit", "HighSecurity": True, "MinSize": 2},
+                return_values={"LogListUID": "0000000A02000002", "LogTableUID": "0000000A00000002", "Rows": 2},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateLog",
+                "",
+                "LogList",
+                "SUCCESS",
+                required={"NewLogTableName": "Audit", "HighSecurity": 2, "MinSize": 2},
+                return_values={"LogListUID": "0000000A02000002", "LogTableUID": "0000000A00000002", "Rows": 2},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateLog",
+                "",
+                "LogList",
+                "SUCCESS",
+                required={"NewLogTableName": "Audit", "MinSize": 2},
+                return_values={"LogListUID": "0000000A02000002", "LogTableUID": "0000000A00000002", "Rows": 2},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateLog",
+                "",
+                "LogList",
+                "SUCCESS",
+                required={"NewLogTableName": "Audit", "HighSecurity": False, "MinSize": 2, "HintSize": -1},
+                return_values={"LogListUID": "0000000A02000002", "LogTableUID": "0000000A00000002", "Rows": 2},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        for required in (
+            {"NewLogTableName": "BoolMin", "HighSecurity": False, "MinSize": True},
+            {"NewLogTableName": "BoolMax", "HighSecurity": False, "MinSize": 2, "MaxSize": True},
+            {"NewLogTableName": "BoolHint", "HighSecurity": False, "MinSize": 2, "HintSize": True},
+        ):
+            trajectory = [
+                start_session(ADMIN_SP, SID, "new"),
+                method_record(
+                    "CreateLog",
+                    "",
+                    "LogList",
+                    "SUCCESS",
+                    required=required,
+                    return_values={"LogListUID": "0000000A02000002", "LogTableUID": "0000000A00000002", "Rows": 2},
+                ),
+            ]
+            self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_loglist_readonly_columns_are_not_host_modifiable(self):
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "LogList_Audit", "SUCCESS", optional={"Values": [{"Log": "0000000A00000002"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "LogList_Audit", "SUCCESS", optional={"Values": [{"4": "0000000A00000001"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_initial_loglist_row_defaults_are_checked(self):
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "0000000A02000001",
+                "LogList",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 1, "endColumn": 1}]},
+                return_values=[[{"1": "Log"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "0000000A02000001",
+                "LogList",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 1, "endColumn": 1}]},
+                return_values=[[{"1": "Audit"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "0000000A02000001",
+                "LogList",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 5, "endColumn": 5}]},
+                return_values=[[{"5": False}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "0000000A02000001",
+                "LogList",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 5, "endColumn": 5}]},
+                return_values=[[{"5": True}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_loglist_highsecurity_set_updates_later_get_expectation(self):
+        trajectory = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000A02000001", "LogList", "SUCCESS", optional={"Values": [{"5": True}]}),
+            method_record(
+                "Get",
+                "0000000A02000001",
+                "LogList",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 5, "endColumn": 5}]},
+                return_values=[[{"5": True}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authenticate_accepts_plaintext_challenge_object(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000020500000001", "SP", "SUCCESS", required={"Authority": "SID", "Challenge": {"plainText": "new"}}, return_values=[True]),
+            method_record("Set", "0000000B00000001", "C_PIN", optional={"Values": [{"3": "newer"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authenticate_correct_pin_success_requires_true_result(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", required={"Authority": "SID", "Challenge": "new"}, return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authenticate_accepts_proof_parameter_as_password(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", required={"Authority": "SID", "Proof": "new"}, return_values=[True]),
+            method_record("Set", "0000000B00000001", "C_PIN", optional={"Values": [{"3": "newer"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authenticate_wrong_pin_success_false_is_valid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", required={"Authority": "SID", "Challenge": "wrong"}, return_values=[False]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authenticate_wrong_pin_success_requires_false_result(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", required={"Authority": "SID", "Challenge": "wrong"}, return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authenticate_wrong_pin_success_true_is_invalid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", required={"Authority": "SID", "Challenge": "wrong"}, return_values=[True]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authenticate_missing_authority_requires_invalid_parameter(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "INVALID_PARAMETER", required={}, return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authenticate_missing_authority_rejects_success(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", required={}, return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authenticate_anybody_success_is_valid(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", required={"Authority": "Anybody"}, return_values=[True]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authenticate_anybody_success_false_is_invalid(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", required={"Authority": "Anybody"}, return_values=[False]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tpersign_authenticate_success_false_is_valid(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", required={"Authority": "TPerSign"}, return_values=[False]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tpersign_authenticate_success_true_is_invalid(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", required={"Authority": "TPerSign"}, return_values=[True]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_disabled_authority_authenticate_not_authorized_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "", "User1", optional={"Values": [{"5": 0}]}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Authenticate",
+                "0000000000000001",
+                "ThisSP",
+                "NOT_AUTHORIZED",
+                required={"Authority": "User1", "Challenge": "userpin"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authority_limit_reached_blocks_start_session_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Get", "0000000900030001", "Authority", return_values={"Limit": 1, "Uses": 1}),
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authority_limit_zero_does_not_block_start_session(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Get", "0000000900030001", "Authority", return_values={"Limit": 0, "Uses": 99}),
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authority_limit_reached_blocks_authenticate_true(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Get", "0000000900030001", "Authority", return_values={"Limit": 1, "Uses": 1}),
+            method_record(
+                "Authenticate",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"Authority": "User1", "Challenge": "userpin"},
+                return_values=[True],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_successful_authentication_consumes_authority_use(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Get", "0000000900030001", "Authority", return_values={"Limit": 1, "Uses": 0}),
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authority_limit_only_set_blocks_later_authentication(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"15": 1}, {"16": 1}]}),
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authority_limit_only_set_is_observable_through_get(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"15": 4}]}),
+            method_record(
+                "Get",
+                "0000000900030001",
+                "Authority",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 15}, {"endColumn": 15}]},
+                return_values=[[{"15": 4}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authority_limit_only_set_rejects_stale_get_value(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"15": 4}]}),
+            method_record(
+                "Get",
+                "0000000900030001",
+                "Authority",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 15}, {"endColumn": 15}]},
+                return_values=[[{"15": 0}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authority_limit_rejects_boolean_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", "SUCCESS", optional={"Values": [{"15": True}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authority_uses_rejects_boolean_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", "SUCCESS", optional={"Values": [{"16": True}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_trylimit_rejects_boolean_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000B00030001", "C_PIN", "SUCCESS", optional={"Values": [{"5": True}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_tries_rejects_boolean_false_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000B00030001", "C_PIN", "SUCCESS", optional={"Values": [{"6": False}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authority_secure_rejects_boolean_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", "SUCCESS", optional={"Values": [{"6": True}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_spinfo_session_timeout_rejects_boolean_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "", "SPInfo", "SUCCESS", optional={"Values": [{"5": True}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_failed_authenticate_updates_observable_cpin_tries(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}, {"5": 2}, {"7": 1}]}),
+            method_record(
+                "Authenticate",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"Authority": "User1", "Challenge": "bad"},
+                return_values=[False],
+            ),
+            method_record(
+                "Get",
+                "0000000B00030001",
+                "C_PIN",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 6}, {"endColumn": 6}]},
+                return_values=[[{"6": 1}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_cpin_tries_get_after_failed_authenticate_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}, {"5": 2}, {"7": 1}]}),
+            method_record(
+                "Authenticate",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"Authority": "User1", "Challenge": "bad"},
+                return_values=[False],
+            ),
+            method_record(
+                "Get",
+                "0000000B00030001",
+                "C_PIN",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 6}, {"endColumn": 6}]},
+                return_values=[[{"6": 0}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_power_cycle_resets_observable_nonpersistent_cpin_tries(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}, {"5": 2}, {"7": 0}]}),
+            method_record(
+                "Authenticate",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"Authority": "User1", "Challenge": "bad"},
+                return_values=[False],
+            ),
+            end_session(),
+            host_reset("PowerCycle"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000B00030001",
+                "C_PIN",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 6}, {"endColumn": 6}]},
+                return_values=[[{"6": 0}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_successful_authenticate_updates_observable_authority_uses(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}, {"15": 3}, {"16": 0}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record(
+                "Authenticate",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"Authority": "User1", "Challenge": "userpin"},
+                return_values=[True],
+            ),
+            method_record(
+                "Get",
+                "0000000900030001",
+                "Authority",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 16}, {"endColumn": 16}]},
+                return_values=[[{"16": 1}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_authority_uses_get_after_successful_authenticate_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}, {"15": 3}, {"16": 0}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record(
+                "Authenticate",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"Authority": "User1", "Challenge": "userpin"},
+                return_values=[True],
+            ),
+            method_record(
+                "Get",
+                "0000000900030001",
+                "Authority",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 16}, {"endColumn": 16}]},
+                return_values=[[{"16": 0}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockonreset_updates_observable_write_locked_cell(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"6": 1}, {"8": 0}, {"9": [0]}]},
+            ),
+            end_session(),
+            host_reset("PowerCycle"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 8}, {"endColumn": 8}]},
+                return_values=[[{"8": True}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockonreset_sets_stored_read_locked_even_when_read_lock_disabled(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"5": 0}, {"6": 1}, {"7": 0}, {"8": 0}, {"9": [0]}]},
+            ),
+            end_session(),
+            host_reset("PowerCycle"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 9}]},
+                return_values=[[{"7": True}, {"8": True}, {"9": [0]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockonreset_stored_read_locked_false_after_match_is_invalid_even_when_read_lock_disabled(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"5": 0}, {"6": 1}, {"7": 0}, {"8": 0}, {"9": [0]}]},
+            ),
+            end_session(),
+            host_reset("PowerCycle"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 9}]},
+                return_values=[[{"7": False}, {"8": True}, {"9": [0]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockonreset_does_not_set_locked_cells_when_both_lock_features_disabled(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"5": 0}, {"6": 0}, {"7": 0}, {"8": 0}, {"9": [0]}]},
+            ),
+            end_session(),
+            host_reset("PowerCycle"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 9}]},
+                return_values=[[{"7": False}, {"8": False}, {"9": [0]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockonreset_disabled_both_wrong_locked_cells_are_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"5": 0}, {"6": 0}, {"7": 0}, {"8": 0}, {"9": [0]}]},
+            ),
+            end_session(),
+            host_reset("PowerCycle"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 9}]},
+                return_values=[[{"7": True}, {"8": True}, {"9": [0]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_wrong_write_locked_get_after_lockonreset_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"6": 1}, {"8": 0}, {"9": [0]}]},
+            ),
+            end_session(),
+            host_reset("PowerCycle"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 8}, {"endColumn": 8}]},
+                return_values=[[{"8": False}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_hardware_reset_matching_lockonreset_sets_observable_lock_cells(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"5": 1}, {"6": 1}, {"7": 0}, {"8": 0}, {"9": [0, 1]}]},
+            ),
+            end_session(),
+            host_reset("HardwareReset"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 9}]},
+                return_values=[[{"7": True}, {"8": True}, {"9": [0, 1]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrapper_reset_aliases_feed_lockonreset_state_machine(self):
+        for alias in ("doPowerCycle", "doPowerCycleReset", "powerCycleDevice", "devicePowerCycle", "powerCycleTPer"):
+            with self.subTest(alias=alias):
+                power_context = activated_locking_context() + [
+                    {
+                        "input": {"function": "setRange", "args": [1], "kwargs": {"authAs": ("Admin1", "new"), "RangeStart": 80, "RangeLength": 8, "WriteLockEnabled": 1, "WriteLocked": 0, "LockOnReset": [0]}},
+                        "output": {"return": True},
+                    },
+                    {"input": {"function": alias}, "output": {"return": True}},
+                ]
+                self.assertEqual(predict_trajectory(power_context + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "PASS")
+        hardware_context = activated_locking_context() + [
+            {
+                "input": {"function": "setRange", "args": [1], "kwargs": {"authAs": ("Admin1", "new"), "RangeStart": 80, "RangeLength": 8, "WriteLockEnabled": 1, "WriteLocked": 0, "LockOnReset": [1]}},
+                "output": {"return": True},
+            },
+        ]
+        for alias in ("doHardwareReset", "hardwareResetDevice", "resetHardware"):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(hardware_context + [{"input": {"function": alias}, "output": {"return": True}}] + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]),
+                    "PASS",
+                )
+
+    def test_generic_reset_envelopes_select_hardware_reset_type(self):
+        base = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setRange",
+                    "args": [1],
+                    "kwargs": {
+                        "authAs": ("Admin1", "new"),
+                        "RangeStart": 80,
+                        "RangeLength": 8,
+                        "WriteLockEnabled": 1,
+                        "WriteLocked": 0,
+                        "LockOnReset": [1],
+                    },
+                },
+                "output": {"return": True},
+            }
+        ]
+        for label, kwargs in (
+            ("direct resetType", {"resetType": "HardwareReset"}),
+            ("policy resetType", {"policy": {"resetType": "HardwareReset"}}),
+            ("request type", {"request": {"type": "HardwareReset"}}),
+            ("target string", {"target": "HardwareReset"}),
+            ("operation reset", {"operation": {"reset": "HardwareReset"}}),
+        ):
+            with self.subTest(label=label):
+                reset_event = {"input": {"function": "reset", "kwargs": kwargs}, "output": {"return": True}}
+                self.assertEqual(
+                    predict_trajectory(base + [reset_event, host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(base + [reset_event, host_write_status("SUCCESS", pattern="CC", lba="80 ~ 87")]),
+                    "FAIL",
+                )
+
+    def test_hardware_reset_nonmatching_lockonreset_preserves_unlocked_cells(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"5": 1}, {"6": 1}, {"7": 0}, {"8": 0}, {"9": [0, 3]}]},
+            ),
+            end_session(),
+            host_reset("HardwareReset"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 9}]},
+                return_values=[[{"7": False}, {"8": False}, {"9": [0, 3]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_programmatic_reset_matching_lockonreset_sets_observable_lock_cells(self):
+        trajectory = activated_locking_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000020100030001", "TPerInfo", optional={"Values": [{"8": 1}]}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"5": 1}, {"6": 1}, {"7": 0}, {"8": 0}, {"9": [0, 3]}]},
+            ),
+            end_session(),
+            host_reset("TPerReset"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 9}]},
+                return_values=[[{"7": True}, {"8": True}, {"9": [0, 3]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_power_cycle_aborts_open_locking_session(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"5": 1}, {"6": 1}, {"7": 0}, {"8": 0}, {"9": [0]}]},
+            ),
+            host_reset("PowerCycle"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 8}, {"endColumn": 8}]},
+                return_values=[[{"8": True}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_hotplug_aborts_open_locking_session_without_power_lockonreset(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"5": 1}, {"6": 1}, {"7": 0}, {"8": 0}, {"9": [0]}]},
+            ),
+            host_reset("HotPlug"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 9}]},
+                return_values=[[{"7": False}, {"8": False}, {"9": [0]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_hotplug_preserves_nonmatching_lockonreset_cells_after_fresh_session(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"5": 1}, {"6": 1}, {"7": 0}, {"8": 0}, {"9": [0]}]},
+            ),
+            host_reset("HotPlug"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 9}]},
+                return_values=[[{"7": False}, {"8": False}, {"9": [0]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_locking_range_get_reflects_updated_range_start_and_length(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"3": 120}, {"4": 12}, {"5": 0}, {"6": 1}]},
+            ),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 3}, {"endColumn": 4}]},
+                return_values=[[{"3": 120}, {"4": 12}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_range_start_get_after_set_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"3": 120}, {"4": 12}, {"5": 0}, {"6": 1}]},
+            ),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 3}, {"endColumn": 3}]},
+                return_values=[[{"3": 80}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_get_reflects_default_lockonreset_power_cycle(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 9}, {"endColumn": 9}]},
+                return_values=[[{"9": [0]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_lockonreset_get_after_set_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"9": [0, 3]}]},
+            ),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 9}, {"endColumn": 9}]},
+                return_values=[[{"9": [0]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authenticate_positional_wrong_challenge_success_true_is_invalid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", args=["wrong", SID], return_values=[True]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authenticate_positional_authority_before_challenge_is_valid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", args=[SID, "new"], return_values=[True]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authenticate_success_false_does_not_authorize_context(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", required={"Authority": "SID", "Challenge": "wrong"}, return_values=[False]),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "newer"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authenticate_accepts_authas_tuple_credential(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000020500000001", "SP", "SUCCESS", optional={"authAs": ("SID", "new")}),
+            method_record("Set", "0000000B00000001", "C_PIN", optional={"Values": [{"3": "newer"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authenticate_rejects_msid_as_authority(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record("Get", "0000000B00008402", "C_PIN", return_values=[[{"3": "MSID"}]]),
+            method_record("Authenticate", "0000020500000001", "SP", "SUCCESS", optional={"authAs": ("MSID", "MSID")}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_method_level_authas_authorizes_target_set(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"authAs": ("SID", "new"), "Values": [{"3": "newer"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_method_level_authas_none_infers_cpin_sid_default(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"authAs": (None, "new"), "Values": [{"3": "newer"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_method_level_authas_rejects_target_set_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"authAs": ("SID", "wrong"), "Values": [{"3": "newer"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_wrong_method_level_authas_none_rejects_target_set_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"authAs": (None, "wrong"), "Values": [{"3": "newer"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_method_level_authas_authorizes_target_genkey(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("GenKey", "0000080600030001", "K_AES_256", "SUCCESS", optional={"authAs": ("Admin1", "new")}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authas_none_uses_matching_admin_for_genkey(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("GenKey", "0000080600030001", "K_AES_256", "SUCCESS", optional={"authAs": (None, "new")}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_authas_none_rejects_genkey_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("GenKey", "0000080600030001", "K_AES_256", "SUCCESS", optional={"authAs": (None, "wrong")}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authas_none_uses_matching_admin_for_user_cpin_set(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("Set", "0000000B00030001", "C_PIN", "SUCCESS", optional={"authAs": (None, "new"), "Values": [{"3": "userpin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_authas_none_rejects_user_cpin_set_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("Set", "0000000B00030001", "C_PIN", "SUCCESS", optional={"authAs": (None, "wrong"), "Values": [{"3": "userpin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_sp_start_session_rejects_sid_authority_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_sp_authenticate_rejects_sid_authority_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", optional={"authAs": ("SID", "new")}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authas_none_uses_matching_sid_for_activate(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Activate", "0000020500000002", "SP", "SUCCESS", optional={"authAs": (None, "new")}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_authas_none_rejects_activate_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Activate", "0000020500000002", "SP", "SUCCESS", optional={"authAs": (None, "wrong")}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_activate_policy_config_request_envelopes_validate_credentials_before_transition(self):
+        for proof, expected in (("new", "PASS"), ("wrong", "FAIL")):
+            for function_name in ("activateLockingSP", "activateSP", "activate"):
+                for label, payload in (
+                    ("policy", {"authAs": ("SID", proof)}),
+                    ("config", {"authority": "SID", "proof": proof}),
+                    ("request", {"credential": {"auth": "SID", "proof": proof}}),
+                ):
+                    with self.subTest(proof=proof, function_name=function_name, label=label):
+                        trajectory = owned_admin_context() + [
+                            {"input": {"function": function_name, "kwargs": {label: payload}}, "output": {"return": True}},
+                            start_session(LOCKING_SP, ADMIN1, "new"),
+                        ]
+                        self.assertEqual(predict_trajectory(trajectory), expected)
+
+    def test_tcgstorageapi_takeownership_activates_locking_sp(self):
+        trajectory = owned_admin_context() + [
+            {"input": {"function": "takeOwnership", "args": ["new"]}, "output": {"return": True}},
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_takeownership_policy_config_request_envelopes_validate_credentials_before_transition(self):
+        for proof, expected in (("new", "PASS"), ("wrong", "FAIL")):
+            for label, payload in (
+                ("policy", {"pin": proof}),
+                ("config", {"credential": proof}),
+                ("request", {"credential": {"pin": proof}}),
+            ):
+                with self.subTest(proof=proof, label=label):
+                    trajectory = owned_admin_context() + [
+                        {"input": {"function": "takeOwnership", "kwargs": {label: payload}}, "output": {"return": True}},
+                        start_session(LOCKING_SP, ADMIN1, "new"),
+                    ]
+                    self.assertEqual(predict_trajectory(trajectory), expected)
+
+    def test_lifecycle_domain_request_envelopes_validate_credentials_before_transition(self):
+        for function_name, wrapper, payload_key in (
+            ("activateLockingSP", "activateRequest", "authAs"),
+            ("activateLockingSP", "spRequest", "authAs"),
+            ("takeOwnership", "ownershipRequest", "credential"),
+            ("takeOwnership", "credentialRequest", "credential"),
+        ):
+            for proof, expected in (("new", "PASS"), ("wrong", "FAIL")):
+                value = ("SID", proof) if payload_key == "authAs" else proof
+                with self.subTest(function_name=function_name, wrapper=wrapper, proof=proof):
+                    trajectory = owned_admin_context() + [
+                        {"input": {"function": function_name, "kwargs": {wrapper: {"values": {payload_key: value}}}}, "output": {"return": True}},
+                        start_session(LOCKING_SP, ADMIN1, "new"),
+                    ]
+                    self.assertEqual(predict_trajectory(trajectory), expected)
+
+    def test_tcgstorageapi_takeownership_wrong_pin_does_not_activate(self):
+        trajectory = owned_admin_context() + [
+            {"input": {"function": "takeownership", "args": ["wrong"]}, "output": {"return": True}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_setuplockingsp_activates_locking_sp(self):
+        trajectory = owned_admin_context() + [
+            {"input": {"function": "setupLockingSP", "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": True}},
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_locking_activation_aliases_activate_locking_sp(self):
+        for alias in ("enableLocking", "provisionLockingSP"):
+            with self.subTest(alias=alias):
+                trajectory = owned_admin_context() + [
+                    {"input": {"function": alias, "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": True}},
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_psid_revert_aliases_deactivate_locking_sp(self):
+        for alias in ("factoryResetDrive", "psidRevert"):
+            with self.subTest(alias=alias):
+                trajectory = activated_locking_context() + [
+                    {"input": {"function": alias, "args": ["psid"]}, "output": {"return": True}},
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_initializelockingsp_activates_locking_sp(self):
+        trajectory = owned_admin_context() + [
+            {"input": {"function": "initializeLockingSP", "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": True}},
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_failed_setuplockingsp_does_not_activate(self):
+        trajectory = owned_admin_context() + [
+            {"input": {"function": "setupLockingSP", "kwargs": {"authAs": ("SID", "wrong")}}, "output": {"return": False}},
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_setsidpin_updates_sid_credential(self):
+        trajectory = owned_admin_context() + [
+            {"input": {"function": "setSIDPIN", "kwargs": {"pin": "sid-next", "authAs": ("SID", "new")}}, "output": {"return": True}},
+            start_session(ADMIN_SP, SID, "sid-next"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_setadminpin_updates_admin1_credential(self):
+        trajectory = activated_locking_context() + [
+            {"input": {"function": "setAdminPIN", "kwargs": {"pin": "admin-next", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            start_session(LOCKING_SP, ADMIN1, "admin-next"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_validatepin_cannot_bypass_trylimit(self):
+        trajectory = activated_locking_context() + [
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}, {"5": 1}, {"7": 1}]}),
+            {"input": {"function": "checkPIN", "kwargs": {"identity": "User1", "passcode": "bad"}}, "output": {"return": False}},
+            {"input": {"function": "validatePIN", "kwargs": {"username": "User1", "password": "userpin"}}, "output": {"return": True}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_sid_full_row_get_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", "0000000B00000001", "C_PIN", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_admin_full_row_get_rejects_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000000B00010001", "C_PIN", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_outer_bytes_schema_and_return_alias_update_lifecycle(self):
+        lifecycle_get = {
+            b"input": {
+                b"method": {
+                    b"name": b"Get",
+                    b"args": {
+                        b"required": {b"Cellblock": [{b"startColumn": 6, b"endColumn": 6}]},
+                        b"optional": {},
+                    },
+                },
+                b"invoking_id": {b"uid": b"0000020500000002", b"name": b"SP"},
+            },
+            b"output": {
+                b"StatusCodes": b"SUCCESS",
+                b"args": {b"returnValues": {b"LifeCycle": "Manufactured"}},
+            },
+        }
+        trajectory = [start_session(ADMIN_SP), lifecycle_get, end_session(), start_session(LOCKING_SP)]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_bytes_cellblock_columns_omit_c_pin_pin_get(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "0000000B00000001",
+                "C_PIN",
+                "SUCCESS",
+                required={b"Cellblock": [{b"startColumn": 3, b"endColumn": 3}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_set_accepts_bytes_values_key_for_pin_update(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record("Get", "0000000B00008402", "C_PIN", return_values=[[{"3": "MSID"}]]),
+            end_session(),
+            start_session(ADMIN_SP, SID, "old"),
+            method_record("Set", "0000000B00000001", "C_PIN", optional={b"Values": [{b"PIN": "new"}]}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_set_accepts_rowvalues_alias_for_pin_update(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record("Get", "0000000B00008402", "C_PIN", return_values=[[{"3": "MSID"}]]),
+            end_session(),
+            start_session(ADMIN_SP, SID, "old"),
+            method_record("Set", "0000000B00000001", "C_PIN", optional={"RowValues": [{"PIN": "new"}]}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_set_accepts_namedvalues_alias_for_range_lock(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"NamedValues": {"RangeStart": 0, "RangeLength": 1024, "WriteLockEnabled": 1, "WriteLocked": 1}},
+            ),
+            end_session(),
+            host_write_status("SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_raw_opal_authenticate_adds_authority(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            raw_method_record(
+                "Authenticate",
+                "0000000000000001",
+                "ThisSP",
+                args=(ADMIN1_INT, [(0, "new")]),
+            ),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"7": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_structured_sp_and_authority_are_accepted(self):
+        record = start_session({"uid": ADMIN_SP, "name": "AdminSP"}, {"uid": SID, "name": "SID"}, "new")
+        trajectory = owned_admin_context() + [record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_enterprise_locking_sp_session_does_not_require_activate(self):
+        trajectory = [start_session("0000020500010001")]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_bytes_named_msid_pin_return_updates_sid_pin(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record("Get", "0000000B00008402", "C_PIN", return_values={b"PIN": "MSID"}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "MSID"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_returnvalue_alias_updates_msid_pin(self):
+        record = method_record("Get", "0000000B00008402", "C_PIN")
+        record["output"].pop("return_values", None)
+        record["output"]["returnValue"] = {"PIN": "MSID"}
+        trajectory = [
+            start_session(ADMIN_SP),
+            record,
+            end_session(),
+            start_session(ADMIN_SP, SID, "MSID"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_numeric_uid_sp_and_authority_are_accepted(self):
+        trajectory = owned_admin_context() + [start_session(ADMIN_SP_INT, SID_INT, "new")]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_ascii_bytes_uid_is_treated_as_hex_uid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", b"0000000B00008401", "C_PIN", "SUCCESS", optional={"Values": [{"3": "erasepin"}]}),
+            end_session(),
+            start_session(ADMIN_SP, b"0000000900008401", "erasepin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_numeric_invoking_uid_updates_pin_state(self):
+        trajectory = owned_admin_context()[:-2] + [
+            start_session(ADMIN_SP, SID, "old"),
+            method_record("Set", int("0000000B00000001", 16), "C_PIN", optional={"Values": [{3: "new"}]}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_cpin_alias_uid_without_name_updates_pin_state(self):
+        trajectory = owned_admin_context()[:-2] + [
+            start_session(ADMIN_SP, SID, "old"),
+            method_record("Set", "0000000900000001", "", optional={"Values": [{"3": "new"}]}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_short_admin1_object_uid_maps_to_admin_pin(self):
+        event = parse_event(method_record("Set", "00000000B0001000", "", optional={"Values": [{"3": "adminpin"}]}))
+        self.assertEqual(event.invoking_symbol, "C_PIN_Admin1")
+
+    def test_flattened_method_schema_updates_pin_state(self):
+        trajectory = owned_admin_context()[:-2] + [
+            start_session(ADMIN_SP, SID, "old"),
+            {
+                "method_name": "Set",
+                "object": {"uid": "0000000B00000001", "name": "C_PIN"},
+                "required_args": {},
+                "optional_args": {"Values": [{"3": "new"}]},
+                "status": "SUCCESS",
+            },
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_top_level_named_method_fields_update_pin_state(self):
+        trajectory = owned_admin_context()[:-2] + [
+            start_session(ADMIN_SP, SID, "old"),
+            {
+                "input": {
+                    "method_name": "Set",
+                    "object": {"uid": "0000000B00000001", "name": "C_PIN"},
+                    "PIN": "new",
+                },
+                "output": {"status": "SUCCESS"},
+            },
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_nonamed_set_tuple_updates_pin_state(self):
+        trajectory = owned_admin_context()[:-2] + [
+            start_session(ADMIN_SP, SID, "old"),
+            raw_method_record("Set", "0000000B00000001", "C_PIN", args=(1, [(3, "new")])),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_invoke_argv_kwargs_updates_pin_state(self):
+        trajectory = owned_admin_context()[:-2] + [
+            start_session(ADMIN_SP, SID, "old"),
+            {
+                "input": {
+                    "argv": ["C_PIN_SID", "Set", (1, [(3, "new")])],
+                    "kwargs": {"sp": "AdminSP", "authAs": ("SID", "old"), "noNamed": True},
+                },
+                "output": {"return": [0, [], {}]},
+            },
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_kwargs_merge_with_normalized_method_args(self):
+        trajectory = owned_admin_context()[:-2] + [
+            start_session(ADMIN_SP, SID, "old"),
+            {
+                "input": {
+                    "method": {"name": "Set", "args": []},
+                    "invoking_id": {"uid": "0000000B00000001", "name": "C_PIN"},
+                    "kwargs": {"PIN": "new", "authAs": ("SID", "old")},
+                },
+                "output": {"status_codes": "SUCCESS"},
+            },
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_function_invoke_args_kwargs_update_pin_state(self):
+        trajectory = owned_admin_context()[:-2] + [
+            start_session(ADMIN_SP, SID, "old"),
+            {
+                "input": {
+                    "function": "invoke",
+                    "args": ["C_PIN_SID", "Set", (1, [(3, "new")])],
+                    "kwargs": {"sp": "AdminSP", "authAs": ("SID", "old"), "noNamed": True},
+                },
+                "output": {"return": [0, [], {}]},
+            },
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_standalone_invoke_target_uses_scoped_session(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {
+                    "function": "invoke",
+                    "args": ["C_PIN_SID", "Set", (1, [(3, "newer")])],
+                    "kwargs": {"sp": "AdminSP", "authAs": ("SID", "new"), "noNamed": True},
+                },
+                "output": {"return": [0, [], {}]},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_standalone_invoke_rejects_wrong_auth_success(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {
+                    "function": "invoke",
+                    "args": ["C_PIN_SID", "Set", (1, [(3, "newer")])],
+                    "kwargs": {"sp": "AdminSP", "authAs": ("SID", "wrong"), "noNamed": True},
+                },
+                "output": {"return": [0, [], {}]},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_standalone_invoke_context_updates_state(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {
+                    "function": "invoke",
+                    "args": ["C_PIN_SID", "Set", (1, [(3, "newer")])],
+                    "kwargs": {"sp": "AdminSP", "authAs": ("SID", "new"), "noNamed": True},
+                },
+                "output": {"return": [0, [], {}]},
+            },
+            start_session(ADMIN_SP, SID, "newer"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_invoke_return_tuple_yields_return_values(self):
+        event = parse_event(
+            {
+                "input": {"argv": ["ThisSP", "Authenticate", SID, ("0", "new")], "kwargs": {"sp": "AdminSP"}},
+                "output": {"return": [0, [1], {}]},
+            }
+        )
+        self.assertEqual(event.method, "Authenticate")
+        self.assertEqual(event.status, "SUCCESS")
+        self.assertIs(_return_bool(event.raw), True)
+
+    def test_tcgstorageapi_checkpin_correct_pin_returns_true(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "checkPIN", "args": ["SID", "new"]},
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_checkpin_params_correct_pin_returns_true(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "checkPIN", "params": ["SID", "new"]},
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_checkpin_wrong_pin_returning_true_is_invalid(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "checkPIN", "args": ["SID", "wrong"]},
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_checkpin_wrong_pin_returning_false_is_valid(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "_checkPIN", "args": ["SID", "wrong"]},
+                "output": {"return": False},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_check_aliases_validate_pin_truth(self):
+        for alias in (
+            "verifyPassword",
+            "verifyPINCode",
+            "checkPINCode",
+            "validatePINCode",
+            "verifyPasscode",
+            "checkPasscode",
+            "validatePasscode",
+            "validateCredential",
+            "checkUserPIN",
+            "verifyUserPIN",
+            "validateUserPIN",
+            "checkUserPassword",
+            "verifyUserPassword",
+            "validateUserPassword",
+            "checkPassphrase",
+            "verifyPassphrase",
+            "validatePassphrase",
+        ):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(owned_admin_context() + [{"input": {"function": alias, "args": ["SID", "new"]}, "output": {"return": True}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(owned_admin_context() + [{"input": {"function": alias, "args": ["SID", "wrong"]}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_high_level_change_pin_updates_state(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "changePIN", "args": ["SID", "newer"], "kwargs": {"authAs": ("SID", "new")}},
+                "output": {"return": True},
+            },
+            start_session(ADMIN_SP, SID, "newer"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_pin_code_and_passcode_aliases_update_state(self):
+        for alias, context, args, kwargs, sp, authority, new_pin, old_pin in (
+            ("setPINCode", owned_admin_context(), ["SID", "pin-code"], {"authAs": ("SID", "new")}, ADMIN_SP, SID, "pin-code", "new"),
+            ("putPIN", owned_admin_context(), ["SID", "pin-put"], {"authAs": ("SID", "new")}, ADMIN_SP, SID, "pin-put", "new"),
+            ("putPINCode", owned_admin_context(), ["SID", "pin-code-put"], {"authAs": ("SID", "new")}, ADMIN_SP, SID, "pin-code-put", "new"),
+            ("setPasscode", owned_admin_context(), ["SID", "sid-set-passcode"], {"authAs": ("SID", "new")}, ADMIN_SP, SID, "sid-set-passcode", "new"),
+            ("changePasscode", owned_admin_context(), ["SID", "sid-change-passcode"], {"authAs": ("SID", "new")}, ADMIN_SP, SID, "sid-change-passcode", "new"),
+            ("updatePassword", owned_admin_context(), ["SID", "sid-update-password"], {"authAs": ("SID", "new")}, ADMIN_SP, SID, "sid-update-password", "new"),
+            ("putPassword", owned_admin_context(), ["SID", "sid-put-password"], {"authAs": ("SID", "new")}, ADMIN_SP, SID, "sid-put-password", "new"),
+            ("putCredential", owned_admin_context(), ["SID", "sid-put-credential"], {"authAs": ("SID", "new")}, ADMIN_SP, SID, "sid-put-credential", "new"),
+            ("changeUserPINCode", activated_locking_context(), ["User1", "user-code"], {"authAs": ("Admin1", "new")}, LOCKING_SP, "User1", "user-code", "userpin"),
+            ("updateUserPasscode", activated_locking_context(), ["User1", "user-pass"], {"authAs": ("Admin1", "new")}, LOCKING_SP, "User1", "user-pass", "userpin"),
+            ("updateUserPassword", activated_locking_context(), ["User1", "user-pw"], {"authAs": ("Admin1", "new")}, LOCKING_SP, "User1", "user-pw", "userpin"),
+            ("putUserPassword", activated_locking_context(), ["User1", "user-pw-put"], {"authAs": ("Admin1", "new")}, LOCKING_SP, "User1", "user-pw-put", "userpin"),
+            ("setUserCredential", activated_locking_context(), ["User1", "user-cred"], {"authAs": ("Admin1", "new")}, LOCKING_SP, "User1", "user-cred", "userpin"),
+            ("updateCredential", activated_locking_context(), ["User1", "user-updated"], {"authAs": ("Admin1", "new")}, LOCKING_SP, "User1", "user-updated", "userpin"),
+            ("putUserCredential", activated_locking_context(), ["User1", "user-cred-put"], {"authAs": ("Admin1", "new")}, LOCKING_SP, "User1", "user-cred-put", "userpin"),
+            ("setSIDPasscode", owned_admin_context(), ["sid-pass"], {"authAs": ("SID", "new")}, ADMIN_SP, SID, "sid-pass", "new"),
+            ("changeAdminPINCode", activated_locking_context(), ["admin-code"], {"authAs": ("Admin1", "new")}, LOCKING_SP, ADMIN1, "admin-code", "new"),
+        ):
+            with self.subTest(alias=alias):
+                setup = list(context)
+                if authority == "User1":
+                    setup.extend(
+                        [
+                            start_session(LOCKING_SP, ADMIN1, "new"),
+                            {"input": {"function": "enableAuthority", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                            {"input": {"function": "changePIN", "args": ["User1", old_pin], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                            end_session(),
+                        ]
+                    )
+                trajectory = setup + [
+                    {"input": {"function": alias, "args": args, "kwargs": kwargs}, "output": {"return": True}},
+                    end_session(),
+                    start_session(sp, authority, new_pin),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+                self.assertEqual(
+                    predict_trajectory(setup + [{"input": {"function": alias, "args": args, "kwargs": kwargs}, "output": {"return": True}}, end_session(), start_session(sp, authority, old_pin)]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_high_level_change_pin_rejects_boolean_pin(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "changePIN", "args": ["SID", True], "kwargs": {"authAs": ("SID", "new")}},
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_failed_boolean_change_pin_does_not_poison_pin_state(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "changePIN", "args": ["SID", True], "kwargs": {"authAs": ("SID", "new")}},
+                "output": {"return": False},
+            },
+            start_session(ADMIN_SP, SID, "True"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_change_pin_accepts_32_byte_password(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "changePIN", "args": ["SID", "A" * 32], "kwargs": {"authAs": ("SID", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(ADMIN_SP, SID, "A" * 32),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_change_pin_rejects_overlong_password(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "changePIN", "args": ["SID", "A" * 33], "kwargs": {"authAs": ("SID", "new")}},
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_failed_overlong_change_pin_does_not_poison_pin_state(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "changePIN", "args": ["SID", "A" * 33], "kwargs": {"authAs": ("SID", "new")}},
+                "output": {"return": False},
+            },
+            start_session(ADMIN_SP, SID, "A" * 33),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_qualified_function_name_maps_to_wrapper(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "TCGstorageAPI.tcgapi.Sed.changePIN", "args": ["SID", "newer"], "kwargs": {"authAs": ("SID", "new")}},
+                "output": {"return": True},
+            },
+            start_session(ADMIN_SP, SID, "newer"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_params_alias_maps_to_args(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "changePIN", "params": ["SID", "newer"], "kwargs": {"authAs": ("SID", "new")}},
+                "output": {"return": True},
+            },
+            start_session(ADMIN_SP, SID, "newer"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_qualified_operation_name_maps_to_revert(self):
+        trajectory = [
+            {"input": {"function": "self.SED.wwn", "args": []}, "output": {"return": 0x1234}},
+            {"input": {"operation": "self.SED.revert", "args": [{"0x9999": "psid"}]}, "output": {"return": True}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_change_user_pin_targets_cpin_user(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "changePIN", "args": ["User1", "userpin"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_set_min_pin_length_targets_cpin_user(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "setMinPINLength", "args": ["User1", 6], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "changePIN", "args": ["User1", "abc"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_set_min_pin_length_domain_request_envelopes_mutate_policy(self):
+        base = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        for envelope in ("credentialRequest", "cpinRequest", "pinRequest", "policyRequest"):
+            payload = {"auth": "User1", "length": 6, "authAs": ("Admin1", "new")}
+            with self.subTest(envelope=envelope):
+                self.assertEqual(
+                    predict_trajectory(
+                        base
+                        + [
+                            {"input": {"function": "setMinPINLength", "kwargs": {envelope: {"values": payload}}}, "output": {"return": True}},
+                            {"input": {"function": "changePIN", "args": ["User1", "abc"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                        ]
+                    ),
+                    "FAIL",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        base
+                        + [
+                            {"input": {"function": "setMinPINLength", "kwargs": {envelope: {"values": payload}}}, "output": {"return": True}},
+                            {"input": {"function": "getMinPINLength", "args": ["User1"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"minimumPINLength": 5}}},
+                        ]
+                    ),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_high_level_set_min_pin_length_rejects_bool_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "setMinPINLength", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_failed_bool_min_pin_length_does_not_poison_pin_set(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "setMinPINLength", "args": ["User1", 6], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "setMinPINLength", "args": ["User1", False], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": False},
+            },
+            {
+                "input": {"function": "changePIN", "args": ["User1", "abc"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_change_pin_wrong_auth_true_is_invalid(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "changePIN", "args": ["SID", "newer"], "kwargs": {"authAs": ("SID", "wrong")}},
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_failure_callback_none_counts_as_failure(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "changePIN", "args": ["SID", "newer"], "kwargs": {"authAs": ("SID", "wrong")}},
+                "output": {"return": None},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_set_range_updates_lock_state(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setRange",
+                    "args": ["Admin1", 1],
+                    "kwargs": {"authAs": ("Admin1", "new"), "RangeStart": 0, "RangeLength": 1024, "WriteLockEnabled": True, "WriteLocked": True},
+                },
+                "output": {"return": True},
+            },
+            end_session(),
+            host_write_status("SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_getrange_reflects_prior_setrange(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setRange",
+                    "args": ["Admin1", 1],
+                    "kwargs": {
+                        "authAs": ("Admin1", "new"),
+                        "RangeStart": 80,
+                        "RangeLength": 8,
+                        "ReadLockEnabled": True,
+                        "WriteLockEnabled": True,
+                        "ReadLocked": False,
+                        "WriteLocked": True,
+                    },
+                },
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "getRange", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {
+                    "return": {
+                        "RangeStart": 80,
+                        "RangeLength": 8,
+                        "ReadLockEnabled": 1,
+                        "WriteLockEnabled": 1,
+                        "ReadLocked": 0,
+                        "WriteLocked": 1,
+                    }
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_setlockingrange_reflects_prior_setrange(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setLockingRange",
+                    "kwargs": {"rangeId": 1, "start": 204, "length": 4, "authAs": ("Admin1", "new")},
+                },
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "getRangeInfo", "args": [1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": {"RangeStart": 204, "RangeLength": 4}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_setlockingrange_rejects_stale_getrangeinfo(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "configureBand",
+                    "kwargs": {"rangeId": 1, "start": 216, "length": 4, "authAs": ("Admin1", "new")},
+                },
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "getRangeState", "args": [1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": {"RangeStart": 0, "RangeLength": 0}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_clearlockonreset_clears_reset_list(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {"function": "setLockOnReset", "kwargs": {"rangeId": 1, "lockOnReset": [0], "authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "clearLockOnReset", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "getLockOnReset", "args": [1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": {"LockOnReset": []}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_lockonreset_getter_aliases_preserve_list_and_boolean_views(self):
+        context = activated_locking_context() + [
+            {
+                "input": {"function": "setLockOnReset", "kwargs": {"rangeId": 1, "lockOnReset": [0], "authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            }
+        ]
+        for alias in ("getLOR", "getRangeLOR", "getResetTypes", "getRangeResetTypes", "getLockOnResetTypes", "getRangeLockOnResetTypes", "getLockingRangeResetTypes", "readLockOnReset", "fetchLockOnReset"):
+            with self.subTest(list_alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"LockOnReset": [0]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"LockOnReset": [3]}}}]),
+                    "FAIL",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"value": True}}}]),
+                    "FAIL",
+                )
+        for return_key in ("lor", "resetTypes", "types", "resetEvents", "reset_on", "resetList"):
+            with self.subTest(return_key=return_key):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getLockOnReset", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {return_key: [0]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getLockOnReset", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {return_key: [3]}}}]),
+                    "FAIL",
+                )
+        for alias in ("isRangeLockOnResetEnabled", "isLockingRangeLockOnResetEnabled", "lockOnResetEnabled", "rangeLockOnResetEnabled", "hasLockOnReset"):
+            with self.subTest(boolean_alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": False}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_lockonreset_setter_aliases_feed_reset_state_machine(self):
+        base = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setRange",
+                    "kwargs": {
+                        "rangeId": 1,
+                        "RangeStart": 80,
+                        "RangeLength": 8,
+                        "ReadLockEnabled": True,
+                        "WriteLockEnabled": True,
+                        "ReadLocked": False,
+                        "WriteLocked": False,
+                        "authAs": ("Admin1", "new"),
+                    },
+                },
+                "output": {"return": True},
+            }
+        ]
+        for alias in ("setLOR", "setRangeLOR", "setResetTypes", "setRangeResetTypes", "setLockOnResetTypes", "setRangeLockOnResetTypes", "setLockingRangeResetTypes", "configureLockOnReset", "configureRangeLockOnReset"):
+            context = base + [
+                {"input": {"function": alias, "kwargs": {"rangeId": 1, "resetTypes": [0], "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                host_reset("PowerCycle"),
+            ]
+            with self.subTest(set_alias=alias):
+                self.assertEqual(predict_trajectory(context + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "PASS")
+                self.assertEqual(predict_trajectory(context + [host_write_status("SUCCESS", pattern="CC", lba="80 ~ 87")]), "FAIL")
+        for reset_key in ("types", "resetEvents", "reset_on", "resetList"):
+            context = base + [
+                {"input": {"function": "setLockOnReset", "kwargs": {"rangeId": 1, reset_key: [0], "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                host_reset("PowerCycle"),
+            ]
+            with self.subTest(reset_key=reset_key):
+                self.assertEqual(predict_trajectory(context + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "PASS")
+                self.assertEqual(predict_trajectory(context + [host_write_status("SUCCESS", pattern="CC", lba="80 ~ 87")]), "FAIL")
+        for label, kwargs in (
+            ("policy resetTypes", {"rangeId": 1, "policy": {"resetTypes": [0]}, "authAs": ("Admin1", "new")}),
+            ("config lor", {"rangeId": 1, "config": {"lor": [0]}, "authAs": ("Admin1", "new")}),
+            ("values policy resetTypes", {"values": {"rangeId": 1, "policy": {"resetTypes": [0]}, "authAs": ("Admin1", "new")}}),
+        ):
+            context = base + [
+                {"input": {"function": "setLockOnReset", "kwargs": kwargs}, "output": {"return": True}},
+                host_reset("PowerCycle"),
+            ]
+            with self.subTest(envelope=label):
+                self.assertEqual(predict_trajectory(context + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "PASS")
+                self.assertEqual(predict_trajectory(context + [host_write_status("SUCCESS", pattern="CC", lba="80 ~ 87")]), "FAIL")
+        for label, kwargs in (
+            ("request values", {"request": {"values": {"rangeId": 1, "LockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
+            ("policy request values", {"policy": {"request": {"values": {"rangeId": 1, "lockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}}),
+            ("config target reset", {"config": {"target": {"rangeId": 1}, "reset": {"types": [0, 3]}, "authAs": ("Admin1", "new")}}),
+            ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "lockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
+            ("lockingRangeRequest values", {"lockingRangeRequest": {"values": {"rangeId": 1, "lockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
+        ):
+            context = base + [
+                {"input": {"function": "setLockOnReset", "kwargs": kwargs}, "output": {"return": True}},
+            ]
+            with self.subTest(nested_envelope=label):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getLockOnReset", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"LockOnReset": [0, 3]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getLockOnReset", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"LockOnReset": [0]}}}]),
+                    "FAIL",
+                )
+                self.assertEqual(predict_trajectory(context + [host_reset("PowerCycle"), host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "PASS")
+                self.assertEqual(predict_trajectory(context + [host_reset("PowerCycle"), host_write_status("SUCCESS", pattern="CC", lba="80 ~ 87")]), "FAIL")
+        getter_context = base + [
+            {"input": {"function": "setLockOnReset", "kwargs": {"rangeId": 1, "LockOnReset": [0, 3], "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for label, kwargs in (
+            ("request values", {"request": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+            ("policy query target", {"policy": {"query": {"target": {"rangeId": 1}}, "authAs": ("Admin1", "new")}}),
+            ("config target", {"config": {"target": {"range": 1}, "authAs": ("Admin1", "new")}}),
+            ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+            ("rangeRequest values", {"rangeRequest": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+            ("lockingRangeRequest target", {"lockingRangeRequest": {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}}),
+        ):
+            with self.subTest(nested_getter=label):
+                self.assertEqual(
+                    predict_trajectory(getter_context + [{"input": {"function": "getLockOnReset", "kwargs": kwargs}, "output": {"return": {"LockOnReset": [0, 3]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(getter_context + [{"input": {"function": "getLockOnReset", "kwargs": kwargs}, "output": {"return": {"LockOnReset": [0]}}}]),
+                    "FAIL",
+                )
+        def wrap(payload, chain):
+            value = payload
+            for key in reversed(chain):
+                value = {key: value}
+            return value
+
+        deep_chains = (
+            ("lockingRequest", "rangeRequest", "reset", "values"),
+            ("request", "lockingRangeRequest", "reset", "types"),
+            ("config", "target", "rangeValues", "reset"),
+            ("policy", "request", "rangeRequest", "values"),
+            ("values", "lockingRequest", "reset", "values"),
+            ("operationRequest", "lockingRangeRequest", "target", "values"),
+        )
+        for set_chain, get_chain in zip(deep_chains, reversed(deep_chains)):
+            with self.subTest(deep_lor_set=set_chain, deep_lor_get=get_chain):
+                context = base + [
+                    {
+                        "input": {
+                            "function": "setLockOnReset",
+                            "kwargs": wrap({"rangeId": 1, "LockOnReset": [0, 3], "authAs": ("Admin1", "new")}, set_chain),
+                        },
+                        "output": {"return": True},
+                    },
+                ]
+                get_kwargs = wrap({"rangeId": 1, "authAs": ("Admin1", "new")}, get_chain)
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getLockOnReset", "kwargs": get_kwargs}, "output": {"return": {"LockOnReset": [0, 3]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getLockOnReset", "kwargs": get_kwargs}, "output": {"return": {"LockOnReset": [0]}}}]),
+                    "FAIL",
+                )
+        for alias in ("enableLockOnReset", "enableRangeLockOnReset", "enableLOR", "enableRangeLOR"):
+            context = base + [
+                {"input": {"function": alias, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                host_reset("PowerCycle"),
+            ]
+            with self.subTest(enable_alias=alias):
+                self.assertEqual(predict_trajectory(context + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "PASS")
+                self.assertEqual(predict_trajectory(context + [host_write_status("SUCCESS", pattern="CC", lba="80 ~ 87")]), "FAIL")
+        for alias in ("disableLockOnReset", "disableRangeLockOnReset", "disableLOR", "disableRangeLOR"):
+            context = base + [
+                {"input": {"function": "setLockOnReset", "kwargs": {"rangeId": 1, "lockOnReset": [0], "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                {"input": {"function": alias, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                host_reset("PowerCycle"),
+            ]
+            with self.subTest(disable_alias=alias):
+                self.assertEqual(predict_trajectory(context + [host_write_status("SUCCESS", pattern="CC", lba="80 ~ 87")]), "PASS")
+                self.assertEqual(predict_trajectory(context + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "FAIL")
+
+    def test_tcgstorageapi_setmbr_control_fields_update_mbrcontrol(self):
+        trajectory = activated_locking_context() + [
+            {"input": {"function": "setMBR", "kwargs": {"enabled": True, "done": False, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080300000001", "MBRControl", return_values={1: True, 2: False, 3: [0]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+        for label, kwargs in (
+            ("request values", {"request": {"values": {"Enabled": True, "Done": False, "DoneOnReset": [0], "authAs": ("Admin1", "new")}}}),
+            ("policy request values", {"policy": {"request": {"values": {"MBREnable": True, "MBRDone": False, "DoneOnReset": [0], "authAs": ("Admin1", "new")}}}}),
+            ("config mbrcontrol", {"config": {"mbrControl": {"enabled": True, "done": False, "doneOnReset": [0]}, "authAs": ("Admin1", "new")}}),
+        ):
+            with self.subTest(envelope=label):
+                context = activated_locking_context() + [
+                    {"input": {"function": "setMBRControl", "kwargs": kwargs}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Enabled": True, "Done": False, "DoneOnReset": [0]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Enabled": False, "Done": True, "DoneOnReset": []}}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_mbr_complete_and_enabled_aliases_update_mbrcontrol(self):
+        for alias in ("markMBRComplete", "completeMBR", "finishMBR"):
+            with self.subTest(alias=alias):
+                complete_context = activated_locking_context() + [
+                    {"input": {"function": alias, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(complete_context + [{"input": {"function": "getMBRComplete", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Done": True}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(complete_context + [{"input": {"function": "isMBRComplete", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Done": False}}}]),
+                    "FAIL",
+                )
+        complete_context = activated_locking_context() + [
+            {"input": {"function": "markMBRComplete", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        clear_context = complete_context + [
+            {"input": {"function": "clearMBRComplete", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            {"input": {"function": "setMBREnabled", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            {"input": {"function": "clearMBREnabled", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        self.assertEqual(
+            predict_trajectory(clear_context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Done": False, "Enabled": False}}}]),
+            "PASS",
+        )
+
+    def test_tcgstorageapi_setmbr_byte_payload_updates_mbr_table(self):
+        trajectory = activated_locking_context() + [
+            {"input": {"function": "setMBR", "kwargs": {"offset": 10, "data": "AABB", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            {"input": {"function": "readMBR", "kwargs": {"offset": 10, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "AABB"}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_mbr_payload_aliases_update_and_read_mbr_table(self):
+        trajectory = activated_locking_context() + [
+            {"input": {"function": "writeMBRPayload", "kwargs": {"offset": 18, "payload": "AABB", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            {"input": {"function": "fetchMBRBytes", "kwargs": {"offset": 18, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "AABB"}},
+            {"input": {"function": "setMBRPayload", "kwargs": {"offset": 18, "bytes": "CCDD", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            {"input": {"function": "getMBRPayload", "kwargs": {"offset": 18, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "CCDD"}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_mbr_block_aliases_share_byte_table_state(self):
+        for write_fn, read_fn in (
+            ("writeMBRBlock", "readMBRBlock"),
+            ("storeMBRSegment", "fetchMBRSegment"),
+            ("writeMBRRange", "fetchMBRRange"),
+            ("writeMBRChunk", "readMBRChunk"),
+            ("storeMBRWindow", "fetchMBRWindow"),
+            ("setMBRWindow", "getMBRWindow"),
+            ("writeMBRSlice", "readMBRSlice"),
+            ("storeMBRSlice", "fetchMBRSlice"),
+        ):
+            with self.subTest(write_fn=write_fn, read_fn=read_fn):
+                context = activated_locking_context() + [
+                    {"input": {"function": write_fn, "kwargs": {"offset": 20, "bytes": "AABB", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": read_fn, "kwargs": {"offset": 20, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "AABB"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": read_fn, "kwargs": {"offset": 20, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "0000"}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_mbr_window_range_slice_envelopes_share_byte_state(self):
+        for label, write_payload, read_payload in (
+            ("window", {"window": {"offset": 4, "length": 3}, "bytes": "AABBCC"}, {"window": {"offset": 4, "length": 3}}),
+            ("range", {"range": {"start": 4, "count": 3}, "data": "AABBCC"}, {"range": {"start": 4, "count": 3}}),
+            ("slice", {"slice": {"startOffset": 4, "byteCount": 3}, "payload": "AABBCC"}, {"slice": {"startOffset": 4, "byteCount": 3}}),
+            ("block", {"block": {"offset": 4, "length": 3}, "bytes": "AABBCC"}, {"block": {"offset": 4, "length": 3}}),
+            ("chunk", {"chunk": {"offset": 4, "length": 3}, "bytes": "AABBCC"}, {"chunk": {"offset": 4, "length": 3}}),
+            ("segment", {"segment": {"offset": 4, "length": 3}, "bytes": "AABBCC"}, {"segment": {"offset": 4, "length": 3}}),
+            ("span", {"span": {"offset": 4, "length": 3}, "bytes": "AABBCC"}, {"span": {"offset": 4, "length": 3}}),
+            ("bounds", {"bounds": {"start": 4, "count": 3}, "bytes": "AABBCC"}, {"bounds": {"start": 4, "count": 3}}),
+            ("byteRange", {"byteRange": {"start": 4, "count": 3}, "bytes": "AABBCC"}, {"byteRange": {"start": 4, "count": 3}}),
+            ("request.window", {"request": {"window": {"offset": 4, "length": 3}}, "bytes": "AABBCC"}, {"request": {"window": {"offset": 4, "length": 3}}}),
+            ("request window bytes", {"request": {"window": {"offset": 4, "length": 3}, "bytes": "AABBCC"}}, {"window": {"offset": 4, "length": 3}}),
+            ("policy range", {"policy": {"range": {"start": 4, "count": 3}, "data": "AABBCC"}}, {"range": {"start": 4, "count": 3}}),
+            ("config slice", {"config": {"slice": {"startOffset": 4, "byteCount": 3}, "payload": "AABBCC"}}, {"request": {"values": {"window": {"offset": 4, "length": 3}}}}),
+            ("request values window", {"request": {"values": {"window": {"offset": 4, "length": 3}, "bytes": "AABBCC"}}}, {"window": {"offset": 4, "length": 3}}),
+            ("mbrRequest values window", {"mbrRequest": {"values": {"offset": 4, "length": 3, "bytes": "AABBCC"}}}, {"mbrRequest": {"window": {"offset": 4, "length": 3}}}),
+            ("mbrShadowRequest byteTableRequest window", {"mbrShadowRequest": {"values": {"offset": 4, "length": 3, "bytes": "AABBCC"}}}, {"byteTableRequest": {"window": {"offset": 4, "length": 3}}}),
+        ):
+            with self.subTest(label=label):
+                context = activated_locking_context() + [
+                    {"input": {"function": "writeMBR", "kwargs": {"authAs": ("Admin1", "new"), **write_payload}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readMBR", "kwargs": {"authAs": ("Admin1", "new"), **read_payload}}, "output": {"return": "AABBCC"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readMBR", "kwargs": {"authAs": ("Admin1", "new"), **read_payload}}, "output": {"return": "000000"}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_mbr_deep_window_envelopes_share_byte_state(self):
+        def wrap(payload, chain):
+            current = payload
+            for key in reversed(chain):
+                current = {key: current}
+            return current
+
+        chains = (
+            ("mbrRequest", "window", "values"),
+            ("request", "mbrShadowRequest", "slice", "values"),
+            ("byteTableRequest", "range", "payload"),
+            ("config", "target", "window", "values"),
+            ("policy", "request", "slice", "values"),
+        )
+        for chain in chains:
+            with self.subTest(chain=chain):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    {"input": {"function": "writeMBR", "kwargs": wrap({"offset": 4, "length": 3, "bytes": "AABBCC", "authAs": ("Admin1", "new")}, chain)}, "output": {"return": True}},
+                ]
+                read_kwargs = wrap({"offset": 4, "length": 3, "authAs": ("Admin1", "new")}, chain)
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readMBR", "kwargs": read_kwargs}, "output": {"return": "AABBCC"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readMBR", "kwargs": read_kwargs}, "output": {"return": "000000"}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_mbr_shadow_aliases_share_byte_table_state(self):
+        for write_fn in ("setMBRShadow", "setMBRShadowBytes", "setMBRShadowPayload", "writeMBRShadow", "writeMBRShadowPayload", "storeMBRShadow", "storeMBRShadowBytes", "storeMBRShadowPayload", "saveMBRShadow", "saveMBRShadowBytes", "saveMBRShadowPayload", "programMBRShadow", "programMBRShadowPayload", "putMBRShadow", "putMBRShadowPayload", "updateMBRShadow", "updateMBRShadowPayload"):
+            with self.subTest(write_fn=write_fn):
+                context = activated_locking_context() + [
+                    {"input": {"function": write_fn, "kwargs": {"offset": 24, "bytes": "AABB", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getMBRShadow", "kwargs": {"offset": 24, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "AABB"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getMBRShadowBytes", "kwargs": {"offset": 24, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "0000"}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_mbr_extended_payload_aliases_share_byte_table_state(self):
+        write_aliases = (
+            "putMBRPayload",
+            "storeMBRPayload",
+            "saveMBRPayload",
+            "updateMBRPayload",
+            "programMBRPayload",
+            "putMBRData",
+            "storeMBRData",
+            "saveMBRData",
+            "updateMBRData",
+            "programMBRData",
+            "setMBRTableBytes",
+            "putMBRTableBytes",
+            "storeMBRTableBytes",
+            "saveMBRTable",
+            "saveMBRTableBytes",
+            "updateMBRTable",
+            "programMBRTableBytes",
+            "putMBRBlock",
+            "updateMBRRange",
+            "programMBRWindow",
+        )
+        for write_fn in write_aliases:
+            with self.subTest(write_fn=write_fn):
+                context = activated_locking_context() + [
+                    {"input": {"function": write_fn, "kwargs": {"offset": 28, "bytes": "AABB", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readMBR", "kwargs": {"offset": 28, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "AABB"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readMBR", "kwargs": {"offset": 28, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "0000"}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_mbr_extended_read_aliases_share_byte_table_state(self):
+        context = activated_locking_context() + [
+            {"input": {"function": "writeMBR", "kwargs": {"offset": 32, "bytes": "AABBCC", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for read_fn in (
+            "readMBRTable",
+            "getMBRTableBytes",
+            "getMBRSegment",
+            "getMBRRange",
+            "fetchMBRPayload",
+            "fetchMBRData",
+            "fetchMBRTableBytes",
+            "fetchMBRShadowPayload",
+            "loadMBRPayload",
+            "loadMBRData",
+            "loadMBRTableBytes",
+            "loadMBRShadowPayload",
+            "loadMBRSegment",
+            "loadMBRRange",
+        ):
+            with self.subTest(read_fn=read_fn):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": read_fn, "kwargs": {"offset": 33, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "BBCC"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": read_fn, "kwargs": {"offset": 33, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "AABB"}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_grantaccess_read_allows_user_unlock(self):
+        trajectory = activated_locking_context() + [
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            {
+                "input": {"function": "setRange", "args": [1], "kwargs": {"authAs": ("Admin1", "new"), "RangeStart": 80, "RangeLength": 8, "ReadLockEnabled": 1, "ReadLocked": 1}},
+                "output": {"return": True},
+            },
+            {"input": {"function": "grantAccess", "args": ["User1", 1, "read"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            {"input": {"function": "readUnlock", "kwargs": {"range": 1, "authAs": ("User1", "userpin"), "locked": False}}, "output": {"return": True}},
+            {"input": {"function": "getRange", "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ReadLocked": False}}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_positional_setrange_updates_getrange(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setRange",
+                    "args": ["Admin1", 1, 80, 8, True, False, True, True],
+                    "kwargs": {"authAs": ("Admin1", "new")},
+                },
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "getRange", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {
+                    "return": {
+                        "RangeStart": 80,
+                        "RangeLength": 8,
+                        "ReadLockEnabled": 1,
+                        "WriteLockEnabled": 1,
+                        "ReadLocked": 1,
+                        "WriteLocked": 0,
+                    }
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_positional_setrange_rejects_stale_getrange(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setRange",
+                    "args": ["Admin1", 1, 80, 8, True, False, True, True],
+                    "kwargs": {"authAs": ("Admin1", "new")},
+                },
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "getRange", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": {"RangeStart": 0, "RangeLength": 0, "ReadLockEnabled": 0, "WriteLockEnabled": 0}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_getrange_rejects_stale_prior_setrange_values(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setRange",
+                    "args": ["Admin1", 1],
+                    "kwargs": {
+                        "authAs": ("Admin1", "new"),
+                        "RangeStart": 80,
+                        "RangeLength": 8,
+                        "ReadLockEnabled": True,
+                        "WriteLockEnabled": True,
+                        "ReadLocked": False,
+                        "WriteLocked": True,
+                    },
+                },
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "getRange", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {
+                    "return": {
+                        "RangeStart": 0,
+                        "RangeLength": 1024,
+                        "ReadLockEnabled": 1,
+                        "WriteLockEnabled": 1,
+                        "ReadLocked": 0,
+                        "WriteLocked": 1,
+                    }
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_getrange_allows_matching_partial_state_return(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setRange",
+                    "args": ["Admin1", 1],
+                    "kwargs": {
+                        "authAs": ("Admin1", "new"),
+                        "RangeStart": 80,
+                        "RangeLength": 8,
+                        "WriteLockEnabled": True,
+                        "WriteLocked": True,
+                    },
+                },
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "getRange", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": {"RangeStart": 80, "RangeLength": 8, "WriteLockEnabled": 1, "WriteLocked": 1}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_getrange_rejects_omitted_non_default_lock_state(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setRange",
+                    "args": ["Admin1", 1],
+                    "kwargs": {
+                        "authAs": ("Admin1", "new"),
+                        "RangeStart": 80,
+                        "RangeLength": 8,
+                        "WriteLockEnabled": True,
+                        "WriteLocked": True,
+                    },
+                },
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "getRange", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": {"RangeStart": 80, "RangeLength": 8}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_failed_setrange_does_not_update_getrange(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setRange",
+                    "args": ["Admin1", 1],
+                    "kwargs": {
+                        "authAs": ("Admin1", "new"),
+                        "RangeStart": 80,
+                        "RangeLength": 8,
+                        "WriteLockEnabled": True,
+                        "WriteLocked": True,
+                    },
+                },
+                "output": {"return": True},
+            },
+            {
+                "input": {
+                    "function": "setRange",
+                    "args": ["Admin1", 1],
+                    "kwargs": {
+                        "authAs": ("Admin1", "wrong"),
+                        "RangeStart": 120,
+                        "RangeLength": 4,
+                        "WriteLockEnabled": True,
+                        "WriteLocked": False,
+                    },
+                },
+                "output": {"return": False},
+            },
+            {
+                "input": {"function": "getRange", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": {"RangeStart": 80, "RangeLength": 8, "WriteLockEnabled": 1, "WriteLocked": 1}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_failed_setrange_cannot_poison_getrange(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setRange",
+                    "args": ["Admin1", 1],
+                    "kwargs": {
+                        "authAs": ("Admin1", "new"),
+                        "RangeStart": 80,
+                        "RangeLength": 8,
+                        "WriteLockEnabled": True,
+                        "WriteLocked": True,
+                    },
+                },
+                "output": {"return": True},
+            },
+            {
+                "input": {
+                    "function": "setRange",
+                    "args": ["Admin1", 1],
+                    "kwargs": {
+                        "authAs": ("Admin1", "wrong"),
+                        "RangeStart": 120,
+                        "RangeLength": 4,
+                        "WriteLockEnabled": True,
+                        "WriteLocked": False,
+                    },
+                },
+                "output": {"return": False},
+            },
+            {
+                "input": {"function": "getRange", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": {"RangeStart": 120, "RangeLength": 4, "WriteLockEnabled": 1, "WriteLocked": 0}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_random_accepts_payload_return(self):
+        trajectory = [
+            {
+                "input": {"function": "random", "args": [4]},
+                "output": {"return": b"abcd"},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_random_rejects_wrong_length_payload(self):
+        trajectory = [
+            {
+                "input": {"function": "random", "args": [4]},
+                "output": {"return": b"abc"},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_enable_authority_updates_state(self):
+        trajectory = owned_admin_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            method_record("Set", "", "C_PIN_User1", optional={"authAs": ("Admin1", "new"), "PIN": "userpin"}),
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_get_authority_false_is_disabled_value(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {"function": "getAuthority", "args": ["User1"], "kwargs": {"obj": "Authority_User1", "authAs": ("Admin1", "new")}},
+                "output": {"return": False},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_get_authority_reflects_enabled_state(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "getAuthority", "args": ["User1"], "kwargs": {"obj": "Authority_User1", "authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_get_authority_rejects_stale_disabled_return(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "getAuthority", "args": ["User1"], "kwargs": {"obj": "Authority_User1", "authAs": ("Admin1", "new")}},
+                "output": {"return": False},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authority_enabled_domain_request_envelopes_mutate_state(self):
+        base = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+        ]
+        for function_name, enabled, expected in (
+            ("enableAuthority", True, True),
+            ("disableAuthority", False, False),
+            ("setAuthorityEnabled", True, True),
+            ("setUserEnabled", False, False),
+        ):
+            for envelope in ("authorityRequest", "authRequest", "identityRequest", "userRequest", "policyRequest"):
+                with self.subTest(function_name=function_name, envelope=envelope):
+                    payload = {"authority": "User1", "enabled": enabled, "authAs": ("Admin1", "new")}
+                    context = base + [
+                        {"input": {"function": function_name, "kwargs": {envelope: {"values": payload}}}, "output": {"return": True}},
+                    ]
+                    self.assertEqual(
+                        predict_trajectory(context + [{"input": {"function": "authenticate", "values": {"authority": "User1", "proof": "userpin"}}, "output": {"return": expected}}]),
+                        "PASS",
+                    )
+                    self.assertEqual(
+                        predict_trajectory(context + [{"input": {"function": "authenticate", "values": {"authority": "User1", "proof": "userpin"}}, "output": {"return": not expected}}]),
+                        "FAIL",
+                    )
+
+    def test_authority_getter_domain_request_envelopes_select_authority(self):
+        base = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        for function_name in ("getAuthority", "isUserEnabled", "getUserEnabled"):
+            for envelope in ("authorityRequest", "authRequest", "identityRequest", "userRequest", "policyRequest", "queryRequest"):
+                with self.subTest(function_name=function_name, envelope=envelope):
+                    payload = {"authority": "User1", "authAs": ("Admin1", "new")}
+                    getter = {"input": {"function": function_name, "kwargs": {envelope: {"values": payload}}}}
+                    self.assertEqual(predict_trajectory(base + [getter | {"output": {"return": True}}]), "PASS")
+                    self.assertEqual(predict_trajectory(base + [getter | {"output": {"return": False}}]), "FAIL")
+
+    def test_authority_getter_deep_request_envelopes_select_authority(self):
+        def wrap(payload, chain):
+            current = payload
+            for key in reversed(chain):
+                current = {key: current}
+            return current
+
+        base = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        chains = (
+            ("authRequest", "identityRequest", "userRequest", "values"),
+            ("request", "authorityRequest", "queryRequest", "values"),
+            ("config", "policyRequest", "query", "selector"),
+        )
+        for function_name in ("getAuthority", "isUserEnabled", "getUserEnabled"):
+            for chain in chains:
+                with self.subTest(function_name=function_name, chain=chain):
+                    kwargs = wrap({"authority": "User1", "authAs": ("Admin1", "new")}, chain)
+                    getter = {"input": {"function": function_name, "kwargs": kwargs}}
+                    self.assertEqual(predict_trajectory(base + [getter | {"output": {"return": True}}]), "PASS")
+                    self.assertEqual(predict_trajectory(base + [getter | {"output": {"return": False}}]), "FAIL")
+
+    def test_tcgstorageapi_activate_authority_alias_enables_authority(self):
+        for alias in ("activateAuthority", "activateUser"):
+            with self.subTest(alias=alias):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    {"input": {"function": alias, "args": ["User1"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "isUserEnabled", "args": ["User1"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "isUserEnabled", "args": ["User1"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": False}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_deactivate_authority_alias_disables_authority(self):
+        for alias in ("deactivateAuthority", "deactivateUser"):
+            with self.subTest(alias=alias):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Set", "", "User1", optional={"Values": [{5: 1}]}),
+                    {"input": {"function": alias, "args": ["User1"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "isUserEnabled", "args": ["User1"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": False}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "isUserEnabled", "args": ["User1"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_get_authority_rejects_stale_enabled_return(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", False], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "getAuthority", "args": ["User1"], "kwargs": {"obj": "Authority_User1", "authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_failed_enable_authority_does_not_poison_get_authority(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", True], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "enableAuthority", "args": ["User1", False], "kwargs": {"authAs": ("Admin1", "wrong")}},
+                "output": {"return": False},
+            },
+            {
+                "input": {"function": "getAuthority", "args": ["User1"], "kwargs": {"obj": "Authority_User1", "authAs": ("Admin1", "new")}},
+                "output": {"return": False},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_readdata_none_is_empty_datastore_success(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {"function": "readData", "args": ["Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": None},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_get_psk_entry_none_is_empty_get_success(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "getPskEntry", "args": [1], "kwargs": {"authAs": ("SID", "new")}},
+                "output": {"return": None},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_set_port_maps_to_adminsp_set(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "setPort", "args": ["Port2"], "kwargs": {"authAs": ("SID", "new"), "PortLocked": True}},
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_port_read_aliases_track_portlocked(self):
+        context = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            {
+                "input": {"function": "setPort", "kwargs": {"port": "Port2", "PortLocked": True, "authAs": ("SID", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        for alias in ("readPort", "fetchPort"):
+            with self.subTest(alias=alias, case="current"):
+                trajectory = context + [
+                    {
+                        "input": {"function": alias, "args": ["Port2"], "kwargs": {"authAs": ("SID", "new")}},
+                        "output": {"return": {"PortLocked": True}},
+                    }
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+            with self.subTest(alias=alias, case="stale"):
+                trajectory = context + [
+                    {
+                        "input": {"function": alias, "args": ["Port2"], "kwargs": {"authAs": ("SID", "new")}},
+                        "output": {"return": {"PortLocked": False}},
+                    }
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+            with self.subTest(alias=alias, case="boolean_only"):
+                trajectory = context + [
+                    {
+                        "input": {"function": alias, "args": ["Port2"], "kwargs": {"authAs": ("SID", "new")}},
+                        "output": {"return": True},
+                    }
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+        for selector_key in ("interface", "interfaceId", "portName", "name"):
+            with self.subTest(selector_key=selector_key):
+                selector_context = owned_admin_context() + [
+                    start_session(ADMIN_SP, SID, "new"),
+                    {
+                        "input": {"function": "setPort", "kwargs": {selector_key: "Port2", "PortLocked": True, "authAs": ("SID", "new")}},
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(selector_context + [{"input": {"function": "getPort", "kwargs": {selector_key: "Port2", "authAs": ("SID", "new")}}, "output": {"return": {"PortLocked": True}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(selector_context + [{"input": {"function": "getPort", "kwargs": {selector_key: "Port2", "authAs": ("SID", "new")}}, "output": {"return": {"PortLocked": False}}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_high_level_port_lock_read_aliases_track_portlocked(self):
+        context = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            {
+                "input": {"function": "setPort", "kwargs": {"port": "Port2", "PortLocked": True, "authAs": ("SID", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        for alias in ("readPortLock", "getInterfaceLock"):
+            with self.subTest(alias=alias, case="current"):
+                trajectory = context + [
+                    {
+                        "input": {"function": alias, "args": ["Port2"], "kwargs": {"authAs": ("SID", "new")}},
+                        "output": {"return": {"PortLocked": True}},
+                    }
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+            with self.subTest(alias=alias, case="stale"):
+                trajectory = context + [
+                    {
+                        "input": {"function": alias, "args": ["Port2"], "kwargs": {"authAs": ("SID", "new")}},
+                        "output": {"return": {"PortLocked": False}},
+                    }
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+        for return_key in ("portLock", "lockState", "portLockState", "portState"):
+            with self.subTest(return_key=return_key, case="current"):
+                trajectory = context + [
+                    {
+                        "input": {"function": "getPortLocked", "args": ["Port2"], "kwargs": {"authAs": ("SID", "new")}},
+                        "output": {"return": {return_key: True}},
+                    }
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+            with self.subTest(return_key=return_key, case="stale"):
+                trajectory = context + [
+                    {
+                        "input": {"function": "getPortLocked", "args": ["Port2"], "kwargs": {"authAs": ("SID", "new")}},
+                        "output": {"return": {return_key: False}},
+                    }
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_port_update_put_aliases_track_portlocked(self):
+        for setter in ("updatePortLocked", "putPortLocked", "updatePortLock", "putPortLock", "updatePortState"):
+            with self.subTest(setter=setter):
+                context = owned_admin_context() + [
+                    start_session(ADMIN_SP, SID, "new"),
+                    {"input": {"function": setter, "args": ["Port2"], "kwargs": {"authAs": ("SID", "new"), "value": True}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getPort", "args": ["Port2"], "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": {"PortLocked": True}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getPort", "args": ["Port2"], "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": {"PortLocked": False}}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_high_level_tpersign_rejects_oversized_payload(self):
+        trajectory = [
+            {
+                "input": {"function": "tperSign", "args": ["A" * 257]},
+                "output": {"return": b"signature"},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_tpersign_rejects_wrong_explicit_authas_success(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "tperSign", "args": [b"payload"], "kwargs": {"authAs": ("SID", "wrong")}},
+                "output": {"return": b"signature"},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_tpersign_accepts_wrong_explicit_authas_failure(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "tperSign", "args": [b"payload"], "kwargs": {"authAs": ("SID", "wrong")}},
+                "output": {"return": False},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_tpersign_rejects_locked_out_explicit_authas_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", optional={"Values": [{"5": 1}]}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "wrong", "NOT_AUTHORIZED"),
+            {
+                "input": {"function": "tperSign", "args": [b"payload"], "kwargs": {"authAs": ("SID", "new")}},
+                "output": {"return": b"signature"},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_failed_method_authas_counts_toward_try_limit(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", optional={"Values": [{"5": 1}]}),
+            end_session(),
+            {
+                "input": {"function": "tperSign", "args": [b"payload"], "kwargs": {"authAs": ("SID", "wrong")}},
+                "output": {"return": False},
+            },
+            {
+                "input": {"function": "tperSign", "args": [b"payload"], "kwargs": {"authAs": ("SID", "new")}},
+                "output": {"return": b"signature"},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_firmware_attestation_requires_nonce(self):
+        trajectory = [
+            {
+                "input": {"function": "firmware_attestation", "args": []},
+                "output": {"return": [b"attestation"]},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_firmware_attestation_accepts_nonce(self):
+        for alias in ("firmware_attestation", "getAttestation", "readAttestation", "fetchAttestation", "getTPerAttestation"):
+            with self.subTest(alias=alias):
+                trajectory = [
+                    {
+                        "input": {"function": alias, "args": [b"0" * 16]},
+                        "output": {"return": [b"attestation"]},
+                    }
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_cert_get_maps_to_byte_table_get(self):
+        trajectory = [
+            {
+                "input": {"function": "get_tperAttestation_Cert", "args": []},
+                "output": {"return": bytearray(b"cert")},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_tpersign_cert_get_maps_to_byte_table_get(self):
+        trajectory = [
+            {
+                "input": {"function": "get_tperSign_cert", "args": []},
+                "output": {"return": bytearray(b"cert")},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_tpersign_cert_get_rejects_wrong_explicit_authas_success(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {"function": "get_tperSign_cert", "kwargs": {"authAs": ("SID", "wrong")}},
+                "output": {"return": bytearray(b"cert")},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_writeaccess_allows_user_datastore_write(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            {
+                "input": {"function": "writeaccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            {
+                "input": {"function": "writeData", "args": ["User1", {"hello": "world"}], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_writedata_empty_return_is_not_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            {
+                "input": {"function": "writeaccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            {
+                "input": {"function": "writeData", "args": ["User1", {"hello": "world"}], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": {}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_writedata_success_envelope_is_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            {
+                "input": {"function": "writeaccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            {
+                "input": {"function": "writeData", "args": ["User1", {"hello": "world"}], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": {"success": True}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_readaccess_writeaccess_preserves_datastore_payload(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            {
+                "input": {"function": "writeAccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "readAccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            {
+                "input": {"function": "writeData", "args": ["User1", "AA"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "readData", "args": ["User1"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": "AA"},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_readdata_rejects_stale_payload(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            {
+                "input": {"function": "writeAccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "readAccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            {
+                "input": {"function": "writeData", "args": ["User1", "AA"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "readData", "args": ["User1"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": "BB"},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_readdata_without_readaccess_returns_none(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            {
+                "input": {"function": "writeAccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            {
+                "input": {"function": "writeData", "args": ["User1", "CC"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "readData", "args": ["User1"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": None},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_readdata_without_readaccess_cannot_return_payload(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            {
+                "input": {"function": "writeAccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            {
+                "input": {"function": "writeData", "args": ["User1", "CC"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "readData", "args": ["User1"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": "CC"},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_writeaccess_replacement_failed_write_preserves_payload(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000900030002", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "0000000B00030002", "C_PIN", optional={"Values": [{"3": "otherpin"}]}),
+            {
+                "input": {"function": "writeAccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "readAccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            {
+                "input": {"function": "writeData", "args": ["User1", "AABB"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "writeAccess", "args": ["User2", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            {
+                "input": {"function": "writeData", "args": ["User1", "CCDD"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": False},
+            },
+            {
+                "input": {"function": "readData", "args": ["User1"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": "AABB"},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_writeaccess_replacement_cannot_poison_payload(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000900030002", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "0000000B00030002", "C_PIN", optional={"Values": [{"3": "otherpin"}]}),
+            {
+                "input": {"function": "writeAccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "readAccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            {
+                "input": {"function": "writeData", "args": ["User1", "AABB"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "writeAccess", "args": ["User2", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            {
+                "input": {"function": "writeData", "args": ["User1", "CCDD"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": False},
+            },
+            {
+                "input": {"function": "readData", "args": ["User1"], "kwargs": {"authAs": ("User1", "userpin")}},
+                "output": {"return": "CCDD"},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_readaccess_replacement_admin_readdata_returns_none(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "writeData", "args": ["Admin1", "AABB"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            {
+                "input": {"function": "readAccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "readData", "args": ["Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": None},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_readaccess_replacement_blocks_admin_payload_leak(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "writeData", "args": ["Admin1", "AABB"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            {
+                "input": {"function": "readAccess", "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "readData", "args": ["Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": "AABB"},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_writeaccess_rejects_user_without_number(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "writeaccess", "args": ["User", 1], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_enable_range_access_rejects_user_without_number(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "enable_range_access", "args": ["Band1", "User", "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_set_psk_entry_accepts_sid_auth(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {
+                    "function": "setPskEntry",
+                    "args": [0],
+                    "kwargs": {"authAs": ("SID", "new"), "Enabled": False, "PSK": b"secret", "CipherSuite": "0x1301"},
+                },
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_psk_aliases_preserve_tracked_metadata(self):
+        for setter in (
+            "updatePSK",
+            "updatePskEntry",
+            "putPskEntry",
+            "configurePskEntry",
+            "setTLSPSK",
+            "updateTLSPSK",
+            "putTLSPSK",
+            "storeTLSPSK",
+            "saveTLSPSK",
+            "importTLSPSK",
+            "restorePskEntry",
+            "setPreSharedKey",
+            "setPreSharedKeyEntry",
+            "writePreSharedKey",
+            "updatePreSharedKey",
+            "putPreSharedKey",
+            "storePreSharedKey",
+            "savePreSharedKey",
+            "importPreSharedKey",
+            "restorePreSharedKey",
+        ):
+            with self.subTest(setter=setter):
+                context = owned_admin_context() + [
+                    {
+                        "input": {
+                            "function": setter,
+                            "kwargs": {"psk_id": 1, "authAs": ("SID", "new"), "Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301"},
+                        },
+                        "output": {"return": True},
+                    }
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "fetchPSK", "kwargs": {"psk_id": 1, "authAs": ("SID", "new")}}, "output": {"return": {"Enabled": True, "CipherSuite": "0x1301"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readPreSharedKey", "kwargs": {"psk_id": 1, "authAs": ("SID", "new")}}, "output": {"return": {"Enabled": False, "CipherSuite": "0x1301"}}}]),
+                    "FAIL",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readPskEntry", "kwargs": {"psk_id": 1, "authAs": ("SID", "new")}}, "output": {"return": {"Enabled": True, "CipherSuite": "0x1301"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "fetchPskEntry", "kwargs": {"psk_id": 1, "authAs": ("SID", "new")}}, "output": {"return": {"Enabled": False, "CipherSuite": "0x1301"}}}]),
+                    "FAIL",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "fetchPreSharedKey", "kwargs": {"psk_id": 1, "authAs": ("SID", "new")}}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "queryTLSPSK", "kwargs": {"psk_id": 1, "authAs": ("SID", "new")}}, "output": {"return": {"Enabled": True, "CipherSuite": "0x1301"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "queryPreSharedKeyEntry", "kwargs": {"psk_id": 1, "authAs": ("SID", "new")}}, "output": {"return": {"Enabled": False, "CipherSuite": "0x1301"}}}]),
+                    "FAIL",
+                )
+                for return_key, good, stale in (
+                    ("isEnabled", True, False),
+                    ("active", True, False),
+                    ("cipher_suite", "0x1301", "0x1302"),
+                    ("tlsCipherSuite", "0x1301", "0x1302"),
+                    ("suite", "0x1301", "0x1302"),
+                    ("secret", b"secret", b"wrong"),
+                    ("pskSecret", b"secret", b"wrong"),
+                    ("pskValue", b"secret", b"wrong"),
+                    ("preSharedKey", b"secret", b"wrong"),
+                    ("keyMaterial", b"secret", b"wrong"),
+                ):
+                    with self.subTest(setter=setter, return_key=return_key):
+                        self.assertEqual(
+                            predict_trajectory(context + [{"input": {"function": "getPskEntry", "kwargs": {"psk_id": 1, "authAs": ("SID", "new")}}, "output": {"return": {return_key: good}}}]),
+                            "PASS",
+                        )
+                        self.assertEqual(
+                            predict_trajectory(context + [{"input": {"function": "getPskEntry", "kwargs": {"psk_id": 1, "authAs": ("SID", "new")}}, "output": {"return": {return_key: stale}}}]),
+                            "FAIL",
+                        )
+        for selector_key in ("uid", "slot", "keyId", "key_id"):
+            with self.subTest(selector_key=selector_key):
+                context = owned_admin_context() + [
+                    {
+                        "input": {
+                            "function": "setPskEntry",
+                            "kwargs": {selector_key: 1, "authAs": ("SID", "new"), "Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301"},
+                        },
+                        "output": {"return": True},
+                    }
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getPskEntry", "kwargs": {selector_key: 1, "authAs": ("SID", "new")}}, "output": {"return": {"Enabled": True, "CipherSuite": "0x1301"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getPskEntry", "kwargs": {selector_key: 1, "authAs": ("SID", "new")}}, "output": {"return": {"Enabled": False, "CipherSuite": "0x1301"}}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_high_level_set_psk_entry_rejects_wrong_sid_auth(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {
+                    "function": "setPskEntry",
+                    "args": [0],
+                    "kwargs": {"authAs": ("SID", "wrong"), "Enabled": False, "PSK": b"secret", "CipherSuite": "0x1301"},
+                },
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_set_psk_entry_requires_cipher_suite(self):
+        trajectory = owned_admin_context() + [
+            {
+                "input": {
+                    "function": "setPskEntry",
+                    "args": [0],
+                    "kwargs": {"authAs": ("SID", "new"), "Enabled": False, "PSK": b"secret"},
+                },
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_set_psk_entry_rejects_wrong_second_auth(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setPskEntry",
+                    "args": [0],
+                    "kwargs": {"authAs": [("SID", "new"), ("Admin1", "wrong")], "Enabled": False, "PSK": b"secret", "CipherSuite": "0x1301"},
+                },
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_set_psk_entry_rejects_locked_out_second_auth(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000B00010001", "C_PIN_Admin1", optional={"Values": [{"5": 1}]}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "wrong", "NOT_AUTHORIZED"),
+            {
+                "input": {
+                    "function": "setPskEntry",
+                    "args": [0],
+                    "kwargs": {"authAs": [("SID", "new"), ("Admin1", "new")], "Enabled": False, "PSK": b"secret", "CipherSuite": "0x1301"},
+                },
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_set_psk_entry_accepts_two_valid_auths(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {
+                    "function": "setPskEntry",
+                    "args": [0],
+                    "kwargs": {"authAs": [("SID", "new"), ("Admin1", "new")], "Enabled": False, "PSK": b"secret", "CipherSuite": "0x1301"},
+                },
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_lockinginfo_updates_alignment_state(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "lockingInfo", "args": []},
+                "output": {"return": {"AlignmentRequired": 1, "AlignmentGranularity": 8, "LowestAlignedLBA": 4}},
+            },
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"3": 4}, {"4": 12}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_lockinginfo_rejects_stale_alignment_granularity(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {"function": "lockingInfo", "args": []},
+                "output": {"return": {"AlignmentRequired": 1, "AlignmentGranularity": 8, "LowestAlignedLBA": 4}},
+            },
+            {
+                "input": {"function": "lockingInfo", "args": []},
+                "output": {"return": {"AlignmentRequired": 1, "AlignmentGranularity": 16, "LowestAlignedLBA": 4}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_lockinginfo_rejects_stale_max_ranges(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {"function": "lockingInfo", "args": []},
+                "output": {"return": {"MaxRanges": 8}},
+            },
+            {
+                "input": {"function": "lockingInfo", "args": []},
+                "output": {"return": {"MaxRanges": 4}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_lockinginfo_allows_matching_partial_repeat(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {"function": "lockingInfo", "args": []},
+                "output": {"return": {"AlignmentRequired": 1, "AlignmentGranularity": 8, "LowestAlignedLBA": 4, "MaxRanges": 8}},
+            },
+            {
+                "input": {"function": "lockingInfo", "args": []},
+                "output": {"return": {"AlignmentGranularity": 8}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_getrange_empty_return_is_success(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {"function": "getRange", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": None},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_getrange_tuple_updates_range_state(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {"function": "getRange", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {
+                    "return": [
+                        {"RangeStart": 0, "RangeLength": 1024, "WriteLockEnabled": 1, "WriteLocked": 1},
+                        True,
+                    ]
+                },
+            },
+            host_write_status("SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_locking_bool_getter_rejects_success_envelope(self):
+        trajectory = activated_locking_context() + [
+            {"input": {"function": "setReadLocked", "kwargs": {"range": 1, "locked": True, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            {"input": {"function": "isReadLocked", "kwargs": {"range": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"success": True}}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_locking_bool_getter_accepts_named_result(self):
+        trajectory = activated_locking_context() + [
+            {"input": {"function": "setReadLocked", "kwargs": {"range": 1, "locked": True, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            {"input": {"function": "isReadLocked", "kwargs": {"range": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"isReadLocked": True}}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_result_pass_maps_to_success(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {"function": "getRange", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"result": "pass"},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_operation_field_maps_high_level_revert(self):
+        trajectory = [
+            {"input": {"operation": "wwn", "args": []}, "output": {"return": 0x1234}},
+            {"input": {"operation": "revert", "args": [{"0x9999": "psid"}]}, "output": {"return": True}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_revertdrive_alias_maps_to_revert(self):
+        trajectory = [
+            {"input": {"function": "wwn", "args": []}, "output": {"return": 0x1234}},
+            {"input": {"operation": "revertDrive", "kwargs": {"psid": {"0x9999": "psid"}}}, "output": {"return": True}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_camelcase_getmek_alias_maps_to_get_mek(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {"function": "getMEK", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": {"K_AES_256_Range1_Key_UID": b"\x00\x00\x08\x06\x00\x03\x00\x01"}},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_getmek_reflects_known_active_key_uid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"10": "K_AES_256_Range1_Key"}]}),
+            {
+                "input": {"function": "getMEK", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": {"K_AES_256_Range1_Key_UID": b"\x00\x00\x08\x06\x00\x03\x00\x01"}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_getmek_rejects_wrong_known_active_key_uid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"10": "K_AES_256_Range1_Key"}]}),
+            {
+                "input": {"function": "getMEK", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": {"K_AES_256_Range2_Key_UID": b"\x00\x00\x08\x06\x00\x03\x00\x02"}},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getmek_range_name_values_aliases_reject_stale_active_key(self):
+        context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"10": "K_AES_256_Range1_Key"}]}),
+        ]
+        good = {"K_AES_256_Range1_Key_UID": b"\x00\x00\x08\x06\x00\x03\x00\x01"}
+        stale = {"K_AES_256_Range2_Key_UID": b"\x00\x00\x08\x06\x00\x03\x00\x02"}
+        for selector_key in ("rangeName", "range_name", "bandName", "band_name"):
+            with self.subTest(selector_key=selector_key):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getMEK", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}}, "output": {"return": good}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getMEK", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}}, "output": {"return": stale}}]),
+                    "FAIL",
+                )
+
+    def test_getmek_policy_config_request_envelopes_preserve_range2_selector(self):
+        context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"10": "K_AES_256_Range1_Key"}]}),
+            method_record("Set", "0000080200030002", "Locking_Range2", "SUCCESS", optional={"Values": [{"10": "K_AES_256_Range2_Key"}]}),
+        ]
+        good = {"K_AES_256_Range2_Key_UID": b"\x00\x00\x08\x06\x00\x03\x00\x02"}
+        stale = {"K_AES_256_Range1_Key_UID": b"\x00\x00\x08\x06\x00\x03\x00\x01"}
+        for function in ("getMEK", "getActiveKey", "readMEK"):
+            for label, payload in (
+                ("policy", {"range": 2, "authAs": ("Admin1", "new")}),
+                ("config", {"target": "Locking_Range2", "authAs": ("Admin1", "new")}),
+                ("request", {"target": {"range": 2}, "credential": {"auth": "Admin1", "proof": "new"}}),
+                ("lockingRequest", {"values": {"rangeId": 2, "authAs": ("Admin1", "new")}}),
+                ("rangeRequest", {"values": {"rangeId": 2, "authAs": ("Admin1", "new")}}),
+                ("keyRequest", {"target": {"rangeId": 2}, "authAs": ("Admin1", "new")}),
+                ("lockingRangeRequest", {"key": {"rangeId": 2}, "authAs": ("Admin1", "new")}),
+            ):
+                with self.subTest(function=function, label=label, case="good"):
+                    self.assertEqual(
+                        predict_trajectory(context + [{"input": {"function": function, "kwargs": {label: payload}}, "output": {"return": good}}]),
+                        "PASS",
+                    )
+                with self.subTest(function=function, label=label, case="stale"):
+                    self.assertEqual(
+                        predict_trajectory(context + [{"input": {"function": function, "kwargs": {label: payload}}, "output": {"return": stale}}]),
+                        "FAIL",
+                    )
+
+    def test_tcgstorageapi_camelcase_enable_range_access_alias(self):
+        trajectory = activated_locking_context() + [
+            {
+                "input": {"function": "enableRangeAccess", "args": ["Band1", "User", "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_high_level_tcgreset_closes_session_without_factory_reset(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            {"input": {"function": "tcgReset", "args": []}, "output": {"return": True}},
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_tcg_reset_alias_closes_session(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            {"input": {"function": "tcg_reset", "args": []}, "output": {"return": True}},
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_high_level_tcgreset_does_not_clear_credentials(self):
+        trajectory = owned_admin_context() + [
+            {"input": {"function": "tcgReset", "args": []}, "output": {"return": True}},
+            start_session(ADMIN_SP, SID, "old"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_host_property_false_value_is_not_a_tcg_failure(self):
+        trajectory = [
+            {
+                "input": {"function": "hasLockedRange", "args": []},
+                "output": {"return": False},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_has_locked_range_rejects_false_when_range_is_locked(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Activate", "0000020500000002", "SP", "SUCCESS"),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"3": 80}, {"4": 8}, {"6": 1}, {"8": 1}]},
+            ),
+            end_session(),
+            {"input": {"function": "hasLockedRange", "args": []}, "output": {"return": False}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_has_locked_range_accepts_true_when_range_is_locked(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Activate", "0000020500000002", "SP", "SUCCESS"),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"3": 80}, {"4": 8}, {"5": 1}, {"7": 1}]},
+            ),
+            end_session(),
+            {"input": {"function": "hasLockedRange", "args": []}, "output": {"return": True}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_has_locked_range_rejects_true_when_locked_cell_is_disabled(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Activate", "0000020500000002", "SP", "SUCCESS"),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"3": 80}, {"4": 8}, {"6": 0}, {"8": 1}]},
+            ),
+            end_session(),
+            {"input": {"function": "hasLockedRange", "args": []}, "output": {"return": True}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_level0_locking_feature_locked_bit_reflects_range_state(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Activate", "0000020500000002", "SP", "SUCCESS"),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"3": 80}, {"4": 8}, {"6": 1}, {"8": 1}]},
+            ),
+            end_session(),
+            {
+                "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0002", "Feature": "Locking"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {"LockingEnabled": 1, "Locked": 1, "MBREnabled": 0, "MBRDone": 0},
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_level0_locking_feature_rejects_stale_unlocked_bit(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Activate", "0000020500000002", "SP", "SUCCESS"),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"3": 80}, {"4": 8}, {"5": 1}, {"7": 1}]},
+            ),
+            end_session(),
+            {
+                "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0002", "Feature": "Locking"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {"LockingEnabled": 1, "Locked": 0, "MBREnabled": 0, "MBRDone": 0},
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_level0_locking_feature_mbr_bits_track_mbrcontrol(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Activate", "0000020500000002", "SP", "SUCCESS"),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080300000001", "MBRControl", "SUCCESS", optional={"Values": [{"1": 1}, {"2": 1}]}),
+            end_session(),
+            {
+                "input": {"command": "Level0Discovery", "args": {"Feature": "Locking"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {"LockingEnabled": 1, "Locked": 0, "MBREnabled": 1, "MBRDone": 1},
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_level0_locking_feature_locked_bit_tracks_lockonreset_after_powercycle(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Activate", "0000020500000002", "SP", "SUCCESS"),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"5": 1}, {"6": 1}, {"7": 0}, {"8": 0}, {"9": [0]}]},
+            ),
+            end_session(),
+            host_reset("PowerCycle"),
+            {
+                "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0002", "Feature": "Locking"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {"LockingEnabled": 1, "Locked": 1, "MBREnabled": 0, "MBRDone": 0},
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_level0_locking_feature_rejects_locked_bit_after_nonmatching_reset(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Activate", "0000020500000002", "SP", "SUCCESS"),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"5": 1}, {"6": 1}, {"7": 0}, {"8": 0}, {"9": [0, 3]}]},
+            ),
+            end_session(),
+            host_reset("HardwareReset"),
+            {
+                "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0002", "Feature": "Locking"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {"LockingEnabled": 1, "Locked": 1, "MBREnabled": 0, "MBRDone": 0},
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_level0_data_removal_feature_accepts_required_descriptor_bits(self):
+        trajectory = [
+            {
+                "input": {
+                    "command": "Level0Discovery",
+                    "args": {"FeatureCode": "0x0404", "Feature": "Supported Data Removal Mechanism"},
+                },
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0404",
+                        "Version": 2,
+                        "Length": 0x20,
+                        "DataRemovalOperationProcessing": 0,
+                        "SupportedDataRemovalMechanism": 0x04,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_level0_data_removal_feature_rejects_missing_crypto_erase(self):
+        trajectory = [
+            {
+                "input": {
+                    "command": "Level0Discovery",
+                    "args": {"FeatureCode": "0x0404", "Feature": "Supported Data Removal Mechanism"},
+                },
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0404",
+                        "Version": 2,
+                        "Length": 0x20,
+                        "DataRemovalOperationProcessing": 0,
+                        "SupportedDataRemovalMechanism": 0x00,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_level0_data_removal_feature_rejects_reserved_mechanism_bits(self):
+        trajectory = [
+            {
+                "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0404"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0404",
+                        "Version": 2,
+                        "Length": 0x20,
+                        "DataRemovalOperationProcessing": 0,
+                        "SupportedDataRemovalMechanism": 0x44,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_level0_data_removal_feature_rejects_processing_bit_when_no_operation_active(self):
+        trajectory = [
+            {
+                "input": {"command": "Level0Discovery", "args": {"Feature": "Data Removal Feature"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0404",
+                        "Version": 2,
+                        "Length": 0x20,
+                        "DataRemovalOperationProcessing": 1,
+                        "SupportedDataRemovalMechanism": 0x04,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_level0_data_removal_feature_accepts_clear_interrupted_bit(self):
+        trajectory = [
+            {
+                "input": {
+                    "command": "Level0Discovery",
+                    "args": {"FeatureCode": "0x0404", "Feature": "Supported Data Removal Mechanism"},
+                },
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0404",
+                        "Version": 2,
+                        "Length": 0x20,
+                        "DataRemovalOperationProcessing": 0,
+                        "DataRemovalOperationInterrupted": 0,
+                        "SupportedDataRemovalMechanism": 0x04,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_level0_data_removal_feature_rejects_interrupted_bit_without_interrupted_operation(self):
+        trajectory = [
+            {
+                "input": {
+                    "command": "Level0Discovery",
+                    "args": {"FeatureCode": "0x0404", "Feature": "Supported Data Removal Mechanism"},
+                },
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0404",
+                        "Version": 2,
+                        "Length": 0x20,
+                        "DataRemovalOperationProcessing": 0,
+                        "DataRemovalOperationInterrupted": 1,
+                        "SupportedDataRemovalMechanism": 0x04,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_level0_data_removal_feature_rejects_interrupted_bit_after_successful_genkey(self):
+        trajectory = [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("GenKey", "0000080600030001", "K_AES_256", "SUCCESS"),
+            end_session(),
+            {
+                "input": {
+                    "command": "Level0Discovery",
+                    "args": {"FeatureCode": "0x0404", "Feature": "Supported Data Removal Mechanism"},
+                },
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0404",
+                        "Version": 2,
+                        "Length": 0x20,
+                        "DataRemovalOperationProcessing": 0,
+                        "DataRemovalOperationInterrupted": 1,
+                        "SupportedDataRemovalMechanism": 0x04,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_level0_geometry_feature_reflects_observed_lockinginfo_geometry(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080100000000",
+                "LockingInfo",
+                "SUCCESS",
+                return_values={
+                    "AlignmentRequired": 1,
+                    "LogicalBlockSize": 4096,
+                    "AlignmentGranularity": 8,
+                    "LowestAlignedLBA": 4,
+                },
+            ),
+            end_session(),
+            {
+                "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0003", "Feature": "Geometry Reporting"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0003",
+                        "Version": 1,
+                        "Length": 0x1C,
+                        "ALIGN": 1,
+                        "LogicalBlockSize": 4096,
+                        "AlignmentGranularity": 8,
+                        "LowestAlignedLBA": 4,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_level0_geometry_feature_rejects_stale_alignment_granularity(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080100000000",
+                "LockingInfo",
+                "SUCCESS",
+                return_values={"AlignmentRequired": 1, "AlignmentGranularity": 8, "LowestAlignedLBA": 4},
+            ),
+            end_session(),
+            {
+                "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0003"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0003",
+                        "Version": 1,
+                        "Length": 0x1C,
+                        "ALIGN": 1,
+                        "AlignmentGranularity": 4,
+                        "LowestAlignedLBA": 4,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_level0_opal_ssc_v2_feature_accepts_required_descriptor_values(self):
+        trajectory = [
+            {
+                "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0203", "Feature": "Opal SSC V2"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0203",
+                        "FeatureDescriptorVersion": 2,
+                        "SSCMinorVersion": 3,
+                        "Length": 0x10,
+                        "NumberOfComIDs": 1,
+                        "RangeCrossingBehavior": 0,
+                        "NumberOfLockingSPAdminAuthorities": 4,
+                        "NumberOfLockingSPUserAuthorities": 8,
+                        "InitialCPINSIDPINIndicator": 0xFF,
+                        "BehaviorOfCPINSIDPINUponTPerRevert": 0x00,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_level0_opal_ssc_v2_feature_rejects_reserved_sid_indicator(self):
+        trajectory = [
+            {
+                "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0203"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0203",
+                        "FeatureDescriptorVersion": 2,
+                        "SSCMinorVersion": 2,
+                        "Length": 0x10,
+                        "NumberOfComIDs": 1,
+                        "RangeCrossingBehavior": 1,
+                        "NumberOfLockingSPAdminAuthorities": 4,
+                        "NumberOfLockingSPUserAuthorities": 8,
+                        "InitialCPINSIDPINIndicator": 0x01,
+                        "BehaviorOfCPINSIDPINUponTPerRevert": 0x00,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_level0_opal_ssc_v2_feature_rejects_insufficient_authority_counts(self):
+        trajectory = [
+            {
+                "input": {"command": "Level0Discovery", "args": {"Feature": "Opal SSC V2"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0203",
+                        "FeatureDescriptorVersion": 2,
+                        "SSCMinorVersion": 2,
+                        "Length": 0x10,
+                        "NumberOfComIDs": 1,
+                        "RangeCrossingBehavior": 0,
+                        "NumberOfLockingSPAdminAuthorities": 3,
+                        "NumberOfLockingSPUserAuthorities": 8,
+                        "InitialCPINSIDPINIndicator": 0x00,
+                        "BehaviorOfCPINSIDPINUponTPerRevert": 0xFF,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_host_helper_use_psk_is_not_a_tcg_method(self):
+        trajectory = [
+            {
+                "input": {"function": "usePsk", "args": ["TLS_PSK_Key1", "TLS_AES_128_GCM_SHA256", b"psk"]},
+                "output": {"return": None},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_revert_accepts_psid_map_for_observed_wwn(self):
+        trajectory = [
+            {"input": {"function": "wwn", "args": []}, "output": {"return": 0x1234}},
+            {"input": {"function": "revert", "args": [{"0x1234": "psid"}]}, "output": {"return": True}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_revert_rejects_success_for_wrong_psid_map_wwn(self):
+        trajectory = [
+            {"input": {"function": "wwn", "args": []}, "output": {"return": 0x1234}},
+            {"input": {"function": "revert", "args": [{"0x9999": "psid"}]}, "output": {"return": True}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_revert_accepts_false_for_wrong_psid_map_wwn(self):
+        trajectory = [
+            {"input": {"function": "wwn", "args": []}, "output": {"return": 0x1234}},
+            {"input": {"function": "revert", "args": [{"0x9999": "psid"}]}, "output": {"return": False}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_msid_property_seeds_factory_sid_credential(self):
+        trajectory = [
+            {
+                "input": {"function": "mSID", "args": []},
+                "output": {"return": "factory"},
+            },
+            start_session(ADMIN_SP, SID, "wrong"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_enterprise_locking_range_uid_without_name_updates_lock_state(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200000002",
+                "",
+                optional={"Values": [{"3": 0}, {"4": 1024}, {"6": 1}, {"8": 1}]},
+            ),
+            end_session(),
+            host_write_status("SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_nonamed_set_tuple_updates_lock_state(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                args=(1, [(3, 0), (4, 1024), (6, 1), (8, 1)]),
+            ),
+            end_session(),
+            host_write_status("SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_port_base_uid_without_name_uses_port_columns(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0001000200000002", "", "SUCCESS", optional={"Values": [{"3": "locked"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_bandmaster_alias_prefers_supplied_name(self):
+        event = parse_event(method_record("Set", "0000000900008002", "C_PIN_BandMaster1", optional={"Values": [{"3": "pin"}]}))
+        self.assertEqual(event.invoking_symbol, "C_PIN_BandMaster1")
+
+    def test_tcgstorageapi_bandmaster_authority_prefers_supplied_name(self):
+        record = start_session(ADMIN_SP, {"uid": "0000000900008002", "name": "BandMaster1"}, "pin")
+        event = parse_event(record)
+        self.assertEqual(event.authority, "BandMaster1")
+
+    def test_tcgstorageapi_bandmaster_uid_without_name_uses_lookupids_numbering(self):
+        event = parse_event(method_record("Set", "0000000900008002", "", optional={"Values": [{"3": "pin"}]}))
+        self.assertEqual(event.invoking_symbol, "C_PIN_BandMaster1")
+
+    def test_tcgstorageapi_bandmaster_cpin_uid_without_name_uses_lookupids_numbering(self):
+        event = parse_event(method_record("Set", "0000000B00008002", "", optional={"Values": [{"3": "pin"}]}))
+        self.assertEqual(event.invoking_symbol, "C_PIN_BandMaster1")
+
+    def test_named_pin_argument_updates_pin_state(self):
+        trajectory = owned_admin_context()[:-2] + [
+            start_session(ADMIN_SP, SID, "old"),
+            method_record("Set", "0000000B00000001", "C_PIN", optional={"PIN": "new"}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_cpin_name_without_underscore_updates_pin_state(self):
+        trajectory = owned_admin_context()[:-2] + [
+            start_session(ADMIN_SP, SID, "old"),
+            method_record("Set", "", "C PIN SID", optional={"PIN": "new"}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authority_name_without_underscore_updates_enabled_state(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "", "Authority User1", optional={"Enabled": 0}),
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_numeric_tcg_status_code_is_normalized(self):
+        record = method_record("Set", "0000000B00000001", "C_PIN", 1, optional={"Values": [{"3": "new"}]})
+        trajectory = [start_session(ADMIN_SP), record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_raw_status_byte_is_normalized(self):
+        record = method_record("Set", "0000000B00000001", "C_PIN", b"\x01", optional={"Values": [{"3": "new"}]})
+        trajectory = [start_session(ADMIN_SP), record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_numeric_13_status_is_auth_failure(self):
+        record = method_record("Set", "0000000B00000001", "C_PIN", 13, optional={"Values": [{"3": "new"}]})
+        trajectory = [start_session(ADMIN_SP), record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authority_locked_out_status_is_auth_failure(self):
+        record = method_record("Set", "0000000B00000001", "C_PIN", "AuthorityLockedOut", optional={"Values": [{"3": "new"}]})
+        trajectory = [start_session(ADMIN_SP), record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_hex_status_text_is_normalized(self):
+        record = method_record("Set", "0000000B00000001", "C_PIN", "0x12", optional={"Values": [{"3": "new"}]})
+        trajectory = [start_session(ADMIN_SP), record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcg_status_field_is_used_when_status_codes_absent(self):
+        record = method_record("Set", "0000000B00000001", "C_PIN", optional={"Values": [{"3": "new"}]})
+        record["output"]["status"] = "NotAuthorized"
+        del record["output"]["status_codes"]
+        trajectory = [start_session(ADMIN_SP), record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_statuscode_enum_string_is_normalized(self):
+        record = method_record("Set", "0000000B00000001", "C_PIN", "StatusCode.NotAuthorized", optional={"Values": [{"3": "new"}]})
+        trajectory = [start_session(ADMIN_SP), record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_statuscode_repr_string_is_normalized(self):
+        record = method_record("Set", "0000000B00000001", "C_PIN", "<StatusCode.InvalidParameter: 12>", optional={"Values": [{"4": "UTF-8"}]})
+        trajectory = [start_session(ADMIN_SP, SID, "new"), record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_obsolete_status_is_treated_as_failure_status(self):
+        record = method_record("CreateTable", "0000000000000001", "ThisSP", "StatusCode.Obsolete")
+        trajectory = [start_session(ADMIN_SP), record]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_create_table_object_accepts_required_args(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_created_table_getsetacl_allows_getacl_meta_method(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "0000010000000001", "MethodID": "Get"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_admin_created_table_getacl_is_not_visible_in_locking_sp(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "CrossScope", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                optional={"CommonName": "Base"},
+                return_values={"UID": "000001AB00000000", "Rows": 0},
+            ),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "000001AB00000000", "MethodID": "Get"},
+                return_values=["ACE_00038000"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_created_table_getacl_is_not_visible_in_admin_sp(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "LockCrossScope", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                optional={"CommonName": "Base"},
+                return_values={"UID": "000001AC00000000", "Rows": 0},
+            ),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "000001AC00000000", "MethodID": "Get"},
+                return_values=["ACE_00038000"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_table_getsetacl_allows_deletemethod_then_getacl_fails(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record(
+                "DeleteMethod",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000010000000001", "MethodID": "Get"},
+                return_values=[],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000010000000001", "MethodID": "Get"},
+                return_values=["ACE_00038000"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_table_duplicate_dynamic_addace_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017000000000", "Rows": 0},
+            ),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017000000000", "MethodID": "Get"},
+                optional={"ACE": "ACE_Admin"},
+                return_values=[],
+            ),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017000000000", "MethodID": "Get"},
+                optional={"ACE": "0000000800000002"},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_table_removeace_clears_dynamic_addace_duplicate_state(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017100000000", "Rows": 0},
+            ),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017100000000", "MethodID": "Get"},
+                optional={"ACE": "ACE_Admin"},
+                return_values=[],
+            ),
+            method_record(
+                "RemoveACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017100000000", "MethodID": "Get"},
+                optional={"ACE": "ACE_Admin"},
+                return_values=[],
+            ),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017100000000", "MethodID": "Get"},
+                optional={"ACE": "ACE_Admin"},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_created_table_dynamic_addace_must_appear_in_later_getacl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017600000000", "Rows": 0},
+            ),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017600000000", "MethodID": "Get"},
+                optional={"ACE": "ACE_Admin"},
+                return_values=[],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017600000000", "MethodID": "Get"},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_table_dynamic_addace_getacl_accepts_required_ace_alias(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017600000000", "Rows": 0},
+            ),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017600000000", "MethodID": "Get"},
+                optional={"ACE": "ACE_Admin"},
+                return_values=[],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017600000000", "MethodID": "Get"},
+                return_values=["0000000800000002"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_created_table_removeace_forbids_removed_dynamic_ace_in_getacl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017600000000", "Rows": 0},
+            ),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017600000000", "MethodID": "Get"},
+                optional={"ACE": "ACE_Admin"},
+                return_values=[],
+            ),
+            method_record(
+                "RemoveACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017600000000", "MethodID": "Get"},
+                optional={"ACE": "ACE_Admin"},
+                return_values=[],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017600000000", "MethodID": "Get"},
+                return_values=["ACE_Admin"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_row_getacl_requires_nonempty_runtime_ace(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017700000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000017700000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row"}]},
+                return_values=["0000017700000001"],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017700000001", "MethodID": "Get"},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_row_getacl_accepts_new_runtime_ace_uidref(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017700000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000017700000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row"}]},
+                return_values=["0000017700000001"],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017700000001", "MethodID": "Get"},
+                return_values=["0000010800000001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_delete_row_removes_created_row_getacl_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017700000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000017700000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row"}]},
+                return_values=["0000017700000001"],
+            ),
+            method_record(
+                "DeleteRow",
+                "0000017700000000",
+                "",
+                "SUCCESS",
+                required={"Rows": ["0000017700000001"]},
+                return_values=[],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017700000001", "MethodID": "Get"},
+                return_values=["0000010800000001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_different_created_row_preserves_other_row_getacl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017700000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000017700000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row-a"}]},
+                return_values=["0000017700000001"],
+            ),
+            method_record(
+                "CreateRow",
+                "0000017700000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row-b"}]},
+                return_values=["0000017700000002"],
+            ),
+            method_record(
+                "DeleteRow",
+                "0000017700000000",
+                "",
+                "SUCCESS",
+                required={"Rows": ["0000017700000002"]},
+                return_values=[],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017700000001", "MethodID": "Get"},
+                return_values=["0000010800000001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_delete_object_on_created_row_can_succeed_with_empty_payload(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017700000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000017700000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row"}]},
+                return_values=["0000017700000001"],
+            ),
+            method_record("Delete", "0000017700000001", "", "SUCCESS", return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_delete_object_on_created_row_success_requires_empty_payload(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017700000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000017700000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row"}]},
+                return_values=["0000017700000001"],
+            ),
+            method_record("Delete", "0000017700000001", "", "SUCCESS", return_values=["unexpected"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_object_on_created_row_removes_getacl_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017700000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000017700000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row"}]},
+                return_values=["0000017700000001"],
+            ),
+            method_record("Delete", "0000017700000001", "", "SUCCESS", return_values=[]),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017700000001", "MethodID": "Get"},
+                return_values=["0000010800000001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_object_on_created_row_preserves_sibling_getacl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017700000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000017700000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row-a"}]},
+                return_values=["0000017700000001"],
+            ),
+            method_record(
+                "CreateRow",
+                "0000017700000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row-b"}]},
+                return_values=["0000017700000002"],
+            ),
+            method_record("Delete", "0000017700000002", "", "SUCCESS", return_values=[]),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017700000001", "MethodID": "Get"},
+                return_values=["0000010800000001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_delete_object_on_created_row_releases_unique_value(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={
+                    "NewTableName": "UniqueAudit",
+                    "Kind": 1,
+                    "GetSetACL": [],
+                    "Columns": [[[1, "uid"]], [[2, "bytes"]]],
+                    "MinSize": 0,
+                },
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "A"}, {"2": "first"}]}, return_values=["0000010100000001"]),
+            method_record("Delete", "0000010100000001", "", "SUCCESS", return_values=[]),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "A"}, {"2": "second"}]}, return_values=["0000010100000002"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_created_row_addace_is_visible_in_later_getacl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017A00000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000017A00000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row"}]},
+                return_values=["0000017A00000001"],
+            ),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017A00000001", "MethodID": "Get"},
+                optional={"ACE": "ACE_Admin"},
+                return_values=[],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017A00000001", "MethodID": "Get"},
+                return_values=["0000010800000001", "ACE_Admin"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_created_row_getacl_after_addace_requires_added_ace(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017A00000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000017A00000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row"}]},
+                return_values=["0000017A00000001"],
+            ),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017A00000001", "MethodID": "Get"},
+                optional={"ACE": "ACE_Admin"},
+                return_values=[],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017A00000001", "MethodID": "Get"},
+                return_values=["0000010800000001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_row_deletemethod_tombstones_row_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017A00000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000017A00000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row"}]},
+                return_values=["0000017A00000001"],
+            ),
+            method_record(
+                "DeleteMethod",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017A00000001", "MethodID": "Get"},
+                return_values=[],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017A00000001", "MethodID": "Get"},
+                return_values=["0000010800000001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_row_deletemethod_on_delete_blocks_direct_delete(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000017B00000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000017B00000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row"}]},
+                return_values=["0000017B00000001"],
+            ),
+            method_record(
+                "DeleteMethod",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000017B00000001", "MethodID": "Delete"},
+                return_values=[],
+            ),
+            method_record("Delete", "0000017B00000001", "", "SUCCESS", return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_table_descriptor_removes_created_table_getacl_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000016000000000", "Rows": 0},
+            ),
+            method_record(
+                "DeleteRow",
+                "0000000100000000",
+                "Table",
+                "SUCCESS",
+                required={"Rows": ["0000000100000160"]},
+                return_values=[],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000016000000000", "MethodID": "Get"},
+                return_values=["ACE_00038000"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_table_descriptor_releases_created_table_name(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0, "CommonName": "Base"},
+                return_values={"UID": "0000016100000000", "Rows": 0},
+            ),
+            method_record(
+                "DeleteRow",
+                "0000000100000000",
+                "Table",
+                "SUCCESS",
+                required={"Rows": ["0000000100000161"]},
+                return_values=[],
+            ),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 0, "CommonName": "Base"},
+                return_values={"UID": "0000016200000000", "Rows": 0},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_delete_object_on_created_table_descriptor_can_succeed(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000016300000000", "Rows": 0},
+            ),
+            method_record(
+                "Delete",
+                "0000000100000163",
+                "Table",
+                "SUCCESS",
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_delete_object_on_created_table_descriptor_removes_getacl_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000016300000000", "Rows": 0},
+            ),
+            method_record(
+                "Delete",
+                "0000000100000163",
+                "Table",
+                "SUCCESS",
+                return_values=[],
+            ),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000016300000000", "MethodID": "Get"},
+                return_values=["ACE_00038000"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_table_success_requires_uid_and_rows_result(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000010000000001"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_table_success_rows_must_cover_min_size(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 3},
+                return_values={"UID": "0000010000000001", "Rows": 2},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_table_success_rows_may_exceed_min_size_when_hint_requests_more(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 2},
+                optional={"HintSize": 5},
+                return_values=["0000010000000001", 5],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_create_table_hint_below_min_size_is_not_enough_to_reject_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 2},
+                optional={"HintSize": 1},
+                return_values={"UID": "0000010000000001", "Rows": 2},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_create_table_success_rows_must_not_exceed_max_size(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 3},
+                optional={"MaxSize": 3},
+                return_values={"UID": "0000010000000001", "Rows": 4},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_table_success_list_rows_must_not_exceed_max_size(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 1},
+                optional={"MaxSize": 3},
+                return_values=["0000010000000001", 4],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_table_rejects_reserved_table_kind_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 3, "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_table_requires_admins(self):
+        trajectory = [
+            start_session(ADMIN_SP),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [], "MinSize": 0},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_table_missing_required_arg_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "Columns": [], "MinSize": 0},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_table_byte_requires_empty_columns(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Blob", "Kind": "Byte", "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 16},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_table_byte_rejects_max_size(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Blob", "Kind": 2, "GetSetACL": [], "Columns": [], "MinSize": 16},
+                optional={"MaxSize": 32},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_table_duplicate_name_common_name_rejects_success(self):
+        args = {"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [], "MinSize": 0}
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("CreateTable", "0000000000000001", "ThisSP", "SUCCESS", required=args, optional={"CommonName": "Base"}, return_values={"UID": "0000010000000001", "Rows": 0}),
+            method_record("CreateTable", "0000000000000001", "ThisSP", "SUCCESS", required=args, optional={"CommonName": "Base"}, return_values={"UID": "0000010000000002", "Rows": 0}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_object_table_get_free_rows_is_allowed(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [], "MinSize": 0},
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record("GetFreeRows", "0000010000000001", "", "SUCCESS", return_values={"FreeRows": 4}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_created_object_table_create_row_is_allowed(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "row"}]}, return_values=["0000010100000001"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_table_lifecycle_domain_request_envelopes_preserve_payloads(self):
+        base = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        table_values = {
+            "NewTableName": "DynamicRow",
+            "Kind": 1,
+            "GetSetACL": ["ACE_Anybody"],
+            "Columns": [["Entry", "uid"]],
+            "MinSize": 0,
+            "CommonName": "Base",
+            "authAs": ("SID", "new"),
+        }
+        for envelope in ("createTableRequest", "tableRequest", "schemaRequest"):
+            with self.subTest(envelope=envelope):
+                trajectory = base + [
+                    {
+                        "input": {"function": "createTable", "kwargs": {envelope: {"values": table_values}}},
+                        "output": {"return": {"UID": "000001AA00000000", "Rows": 0}},
+                    }
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+        missing_min_size = dict(table_values)
+        missing_min_size.pop("MinSize")
+        trajectory = base + [
+            {
+                "input": {"function": "createTable", "kwargs": {"createTableRequest": {"values": missing_min_size}}},
+                "output": {"return": {"UID": "000001AA00000000", "Rows": 0}},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        trajectory = base + [
+            {
+                "input": {"function": "createTable", "kwargs": {"tableRequest": {"values": table_values}}},
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        row_context = base + [
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "DynamicRow", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                optional={"CommonName": "Base"},
+                return_values={"UID": "000001AA00000000", "Rows": 0},
+            )
+        ]
+        row_values = {"table": "000001AA00000000", "Values": [{"1": "row"}], "authAs": ("SID", "new")}
+        for envelope in ("createRowRequest", "rowRequest", "tableRequest"):
+            with self.subTest(envelope=envelope):
+                trajectory = row_context + [
+                    {
+                        "input": {"function": "createRow", "kwargs": {envelope: {"values": row_values}}},
+                        "output": {"return": ["000001AA00000001"]},
+                    }
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+        trajectory = row_context + [
+            {
+                "input": {"function": "createRow", "kwargs": {"createRowRequest": {"values": row_values}}},
+                "output": {"return": True},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_table_delete_query_domain_request_envelopes_preserve_payloads(self):
+        base = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        created_row_context = base + [
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "row"}]}, return_values=["0000010100000001"]),
+        ]
+        delete_row_values = {"table": "0000010000000001", "Rows": ["0000010100000001"], "authAs": ("SID", "new")}
+        for envelope in ("deleteRowRequest", "rowRequest", "tableRequest"):
+            with self.subTest(path="deleteRow", envelope=envelope):
+                trajectory = created_row_context + [
+                    {
+                        "input": {"function": "deleteRow", "kwargs": {envelope: {"values": delete_row_values}}},
+                        "output": {"return": []},
+                    }
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+        missing_rows = {"table": "0000010000000001", "authAs": ("SID", "new")}
+        trajectory = created_row_context + [
+            {
+                "input": {"function": "deleteRow", "kwargs": {"deleteRowRequest": {"values": missing_rows}}},
+                "output": {"return": []},
+            }
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        created_table_context = base + [
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [], "MinSize": 0},
+                return_values={"UID": "0000016300000000", "Rows": 0},
+            )
+        ]
+        for envelope in ("deleteTableRequest", "tableRequest"):
+            with self.subTest(path="deleteTable", envelope=envelope):
+                trajectory = created_table_context + [
+                    {
+                        "input": {"function": "deleteTable", "kwargs": {envelope: {"values": {"table": "0000016300000000", "authAs": ("SID", "new")}}}},
+                        "output": {"return": []},
+                    }
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+        query_values = {"table": "C_PIN", "authAs": "Anybody"}
+        for envelope in ("tableQueryRequest", "freeRowsRequest", "tableRequest"):
+            with self.subTest(path="tableQuery", envelope=envelope):
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "tableQuery", "kwargs": {envelope: {"values": query_values}}}, "output": {"return": [4]}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "tableQuery", "kwargs": {envelope: {"values": query_values}}}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+        next_values = {"table": "C_PIN", "Count": 2, "authAs": "Anybody"}
+        self.assertEqual(
+            predict_trajectory(base + [{"input": {"function": "getNext", "kwargs": {"nextRequest": {"values": next_values}}}, "output": {"return": ["0000000B00010001"]}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(base + [{"input": {"function": "getNext", "kwargs": {"tableRequest": {"values": next_values}}}, "output": {"return": [True]}}]),
+            "FAIL",
+        )
+
+        self.assertEqual(
+            predict_trajectory(base + [{"input": {"function": "getFreeSpace", "kwargs": {"freeSpaceRequest": {"values": {"authAs": "Anybody"}}}}, "output": {"return": {"FreeSpace": 1024, "TableRows": []}}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(base + [{"input": {"function": "getFreeSpace", "kwargs": {"spRequest": {"values": {"authAs": "Anybody"}}}}, "output": {"return": True}}]),
+            "FAIL",
+        )
+
+    def test_created_object_table_create_row_requires_uid_list_result(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [[1, "uid"], [2, "bytes"]], "MinSize": 0},
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "row"}, {"2": "payload"}]}, return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_object_table_create_row_rejects_missing_declared_column(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [[1, "uid"], [2, "bytes"]], "MinSize": 0},
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "row"}]}, return_values=["0000010100000001"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_object_table_create_row_rejects_undeclared_column(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [[1, "uid"], [2, "bytes"]], "MinSize": 0},
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "row"}, {"2": "payload"}, {"3": "extra"}]}, return_values=["0000010100000001"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_object_table_create_row_rejects_duplicate_unique_columns(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={
+                    "NewTableName": "UniqueAudit",
+                    "Kind": 1,
+                    "GetSetACL": [],
+                    "Columns": [[[1, "uid"]], [[2, "bytes"]]],
+                    "MinSize": 0,
+                },
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "A"}, {"2": "first"}]}, return_values=["0000010100000001"]),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "A"}, {"2": "second"}]}, return_values=["0000010100000002"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_object_table_create_row_allows_duplicate_nonunique_value(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={
+                    "NewTableName": "UniqueAudit",
+                    "Kind": 1,
+                    "GetSetACL": [],
+                    "Columns": [[[1, "uid"]], [[2, "bytes"]]],
+                    "MinSize": 0,
+                },
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "A"}, {"2": "same"}]}, return_values=["0000010100000001"]),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "B"}, {"2": "same"}]}, return_values=["0000010100000002"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_created_object_table_delete_row_releases_unique_value(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={
+                    "NewTableName": "UniqueAudit",
+                    "Kind": 1,
+                    "GetSetACL": [],
+                    "Columns": [[[1, "uid"]], [[2, "bytes"]]],
+                    "MinSize": 0,
+                },
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "A"}, {"2": "first"}]}, return_values=["0000010100000001"]),
+            method_record("DeleteRow", "0000010000000001", "", "SUCCESS", required={"Rows": ["0000010100000001"]}),
+            method_record("CreateRow", "0000010000000001", "", "SUCCESS", optional={"Values": [{"1": "A"}, {"2": "second"}]}, return_values=["0000010100000002"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_created_table_descriptor_max_size_set_may_succeed(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [[1, "uid"]], "MinSize": 3},
+                optional={"MaxSize": 6},
+                return_values={"UID": "0000015000000000", "Rows": 3},
+            ),
+            method_record(
+                "Set",
+                "0000000100000000",
+                "Table",
+                "SUCCESS",
+                optional={"Where": {"uid": "0000000100000150", "name": "Table_Audit"}, "Values": [{"12": 5}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_created_table_descriptor_min_size_cannot_be_lowered(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [[1, "uid"]], "MinSize": 3},
+                return_values={"UID": "0000015000000000", "Rows": 3},
+            ),
+            method_record(
+                "Set",
+                "0000000100000000",
+                "Table",
+                "SUCCESS",
+                optional={"Where": {"uid": "0000000100000150", "name": "Table_Audit"}, "Values": [{"11": 2}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_table_descriptor_max_size_below_min_size_cannot_succeed(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [[1, "uid"]], "MinSize": 3},
+                return_values={"UID": "0000015000000000", "Rows": 3},
+            ),
+            method_record(
+                "Set",
+                "0000000100000000",
+                "Table",
+                "SUCCESS",
+                optional={"Where": {"uid": "0000000100000150", "name": "Table_Audit"}, "Values": [{"12": 2}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_table_descriptor_max_size_below_rows_returns_invalid_parameter(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [[1, "uid"]], "MinSize": 2},
+                return_values={"UID": "0000015000000000", "Rows": 4},
+            ),
+            method_record(
+                "Set",
+                "0000000100000000",
+                "Table",
+                "INVALID_PARAMETER",
+                optional={"Where": {"uid": "0000000100000150", "name": "Table_Audit"}, "Values": [{"12": 3}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_created_table_descriptor_same_set_max_size_below_new_min_size_fails(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [[1, "uid"]], "MinSize": 2},
+                return_values={"UID": "0000015000000000", "Rows": 2},
+            ),
+            method_record(
+                "Set",
+                "0000000100000000",
+                "Table",
+                "SUCCESS",
+                optional={"Where": {"uid": "0000000100000150", "name": "Table_Audit"}, "Values": [{"11": 4}, {"12": 3}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_table_descriptor_successful_min_size_set_updates_later_max_size_check(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [[1, "uid"]], "MinSize": 2},
+                return_values={"UID": "0000015000000000", "Rows": 2},
+            ),
+            method_record(
+                "Set",
+                "0000000100000000",
+                "Table",
+                "SUCCESS",
+                optional={"Where": {"uid": "0000000100000150", "name": "Table_Audit"}, "Values": [{"11": 4}]},
+            ),
+            method_record(
+                "Set",
+                "0000000100000000",
+                "Table",
+                "SUCCESS",
+                optional={"Where": {"uid": "0000000100000150", "name": "Table_Audit"}, "Values": [{"12": 3}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_object_table_delete_row_requires_rows(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [], "MinSize": 0},
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record("DeleteRow", "0000010000000001", "", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_object_table_delete_row_success_requires_empty_return(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Audit", "Kind": 1, "GetSetACL": [], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "0000010000000001", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "0000010000000001",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row"}]},
+                return_values=["0000010100000001"],
+            ),
+            method_record(
+                "DeleteRow",
+                "0000010000000001",
+                "",
+                "SUCCESS",
+                required={"Rows": ["0000010100000001"]},
+                return_values=["unexpected"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_created_byte_table_get_free_rows_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Blob", "Kind": 2, "GetSetACL": [], "Columns": [], "MinSize": 16},
+                return_values={"UID": "0000010000000002", "Rows": 16},
+            ),
+            method_record("GetFreeRows", "0000010000000002", "", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_success_requires_empty_return(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Delete", "0000080200030001", "Locking", "SUCCESS", return_values=["unexpected"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_set_success_requires_empty_return(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Set",
+                "0000000B00000001",
+                "C_PIN",
+                "SUCCESS",
+                optional={"Values": [{"3": "rotated"}]},
+                return_values=["unexpected"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_byte_table_set_omitted_values_succeeds_no_effect(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080400000000", "MBR", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080400000000", "MBR", "SUCCESS", optional={"Where": {"Row": 0}}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_byte_table_set_where_uid_rejects_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080400000000", "MBR", "SUCCESS", optional={"Where": "C_PIN_User1", "Bytes": "AA"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_object_set_where_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Where": "C_PIN_SID", "Values": [{"3": "rotated"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_failed_credential_update_does_not_change_pin(self):
+        trajectory = owned_admin_context()[:-2] + [
+            method_record("Set", "0000000B00000001", "C_PIN", "NOT_AUTHORIZED", optional={"Values": [{"3": "new"}]}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_erase_master_pin_uid_updates_later_auth(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008401", "C_PIN", "SUCCESS", optional={"Values": [{"3": "erasepin"}]}),
+            end_session(),
+            start_session(ADMIN_SP, "0000000900008401", "erasepin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_initial_erase_master_pin_can_be_changed_with_observed_msid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Set", "0000000B00008401", "C_PIN_EraseMaster", "SUCCESS", optional={"authAs": (None, "MSID"), "Values": [{"3": "erasepin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_initial_erase_master_default_pin_rejects_success_when_msid_known(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Set", "0000000B00008401", "C_PIN_EraseMaster", "SUCCESS", optional={"authAs": (None, "wrong"), "Values": [{"3": "erasepin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_initial_bandmaster_pin_can_be_changed_with_observed_msid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Set", "0000000B00008001", "C_PIN_BandMaster1", "SUCCESS", optional={"authAs": (None, "MSID"), "Values": [{"3": "bandpin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_initial_bandmaster_default_pin_rejects_success_when_msid_known(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Set", "0000000B00008001", "C_PIN_BandMaster1", "SUCCESS", optional={"authAs": (None, "wrong"), "Values": [{"3": "bandpin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_bare_sid_object_name_updates_pin_state(self):
+        trajectory = owned_admin_context()[:-2] + [
+            start_session(ADMIN_SP, SID, "old"),
+            method_record("Set", "", "SID", optional={"Values": [{"3": "new"}]}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_cpin_prefixed_erase_master_name_can_set_enabled_column(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "C_PIN_EraseMaster", optional={"Values": [{"5": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_cpin_user_object_name_updates_pin_state(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "", "C_PIN_User1", optional={"Values": [{"3": "userpin"}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_bare_user_object_name_enables_authority(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "", "User1", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "", "C_PIN_User1", optional={"Values": [{"3": "userpin"}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_cpin_prefixed_user_name_enables_authority_when_setting_enabled(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "", "C_PIN_User1", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "", "C_PIN_User1", optional={"Values": [{"3": "userpin"}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_named_authority_get_updates_enabled_state(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "", "User1", return_values={"Enabled": 1}),
+            method_record("Set", "", "C_PIN_User1", optional={"PIN": "userpin"}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authority_get_enabled_value_two_is_not_enabled(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "", "User1", return_values={"Enabled": 2}),
+            method_record("Set", "", "C_PIN_User1", optional={"PIN": "userpin"}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_band_master_pin_uid_updates_later_auth(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "bandpin"}]}),
+            end_session(),
+            start_session(ADMIN_SP, "0000000900008001", "bandpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_band_master_pin_set_from_lockingsp_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000B00008001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "bandpin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_msid_set_success_is_invalid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008402", "C_PIN", "SUCCESS", optional={"Values": [{"3": "newmsid"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_set_rejects_non_pin_column_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"4": "UTF-8"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_issued_cpin_identity_columns_are_readonly(self):
+        targets = [
+            (ADMIN_SP, SID, "new", "0000000B00000001"),
+            (ADMIN_SP, SID, "new", "0000000B00008402"),
+            (ADMIN_SP, SID, "new", "0000000B00000201"),
+            (LOCKING_SP, ADMIN1, "new", "0000000B00010001"),
+            (LOCKING_SP, ADMIN1, "new", "0000000B00030001"),
+        ]
+        for spid, authority, challenge, uid in targets:
+            for column, value in ((0, "0000000B00FFFFFF"), (1, "C_PIN_Renamed"), (2, "RenamedCredential")):
+                with self.subTest(uid=uid, column=column):
+                    context = activated_locking_context() if spid == LOCKING_SP else owned_admin_context()
+                    trajectory = context + [
+                        start_session(spid, authority, challenge),
+                        method_record("Set", uid, "C_PIN", "SUCCESS", optional={"Values": [{str(column): value}]}),
+                    ]
+                    self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_set_on_object_table_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000000", "C_PIN", "SUCCESS", optional={"Values": [{"3": "new"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_object_set_rejects_where_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Where": "0000000B00000001", "Values": [{"3": "newer"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_table_set_with_where_updates_pin_state(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000000", "C_PIN", "SUCCESS", optional={"Where": "0000000B00000001", "Values": [{"3": "tablepin"}]}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "tablepin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_table_set_rejects_wrong_where_family_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000000", "C_PIN", "SUCCESS", optional={"Where": "0000080200000001", "Values": [{"3": "newer"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_table_set_rejects_cross_sp_row_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000000", "C_PIN", "SUCCESS", optional={"Where": "0000000B00030001", "Values": [{"3": "userpin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_table_set_without_values_succeeds_with_no_effect(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000000", "C_PIN", "SUCCESS", optional={"Where": "0000000B00000001"}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_min_pin_length_set_is_allowed_for_cpin(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"0xFFFF0001": 4}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_cpin_try_limit_set_is_allowed(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"5": 2}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_cpin_try_limit_rejects_negative_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"5": -1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_tries_only_allows_reset_to_zero(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"6": 0}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_cpin_tries_rejects_nonzero_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"6": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_persistence_requires_boolean(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"7": "sticky"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_charset_accepts_null_uid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"4": "0000000000000000"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_try_limit_locks_out_start_session_after_failures(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"5": 2}]}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "wrong", "NOT_AUTHORIZED"),
+            start_session(ADMIN_SP, SID, "wrong", "NOT_AUTHORIZED"),
+            start_session(ADMIN_SP, SID, "new", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_min_pin_length_over_cpin_max_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"0xFFFF0001": 33}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_min_pin_length_rejects_short_later_pin_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", optional={"Values": [{"0xFFFF0001": 4}]}),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "abc"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_min_pin_length_allows_long_enough_later_pin_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", optional={"Values": [{"0xFFFF0001": 4}]}),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "abcd"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_min_pin_length_in_same_set_rejects_short_pin_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"0xFFFF0001": 5}, {"3": "abcd"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_min_pin_length_return_value_updates_state(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", "0000000B00000001", "C_PIN", "SUCCESS", required={"Cellblock": [{"startColumn": "0xFFFF0001"}]}, return_values={"_MinPINLength": 4}),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "abc"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_failed_min_pin_length_set_does_not_update_state(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000001", "C_PIN", "NOT_AUTHORIZED", optional={"Values": [{"0xFFFF0001": 4}]}),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "abc"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_min_pin_length_is_per_cpin_owner(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000B00010001", "C_PIN", optional={"Values": [{"0xFFFF0001": 5}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "abc"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_admin_sp_admin_pin_uid_is_recognized(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000201", "C_PIN", "SUCCESS", optional={"Values": [{"3": "adminpin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_locking_user_pin_uid_from_admin_sp_is_invalid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00030001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "userpin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_admin_sp_admin_pin_uid_from_locking_sp_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000B00000201", "C_PIN", "SUCCESS", optional={"Values": [{"3": "adminpin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_unauthenticated_protected_set_success_is_invalid(self):
+        trajectory = [
+            start_session(LOCKING_SP),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"8": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_unauthenticated_protected_set_not_authorized_is_valid(self):
+        trajectory = [
+            start_session(LOCKING_SP),
+            method_record("Set", "0000080200030001", "Locking", "NOT_AUTHORIZED", optional={"Values": [{"8": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_unauthenticated_locking_get_not_authorized_is_valid(self):
+        trajectory = [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "NOT_AUTHORIZED",
+                required={"Cellblock": [{"startColumn": 3}, {"endColumn": 8}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_named_authority_authenticate_updates_session(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Authenticate", "0000020500000001", "SP", "SUCCESS", required={"Authority": "SID", "Challenge": "new"}),
+            method_record("Set", "0000000B00000001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "newer"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tper_sign_allows_anybody_in_adminsp(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Sign", "0000000900000007", "TPerSign", "SUCCESS", required={"Data": "payload"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tper_sign_accepts_name_only_case_variant(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Sign", "", "TperSign", "SUCCESS", required={"Data": "payload"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tper_sign_accepts_nonamed_payload(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Sign", "0000000900000007", "TPerSign", "SUCCESS", args=("payload",)),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tper_sign_accepts_bytes_invoking_name(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Sign", "", b"TPerSign", "SUCCESS", required={"Data": "payload"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tper_sign_accepts_bytes_data_key(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Sign", "0000000900000007", "TPerSign", "SUCCESS", required={b"Data": "payload"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tper_sign_rejects_missing_payload_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Sign", "0000000900000007", "TPerSign", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tper_sign_rejects_only_unrelated_named_pair_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Sign", "0000000900000007", "TPerSign", "SUCCESS", args=(("Algorithm", "RSA"),)),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tper_sign_rejects_lockingsp_session_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Sign", "0000000900000007", "TPerSign", "SUCCESS", required={"Data": "payload"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tper_sign_rejects_oversized_payload_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Sign", "0000000900000007", "TPerSign", "SUCCESS", required={"Data": "A" * 257}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tper_sign_rejects_oversized_nonamed_tuple_payload_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Sign", "0000000900000007", "TPerSign", "SUCCESS", args=("A" * 257,)),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tper_sign_rejects_scalar_integer_signature_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Sign", "0000000900000007", "TPerSign", "SUCCESS", required={"Data": "payload"}, return_values=1),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_firmware_attestation_allows_anybody_in_adminsp(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("FirmwareAttestation", "000000090001FF05", "TperAttestation", "SUCCESS", required={"AssessorNonce": "23helloseagate"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_firmware_attestation_accepts_nonamed_nonce_with_optional_pairs(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record(
+                "FirmwareAttestation",
+                "000000090001FF05",
+                "TperAttestation",
+                "SUCCESS",
+                args=("nonce", (0, "subject"), (1, "assessor")),
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_firmware_attestation_rejects_missing_nonce_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("FirmwareAttestation", "000000090001FF05", "TperAttestation", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_firmware_attestation_rejects_only_optional_pairs_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record(
+                "FirmwareAttestation",
+                "000000090001FF05",
+                "TperAttestation",
+                "SUCCESS",
+                args=((0, "subject"), (1, "assessor")),
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_firmware_attestation_rejects_scalar_integer_attestation_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("FirmwareAttestation", "000000090001FF05", "TperAttestation", "SUCCESS", required={"AssessorNonce": "23helloseagate"}, return_values=1),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tper_certificate_byte_table_get_is_allowed(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Get", "0001000400000000", "_CertData_TPerSign", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tper_certificate_byte_table_get_accepts_row_range_args(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Get", "0001001F00000000", "_CertData_TPerAttestation", "SUCCESS", args=[(1, 0), (2, 0x5FF)]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tper_certificate_byte_table_get_rejects_columns(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Get", "0001000400000000", "_CertData_TPerSign", "SUCCESS", required={"Cellblock": [{"startColumn": 1}, {"endColumn": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tper_certificate_byte_table_get_rejects_column_raw_args(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Get", "0001000400000000", "_CertData_TPerSign", "SUCCESS", args=[(3, 0)]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tper_certificate_byte_table_set_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0001000400000000", "_CertData_TPerSign", "SUCCESS", optional={"Bytes": "AA"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tper_certificate_byte_table_get_rejects_scalar_integer_result(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Get", "0001000400000000", "_CertData_TPerSign", "SUCCESS", return_values=1),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_random_count_within_opal_limit_is_allowed(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Random", "0000000000000001", "ThisSP", "SUCCESS", args=16, return_values=[bytes(range(16))]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_random_count_over_opal_limit_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Random", "0000000000000001", "ThisSP", "SUCCESS", args=33, return_values=[bytes(range(33))]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_random_success_with_wrong_result_length_is_invalid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Random", "0000000000000001", "ThisSP", "SUCCESS", args=4, return_values=[b"abc"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_random_missing_count_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Random", "0000000000000001", "ThisSP", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_random_rejects_boolean_count_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Random", "0000000000000001", "ThisSP", "SUCCESS", required={"Count": True}, return_values=[b"x"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_random_rejects_boolean_raw_count_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Random", "0000000000000001", "ThisSP", "SUCCESS", args=True, return_values=[b"x"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_random_accepts_named_pair_count_args(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Random", "0000000000000001", "ThisSP", "SUCCESS", args=[("Count", 4)], return_values=[b"abcd"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_random_with_bufferout_requires_empty_result(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "Random",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"Count": 4},
+                optional={"BufferOut": {"CellBlock": [{"startColumn": 3, "endColumn": 3}]}},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "Random",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"Count": 4},
+                optional={"BufferOut": {"CellBlock": [{"startColumn": 3, "endColumn": 3}]}},
+                return_values=[b"abcd"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "Random",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"Count": 4},
+                optional={"BufferOut": {"CellBlock": [{"startColumn": 3, "endColumn": 3}]}},
+                return_values=1,
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_random_rejects_unsupported_parameter(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "Random",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"Count": 4},
+                optional={"Seed": "host"},
+                return_values=[b"abcd"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_next_accepts_count_on_object_table(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "0000000B00000000", "C_PIN", "SUCCESS", optional={"Count": 2}, return_values=["0000000B00000001"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_next_success_requires_uid_list_result(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "0000000B00000000", "C_PIN", "SUCCESS", return_values="0000000B00000001"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_next_success_rejects_row_values_result(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "0000000B00000000", "C_PIN", "SUCCESS", return_values={"0": "0000000B00000001"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_next_rejects_byte_table_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Next", "0000100100000000", "DataStore", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_next_rejects_negative_count_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "0000000B00000000", "C_PIN", "SUCCESS", optional={"Count": -1}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_next_rejects_boolean_count_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "Next",
+                "0000000B00000000",
+                "C_PIN",
+                "SUCCESS",
+                optional={"Count": True},
+                return_values=["0000000B00000001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_next_rejects_negative_named_pair_count_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            raw_method_record("Next", "0000000B00000000", "C_PIN", "SUCCESS", args=[("Count", -1)]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_next_rejects_wrong_table_where_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "0000000B00000000", "C_PIN", "SUCCESS", optional={"Where": "0000080200000001"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_next_accepts_name_only_where_on_cpin_table(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "0000000B00000000", "C_PIN", "SUCCESS", optional={"Where": "SID"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_next_accepts_name_only_where_on_locking_table(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Next", "0000080200000000", "Locking", "SUCCESS", optional={"Where": "Band1"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_next_accepts_name_only_where_on_authority_table(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Next", "0000000900000000", "Authority", "SUCCESS", optional={"Where": "User1"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_next_accepts_name_only_cpin_table(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "", "C_PIN", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_next_rejects_wrong_template_where_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "0000020400000000", "Template", "SUCCESS", optional={"Where": "0000000300000001"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_next_accepts_template_where(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "0000020400000000", "Template", "SUCCESS", optional={"Where": "0000020400000001"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_next_rejects_wrong_sp_where_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "0000020500000000", "SP", "SUCCESS", optional={"Where": "0000020400000001"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_next_accepts_sp_where(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "0000020500000000", "SP", "SUCCESS", optional={"Where": "0000020500000002"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_next_rejects_wrong_access_control_where_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "0000000700000000", "AccessControl", "SUCCESS", optional={"Where": "0000000800000001"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_next_accepts_access_control_where(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Next", "0000000700000000", "AccessControl", "SUCCESS", optional={"Where": "0000000700000001"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_next_rejects_wrong_secretprotect_where_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Next", "0000001D00000000", "SecretProtect", "SUCCESS", optional={"Where": "0000000800038001"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_next_accepts_secretprotect_where(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Next", "0000001D00000000", "SecretProtect", "SUCCESS", optional={"Where": "0000001D0000001D"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_next_rejects_secretprotect_table_in_admin_sp_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Next", "0000001D00000000", "SecretProtect", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_get_free_space_rejects_object_table_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("GetFreeSpace", "0000000B00000000", "C_PIN", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_get_free_space_accepts_thissp(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("GetFreeSpace", "0000000000000001", "ThisSP", "SUCCESS", return_values={"FreeSpace": 1024, "TableRows": []}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_get_free_space_success_requires_two_results(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("GetFreeSpace", "0000000000000001", "ThisSP", "SUCCESS", return_values={"FreeSpace": 1024}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_get_free_space_wrapper_aliases_preserve_two_field_shape(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP)]
+        for alias in ("remainingSpace", "freeSpaceBytes", "availableBytes", "getAvailableBytes", "queryAvailableSpace", "spaceAvailable"):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias}, "output": {"return": {"FreeSpace": 1024, "TableRows": []}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_log_wrapper_aliases_preserve_create_and_empty_result_shapes(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        self.assertEqual(
+            predict_trajectory(
+                context
+                + [
+                    {
+                        "input": {"function": "makeLog", "kwargs": {"name": "MyLog", "highSecurity": False, "minSize": 8, "authAs": ("Admin1", "new")}},
+                        "output": {"return": ["LogListUID", "LogTableUID", 8]},
+                    }
+                ]
+            ),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(
+                context
+                + [
+                    {
+                        "input": {"function": "makeLog", "kwargs": {"name": "MyLog", "highSecurity": False, "minSize": 8, "authAs": ("Admin1", "new")}},
+                        "output": {"return": True},
+                    }
+                ]
+            ),
+            "FAIL",
+        )
+        for alias in ("truncateLog", "syncLog"):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"log": "Log1", "authAs": ("Admin1", "new")}}, "output": {"return": True}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"log": "Log1", "authAs": ("Admin1", "new")}}, "output": {"return": ["unexpected"]}}]),
+                    "FAIL",
+                )
+
+    def test_log_domain_request_envelopes_preserve_required_payload_and_result_shape(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        add_payload = {"addLogRequest": {"values": {"log": "Log1", "name": "Entry1", "data": "AABB", "authAs": ("Admin1", "new")}}}
+        create_payload = {"createLogRequest": {"values": {"name": "MyLog", "highSecurity": False, "minSize": 8, "authAs": ("Admin1", "new")}}}
+        clear_payload = {"clearLogRequest": {"values": {"log": "Log1", "authAs": ("Admin1", "new")}}}
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "addLog", "kwargs": add_payload}, "output": {"return": True}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "addLog", "kwargs": {"addLogRequest": {"values": {"log": "Log1", "name": "Entry1", "authAs": ("Admin1", "new")}}}}, "output": {"return": True}}]),
+            "FAIL",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "addLog", "kwargs": add_payload}, "output": {"return": ["unexpected"]}}]),
+            "FAIL",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "createLog", "kwargs": create_payload}, "output": {"return": ["LogListUID", "LogTableUID", 8]}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "createLog", "kwargs": {"createLogRequest": {"values": {"name": "MyLog", "highSecurity": False, "authAs": ("Admin1", "new")}}}}, "output": {"return": ["LogListUID", "LogTableUID", 8]}}]),
+            "FAIL",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "createLog", "kwargs": create_payload}, "output": {"return": True}}]),
+            "FAIL",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "clearLog", "kwargs": clear_payload}, "output": {"return": True}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "clearLog", "kwargs": clear_payload}, "output": {"return": ["unexpected"]}}]),
+            "FAIL",
+        )
+
+    def test_get_free_rows_accepts_opal_object_table(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("GetFreeRows", "0000000B00000000", "C_PIN", "SUCCESS", return_values={"FreeRows": 4}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_get_free_rows_success_requires_one_result(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("GetFreeRows", "0000000B00000000", "C_PIN", "SUCCESS", return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_get_free_rows_rejects_byte_table_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("GetFreeRows", "0000100100000000", "DataStore", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_genkey_invalidates_old_plaintext_pattern(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 0}, {"4": "00020000"}]}),
+            method_record("GenKey", "0000080600030001", "K_AES_256"),
+            end_session(),
+            host_write("8E"),
+            host_read("Pattern 8E"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("GenKey", "0000080600030001", "K_AES_256"),
+            end_session(),
+            host_read("8E"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_genkey_accepts_tcgstorageapi_key_name_without_uid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("GenKey", "", "K_AES_256_Range1_Key_UID", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_genkey_range_name_selector_aliases_invalidate_old_media(self):
+        base = activated_locking_context() + [
+            {"input": {"function": "setRange", "kwargs": {"range": 1, "start": 80, "length": 8, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            host_write("AA", lba="80"),
+        ]
+        for selector_key in ("rangeName", "range_name", "bandName", "band_name"):
+            with self.subTest(selector_key=selector_key, shape="kwargs"):
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "genKey", "kwargs": {selector_key: 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}}, host_read("AA", lba="80")]),
+                    "FAIL",
+                )
+            with self.subTest(selector_key=selector_key, shape="values"):
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "genKey", "values": {selector_key: 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}}, host_read("AA", lba="80")]),
+                    "FAIL",
+                )
+            with self.subTest(selector_key=selector_key, shape="argsdict"):
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "genKey", "args": [{selector_key: 1, "authAs": ("Admin1", "new")}]}, "output": {"return": True}}, host_read("AA", lba="80")]),
+                    "FAIL",
+                )
+
+    def test_erase_range_name_values_aliases_invalidate_old_media(self):
+        base = activated_locking_context() + [
+            {"input": {"function": "setRange", "kwargs": {"range": 1, "start": 80, "length": 8, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            host_write("AA", lba="80"),
+        ]
+        for function in ("erase", "eraseRange"):
+            for selector_key in ("rangeName", "range_name", "bandName", "band_name"):
+                with self.subTest(function=function, selector_key=selector_key):
+                    self.assertEqual(
+                        predict_trajectory(base + [{"input": {"function": function, "values": {selector_key: 1, "authAs": "EraseMaster"}}, "output": {"return": True}}, host_read("AA", lba="80")]),
+                        "FAIL",
+                    )
+
+    def test_erase_policy_config_request_envelopes_select_range_and_invalidate_old_media(self):
+        base = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 80}, {"4": 8}, {"5": 1}, {"6": 1}, {"7": 0}, {"8": 0}]}),
+            host_write("AA", lba="80"),
+        ]
+        for function in ("erase", "eraseRange"):
+            for label, payload in (
+                ("policy", {"range": 1, "authAs": "EraseMaster"}),
+                ("config", {"target": "Locking_Range1", "authAs": "EraseMaster"}),
+                ("request", {"target": {"range": 1}, "credential": {"auth": "EraseMaster"}}),
+                ("eraseRequest", {"target": {"rangeId": 1}, "authAs": "EraseMaster"}),
+                ("lockingRangeRequest", {"erase": {"rangeId": 1}, "authAs": "EraseMaster"}),
+            ):
+                with self.subTest(function=function, label=label):
+                    self.assertEqual(
+                        predict_trajectory(base + [{"input": {"function": function, "kwargs": {label: payload}}, "output": {"return": True}}, host_read("AA", lba="80")]),
+                        "FAIL",
+                    )
+
+    def test_genkey_key_name_without_underscore_invalidates_range_media(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 0}, {"4": "00020000"}]}),
+            end_session(),
+            host_write("8E"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("GenKey", "", "K AES 256 Range1 Key", "SUCCESS"),
+            end_session(),
+            host_read("8E"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_genkey_policy_config_request_envelopes_select_range_key_and_invalidate_old_media(self):
+        base = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 80}, {"4": 8}, {"5": 1}, {"6": 1}, {"7": 0}, {"8": 0}]}),
+            host_write("AA", lba="80"),
+        ]
+        for function in ("genKey", "generateKey", "genRangeKey", "rotateKey", "rekeyRange"):
+            for label, payload in (
+                ("policy", {"range": 1, "authAs": ("Admin1", "new")}),
+                ("config", {"target": "K_AES_256_Range1_Key", "authAs": ("Admin1", "new")}),
+                ("request", {"target": {"range": 1}, "credential": {"auth": "Admin1", "proof": "new"}}),
+                ("lockingRequest", {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
+                ("rangeRequest", {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
+                ("keyRequest", {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}),
+                ("lockingRangeRequest", {"key": {"rangeId": 1}, "authAs": ("Admin1", "new")}),
+            ):
+                with self.subTest(function=function, label=label):
+                    self.assertEqual(
+                        predict_trajectory(base + [{"input": {"function": function, "kwargs": {label: payload}}, "output": {"return": True}}, host_read("AA", lba="80")]),
+                        "FAIL",
+                    )
+
+    def test_genkey_requires_write_session(self):
+        trajectory = activated_locking_context() + [
+            raw_method_record("StartSession", "00000000000000FF", "Session Manager UID", args=[100, LOCKING_SP_INT, 0]),
+            method_record("GenKey", "0000080600030001", "K_AES_256", "SUCCESS", optional={"authAs": ("Admin1", "new")}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_genkey_accepts_pin_length(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("GenKey", "0000000B00000001", "C_PIN", "SUCCESS", optional={"PinLength": 16}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_cpin_genkey_success_returns_empty_list(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("GenKey", "0000000B00000001", "C_PIN", "SUCCESS", optional={"PinLength": 16}, return_values=["unexpected"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_genkey_invalidates_old_start_session_pin(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("GenKey", "0000000B00000001", "C_PIN", "SUCCESS", optional={"PinLength": 16}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_genkey_invalidates_old_authenticate_pin(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("GenKey", "0000000B00000001", "C_PIN", "SUCCESS", optional={"PinLength": 16}),
+            method_record("Authenticate", "0000000000000001", "ThisSP", "SUCCESS", required={"Authority": "SID", "Challenge": "new"}, return_values=[True]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_genkey_rejects_pin_length_over_32_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("GenKey", "0000000B00000001", "C_PIN", "SUCCESS", optional={"PinLength": 33}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_genkey_rejects_boolean_pin_length_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("GenKey", "0000000B00000001", "C_PIN", "SUCCESS", optional={"PinLength": True}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_genkey_rejects_public_exponent_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("GenKey", "0000000B00000001", "C_PIN", "SUCCESS", optional={"PublicExponent": 65537}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_media_key_genkey_rejects_public_exponent_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("GenKey", "0000080600030001", "K_AES_256", "SUCCESS", optional={"PublicExponent": 65537}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_charset_rejects_non_byte_table_ref_success(self):
+        numeric_column = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", C_PIN_SID, "C_PIN", "SUCCESS", optional={"Values": [{"4": C_PIN_SID}]}),
+        ]
+        self.assertEqual(predict_trajectory(numeric_column), "FAIL")
+
+    def test_get_package_accepts_credential_with_purpose(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("GetPackage", "0000000B00000001", "C_PIN_SID", "SUCCESS", required={"Purpose": "backup"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_get_package_requires_purpose(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("GetPackage", "0000000B00000001", "C_PIN_SID", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_get_package_rejects_invalid_wrapping_key_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("GetPackage", "0000000B00000001", "C_PIN_SID", "SUCCESS", required={"Purpose": "backup"}, optional={"WrappingKey": "0000080100000000"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_set_package_accepts_credential_value(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("SetPackage", "0000000B00000001", "C_PIN_SID", "SUCCESS", required={"Value": "package"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_set_package_success_requires_empty_result(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("SetPackage", "0000000B00000001", "C_PIN_SID", "SUCCESS", required={"Value": "package"}, return_values=["unexpected"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_set_package_requires_read_write_session(self):
+        readonly_start = start_session(ADMIN_SP, SID, "new")
+        readonly_start["input"]["method"]["args"]["required"]["Write"] = 0
+        trajectory = owned_admin_context() + [
+            readonly_start,
+            method_record("SetPackage", "0000000B00000001", "C_PIN_SID", "SUCCESS", required={"Value": "package"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_set_package_rejects_non_credential_target_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("SetPackage", "0000080100000000", "LockingInfo", "SUCCESS", required={"Value": "package"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_k_aes_genkey_rejects_pin_length_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("GenKey", "0000080600030001", "K_AES_256", "SUCCESS", optional={"PinLength": 16}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_read_subrange_matches_prior_written_pattern(self):
+        trajectory = activated_locking_context() + [
+            host_write("8E", lba="80 ~ 87"),
+            host_read("Pattern 8E", lba="82 ~ 83"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_host_read_pattern_that_looks_like_status_code_is_data(self):
+        trajectory = activated_locking_context() + [
+            host_write("13", lba="80 ~ 87"),
+            host_read("Pattern 13", lba="80 ~ 87"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_top_level_host_io_schema_tracks_lba_pattern(self):
+        trajectory = activated_locking_context() + [
+            host_write_top_level("8E"),
+            host_read_top_level("8E"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_nested_operation_host_io_schema_tracks_lba_pattern(self):
+        trajectory = activated_locking_context() + [
+            {"input": {"operation": "Write", "args": {"LBA": "80 ~ 87", "pattern": "8E"}}, "output": {"status": "SUCCESS"}},
+            {"input": {"operation": "Read", "args": {"LBA": "80 ~ 87"}}, "output": {"data": "8E"}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_host_io_bytes_payloads_track_lba_pattern(self):
+        trajectory = activated_locking_context() + [
+            host_write_top_level(b"\x8e"),
+            host_read_top_level([0x8E]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_write_locked_range_rejects_successful_host_write(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 0}, {"4": "00020000"}, {"6": 1}, {"8": 1}]}),
+            end_session(),
+            host_write("AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_named_locking_set_fields_update_range_state(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"RangeStart": 80, "RangeLength": 8, "WriteLockEnabled": 1, "WriteLocked": 1},
+            ),
+            end_session(),
+            host_write_status("SUCCESS", lba="80 ~ 87"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockingrange_name_variant_updates_range_state(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "",
+                "LockingRange1",
+                optional={"Values": [{"RangeStart": 80}, {"RangeLength": 8}, {"WriteLockEnabled": 1}, {"WriteLocked": 1}]},
+            ),
+            end_session(),
+            host_write_status("SUCCESS", lba="80 ~ 87"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_set_accepts_supported_lock_on_reset_list(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"9": [0, 3]}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_locking_set_rejects_programmatic_only_lock_on_reset_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"9": [3]}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_set_rejects_bool_lock_on_reset_success(self):
+        for value in (True, False, [True], ["true"], ["false"]):
+            with self.subTest(value=value):
+                trajectory = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"9": value}]}),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_read_locked_range_rejects_returned_plaintext(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 0}, {"4": "00020000"}, {"5": 1}, {"7": 1}]}),
+            end_session(),
+            host_read("Pattern AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_write_crossing_into_locked_range_rejects_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 10}, {"4": 10}, {"6": 1}, {"8": 1}]}),
+            end_session(),
+            host_write("AA", lba="5 ~ 12"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_read_crossing_into_locked_range_rejects_plaintext(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 10}, {"4": 10}, {"5": 1}, {"7": 1}]}),
+            end_session(),
+            host_read("Pattern AA", lba="5 ~ 12"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_unlocked_range_crossing_write_may_return_invalid_parameter(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 10}, {"4": 10}]}),
+            end_session(),
+            host_write_status("INVALID_PARAMETER", lba="5 ~ 12"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_unlocked_range_crossing_read_may_return_invalid_parameter(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 10}, {"4": 10}]}),
+            end_session(),
+            host_read_status("INVALID_PARAMETER", lba="5 ~ 12"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_range_crossing_behavior_zero_rejects_unlocked_crossing_write_error(self):
+        trajectory = activated_locking_context() + [
+            level0_opal_ssc_v2(0),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 10}, {"4": 10}]}),
+            end_session(),
+            host_write_status("INVALID_PARAMETER", lba="5 ~ 12"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_range_crossing_behavior_one_rejects_unlocked_crossing_write_success(self):
+        trajectory = activated_locking_context() + [
+            level0_opal_ssc_v2(1),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 10}, {"4": 10}]}),
+            end_session(),
+            host_write_status("SUCCESS", lba="5 ~ 12"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_range_crossing_behavior_one_does_not_block_single_range_write(self):
+        trajectory = activated_locking_context() + [
+            level0_opal_ssc_v2(1),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 10}, {"4": 10}]}),
+            end_session(),
+            host_write_status("SUCCESS", lba="10 ~ 12"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_range_crossing_behavior_one_rejects_unlocked_crossing_read_payload(self):
+        trajectory = activated_locking_context() + [
+            level0_opal_ssc_v2(1),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 10}, {"4": 10}]}),
+            end_session(),
+            host_read("Pattern AA", lba="5 ~ 12"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_crossing_write_then_range_genkey_rejects_full_old_payload(self):
+        trajectory = activated_locking_context() + [
+            level0_opal_ssc_v2(0),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("CreateRow", "0000080200000000", "Locking", optional={"Row": [{"3": 100}, {"4": 8}]}, return_values=["0000080200030001"]),
+            method_record("CreateRow", "0000080200000000", "Locking", optional={"Row": [{"3": 108}, {"4": 8}]}, return_values=["0000080200030002"]),
+            end_session(),
+            host_write("A1", lba="104 ~ 111"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("GenKey", "0000080600030001", "K_AES_256", "SUCCESS"),
+            end_session(),
+            host_read("Pattern A1", lba="104 ~ 111"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_crossing_write_then_range_genkey_preserves_unaffected_segment(self):
+        trajectory = activated_locking_context() + [
+            level0_opal_ssc_v2(0),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("CreateRow", "0000080200000000", "Locking", optional={"Row": [{"3": 100}, {"4": 8}]}, return_values=["0000080200030001"]),
+            method_record("CreateRow", "0000080200000000", "Locking", optional={"Row": [{"3": 108}, {"4": 8}]}, return_values=["0000080200030002"]),
+            end_session(),
+            host_write("A1", lba="104 ~ 111"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("GenKey", "0000080600030001", "K_AES_256", "SUCCESS"),
+            end_session(),
+            host_read("Pattern A1", lba="108 ~ 111"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_power_cycle_applies_lock_on_reset(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 0}, {"4": "00020000"}, {"6": 1}, {"8": 0}, {"9": [0]}]}),
+            end_session(),
+            host_reset("PowerCycle"),
+            host_write("AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_string_lock_on_reset_value_is_parsed(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 0}, {"4": "00020000"}, {"6": 1}, {"8": 0}, {"9": "[0]"}]}),
+            end_session(),
+            host_reset("PowerCycle"),
+            host_write("AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_programmatic_reset_does_not_apply_power_only_lock_on_reset(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 0}, {"4": "00020000"}, {"6": 1}, {"8": 0}, {"9": [0]}]}),
+            end_session(),
+            host_reset("TCGReset"),
+            host_write("AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcg_reset_is_protocol_stack_reset_not_tper_reset(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 0}, {"4": "00020000"}, {"6": 1}, {"8": 0}, {"9": [0, 3]}]}),
+            end_session(),
+            host_reset("TCGReset"),
+            host_write("AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tper_reset_requires_programmatic_reset_enable(self):
+        trajectory = activated_locking_context() + [
+            host_reset("TPerReset"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tper_reset_applies_programmatic_lock_when_enabled(self):
+        trajectory = activated_locking_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000020100030001", "TPerInfo", optional={"ProgrammaticResetEnable": True}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 0}, {"4": "00020000"}, {"6": 1}, {"8": 0}, {"9": [0, 3]}]}),
+            end_session(),
+            host_reset("TPerReset"),
+            host_write("AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_admin_revert_restores_programmatic_reset_disabled(self):
+        trajectory = activated_locking_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000020100030001", "TPerInfo", optional={"ProgrammaticResetEnable": True}),
+            method_record("Revert", "0000020500000001", "SP", "SUCCESS"),
+            host_reset("TPerReset"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_admin_revert_requires_read_write_session(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new", write=0),
+            method_record("Revert", "0000020500000001", "SP", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_admin_revert_success_requires_empty_return_list(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Revert", "0000020500000001", "SP", "SUCCESS", return_values=["unexpected"]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_activate_on_unknown_sp_object_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Activate", "0000010500000004", "SP", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_get_lockingsp_lifecycle_active_enables_later_session(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Get", "0000020500000002", "SP", return_values={"LifeCycle": "Manufactured"}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_get_lockingsp_object_from_lockingsp_session_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000020500000002", "SP", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_get_lockingsp_lifecycle_inactive_blocks_later_session_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(ADMIN_SP),
+            method_record("Get", "0000020500000002", "SP", return_values={"LifeCycle": "Manufactured-Inactive"}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_get_lockingsp_numeric_lifecycle_active_enables_later_session(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Get", "0000020500000002", "SP", return_values={6: 9}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_get_lockingsp_numeric_lifecycle_inactive_blocks_later_session_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(ADMIN_SP),
+            method_record("Get", "0000020500000002", "SP", return_values={6: 8}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_adminsp_thissp_revertsp_requires_psid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("RevertSP", "0000000000000001", "ThisSP", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_adminsp_psid_revertsp_success_is_valid(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, "PSID", "psid"),
+            method_record("RevertSP", "0000000000000001", "ThisSP", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_psid_revertsp_resets_locking_sp_activation(self):
+        trajectory = activated_locking_context() + [
+            start_session(ADMIN_SP, "PSID", "psid"),
+            method_record("RevertSP", "0000000000000001", "ThisSP"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_targeted_revertsp_locking_preserves_global_range_key(self):
+        trajectory = activated_locking_context() + [
+            host_write("AA", lba="200 ~ 207"),
+            {"input": {"function": "revertSP", "args": ["LockingSP", "new"], "kwargs": {"KeepGlobalRangeKey": True}}, "output": {"return": True}},
+            host_read("Pattern AA", lba="200 ~ 207"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_targeted_revertsp_admin_resets_locking_sp_activation(self):
+        trajectory = activated_locking_context() + [
+            {"input": {"function": "revertSP", "kwargs": {"target": "AdminSP", "psid": "psid"}}, "output": {"return": True}},
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_revertsp_policy_config_request_envelopes_preserve_target_and_credentials(self):
+        locking_payloads = (
+            ("policy", {"target": "LockingSP", "credential": "new", "KeepGlobalRangeKey": True}),
+            ("config", {"sp": "LockingSP", "cred": "new", "keepGlobalRangeKey": True}),
+            ("request", {"sp": {"name": "LockingSP"}, "credential": {"proof": "new"}, "options": {"KeepGlobalRangeKey": True}}),
+        )
+        for label, payload in locking_payloads:
+            with self.subTest(label=label, target="LockingSP"):
+                trajectory = activated_locking_context() + [
+                    host_write("AA", lba="200 ~ 207"),
+                    {"input": {"function": "revertSP", "kwargs": {label: payload}}, "output": {"return": True}},
+                    host_read("Pattern AA", lba="200 ~ 207"),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+        admin_payloads = (
+            ("policy", {"target": "AdminSP", "psid": "psid"}),
+            ("config", {"sp": "AdminSP", "credential": "psid"}),
+            ("request", {"target": {"name": "AdminSP"}, "credential": {"psid": "psid"}}),
+            ("revertRequest", {"values": {"target": "AdminSP", "psid": "psid"}}),
+            ("revertSpRequest", {"values": {"target": "AdminSP", "psid": "psid"}}),
+            ("spRequest", {"values": {"target": "AdminSP", "psid": "psid"}}),
+            ("lifecycleRequest", {"values": {"target": "AdminSP", "psid": "psid"}}),
+        )
+        for label, payload in admin_payloads:
+            with self.subTest(label=label, target="AdminSP"):
+                trajectory = activated_locking_context() + [
+                    {"input": {"function": "revertSP", "kwargs": {label: payload}}, "output": {"return": True}},
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_keep_global_range_key_revertsp_fails_when_global_range_locked(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200000001", "Locking", optional={"Values": [{"5": 1}, {"6": 1}, {"7": 1}, {"8": 1}]}),
+            method_record("RevertSP", "0000000000000001", "ThisSP", "SUCCESS", optional={"KeepGlobalRangeKey": True}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_keep_global_range_key_revertsp_preserves_global_user_data(self):
+        trajectory = activated_locking_context() + [
+            host_write("AA", lba="200 ~ 207"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("RevertSP", "0000000000000001", "ThisSP", optional={"KeepGlobalRangeKey": True}),
+            host_read("Pattern AA", lba="200 ~ 207"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_revertlockingsp_keep_global_range_key_fails_when_global_range_locked(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200000001", "Locking", optional={"Values": [{"5": 1}, {"6": 1}, {"7": 1}, {"8": 1}]}),
+            {
+                "input": {"function": "revertLockingSP", "args": ["new"], "kwargs": {"KeepGlobalRangeKey": True}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_revertlockingsp_keep_global_range_key_preserves_global_data(self):
+        trajectory = activated_locking_context() + [
+            host_write("AA", lba="200 ~ 207"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "revertLockingSP", "args": ["new"], "kwargs": {"KeepGlobalRangeKey": True}},
+                "output": {"return": True},
+            },
+            host_read("Pattern AA", lba="200 ~ 207"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_revertsp_without_keep_global_range_key_invalidates_global_user_data(self):
+        trajectory = activated_locking_context() + [
+            host_write("AA", lba="200 ~ 207"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("RevertSP", "0000000000000001", "ThisSP"),
+            host_read("Pattern AA", lba="200 ~ 207"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_enterprise_bandmaster_can_start_locking_session_after_pin_set(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008001", "C_PIN", optional={"Values": [{"3": "bandpin"}]}),
+            method_record("Activate", "0000020500000002", "SP"),
+            end_session(),
+            start_session(LOCKING_SP, "BandMaster1", "bandpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_erasemaster_can_enable_enterprise_bandmaster_authority(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008401", "C_PIN_EraseMaster", optional={"Values": [{"3": "erasepin"}]}),
+            end_session(),
+            start_session(ADMIN_SP),
+            method_record(
+                "Set",
+                "",
+                "C_PIN_BandMaster1",
+                "SUCCESS",
+                optional={"authAs": ("EraseMaster", "erasepin"), "Values": [{"5": 1}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_erasemaster_cannot_enable_bandmaster_authority(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008401", "C_PIN_EraseMaster", optional={"Values": [{"3": "erasepin"}]}),
+            end_session(),
+            start_session(ADMIN_SP),
+            method_record(
+                "Set",
+                "",
+                "C_PIN_BandMaster1",
+                "SUCCESS",
+                optional={"authAs": ("EraseMaster", "wrong"), "Values": [{"5": 1}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_bandmaster_authorizes_matching_range_set(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008001", "C_PIN", optional={"Values": [{"3": "bandpin"}]}),
+            method_record("Activate", "0000020500000002", "SP"),
+            end_session(),
+            start_session(LOCKING_SP, "BandMaster1", "bandpin"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"3": 8}, {"4": 64}, {"5": 1}, {"6": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_bandmaster_does_not_authorize_other_range_set(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008001", "C_PIN", optional={"Values": [{"3": "bandpin"}]}),
+            method_record("Activate", "0000020500000002", "SP"),
+            end_session(),
+            start_session(LOCKING_SP, "BandMaster1", "bandpin"),
+            method_record("Set", "0000080200030002", "Locking", "SUCCESS", optional={"Values": [{"3": 8}, {"4": 64}, {"5": 1}, {"6": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_erasemaster_authorizes_locking_range_set(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008401", "C_PIN_EraseMaster", optional={"Values": [{"3": "erasepin"}]}),
+            method_record("Activate", "0000020500000002", "SP"),
+            end_session(),
+            start_session(LOCKING_SP, "EraseMaster", "erasepin"),
+            method_record("Set", "0000080200030002", "Locking", "SUCCESS", optional={"Values": [{"3": 8}, {"4": 64}, {"5": 1}, {"6": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_erase_requires_erase_master(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Erase", "", "Band1", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_erase_not_authorized_with_admin_is_valid_failure(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Erase", "", "Band1", "NOT_AUTHORIZED"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_erase_master_authorizes_band_erase(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008401", "C_PIN_EraseMaster", optional={"Values": [{"3": "erasepin"}]}),
+            end_session(),
+            start_session(ADMIN_SP, "EraseMaster", "erasepin"),
+            method_record("Erase", "", "Band1", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authas_none_uses_erase_master_for_band_erase(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008401", "C_PIN_EraseMaster", optional={"Values": [{"3": "erasepin"}]}),
+            end_session(),
+            start_session(ADMIN_SP),
+            method_record("Erase", "", "Band1", "SUCCESS", optional={"authAs": (None, "erasepin")}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_authas_none_rejects_band_erase_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008401", "C_PIN_EraseMaster", optional={"Values": [{"3": "erasepin"}]}),
+            end_session(),
+            start_session(ADMIN_SP),
+            method_record("Erase", "", "Band1", "SUCCESS", optional={"authAs": (None, "wrong")}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_erase_invalidates_band_user_data(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008401", "C_PIN_EraseMaster", optional={"Values": [{"3": "erasepin"}]}),
+            method_record("Activate", "0000020500000002", "SP"),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"3": 80}, {"4": 8}]}),
+            end_session(),
+            host_write("AA", lba="80 ~ 87"),
+            start_session(ADMIN_SP),
+            method_record("Erase", "", "Band1", "SUCCESS", optional={"authAs": (None, "erasepin")}),
+            end_session(),
+            host_read("Pattern AA", lba="80 ~ 87"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_disabled_locking_admin2_cannot_start_session(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, "0000000900010002", "admin2"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_enabled_locking_admin2_can_start_session_after_pin_set(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900010002", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00010002", "C_PIN", optional={"Values": [{"3": "admin2"}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900010002", "admin2"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_bare_admin_authority_name_enables_admin2(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "", "Admin2", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00010002", "C_PIN", optional={"Values": [{"3": "admin2"}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900010002", "admin2"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_disabled_adminsp_admin1_cannot_start_session_after_pin_set(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00000201", "C_PIN", optional={"Values": [{"3": "adminpin"}]}),
+            end_session(),
+            start_session(ADMIN_SP, "0000000900000201", "adminpin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_ace_grant_allows_user_to_set_range_read_lock(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003E001", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"7": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_ace_grant_accepts_tcgstorageapi_binary_authority_uid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            raw_method_record(
+                "Set",
+                "000000080003E001",
+                "ACE",
+                args=(1, [(3, [("\x00\x00\x0C\x05", bytes.fromhex("0000000900030001"))])]),
+            ),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"7": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_ace_grant_accepts_integer_authority_uid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", int("0000000900030001", 16), "Authority", optional={"Values": [{5: 1}]}),
+            method_record("Set", int("0000000B00030001", 16), "C_PIN", optional={"Values": [{3: "userpin"}]}),
+            raw_method_record(
+                "Set",
+                int("000000080003E001", 16),
+                "ACE",
+                args=(1, [(3, [("\x00\x00\x0C\x05", int("0000000900030001", 16))])]),
+            ),
+            end_session(),
+            start_session(LOCKING_SP_INT, int("0000000900030001", 16), "userpin"),
+            method_record("Set", int("0000080200030001", 16), "Locking", "SUCCESS", optional={"Values": [{7: 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tcgstorageapi_band_name_maps_to_locking_range(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "",
+                "Band1",
+                optional={"Values": [{"3": 80}, {"4": 8}, {"5": 1}, {"6": 1}, {"8": 1}]},
+            ),
+            end_session(),
+            host_write_status("SUCCESS", lba="80 ~ 87"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tcgstorageapi_ace_name_grants_range_access(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "", "ACE_Locking_Range1_Set_RdLocked", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+            method_record("Set", "", "Band1", "SUCCESS", optional={"Values": [{"7": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_ace_revoke_removes_user_range_lock_permission(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003E001", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            method_record("Set", "000000080003E001", "ACE", optional={"Values": [{"3": ["0000000900000002"]}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"7": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_c_pin_user_ace_admins_only_blocks_user_pin_change(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003A801", "ACE", optional={"Values": [{"3": ["0000000900000002"]}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+            method_record("Set", "0000000B00030001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "newuserpin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_c_pin_user_ace_admins_or_user_allows_user_pin_change(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003A801", "ACE", optional={"Values": [{"3": ["0000000900000002"]}]}),
+            method_record("Set", "000000080003A801", "ACE", optional={"Values": [{"3": ["Admins", "OR", "User1"]}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+            method_record("Set", "0000000B00030001", "C_PIN", "SUCCESS", optional={"Values": [{"3": "newuserpin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_write_ace_allows_user_write(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003FC01", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AA"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_bandmaster_authorizes_datastore_write(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008001", "C_PIN", optional={"Values": [{"3": "bandpin"}]}),
+            method_record("Activate", "0000020500000002", "SP"),
+            end_session(),
+            start_session(LOCKING_SP, "BandMaster1", "bandpin"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AA"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_bandmaster_authorizes_datastore_get(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008001", "C_PIN", optional={"Values": [{"3": "bandpin"}]}),
+            method_record("Activate", "0000020500000002", "SP"),
+            end_session(),
+            start_session(LOCKING_SP, "BandMaster1", "bandpin"),
+            method_record("Get", "0000100100000000", "DataStore", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authas_none_uses_matching_user_for_datastore_write_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003FC01", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"authAs": (None, "userpin"), "Bytes": "AA"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_authas_none_rejects_datastore_write_ace_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003FC01", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"authAs": (None, "wrong"), "Bytes": "AA"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authas_none_uses_matching_user_for_datastore_read_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003FC00", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP),
+            method_record("Get", "0000100100000000", "DataStore", "SUCCESS", optional={"authAs": (None, "userpin")}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_authas_none_datastore_read_returns_empty_result(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003FC00", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP),
+            method_record("Get", "0000100100000000", "DataStore", "SUCCESS", optional={"authAs": (None, "wrong")}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_authas_none_datastore_read_cannot_return_payload(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003FC00", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP),
+            method_record("Get", "0000100100000000", "DataStore", "SUCCESS", optional={"authAs": (None, "wrong")}, return_values="AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_set_ace_personalization_replaces_admins_authority(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003FC01", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AA"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_get_ace_personalization_replaces_admins_authority(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AA"}),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003FC00", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            method_record("Get", "0000100100000000", "DataStore", "SUCCESS", return_values="AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_get_ace_personalized_admin_get_returns_empty_result(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AA"}),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003FC00", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            method_record("Get", "0000100100000000", "DataStore", "SUCCESS", return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_empty_datastore_get_ace_booleanexpr_blocks_admin_read(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AABB"}),
+            method_record("Set", "000000080003FC00", "ACE", optional={"Values": [{"3": []}]}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 1)], return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_empty_datastore_get_ace_booleanexpr_cannot_return_payload(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AABB"}),
+            method_record("Set", "000000080003FC00", "ACE", optional={"Values": [{"3": []}]}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 1)], return_values="AABB"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_empty_datastore_set_ace_booleanexpr_blocks_admin_set(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AABB"}),
+            method_record("Set", "000000080003FC01", "ACE", optional={"Values": [{"3": []}]}),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Where": {"Row": 1}, "Bytes": "CC"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_failed_datastore_set_under_empty_booleanexpr_does_not_mutate(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AABB"}),
+            method_record("Set", "000000080003FC01", "ACE", optional={"Values": [{"3": []}]}),
+            method_record("Set", "0000100100000000", "DataStore", "NOT_AUTHORIZED", optional={"Where": {"Row": 1}, "Bytes": "CC"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 1)], return_values="AABB"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_read_only_datastore_set_does_not_persist_payload(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AABB"}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new", write=0),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "1122"}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 1)], return_values="1122"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_read_only_ace_set_does_not_persist_datastore_grant(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AA"}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new", write=0),
+            method_record("Set", "000000080003FC00", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 0)], return_values="AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_read_only_ace_set_does_not_persist_booleanexpr_cell(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new", write=0),
+            method_record("Set", "000000080003FC00", "ACE_DataStore_Get_All", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "000000080003FC00",
+                "ACE_DataStore_Get_All",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 4}]},
+                return_values=[[{"3": ["0000000900030001"]}, {"4": ["All"]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_read_only_cpin_pin_set_does_not_persist_credential(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new", write=0),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "readonlypin"}]}),
+            end_session(),
+            start_session(LOCKING_SP, "User1", "readonlypin"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_read_only_locking_set_does_not_persist_range_cell(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new", write=0),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"4": 120}]}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 4}, {"endColumn": 4}]},
+                return_values=[[{"4": 120}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_set_accepts_tcgstorageapi_nonamed_byte_payload(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record(
+                "Set",
+                "0000100100000000",
+                "DataStore",
+                "SUCCESS",
+                args=([(1, 0), (2, 64)], (1, b"payload")),
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_get_accepts_tcgstorageapi_row_range_args(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 64)]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_get_rejects_column_raw_args(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(3, 0)]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_set_rejects_column_raw_payload_pair_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record("Set", "0000100100000000", "DataStore", "SUCCESS", args=[(3, b"payload")]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_set_without_payload_succeeds_no_effect(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record("Set", "0000100100000000", "DataStore", "SUCCESS", args=[("startRow", 0)]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_set_where_row_plus_endrow_rejects_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Where": {"Row": 5, "EndRow": 9}, "Bytes": "AA"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_set_where_row_plus_endrow_accepts_invalid_parameter(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "INVALID_PARAMETER", optional={"Where": {"Row": 5, "EndRow": 9}, "Bytes": "AA"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_set_raw_where_uid_rejects_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record(
+                "Set",
+                "0000100100000000",
+                "DataStore",
+                "SUCCESS",
+                args=[("Where", {"UID": "0000100100000000"}), ("Bytes", "AA")],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_set_raw_where_uid_accepts_invalid_parameter(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record(
+                "Set",
+                "0000100100000000",
+                "DataStore",
+                "INVALID_PARAMETER",
+                args=[("Where", {"UID": "0000100100000000"}), ("Bytes", "AA")],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_set_with_column_cellblock_rejects_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000100100000000",
+                "DataStore",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 1}, {"endColumn": 1}]},
+                optional={"Bytes": "AA"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_write_ace_accepts_tcgstorageapi_table_name(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003FC02", "ACE_DataStore1_Set_All", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AA"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_write_ace_accepts_tcgstorageapi_uid_only_table_one(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003FC02", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AA"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_range_access_ace_accepts_tcgstorageapi_zero_user_uid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "000000080003E001", "ACE", optional={"Values": [{"3": ["0000000900030000"]}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"7": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_row_values_are_invalid_for_byte_table_set(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Values": [{"1": "AA"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_get_with_column_cellblock_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000100100000000",
+                "DataStore",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 1}, {"endColumn": 1}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_get_with_row_cellblock_is_valid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 64)], return_values="AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_get_startrow_uid_option_rejects_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record(
+                "Get",
+                "0000100100000000",
+                "DataStore",
+                "SUCCESS",
+                args=[("startRow", {"UID": "0000100100000000"}), ("endRow", 1)],
+                return_values="AA",
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_get_startrow_uid_option_accepts_invalid_parameter(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record(
+                "Get",
+                "0000100100000000",
+                "DataStore",
+                "INVALID_PARAMETER",
+                args=[("startRow", {"UID": "0000100100000000"}), ("endRow", 1)],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_get_reflects_prior_byte_payload_set(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AA"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 0)], return_values="AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_datastore_get_payload_after_set_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AA"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 0)], return_values="BB"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_trylimit_locked_out_explicit_authenticate_returns_false_result(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin", "5": 1, "7": 1}]}),
+            method_record("Authenticate", "", "ThisSP", "SUCCESS", required={"Authority": "User1"}, optional={"Proof": "bad"}, return_values=False),
+            method_record("Authenticate", "", "ThisSP", "SUCCESS", required={"Authority": "User1"}, optional={"Proof": "userpin"}, return_values=False),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_trylimit_locked_out_explicit_authenticate_cannot_return_true(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin", "5": 1, "7": 1}]}),
+            method_record("Authenticate", "", "ThisSP", "SUCCESS", required={"Authority": "User1"}, optional={"Proof": "bad"}, return_values=False),
+            method_record("Authenticate", "", "ThisSP", "SUCCESS", required={"Authority": "User1"}, optional={"Proof": "userpin"}, return_values=True),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_trylimit_retry_aliases_lock_out_user(self):
+        for setter in (
+            "setRetryLimit",
+            "setUserRetryLimit",
+            "setPasswordRetryLimit",
+            "setCredentialRetryLimit",
+            "setMaxRetries",
+            "setUserMaxRetries",
+        ):
+            with self.subTest(setter=setter):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+                    {"input": {"function": "setPIN", "args": ["User1", "userpin"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                    {"input": {"function": setter, "args": ["User1", 1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                    {"input": {"function": "checkPIN", "args": ["User1", "wrong"]}, "output": {"return": False}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "checkPIN", "args": ["User1", "userpin"]}, "output": {"return": False}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "checkPIN", "args": ["User1", "userpin"]}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_trylimit_policy_envelopes_lock_out_user(self):
+        base = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            {"input": {"function": "setPIN", "args": ["User1", "userpin"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for kwargs in (
+            {"identity": "User1", "policy": {"retryLimit": 1}, "authAs": ("Admin1", "new")},
+            {"identity": "User1", "limits": {"retryLimit": 1}, "authAs": ("Admin1", "new")},
+            {"identity": "User1", "security": {"maxRetries": 1}, "authAs": ("Admin1", "new")},
+            {"identity": "User1", "credentialPolicy": {"tryLimit": 1}, "authAs": ("Admin1", "new")},
+            {"values": {"identity": "User1", "policy": {"retryLimit": 1}, "authAs": ("Admin1", "new")}},
+            {"request": {"identity": "User1", "limits": {"retryLimit": 1}}, "authAs": ("Admin1", "new")},
+            {"identity": "User1", "config": {"attemptLimit": 1}, "authAs": ("Admin1", "new")},
+        ):
+            with self.subTest(kwargs=kwargs):
+                context = base + [
+                    {"input": {"function": "setTryLimit", "kwargs": kwargs}, "output": {"return": True}},
+                    {"input": {"function": "checkPIN", "kwargs": {"user": "User1", "pin": "bad"}}, "output": {"return": False}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "checkPIN", "kwargs": {"user": "User1", "pin": "userpin"}}, "output": {"return": False}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "checkPIN", "kwargs": {"user": "User1", "pin": "userpin"}}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_authority_limit_aliases_block_second_authentication(self):
+        for setter in (
+            "setAuthLimit",
+            "setMaxAuthentications",
+            "setUserMaxAuthentications",
+            "setAuthorityUseLimit",
+            "setUserUseLimit",
+        ):
+            with self.subTest(setter=setter):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+                    method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin", "5": 3}]}),
+                    {"input": {"function": setter, "kwargs": {"user": "User1", "limit": 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                    {"input": {"function": "checkPIN", "args": ["User1", "userpin"]}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "checkPIN", "args": ["User1", "userpin"]}, "output": {"return": False}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "checkPIN", "args": ["User1", "userpin"]}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_authority_counter_getter_aliases_read_limit_and_uses(self):
+        limit_context = activated_locking_context() + [
+            {"input": {"function": "setAuthLimit", "kwargs": {"identity": "User1", "limit": 3, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for getter in ("getAuthLimit", "getMaxAuthentications", "getUserMaxAuthentications", "getAuthorityUseLimit", "getUserUseLimit"):
+            with self.subTest(getter=getter):
+                self.assertEqual(
+                    predict_trajectory(limit_context + [{"input": {"function": getter, "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Limit": 3}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(limit_context + [{"input": {"function": getter, "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Limit": 1}}}]),
+                    "FAIL",
+                )
+        for return_key in ("authLimit", "useLimit", "maxUses", "maxAuthentications", "maxAuths", "authenticationLimit", "authUseLimit", "userUseLimit", "credentialLimit", "credentialUseLimit"):
+            with self.subTest(return_key=return_key):
+                self.assertEqual(
+                    predict_trajectory(limit_context + [{"input": {"function": "getAuthorityLimit", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {return_key: 3}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(limit_context + [{"input": {"function": "getAuthorityLimit", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {return_key: 1}}}]),
+                    "FAIL",
+                )
+
+        uses_context = activated_locking_context() + [
+            {"input": {"function": "setUserUses", "kwargs": {"identity": "User1", "uses": 2, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for getter in ("getAuthorityUseCount", "getUserUseCount", "getAuthUses", "getAuthenticationUses", "getUserAuthenticationUses", "getUseCount", "getAuthUseCount", "getCredentialUseCount", "getCredentialUses"):
+            with self.subTest(getter=getter):
+                self.assertEqual(
+                    predict_trajectory(uses_context + [{"input": {"function": getter, "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Uses": 2}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(uses_context + [{"input": {"function": getter, "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Uses": 0}}}]),
+                    "FAIL",
+                )
+        for return_key in ("useCount", "authUseCount", "credentialUseCount", "credentialUses"):
+            with self.subTest(return_key=return_key):
+                self.assertEqual(
+                    predict_trajectory(uses_context + [{"input": {"function": "getAuthorityUses", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {return_key: 2}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(uses_context + [{"input": {"function": "getAuthorityUses", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {return_key: 1}}}]),
+                    "FAIL",
+                )
+
+    def test_authority_and_cpin_counter_policy_envelopes_preserve_state(self):
+        for kwargs in (
+            {"credentialRequest": {"values": {"auth": "User1", "TryLimit": 3, "authAs": ("Admin1", "new")}}},
+            {"cpinRequest": {"policy": {"user": "User1", "tryLimit": 3}, "authAs": ("Admin1", "new")}},
+            {"pinRequest": {"limits": {"credentialId": "User1", "maxTries": 3}, "authAs": ("Admin1", "new")}},
+        ):
+            with self.subTest(kind="trylimit-domain-request", kwargs=kwargs):
+                context = activated_locking_context() + [{"input": {"function": "setTryLimit", "kwargs": kwargs}, "output": {"return": True}}]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getTryLimit", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"TryLimit": 3}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getTryLimit", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"TryLimit": 0}}}]),
+                    "FAIL",
+                )
+        for kwargs in (
+            {"identity": "User1", "limits": {"retryCount": 2}, "authAs": ("Admin1", "new")},
+            {"identity": "User1", "security": {"pinAttempts": 2}, "authAs": ("Admin1", "new")},
+        ):
+            with self.subTest(kind="tries", kwargs=kwargs):
+                context = activated_locking_context() + [{"input": {"function": "setTries", "kwargs": kwargs}, "output": {"return": True}}]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getTries", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Tries": 2}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getTries", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Tries": 0}}}]),
+                    "FAIL",
+                )
+        for kwargs in (
+            {"identity": "User1", "policy": {"authLimit": 2}, "authAs": ("Admin1", "new")},
+            {"identity": "User1", "limits": {"maxAuthentications": 2}, "authAs": ("Admin1", "new")},
+            {"identity": "User1", "security": {"useLimit": 2}, "authAs": ("Admin1", "new")},
+            {"authorityRequest": {"values": {"auth": "User1", "Limit": 2, "authAs": ("Admin1", "new")}}},
+            {"authRequest": {"policy": {"identity": "User1", "Limit": 2}, "authAs": ("Admin1", "new")}},
+            {"identityRequest": {"limits": {"user": "User1", "limit": 2}, "authAs": ("Admin1", "new")}},
+        ):
+            with self.subTest(kind="limit", kwargs=kwargs):
+                context = activated_locking_context() + [{"input": {"function": "setAuthLimit", "kwargs": kwargs}, "output": {"return": True}}]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getAuthorityLimit", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Limit": 2}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getAuthorityLimit", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Limit": 0}}}]),
+                    "FAIL",
+                )
+        for kwargs in (
+            {"identity": "User1", "policy": {"useCount": 2}, "authAs": ("Admin1", "new")},
+            {"identity": "User1", "security": {"credentialUses": 2}, "authAs": ("Admin1", "new")},
+        ):
+            with self.subTest(kind="uses", kwargs=kwargs):
+                context = activated_locking_context() + [{"input": {"function": "setAuthorityUses", "kwargs": kwargs}, "output": {"return": True}}]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getAuthorityUses", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Uses": 2}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getAuthorityUses", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Uses": 0}}}]),
+                    "FAIL",
+                )
+
+    def test_cpin_deep_counter_envelopes_feed_authenticate_and_get_state(self):
+        context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            {"input": {"function": "setPIN", "args": ["User1", "userpin"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            {
+                "input": {
+                    "function": "setTryLimit",
+                    "kwargs": {
+                        "request": {
+                            "cpinRequest": {
+                                "target": {"identity": "User1"},
+                                "counter": {"tryLimit": 1},
+                                "authAs": ("Admin1", "new"),
+                            },
+                        },
+                    },
+                },
+                "output": {"return": True},
+            },
+            {
+                "input": {
+                    "function": "checkPIN",
+                    "kwargs": {
+                        "request": {
+                            "authRequest": {
+                                "target": {"identity": "User1"},
+                                "proofRequest": {"pin": "bad"},
+                            },
+                        },
+                    },
+                },
+                "output": {"return": False},
+            },
+        ]
+        good_pin_request = {
+            "input": {
+                "function": "checkPIN",
+                "kwargs": {
+                    "operationRequest": {
+                        "authenticationRequest": {
+                            "target": {"identity": "User1"},
+                            "proofRequest": {"pin": "userpin"},
+                        },
+                    },
+                },
+            },
+            "output": {"return": False},
+        }
+        stale_tries_get = {
+            "input": {
+                "function": "getPINTries",
+                "kwargs": {
+                    "request": {"cpinRequest": {"target": {"identity": "User1"}, "counter": {}}},
+                    "authAs": ("Admin1", "new"),
+                },
+            },
+            "output": {"return": {"Tries": 0}},
+        }
+        current_tries_get = {
+            **stale_tries_get,
+            "output": {"return": {"Tries": 1}},
+        }
+        self.assertEqual(predict_trajectory(context + [good_pin_request]), "PASS")
+        self.assertEqual(predict_trajectory(context + [{**good_pin_request, "output": {"return": True}}]), "FAIL")
+        self.assertEqual(predict_trajectory(context + [current_tries_get]), "PASS")
+        self.assertEqual(predict_trajectory(context + [stale_tries_get]), "FAIL")
+
+    def test_authority_and_cpin_selector_aliases_preserve_counter_state(self):
+        for selector_key in ("authId", "auth_id", "authorityId", "authority_id", "userId", "user_id", "name"):
+            with self.subTest(authority_selector=selector_key):
+                context = activated_locking_context() + [
+                    {
+                        "input": {"function": "setAuthorityUses", "kwargs": {selector_key: "User1", "uses": 4, "authAs": ("Admin1", "new")}},
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getAuthorityUses", "kwargs": {selector_key: "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Uses": 4}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getAuthorityUses", "kwargs": {selector_key: "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Uses": 1}}}]),
+                    "FAIL",
+                )
+
+        for selector_key in ("pinId", "pin_id", "credentialId", "credential_id", "authId", "name"):
+            with self.subTest(cpin_selector=selector_key):
+                context = activated_locking_context() + [
+                    {
+                        "input": {"function": "setTryLimit", "kwargs": {selector_key: "User1", "tryLimit": 5, "authAs": ("Admin1", "new")}},
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getTryLimit", "kwargs": {selector_key: "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"TryLimit": 5}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getTryLimit", "kwargs": {selector_key: "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"TryLimit": 1}}}]),
+                    "FAIL",
+                )
+
+    def test_pin_selector_aliases_preserve_credential_state(self):
+        base = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": True}, {"15": 0}, {"16": 0}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}, {"5": 10}, {"7": 0}]}),
+        ]
+        for selector_key in ("pinId", "credentialId", "authId", "name"):
+            with self.subTest(change_selector=selector_key):
+                context = base + [
+                    {
+                        "input": {"function": "changePIN", "kwargs": {selector_key: "User1", "newPin": "rotated", "authAs": ("Admin1", "new")}},
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "checkPIN", "kwargs": {"user": "User1", "pin": "rotated"}}, "output": {"return": True}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "checkPIN", "kwargs": {"user": "User1", "pin": "userpin"}}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+            with self.subTest(check_selector=selector_key):
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "checkPIN", "kwargs": {selector_key: "User1", "pin": "userpin"}}, "output": {"return": True}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "checkPIN", "kwargs": {selector_key: "User1", "pin": "bad"}}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_datastore_get_subrange_reflects_prior_byte_payload_set(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AABBCCDD"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 1), (2, 2)], return_values="BBCC"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_datastore_get_subrange_after_set_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AABBCCDD"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 1), (2, 2)], return_values="AABBCCDD"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_get_omitted_endrow_after_payload_cannot_return_single_byte(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AA"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0)], return_values="AA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_get_omitted_endrow_at_observed_last_row_is_exact(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100001001",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 7}]},
+                return_values={"Rows": 0x00A00001},
+            ),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Where": {"Row": 0x00A00000}, "Bytes": "44"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0x00A00000)], return_values="44"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_get_omitted_endrow_at_observed_last_row_rejects_empty_result(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100001001",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 7}]},
+                return_values={"Rows": 0x00A00001},
+            ),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Where": {"Row": 0x00A00000}, "Bytes": "44"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0x00A00000)], return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_partial_overwrite_updates_later_get(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AABBCCDD"}),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Where": {"Row": 1}, "Bytes": "1122"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 3)], return_values="AA1122DD"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_wrong_datastore_partial_overwrite_get_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Bytes": "AABBCCDD"}),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Where": {"Row": 1}, "Bytes": "1122"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 3)], return_values="AABBCCDD"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_sparse_datastore_get_requires_known_bytes_at_requested_offsets(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Where": {"Row": 4}, "Bytes": "AABB"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 5)], return_values="00000000AABB"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_sparse_datastore_get_rejects_short_shifted_known_bytes(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Where": {"Row": 4}, "Bytes": "AABB"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 5)], return_values="AABB"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_sparse_datastore_get_rejects_wrong_known_tail_bytes(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Where": {"Row": 4}, "Bytes": "AABB"}),
+            raw_method_record("Get", "0000100100000000", "DataStore", "SUCCESS", args=[(1, 0), (2, 5)], return_values="00000000BBAA"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_get_with_table_cellblock_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000100100000000",
+                "DataStore",
+                "SUCCESS",
+                required={"Cellblock": [{"Table": "0000100100000000"}, {"startRow": 0}]},
+                return_values="AA",
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_table_descriptor_rows_at_minimum_is_valid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100001001",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 7}]},
+                return_values={"7": 0x00A00000},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_table_descriptor_rows_below_minimum_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100001001",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 7}, {"endColumn": 7}]},
+                return_values={"7": 0x009FFFFF},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_table_descriptor_column_and_numcolumns_are_valid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100001001",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 5}, {"endColumn": 6}]},
+                return_values={"Column": "0000000000000000", "NumColumns": 1},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_table_descriptor_nonnull_column_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100001001",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 5}, {"endColumn": 6}]},
+                return_values={"Column": "0000000000000001", "NumColumns": 1},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_table_descriptor_numcolumns_not_one_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100001001",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 5}, {"endColumn": 6}]},
+                return_values={"Column": "0000000000000000", "NumColumns": 2},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_mbr_table_descriptor_kind_and_rows_are_valid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100000804",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 4}, {"endColumn": 7}]},
+                return_values={"4": "Byte", "7": "0x08000000"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_mbr_table_descriptor_non_byte_kind_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100000804",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 4}, {"endColumn": 4}]},
+                return_values={"4": "Object"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_object_table_descriptor_granularity_must_be_zero(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100000802",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 13}, {"endColumn": 14}]},
+                return_values={"13": 0, "14": 8},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_table_descriptor_granularity_constraints_are_valid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100001001",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 13}, {"endColumn": 14}]},
+                return_values={"MandatoryWriteGranularity": 4, "RecommendedAccessGranularity": 8},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_table_descriptor_mandatory_granularity_above_recommended_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100001001",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 13}, {"endColumn": 14}]},
+                return_values={"13": 8, "14": 4},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_datastore_set_aligned_to_observed_mandatory_granularity_is_valid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100001001",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 13}, {"endColumn": 14}]},
+                return_values={"13": 4, "14": 4},
+            ),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Where": {"Row": 4}, "Bytes": "AABBCCDD"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_datastore_set_unaligned_to_observed_mandatory_granularity_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100001001",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 13}, {"endColumn": 14}]},
+                return_values={"13": 4, "14": 4},
+            ),
+            method_record("Set", "0000100100000000", "DataStore", "SUCCESS", optional={"Where": {"Row": 2}, "Bytes": "AABBCCDD"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockinginfo_object_get_with_start_row_cellblock_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000080100000001",
+                "LockingInfo",
+                "SUCCESS",
+                required={"Cellblock": [{"startRow": "0000080100000001"}, {"startColumn": 7}, {"endColumn": 10}]},
+                return_values={"7": 0, "8": 512, "9": 1, "10": 0},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_table_get_requires_start_row_cellblock(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000B00000000",
+                "C_PIN",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 0}, {"endColumn": 2}]},
+                return_values=[{"0": "0000000B00030001", "1": "C_PIN_User1"}],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_table_get_with_start_row_cellblock_is_valid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000B00000000",
+                "C_PIN",
+                "SUCCESS",
+                required={"Cellblock": [{"startRow": "0000000B00030001"}, {"startColumn": 0}, {"endColumn": 2}]},
+                return_values=[{"0": "0000000B00030001", "1": "C_PIN_User1"}],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_ace_meta_acl_allows_user_to_personalize_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            method_record("Set", "0000000800038001", "ACE", optional={"Values": [{"3": ["0000000900030001"]}]}),
+            end_session(),
+            start_session(LOCKING_SP, "0000000900030001", "userpin"),
+            method_record("Set", "000000080003E001", "ACE", "SUCCESS", optional={"Values": [{"3": ["0000000900030001"]}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_k_aes_mode_ace_can_block_anybody_get(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "000000080003BFFF", "ACE", optional={"Values": [{"3": ["0000000900000002"]}]}),
+            end_session(),
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 4}, {"endColumn": 4}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_k_aes_mode_get_uses_column_four(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 4}, {"endColumn": 4}]},
+                return_values=[[{"4": 7}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_k_aes_mode_get_accepts_raw_named_cellblock_columns(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            raw_method_record(
+                "Get",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                args=[("startColumn", 4), ("endColumn", 4)],
+                return_values=[[{"4": "XTS"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_k_aes_mode_get_accepts_tcgstorageapi_nonamed_cellblock_columns(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            raw_method_record(
+                "Get",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                args=[(3, 4), (4, 4)],
+                return_values=[[{"4": 23}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_k_aes_mode_get_requires_returned_mode_cell(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 4}, {"endColumn": 4}]},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_k_aes_mode_get_rejects_reserved_mode_value(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 4}, {"endColumn": 4}]},
+                return_values=[[{"4": 12}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_k_aes_mode_get_rejects_leaked_key_cell(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 4}, {"endColumn": 4}]},
+                return_values=[[{"3": "secret"}, {"4": 7}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_k_aes_raw_named_key_column_get_success_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record(
+                "Get",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                args=[("startColumn", 3), ("endColumn", 3)],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_k_aes_nonamed_key_column_get_success_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record(
+                "Get",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                args=[(3, 3), (4, 3)],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_k_aes_key_column_get_success_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 3}, {"endColumn": 3}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_k_aes_get_without_cellblock_success_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("Get", "0000080600030001", "K_AES_256", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_k_aes_unknown_column_get_success_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 5}, {"endColumn": 5}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_k_aes_set_success_is_invalid_because_opal_has_no_set_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080600030001", "K_AES_256", "SUCCESS", optional={"Values": [{"4": "x"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_mbrcontrol_get_is_available_to_anybody(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("Get", "0000080300000001", "MBRControl", "SUCCESS", required={"Cellblock": [{"startColumn": 1}, {"endColumn": 2}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_mbrcontrol_preconfigured_defaults_are_checked(self):
+        correct = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000080300000001",
+                "MBRControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 1}, {"endColumn": 3}]},
+                return_values=[[{"1": False}, {"2": False}, {"3": ["PowerCycle"]}]],
+            ),
+        ]
+        stale = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000080300000001",
+                "MBRControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 1}, {"endColumn": 3}]},
+                return_values=[[{"1": True}, {"2": False}, {"3": []}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(stale), "FAIL")
+
+    def test_mbrcontrol_get_reflects_successful_set_values(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080300000001", "MBRControl", "SUCCESS", optional={"Values": [{"1": True}, {"2": True}, {"3": ["PowerCycle", "Programmatic"]}]}),
+            method_record(
+                "Get",
+                "0000080300000001",
+                "MBRControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 1}, {"endColumn": 3}]},
+                return_values=[[{"1": True}, {"2": True}, {"3": ["PowerCycle", "Programmatic"]}]],
+            ),
+        ]
+        wrong = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080300000001", "MBRControl", "SUCCESS", optional={"Values": [{"1": True}, {"2": True}, {"3": ["PowerCycle", "Programmatic"]}]}),
+            method_record(
+                "Get",
+                "0000080300000001",
+                "MBRControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 1}, {"endColumn": 3}]},
+                return_values=[[{"1": True}, {"2": True}, {"3": ["PowerCycle"]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_mbrcontrol_done_to_dor_ace_does_not_authorize_enable(self):
+        context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "u1"}]}),
+            method_record("Set", "000000080003F801", "ACE", optional={"Values": [{"3": "User1"}]}),
+            end_session(),
+            start_session(LOCKING_SP, "User1", "u1"),
+        ]
+        self.assertEqual(
+            predict_trajectory(context + [method_record("Set", "0000080300000001", "MBRControl", optional={"Values": [{"2": True}]})]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [method_record("Set", "0000080300000001", "MBRControl", optional={"Values": [{"1": True}, {"2": True}]})]),
+            "FAIL",
+        )
+
+    def test_mbr_shadowing_blocks_host_writes(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080300000001", "MBRControl", optional={"Values": [{"1": 1}, {"2": 0}]}),
+            end_session(),
+            host_write("AA", lba="0"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_mbr_shadowing_read_does_not_return_prior_user_data(self):
+        trajectory = activated_locking_context() + [
+            host_write("AA", lba="0"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080300000001", "MBRControl", optional={"Values": [{"1": 1}, {"2": 0}]}),
+            end_session(),
+            host_read("Pattern AA", lba="0"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_mbr_shadowing_returns_tracked_mbr_table_data(self):
+        trajectory = activated_locking_context() + [
+            host_write("AA", lba="0"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080400000000", "MBR", optional={"Bytes": "B0"}),
+            method_record("Set", "0000080300000001", "MBRControl", optional={"Values": [{"1": 1}, {"2": 0}]}),
+            end_session(),
+            host_read("Pattern B0", lba="0"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_mbr_shadow_boundary_uses_observed_logical_block_size(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080100000000",
+                "LockingInfo",
+                return_values={"LogicalBlockSize": 4096},
+            ),
+            end_session(),
+            host_write("AB", lba="40000"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080300000001", "MBRControl", optional={"Values": [{"1": 1}, {"2": 0}]}),
+            end_session(),
+            host_read("Pattern AB", lba="40000"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_mbr_shadow_boundary_uses_observed_mbr_rows(self):
+        trajectory = activated_locking_context() + [
+            host_write("AA", lba="300000"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000000100000804", "Table", return_values={"7": 0x10000000}),
+            method_record("Set", "0000080400000000", "MBR", optional={"Bytes": "B0"}),
+            method_record("Set", "0000080300000001", "MBRControl", optional={"Values": [{"1": 1}, {"2": 0}]}),
+            end_session(),
+            host_read("Pattern B0", lba="300000"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_mbr_shadowing_rejects_wrong_tracked_mbr_table_data(self):
+        trajectory = activated_locking_context() + [
+            host_write("AA", lba="0"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080400000000", "MBR", optional={"Bytes": "B0"}),
+            method_record("Set", "0000080300000001", "MBRControl", optional={"Values": [{"1": 1}, {"2": 0}]}),
+            end_session(),
+            host_read("Pattern AA", lba="0"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_mbr_done_disables_shadowing_for_user_data_reads(self):
+        trajectory = activated_locking_context() + [
+            host_write("AA", lba="0"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080300000001", "MBRControl", optional={"Values": [{"1": 1}, {"2": 1}]}),
+            end_session(),
+            host_read("Pattern AA", lba="0"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_power_cycle_applies_mbr_done_on_reset(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080300000001", "MBRControl", optional={"Values": [{"1": 1}, {"2": 1}, {"3": [0]}]}),
+            end_session(),
+            host_reset("PowerCycle"),
+            host_write("AA", lba="0"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_programmatic_reset_does_not_apply_power_only_done_on_reset(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080300000001", "MBRControl", optional={"Values": [{"1": 1}, {"2": 1}, {"3": [0]}]}),
+            end_session(),
+            host_reset("TCGReset"),
+            host_write("AA", lba="0"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_mbrcontrol_set_accepts_supported_done_on_reset_list(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080300000001", "MBRControl", "SUCCESS", optional={"Values": [{"1": 1}, {"2": 1}, {"3": [0, 3]}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_mbrcontrol_set_rejects_programmatic_only_done_on_reset_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080300000001", "MBRControl", "SUCCESS", optional={"Values": [{"1": 1}, {"2": 1}, {"3": [3]}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_port_set_is_admin_sp_operation(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0001000200010002", "Port", "SUCCESS", optional={"Values": [{"2": [0]}, {"3": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_port_set_accepts_name_only_port_row(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "Port2", "SUCCESS", optional={"Values": [{"3": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_port_get_allows_anybody_status_check(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Get", "0001000200010002", "Port", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", "0001000200010002", "Port", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_port_set_from_locking_sp_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0001000200010002", "Port", "SUCCESS", optional={"Values": [{"3": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_port_set_rejects_invalid_locked_value(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0001000200010002", "Port", "SUCCESS", optional={"Values": [{"3": "locked"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_port_set_rejects_unsupported_lock_on_reset_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0001000200010002", "Port", "SUCCESS", optional={"Values": [{"2": [2]}, {"3": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tls_psk_set_rejects_invalid_enabled_value(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000001E00000001", "TLS_PSK_Key", "SUCCESS", optional={"Values": [{"3": "enabled"}, {"5": "0x1301"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tls_psk_set_accepts_named_tcgstorageapi_fields(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Set",
+                "",
+                "TLS_PSK_Key0",
+                "SUCCESS",
+                optional={"Enabled": False, "PSK": b"secret", "CipherSuite": "0x1301"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tls_psk_name_without_underscore_is_recognized(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Set",
+                "",
+                "TLS PSK Key 0",
+                "SUCCESS",
+                optional={"Enabled": False, "PSK": b"secret", "CipherSuite": "0x1301"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tls_psk_set_accepts_bytes_named_fields(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Set",
+                "",
+                "TLS_PSK_Key0",
+                "SUCCESS",
+                optional={b"Enabled": False, b"PSK": b"secret", b"CipherSuite": "0x1301"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tls_psk_set_in_locking_sp_accepts_admin1_authas(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Set",
+                "",
+                "TLS_PSK_Key0",
+                "SUCCESS",
+                optional={"authAs": ("Admin1", "new"), "Enabled": False, "PSK": b"secret", "CipherSuite": "0x1301"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tls_psk_set_in_locking_sp_selects_matching_authas_list_entry(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Set",
+                "",
+                "TLS_PSK_Key0",
+                "SUCCESS",
+                optional={"authAs": [("SID", "new"), ("Admin1", "new")], "Enabled": False, "PSK": b"secret", "CipherSuite": "0x1301"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tls_psk_set_in_locking_sp_accepts_erasemaster_authas(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008401", "C_PIN_EraseMaster", optional={"Values": [{"3": "erasepin"}]}),
+            method_record("Activate", "0000020500000002", "SP"),
+            end_session(),
+            start_session(LOCKING_SP),
+            method_record(
+                "Set",
+                "",
+                "TLS_PSK_Key0",
+                "SUCCESS",
+                optional={"authAs": [("SID", "new"), ("EraseMaster", "erasepin")], "Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tls_psk_set_in_locking_sp_rejects_wrong_erasemaster_authas(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000B00008401", "C_PIN_EraseMaster", optional={"Values": [{"3": "erasepin"}]}),
+            method_record("Activate", "0000020500000002", "SP"),
+            end_session(),
+            start_session(LOCKING_SP),
+            method_record(
+                "Set",
+                "",
+                "TLS_PSK_Key0",
+                "SUCCESS",
+                optional={"authAs": [("SID", "new"), ("EraseMaster", "wrong")], "Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tls_psk_set_in_locking_sp_rejects_wrong_matching_authas_entry(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Set",
+                "",
+                "TLS_PSK_Key0",
+                "SUCCESS",
+                optional={"authAs": [("SID", "new"), ("Admin1", "wrong")], "Enabled": False, "PSK": b"secret", "CipherSuite": "0x1301"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tls_psk_set_in_locking_sp_rejects_sid_only_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Set",
+                "",
+                "TLS_PSK_Key0",
+                "SUCCESS",
+                optional={"authAs": ("SID", "new"), "Enabled": False, "PSK": b"secret", "CipherSuite": "0x1301"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tls_psk_get_accepts_bytes_named_return_keys(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                b"\x00\x00\x00\x1e\x00\x00\x00\x01",
+                b"TLS_PSK_Key0",
+                "SUCCESS",
+                return_values={b"Enabled": 1, b"CipherSuite": "0x1301", b"UID": b"\x00\x00\x00\x1e\x00\x00\x00\x01"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_data_removal_mechanism_get_is_admin_sp_operation(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("Get", "0000110100000001", "DataRemovalMechanism", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_data_removal_mechanism_set_allows_active_mechanism_column(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000110100000001", "DataRemovalMechanism", "SUCCESS", optional={"Values": [{"1": 2}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_data_removal_mechanism_set_accepts_named_mechanism(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000110100000001", "DataRemovalMechanism", "SUCCESS", optional={"ActiveDataRemovalMechanism": "Cryptographic Erase"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_data_removal_mechanism_set_rejects_reserved_mechanism_success(self):
+        for reserved_value in (3, 4, 6, 7):
+            with self.subTest(reserved_value=reserved_value):
+                trajectory = owned_admin_context() + [
+                    start_session(ADMIN_SP, SID, "new"),
+                    method_record("Set", "0000110100000001", "DataRemovalMechanism", "SUCCESS", optional={"Values": [{"1": reserved_value}]}),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_data_removal_mechanism_set_rejects_boolean_success(self):
+        for bool_value in (True, False):
+            with self.subTest(bool_value=bool_value):
+                trajectory = owned_admin_context() + [
+                    start_session(ADMIN_SP, SID, "new"),
+                    method_record("Set", "0000110100000001", "DataRemovalMechanism", "SUCCESS", optional={"Values": [{"1": bool_value}]}),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_data_removal_mechanism_set_rejects_out_of_range_mechanism_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000110100000001", "DataRemovalMechanism", "SUCCESS", optional={"Values": [{"1": 8}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_data_removal_mechanism_set_rejects_uid_column_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000110100000001", "DataRemovalMechanism", "SUCCESS", optional={"Values": [{"0": "0000110100000001"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_data_removal_mechanism_set_from_locking_sp_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000110100000001", "DataRemovalMechanism", "SUCCESS", optional={"Values": [{"1": 2}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_data_removal_wrapper_aliases_preserve_mechanism_state(self):
+        context = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            {"input": {"function": "configureDataRemoval", "kwargs": {"mechanism": 2, "authAs": ("SID", "new")}}, "output": {"return": True}},
+        ]
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "fetchDataRemoval", "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": {"ActiveDataRemovalMechanism": 2}}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "fetchDataRemoval", "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": {"ActiveDataRemovalMechanism": 1}}}]),
+            "FAIL",
+        )
+        for setter in ("updateDataRemovalMechanism", "putDataRemovalMechanism"):
+            with self.subTest(setter=setter):
+                setter_context = owned_admin_context() + [
+                    start_session(ADMIN_SP, SID, "new"),
+                    {"input": {"function": setter, "kwargs": {"mechanism": 2, "authAs": ("SID", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(setter_context + [{"input": {"function": "fetchDataRemovalMechanism", "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": {"ActiveDataRemovalMechanism": 2}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(setter_context + [{"input": {"function": "fetchDataRemovalMechanism", "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": {"ActiveDataRemovalMechanism": 1}}}]),
+                    "FAIL",
+                )
+        for alias, return_key in (
+            ("getDataRemovalMechanism", "activeMechanism"),
+            ("getDataRemovalMechanism", "removalMechanism"),
+            ("getDataRemovalMode", "dataRemovalMode"),
+            ("getDataRemovalMethod", "dataRemovalMethod"),
+            ("fetchDataRemoval", "selectedMechanism"),
+            ("fetchDataRemoval", "currentMechanism"),
+            ("getDataRemovalMode", "mode"),
+            ("getDataRemovalMethod", "method"),
+        ):
+            with self.subTest(alias=alias, return_key=return_key):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": {return_key: 2}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": {return_key: 1}}}]),
+                    "FAIL",
+                )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "fetchDataRemoval", "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": True}}]),
+            "FAIL",
+        )
+
+    def test_tperinfo_set_accepts_programmatic_reset_enable(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000020100030001", "TPerInfo", "SUCCESS", optional={"ProgrammaticResetEnable": True}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tperinfo_set_accepts_uppercase_boolean_literal(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000020100030001", "TPerInfo", "SUCCESS", optional={"ProgrammaticResetEnable": "FALSE"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_tperinfo_set_rejects_invalid_programmatic_reset_enable_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000020100030001", "TPerInfo", "SUCCESS", optional={"ProgrammaticResetEnable": "enabled"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_tperinfo_set_from_locking_sp_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000020100030001", "TPerInfo", "SUCCESS", optional={"ProgrammaticResetEnable": True}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_sp_frozen_get_rejects_non_boolean_success(self):
+        frozen_bad = [
+            start_session(ADMIN_SP),
+            method_record(
+                "Get",
+                "0000020500000001",
+                "SP",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 7, "endColumn": 7}]},
+                return_values=[[{"7": "enabled"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(frozen_bad), "FAIL")
+
+        uid_bad = [
+            start_session(ADMIN_SP),
+            method_record(
+                "Get",
+                "0000020500000001",
+                "SP",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 0, "endColumn": 0}]},
+                return_values=[[{"0": "00020500000001"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(uid_bad), "FAIL")
+
+        bytes_bad = [
+            start_session(ADMIN_SP),
+            method_record(
+                "Get",
+                "0000020500000001",
+                "SP",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 5, "endColumn": 5}]},
+                return_values=[[{"5": True}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(bytes_bad), "FAIL")
+
+    def test_tperinfo_get_rejects_wrong_gudid_and_programmatic_reset_types(self):
+        uid_bad = [
+            start_session(ADMIN_SP),
+            method_record(
+                "Get",
+                "0000020100030001",
+                "TPerInfo",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 0, "endColumn": 0}]},
+                return_values=[[{"0": "00020100030001"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(uid_bad), "FAIL")
+
+        gudid_bad = [
+            start_session(ADMIN_SP),
+            method_record(
+                "Get",
+                "0000020100030001",
+                "TPerInfo",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 2, "endColumn": 2}]},
+                return_values=[[{"2": "AA" * 11}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(gudid_bad), "FAIL")
+
+        reset_bad = [
+            start_session(ADMIN_SP),
+            method_record(
+                "Get",
+                "0000020100030001",
+                "TPerInfo",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 8, "endColumn": 8}]},
+                return_values=[[{"8": "enabled"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(reset_bad), "FAIL")
+
+        bytes_bad = [
+            start_session(ADMIN_SP),
+            method_record(
+                "Get",
+                "0000020100030001",
+                "TPerInfo",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 1, "endColumn": 1}]},
+                return_values=[[{"1": True}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(bytes_bad), "FAIL")
+
+        protocol_bad = [
+            start_session(ADMIN_SP),
+            method_record(
+                "Get",
+                "0000020100030001",
+                "TPerInfo",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 5, "endColumn": 5}]},
+                return_values=[[{"5": -1}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(protocol_bad), "FAIL")
+
+    def test_spinfo_set_accepts_session_timeout(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"SPSessionTimeout": 30000}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_timeout_above_spinfo_cap_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            properties_response(MaxSessionTimeout=0, MinSessionTimeout=0),
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"SPSessionTimeout": 4000}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new", extra_optional={"SessionTimeout": 4001}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_timeout_below_min_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            properties_response(MaxSessionTimeout=10000, MinSessionTimeout=1000),
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"SPSessionTimeout": 0}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new", extra_optional={"SessionTimeout": 999}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_timeout_within_observed_limits_succeeds(self):
+        trajectory = owned_admin_context() + [
+            properties_response(MaxSessionTimeout=10000, MinSessionTimeout=1000),
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"SPSessionTimeout": 4000}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new", extra_optional={"SessionTimeout": 3000}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_timeout_zero_rejects_when_spinfo_nonzero(self):
+        trajectory = owned_admin_context() + [
+            properties_response(MaxSessionTimeout=0, MinSessionTimeout=0),
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"SPSessionTimeout": 4000}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new", extra_optional={"SessionTimeout": 0}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_timeout_zero_allowed_when_max_and_spinfo_zero(self):
+        trajectory = owned_admin_context() + [
+            properties_response(MaxSessionTimeout=0, MinSessionTimeout=0),
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"SPSessionTimeout": 0}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new", extra_optional={"SessionTimeout": 0}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_trans_timeout_below_min_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            properties_response(MaxTransTimeout=10000, MinTransTimeout=1000),
+            start_session(ADMIN_SP, SID, "new", extra_optional={"TransTimeout": 999}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_trans_timeout_above_max_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            properties_response(MaxTransTimeout=10000, MinTransTimeout=1000),
+            start_session(ADMIN_SP, SID, "new", extra_optional={"TransTimeout": 10001}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_trans_timeout_inside_observed_bounds_succeeds(self):
+        trajectory = owned_admin_context() + [
+            properties_response(MaxTransTimeout=10000, MinTransTimeout=1000),
+            start_session(ADMIN_SP, SID, "new", extra_optional={"TransTimeout": 3000}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_session_hashandsign_requires_signed_hash(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000900000006", "Authority_SID", optional={"Values": [{"7": 1}]}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_session_hashandsign_allows_signed_hash_parameter(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000900000006", "Authority_SID", optional={"Values": [{"7": 1}]}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new", extra_optional={"SignedHash": "DEADBEEF"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_spinfo_set_rejects_readonly_column_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"Values": [{"2": "renamed"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_spinfo_set_rejects_invalid_enabled_literal_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"Enabled": "enabled"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_disabled_sp_blocks_non_reenable_methods(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"Enabled": False}),
+            method_record("Get", "0000000200000001", "SPInfo", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_disabled_sp_accepts_specific_status_for_blocked_method(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"Enabled": False}),
+            method_record("Get", "0000000200000001", "SPInfo", "SP_DISABLED"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_disabled_sp_allows_session_start_and_reenable(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"Enabled": False}),
+            end_session(),
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"Enabled": True}),
+            method_record("Get", "0000000200000001", "SPInfo", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_delete_sp_requires_admins(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("DeleteSP", "0000000000000001", "ThisSP", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_sp_requires_read_write_session(self):
+        readonly_start = start_session(LOCKING_SP, ADMIN1, "new")
+        readonly_start["input"]["method"]["args"]["required"]["Write"] = 0
+        trajectory = activated_locking_context() + [
+            readonly_start,
+            method_record("DeleteSP", "0000000000000001", "ThisSP", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_sp_allows_disabled_sp_with_admins(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000200000001", "SPInfo", "SUCCESS", optional={"Enabled": False}),
+            method_record("DeleteSP", "0000000000000001", "ThisSP", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_delete_sp_success_requires_empty_return_list(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "DeleteSP",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                return_values=["unexpected"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_sp_takes_effect_after_successful_close(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("DeleteSP", "0000000000000001", "ThisSP", "SUCCESS"),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_sp_does_not_take_effect_before_close(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("DeleteSP", "0000000000000001", "ThisSP", "SUCCESS"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_admin_sp_delete_sp_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("DeleteSP", "0000000000000001", "ThisSP", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_admin_sp_accepts_admin_only_table_row_get(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", "0000000100000204", "Table", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_locking_sp_rejects_admin_only_table_row_get_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000000100000204", "Table", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_sp_accepts_locking_only_table_row_get(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "000000010000001D", "Table", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_admin_sp_rejects_locking_only_table_row_get_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", "000000010000001D", "Table", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_sptemplates_row_set_rejects_readonly_version_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000300000001", "SPTemplates", "SUCCESS", optional={"Values": [{"3": "00000002"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_template_row_set_rejects_readonly_maxinstances_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000020400000001", "Template", "SUCCESS", optional={"Values": [{"4": 2}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_methodid_row_set_rejects_readonly_name_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000600000008", "MethodID", "SUCCESS", optional={"Values": [{"1": "Next2"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_methodid_row_set_rejects_readonly_commonname_and_templateid_success(self):
+        for column, value in ((2, "ChangedTemplate"), (3, "0000020400000001")):
+            with self.subTest(column=column):
+                trajectory = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Set", "0000000600000016", "MethodID", "SUCCESS", optional={"Values": [{str(column): value}]}),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_methodid_name_get_matches_method_uid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000000600000016",
+                "MethodID",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 1, "endColumn": 1}]},
+                return_values=[[{"1": "Get"}]],
+            ),
+        ]
+        wrong = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000000600000016",
+                "MethodID",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 1, "endColumn": 1}]},
+                return_values=[[{"1": "Set"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_access_control_row_set_rejects_direct_acl_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000700000001", "AccessControl", "SUCCESS", optional={"Values": [{"4": ["ACE_00038000"]}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_access_control_row_get_acl_column_may_succeed_empty(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", "0000000700000001", "AccessControl", "SUCCESS", required={"Cellblock": [{"startColumn": 4, "endColumn": 4}]}, return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_access_control_row_get_all_columns_may_succeed_without_acl_cell(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", "0000000700000001", "AccessControl", "SUCCESS", return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_access_control_row_get_rejects_direct_acl_leak(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", "0000000700000001", "AccessControl", "SUCCESS", required={"Cellblock": [{"startColumn": 4, "endColumn": 4}]}, return_values={"ACL": ["ACE_Anybody"]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_access_control_row_get_accepts_non_acl_column(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", "0000000700000001", "AccessControl", "SUCCESS", required={"Cellblock": [{"startColumn": 3, "endColumn": 3}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_access_control_row_get_log_column_accepts_default_empty(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "000000070003FC00",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 5}, {"endColumn": 5}]},
+                return_values=[[{"Log": ""}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_access_control_row_get_log_column_accepts_default_zero(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "000000070003FC00",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 5}, {"endColumn": 5}]},
+                return_values=[[{"5": 0}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_access_control_row_get_log_column_rejects_arbitrary_logalways(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "000000070003FC00",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 5}, {"endColumn": 5}]},
+                return_values=[[{"Log": "LogAlways"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_access_control_row_get_meta_log_columns_accept_default_empty(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "000000070003FC00",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": "AddACELog"}, {"endColumn": "DeleteMethodLog"}]},
+                return_values=[[{"AddACELog": "", "RemoveACELog": "", "GetACLLog": 0, "DeleteMethodLog": "LogNever"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_access_control_row_get_meta_log_column_rejects_arbitrary_logsuccess(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "000000070003FC00",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": "GetACLLog"}, {"endColumn": "GetACLLog"}]},
+                return_values=[[{"GetACLLog": "LogSuccess"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_secretprotect_row_set_rejects_readonly_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000001D0000001D", "SecretProtect", "SUCCESS", optional={"Values": [{"3": "VU"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_secretprotect_get_rejects_wrong_table_cell_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000001D0000001E",
+                "SecretProtect",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": "Table"}, {"endColumn": "Table"}]},
+                return_values=[[{"Table": "000000010000000B"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_secretprotect_get_rejects_wrong_column_number_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "0000001D0000001D",
+                "SecretProtect",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": "ColumnNumber"}, {"endColumn": "ColumnNumber"}]},
+                return_values=[[{"ColumnNumber": 4}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_ace_row_set_rejects_readonly_name_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000800038001", "ACE", "SUCCESS", optional={"Values": [{"1": "renamed"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_ace_row_set_rejects_columns_write_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000800038001", "ACE", "SUCCESS", optional={"Columns": "All"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_issued_ace_row_set_rejects_readonly_common_name_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000800038001", "ACE", "SUCCESS", optional={"CommonName": "ace-alias"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_issued_ace_row_set_rejects_readonly_uid_and_name_success(self):
+        for values in ({"0": "0000000800FFFFFF"}, {"1": "ACE_Renamed"}):
+            with self.subTest(values=values):
+                trajectory = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Set", "0000000800038001", "ACE", "SUCCESS", optional={"Values": [values]}),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authority_get_common_name_allows_anybody(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("Get", "0000000900030001", "Authority", "SUCCESS", required={"Cellblock": [{"startColumn": 2, "endColumn": 2}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_authority_get_enabled_requires_admin_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("Get", "0000000900030001", "Authority", "SUCCESS", required={"Cellblock": [{"startColumn": 5, "endColumn": 5}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_ace_get_common_name_allows_anybody(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("Get", "0000000800038001", "ACE", "SUCCESS", required={"Cellblock": [{"startColumn": 2, "endColumn": 2}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_ace_get_boolean_expr_requires_admin_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("Get", "0000000800038001", "ACE", "SUCCESS", required={"Cellblock": [{"startColumn": 3, "endColumn": 3}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_issued_authority_set_rejects_readonly_common_name_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", "SUCCESS", optional={"CommonName": "UserAlias"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_issued_authority_set_rejects_readonly_uid_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", "SUCCESS", optional={"Values": [{"0": "0000000900FFFFFF"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_authority_set_rejects_readonly_name_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000900030001", "Authority", "SUCCESS", optional={"Name": "renamed"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_set_rejects_readonly_name_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Name": "BandX"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_set_accepts_common_name(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"CommonName": "BandAlias"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_mbrcontrol_set_rejects_uid_column_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080300000001", "MBRControl", "SUCCESS", optional={"UID": "0000080300000001"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_sp_frozen_blocks_later_start_session(self):
+        trajectory = activated_locking_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000020500000002", "SP", "SUCCESS", optional={"Frozen": True}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_sp_frozen_accepts_specific_status_for_start_session(self):
+        trajectory = activated_locking_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000020500000002", "SP", "SUCCESS", optional={"Frozen": True}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new", "SP_FROZEN"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_sp_frozen_can_be_cleared_before_start_session(self):
+        trajectory = activated_locking_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000020500000002", "SP", "SUCCESS", optional={"Frozen": True}),
+            method_record("Set", "0000020500000002", "SP", "SUCCESS", optional={"Frozen": False}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_admin_revert_sid_behavior_ff_invalidates_prior_sid_pin(self):
+        descriptor = {
+            "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0203", "Feature": "Opal SSC V2"}},
+            "output": {
+                "status": "SUCCESS",
+                "return_values": {
+                    "FeatureCode": "0x0203",
+                    "FeatureDescriptorVersion": 2,
+                    "SSCMinorVersion": 3,
+                    "Length": 0x10,
+                    "NumberOfComIDs": 1,
+                    "RangeCrossingBehavior": 0,
+                    "NumberOfLockingSPAdminAuthorities": 4,
+                    "NumberOfLockingSPUserAuthorities": 8,
+                    "InitialCPINSIDPINIndicator": 0,
+                    "BehaviorOfCPINSIDPINUponTPerRevert": 0xFF,
+                },
+            },
+        }
+        trajectory = [descriptor] + owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Revert", ADMIN_SP, "SP", "SUCCESS"),
+            start_session(ADMIN_SP, SID, "new", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_sp_get_frozen_state_blocks_start_session(self):
+        trajectory = activated_locking_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Get", "0000020500000002", "SP", "SUCCESS", return_values=[[{"7": True}]]),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_sp_set_rejects_direct_lifecycle_write_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000020500000002", "SP", "SUCCESS", optional={"Values": [{"6": "Manufactured"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_sp_get_lifecycle_rejects_reserved_value(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "0000020500000002",
+                "SP",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 6, "endColumn": 6}]},
+                return_values=[[{"6": 5}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_sp_get_lifecycle_accepts_opal_manufactured_value(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "0000020500000002",
+                "SP",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 6, "endColumn": 6}]},
+                return_values=[[{"6": "Manufactured"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_alignment_lowest_lba_applies_to_start_not_length(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", return_values={"AlignmentRequired": 1, "AlignmentGranularity": 8, "LowestAlignedLBA": 4}),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"3": 4}, {"4": 8}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_alignment_rejects_unaligned_length_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", return_values={"AlignmentRequired": 1, "AlignmentGranularity": 8, "LowestAlignedLBA": 4}),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"3": 4}, {"4": 12}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockinginfo_readonly_columns_reject_successful_set(self):
+        for column, value in ((0, "00000801000000FF"), (1, "HostName"), (2, 99), (3, 0), (4, 32), (5, 4)):
+            with self.subTest(column=column):
+                trajectory = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Set", "0000080100000001", "LockingInfo", "SUCCESS", optional={"Values": [{str(column): value}]}),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockinginfo_encryptsupport_get_rejects_reserved_enum(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080100000000",
+                "LockingInfo",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 3}]},
+                return_values=[[{"3": 2}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockinginfo_encryptsupport_get_rejects_boolean_enum(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080100000000",
+                "LockingInfo",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 3}]},
+                return_values=[[{"3": True}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockinginfo_get_rejects_malformed_uid_and_uinteger_cells(self):
+        uid_bad = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080100000000",
+                "LockingInfo",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 0, "endColumn": 0}]},
+                return_values=[[{"0": "00080100000000"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(uid_bad), "FAIL")
+
+        maxranges_bad = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080100000000",
+                "LockingInfo",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 4, "endColumn": 4}]},
+                return_values=[[{"4": True}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(maxranges_bad), "FAIL")
+
+        reencryptions_bad = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080100000000",
+                "LockingInfo",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 5, "endColumn": 5}]},
+                return_values=[[{"5": -1}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(reencryptions_bad), "FAIL")
+
+    def test_set_rejects_duplicate_rowvalue_column_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"7": 1}, {"7": 0}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_set_rejects_duplicate_named_rowvalue_column_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"RowValues": [{"ReadLocked": 1}, {"ReadLocked": 0}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_invalid_method_association_rejects_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000080600030001", "MethodID": "0000000600000017"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_readacl_wrapper_alias_uses_getacl_exact_membership(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        for alias in ("readACL", "getAclEntries", "readAclEntries", "fetchAclEntries", "fetchAceList"):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": alias, "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}},
+                                "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": alias, "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}},
+                                "output": {"return": {"ACL": ["ACE_0003D001"]}},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+
+    def test_getacl_deep_association_envelopes_resolve_exact_membership(self):
+        def wrap(payload, chain):
+            current = payload
+            for key in reversed(chain):
+                current = {key: current}
+            return current
+
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        chains = (
+            ("policy", "request", "association", "values"),
+            ("config", "target", "association", "values"),
+            ("accessControlRequest", "request", "targetMethod", "values"),
+            ("request", "aclRequest", "association", "values"),
+            ("values", "accessControlRequest", "objectMethod", "values"),
+        )
+        for chain in chains:
+            with self.subTest(chain=chain):
+                kwargs = wrap({"object": "Locking_Range1", "method": "Get", "authAs": ("Admin1", "new")}, chain)
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getACL", "kwargs": kwargs}, "output": {"return": ["ACE_0003D001", "ACE_00000003"]}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getACL", "kwargs": kwargs}, "output": {"return": ["ACE_0003D001"]}}]),
+                    "FAIL",
+                )
+
+    def test_acl_mutation_wrapper_aliases_update_later_getacl(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        self.assertEqual(
+            predict_trajectory(
+                context
+                + [
+                    {
+                        "input": {"function": "appendACE", "args": ["Locking_Range1", "Get", "0000000000039000"], "kwargs": {"authAs": ("Admin1", "new")}},
+                        "output": {"return": True},
+                    },
+                    {
+                        "input": {"function": "getACL", "kwargs": {"required": {"object": "Locking_Range1", "method": "Get"}, "authAs": ("Admin1", "new")}},
+                        "output": {"return": {"ACL": ["0000000000000003", "000000000003D001", "0000000000039000"]}},
+                    },
+                ]
+            ),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(
+                context
+                + [
+                    {
+                        "input": {"function": "replaceACL", "args": ["Locking_Range1", "Get", ["0000000000000003", "0000000000039000"]], "kwargs": {"authAs": ("Admin1", "new")}},
+                        "output": {"return": True},
+                    },
+                    {
+                        "input": {"function": "getACL", "kwargs": {"required": {"object": "Locking_Range1", "method": "Get"}, "authAs": ("Admin1", "new")}},
+                        "output": {"return": {"ACL": ["0000000000000003", "000000000003D001"]}},
+                    },
+                ]
+            ),
+            "FAIL",
+        )
+        self.assertEqual(
+            predict_trajectory(
+                context
+                + [
+                    {
+                        "input": {"function": "addACE", "kwargs": {"required": {"object": "Locking_Range1", "method": "Get"}, "ace": "0000000000039000", "authAs": ("Admin1", "new")}},
+                        "output": {"return": True},
+                    },
+                    {
+                        "input": {"function": "revokeACE", "args": ["Locking_Range1", "Get", "0000000000039000"], "kwargs": {"authAs": ("Admin1", "new")}},
+                        "output": {"return": True},
+                    },
+                    {
+                        "input": {"function": "getACL", "kwargs": {"required": {"object": "Locking_Range1", "method": "Get"}, "authAs": ("Admin1", "new")}},
+                        "output": {"return": {"ACL": ["0000000000000003", "000000000003D001", "0000000000039000"]}},
+                    },
+                ]
+            ),
+            "FAIL",
+        )
+
+    def test_create_row_success_is_invalid_for_opal_methodid_tables(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("CreateRow", "0000080200000000", "Locking", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_row_rejects_non_locking_table_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("CreateRow", "0000000B00000000", "C_PIN", "SUCCESS", optional={"Row": [{"3": "pin"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_row_rejects_non_locking_table_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("DeleteRow", "0000000900000000", "Authority", "SUCCESS", required={"Rows": ["0000000900000003"]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_row_success_creates_locking_range_state(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                optional={"Row": [{"3": 0}, {"4": 100}, {"5": 1}, {"6": 1}]},
+                return_values=["0000080200030001"],
+            ),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                "SUCCESS",
+                optional={"Row": [{"3": 50}, {"4": 10}]},
+                return_values=["0000080200030002"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_create_row_rejects_boolean_range_geometry_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                "SUCCESS",
+                optional={"Row": [{"3": True}, {"4": 8}]},
+                return_values=["0000080200030001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_set_rejects_boolean_range_geometry_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                optional={"Row": [{"3": 120}, {"4": 8}]},
+                return_values=["0000080200030001"],
+            ),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"4": True}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_set_rejects_boolean_advkeymode_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                optional={"Row": [{"3": 120}, {"4": 8}]},
+                return_values=["0000080200030001"],
+            ),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"14": True}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_set_rejects_boolean_reencrypt_request_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                optional={"Row": [{"3": 120}, {"4": 8}]},
+                return_values=["0000080200030001"],
+            ),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"13": True}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_set_rejects_boolean_contonreset_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                optional={"Row": [{"3": 120}, {"4": 8}]},
+                return_values=["0000080200030001"],
+            ),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"16": True}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_set_rejects_string_boolean_contonreset_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"16": ["true"]}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_mbrcontrol_set_rejects_bool_done_on_reset_success(self):
+        for value in (True, False, ["true"]):
+            with self.subTest(value=value):
+                trajectory = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Set", "0000080300000001", "MBRControl", "SUCCESS", optional={"Values": [{"3": value}]}),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_row_accepts_name_only_locking_table(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "CreateRow",
+                "",
+                "Locking",
+                "SUCCESS",
+                optional={"Values": [{"3": 96}, {"4": 8}]},
+                return_values=["0000080200030001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_create_row_uses_name_only_returned_range_id(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                optional={"Row": [{"3": 0}, {"4": 100}]},
+                return_values=["Band3"],
+            ),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                "SUCCESS",
+                optional={"Row": [{"3": 50}, {"4": 10}]},
+                return_values=["Band4"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_create_row_allows_non_overlapping_locking_range(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                optional={"Row": [{"3": 0}, {"4": 100}]},
+                return_values=["0000080200030001"],
+            ),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                "SUCCESS",
+                optional={"Row": [{"3": 100}, {"4": 50}]},
+                return_values=["0000080200030002"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_delete_row_rejects_global_range_delete_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "DeleteRow",
+                "0000080200000000",
+                "Locking",
+                "SUCCESS",
+                required={"Rows": ["0000080200000001"]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_row_rejects_name_only_global_range_delete_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "DeleteRow",
+                "0000080200000000",
+                "Locking",
+                "SUCCESS",
+                required={"Rows": ["Band0"]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_row_rejects_unknown_locking_row_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "DeleteRow",
+                "0000080200000000",
+                "Locking",
+                "SUCCESS",
+                required={"Rows": ["NotALockingRange"]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_accepts_locking_range_object(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Delete", "0000080200030001", "Locking", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_delete_rejects_global_range_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Delete", "0000080200000001", "Locking", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_requires_admins(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record("Delete", "0000080200030001", "Locking", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_active_reencrypt_blocks_range_geometry_set_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": 3}]]),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"3": 10}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_active_reencrypt_blocks_range_genkey_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "ACTIVE"}]]),
+            method_record("GenKey", "0000080600030001", "K_AES_256", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_invalid_reencrypt_request_success_is_rejected(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"13": 4}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_host_cannot_directly_set_reencrypt_state_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"12": "PENDING"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_host_cannot_directly_set_last_reencrypt_lba_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "ACTIVE"}]]),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"17": 0}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_host_cannot_directly_set_last_reencrypt_status_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "PAUSED"}]]),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"18": "SUCCESS"}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_media_key_refs_must_point_to_k_aes_objects(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"10": C_PIN_SID}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_reencrypt_request_get_must_not_return_a_value(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 13, "endColumn": 13}]},
+                return_values=[[{"13": "START_req"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_adv_key_mode_rejects_reserved_value(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"14": 2}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_reencrypt_state_get_rejects_reserved_payload(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "ACTIVE"}]]),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 12, "endColumn": 12}]},
+                return_values=[[{"12": 6}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_advkey_request_from_completed_updates_reencrypt_state_to_idle(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "COMPLETED"}]]),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"13": "ADVKEY_req"}]}),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 12, "endColumn": 12}]},
+                return_values=[[{"12": "COMPLETED"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_reencrypt_request_success_updates_later_reencrypt_state_get(self):
+        transitions = [
+            ("IDLE", "START_req", "PENDING"),
+            ("ACTIVE", "PAUSE_req", "PAUSED"),
+            ("PENDING", "PAUSE_req", "PAUSED"),
+            ("PAUSED", "CONT_req", "PENDING"),
+            ("PAUSED", "RETIDLE_req", "IDLE"),
+        ]
+        for prior_state, request, expected_state in transitions:
+            with self.subTest(prior_state=prior_state, request=request):
+                trajectory = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": prior_state}]]),
+                    method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"13": request}]}),
+                    method_record(
+                        "Get",
+                        "0000080200030001",
+                        "Locking",
+                        "SUCCESS",
+                        required={"CellBlock": [{"startColumn": 12, "endColumn": 12}]},
+                        return_values=[[{"12": expected_state}]],
+                    ),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_reencrypt_request_success_rejects_stale_later_reencrypt_state_get(self):
+        transitions = [
+            ("IDLE", "START_req", "IDLE"),
+            ("ACTIVE", "PAUSE_req", "ACTIVE"),
+            ("PENDING", "PAUSE_req", "PENDING"),
+            ("PAUSED", "CONT_req", "PAUSED"),
+            ("PAUSED", "RETIDLE_req", "PAUSED"),
+        ]
+        for prior_state, request, stale_state in transitions:
+            with self.subTest(prior_state=prior_state, request=request):
+                trajectory = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": prior_state}]]),
+                    method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"13": request}]}),
+                    method_record(
+                        "Get",
+                        "0000080200030001",
+                        "Locking",
+                        "SUCCESS",
+                        required={"CellBlock": [{"startColumn": 12, "endColumn": 12}]},
+                        return_values=[[{"12": stale_state}]],
+                    ),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_reencrypt_values_range_name_aliases_update_later_state_get(self):
+        for selector_key in ("rangeName", "range_name", "bandName", "band_name"):
+            with self.subTest(selector_key=selector_key):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "IDLE"}]]),
+                    {"input": {"function": "startReEncrypt", "values": {selector_key: 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getReEncryptStatus", "values": {selector_key: 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"ReEncryptState": "PENDING"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getReEncryptStatus", "values": {selector_key: 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"ReEncryptState": "IDLE"}}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_reencrypt_advkey_and_retidle_aliases_return_to_idle(self):
+        for alias in (
+            "advanceKey",
+            "advKey",
+            "advanceReEncryptKey",
+            "commitReEncryptKey",
+            "retIdle",
+            "returnIdle",
+            "returnToIdle",
+            "stopReEncrypt",
+            "cancelReEncrypt",
+        ):
+            with self.subTest(alias=alias):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "PAUSED"}]]),
+                    {"input": {"function": alias, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getReEncryptStatus", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"ReEncryptState": "IDLE"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getReEncryptStatus", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"ReEncryptState": "PAUSED"}}}]),
+                    "FAIL",
+                )
+
+    def test_pause_request_from_active_sets_general_status(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "ACTIVE"}]]),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"13": "PAUSE_req"}]}),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 12, "endColumn": 19}]},
+                return_values=[[{"12": "PAUSED"}, {"19": 3}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_pause_request_from_active_rejects_pending_pause_general_status(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "ACTIVE"}]]),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"13": "PAUSE_req"}]}),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 12, "endColumn": 19}]},
+                return_values=[[{"12": "PAUSED"}, {"19": 4}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_pause_request_from_pending_sets_general_status(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "PENDING"}]]),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"13": "PAUSE_req"}]}),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 12, "endColumn": 19}]},
+                return_values=[[{"12": "PAUSED"}, {"19": 4}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_request_initial_last_reencrypt_lba_is_max_sentinel(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "IDLE"}]]),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"13": "START_req"}]}),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 17, "endColumn": 17}]},
+                return_values=[[{"17": "0xFFFFFFFFFFFFFFFF"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_start_request_rejects_zero_last_reencrypt_lba_without_progress(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "IDLE"}]]),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"13": "START_req"}]}),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 17, "endColumn": 17}]},
+                return_values=[[{"17": 0}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_last_reenc_stat_get_rejects_reserved_enum_value(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "PAUSED"}]]),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 18, "endColumn": 18}]},
+                return_values=[[{"18": 4}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_general_status_get_rejects_reserved_enum_value(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "PAUSED"}]]),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 19, "endColumn": 19}]},
+                return_values=[[{"19": 7}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_enum_get_rejects_boolean_coercion(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        for column in (15, 18, 19):
+            trajectory = context + [
+                method_record(
+                    "Get",
+                    "0000080200030001",
+                    "Locking",
+                    "SUCCESS",
+                    required={"CellBlock": [{"startColumn": column, "endColumn": column}]},
+                    return_values=[[{str(column): True}]],
+                )
+            ]
+            self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_general_status_get_accepts_named_valid_enum_value(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "PENDING"}]]),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 19, "endColumn": 19}]},
+                return_values=[[{"19": "wait_AvailableKeys"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_verify_mode_set_rejects_reserved_enum_value(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"15": 2}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_verify_mode_get_rejects_reserved_enum_value(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 15, "endColumn": 15}]},
+                return_values=[[{"15": 7}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_verify_mode_valid_values_are_observable(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"15": 1}]}),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 15, "endColumn": 15}]},
+                return_values=[[{"15": 1}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_crsa_format_rejects_reserved_padding_type(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "C_RSA_2048_Test", "SUCCESS", optional={"Values": [{"3": 9}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_crsa_format_rejects_boolean_padding_type(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "C_RSA_2048_Test", "SUCCESS", optional={"Values": [{"3": True}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_crsa_format_get_rejects_reserved_padding_type(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "",
+                "C_RSA_2048_Test",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 3}]},
+                return_values=[[{"3": 15}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_credential_hash_rejects_reserved_hash_protocol(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "C_RSA_2048_Test", "SUCCESS", optional={"Values": [{"12": 9}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_credential_hash_rejects_boolean_hash_protocol(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "C_AES_256_Test", "SUCCESS", optional={"Values": [{"7": True}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_credential_hash_get_rejects_reserved_hash_protocol(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "",
+                "C_HMAC_256_Test",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 4, "endColumn": 4}]},
+                return_values=[[{"4": 15}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_chmac_key_set_rejects_wrong_fixed_byte_length(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        correct = context + [
+            method_record("Set", "", "C_HMAC_512_Test", "SUCCESS", optional={"Values": [{"3": "AA" * 64}]})
+        ]
+        wrong = context + [
+            method_record("Set", "", "C_HMAC_512_Test", "SUCCESS", optional={"Values": [{"3": "AA" * 63}]})
+        ]
+        boolean_value = context + [
+            method_record("Set", "", "C_HMAC_160_Test", "SUCCESS", optional={"Values": [{"3": True}]})
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+        self.assertEqual(predict_trajectory(boolean_value), "FAIL")
+
+    def test_chmac_key_get_rejects_wrong_fixed_byte_length(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "",
+                "C_HMAC_384_Test",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 3}]},
+                return_values=[[{"3": "AA" * 48}]],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Get",
+                "",
+                "C_HMAC_384_Test",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 3}]},
+                return_values=[[{"3": "AA" * 47}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_hsha_proof_accumulator_get_rejects_wrong_fixed_byte_length(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "",
+                "H_SHA_512_Test",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3}, {"endColumn": 4}]},
+                return_values=[[{"3": "AA" * 64, "4": "BB" * 64}]],
+            )
+        ]
+        wrong_proof = context + [
+            method_record(
+                "Get",
+                "",
+                "H_SHA_512_Test",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3}, {"endColumn": 3}]},
+                return_values=[[{"3": "AA" * 63}]],
+            )
+        ]
+        wrong_accumulator = context + [
+            method_record(
+                "Get",
+                "",
+                "H_SHA_384_Test",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 4}, {"endColumn": 4}]},
+                return_values=[[{"4": "AA" * 47}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong_proof), "FAIL")
+        self.assertEqual(predict_trajectory(wrong_accumulator), "FAIL")
+
+    def test_caes_mode_rejects_reserved_symmetric_mode(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "C_AES_256_Test", "SUCCESS", optional={"Values": [{"4": 12}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_caes_mode_rejects_boolean_symmetric_mode(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "C_AES_128_Test", "SUCCESS", optional={"Values": [{"4": True}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_caes_mode_get_rejects_reserved_symmetric_mode(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "",
+                "C_AES_256_Test",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 4, "endColumn": 4}]},
+                return_values=[[{"4": 23}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_caes_cfb_feedback_size_rejects_out_of_block_range(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "C_AES_256_Test", "SUCCESS", optional={"Values": [{"4": 2, "5": 17}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_caes_feedback_size_rejects_boolean(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "C_AES_256_Test", "SUCCESS", optional={"Values": [{"5": True}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_caes_128_key_rejects_wrong_bytes16_length(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "C_AES_128_Test", "SUCCESS", optional={"Values": [{"3": "AA" * 15}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_caes_256_key_rejects_wrong_bytes32_length(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "", "C_AES_256_Test", "SUCCESS", optional={"Values": [{"3": "AA" * 16}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_caes_residualdata_get_rejects_wrong_bytes16_length(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "",
+                "C_AES_256_Test",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 6, "endColumn": 6}]},
+                return_values=[[{"6": "AA" * 15}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_pin_get_rejects_password_longer_than_32_bytes(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "",
+                "C_PIN_MSID",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 3}]},
+                return_values=[[{"3": "A" * 33}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_pin_get_rejects_boolean_password(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Get",
+                "",
+                "C_PIN_Admin1",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 3}]},
+                return_values=[[{"3": True}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_activekey_set_is_observable(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"10": "K_AES_256_Range1_Key"}]}),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 10, "endColumn": 10}]},
+                return_values=[[{"10": "K_AES_256_Range1_Key"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_locking_activekey_get_rejects_stale_media_key(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"10": "K_AES_256_Range1_Key"}]}),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 10, "endColumn": 10}]},
+                return_values=[[{"10": "K_AES_128_Range1_Key"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_advkey_request_moves_nextkey_to_activekey_and_clears_nextkey(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"11": "K_AES_256_Range1_Key"}]}),
+            method_record("Get", "0000080200030001", "Locking", "SUCCESS", return_values=[[{"12": "COMPLETED"}]]),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"13": "ADVKEY_req"}]}),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 10, "endColumn": 11}]},
+                return_values=[[{"10": "K_AES_256_Range1_Key"}, {"11": "0000000000000000"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_advkey_request_rejects_uncleared_nextkey(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"11": "K_AES_256_Range1_Key"}]}),
+            method_record("Get", "0000080200030001", "Locking", "SUCCESS", return_values=[[{"12": "PAUSED"}]]),
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"13": "ADVKEY_req"}]}),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 10, "endColumn": 11}]},
+                return_values=[[{"10": "K_AES_256_Range1_Key"}, {"11": "K_AES_256_Range1_Key"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_reencrypt_request_blocks_later_genkey(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"13": "START_req"}]}),
+            method_record("GenKey", "0000080600030001", "K_AES_256", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_empty_cont_on_reset_pauses_active_reencrypt(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "ACTIVE"}, {"16": []}]]),
+            end_session(),
+            host_reset("PowerCycle"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                required={"CellBlock": [{"startColumn": 12, "endColumn": 19}]},
+                return_values=[[{"12": "PAUSED"}, {"19": 34}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_empty_cont_on_reset_rejects_still_active_get(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "ACTIVE"}, {"16": []}]]),
+            end_session(),
+            host_reset("PowerCycle"),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000080200030001",
+                "Locking",
+                required={"CellBlock": [{"startColumn": 12, "endColumn": 19}]},
+                return_values=[[{"12": "ACTIVE"}, {"19": 0}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_advkey_from_completed_returns_range_to_idle(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"11": "0000080600030001"}, {"12": 4}]]),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"13": "ADVKEY_req"}]}),
+            method_record("GenKey", "0000080600030001", "K_AES_256", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_global_reencrypt_blocks_locking_create_row_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200000001", "Locking", return_values=[[{"12": 2}]]),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                "SUCCESS",
+                optional={"Row": [{"3": 100}, {"4": 50}]},
+                return_values=["0000080200030001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_global_reencrypt_blocks_locking_delete_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200000001", "Locking", return_values=[[{"12": 2}]]),
+            method_record("Delete", "0000080200030001", "Locking", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_active_reencrypt_blocks_locking_delete_row_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": 3}]]),
+            method_record(
+                "DeleteRow",
+                "0000080200000000",
+                "Locking",
+                "SUCCESS",
+                required={"Rows": ["0000080200030001"]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_active_reencrypt_blocks_name_only_locking_delete_row_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": 3}]]),
+            method_record(
+                "DeleteRow",
+                "0000080200000000",
+                "Locking",
+                "SUCCESS",
+                required={"Rows": ["Band1"]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_active_reencrypt_blocks_locking_delete_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": 3}]]),
+            method_record("Delete", "0000080200030001", "Locking", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_create_row_uid_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000080200000000", "MethodID": "0000000600000004"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_missing_methodid_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000080200000000"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_missing_invokingid_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"MethodID": "0000000600000004"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_missing_accesscontrol_row_returns_not_authorized(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "DataStore", "MethodID": "Authenticate"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_missing_accesscontrol_row_rejects_invalid_parameter(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "INVALID_PARAMETER",
+                required={"InvokingID": "DataStore", "MethodID": "Authenticate"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_unobserved_optional_range_absence_returns_not_authorized(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "Locking_Range9", "MethodID": "Get"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_addace_missing_accesscontrol_row_returns_not_authorized(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "DataStore", "MethodID": "CreateRow"},
+                optional={"ACE": "ACE_DataStore_Get_All"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_addace_missing_accesscontrol_row_rejects_invalid_parameter(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "INVALID_PARAMETER",
+                required={"InvokingID": "DataStore", "MethodID": "CreateRow"},
+                optional={"ACE": "ACE_DataStore_Get_All"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_removeace_missing_accesscontrol_row_returns_not_authorized(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "RemoveACE",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "MBR", "MethodID": "DeleteRow"},
+                optional={"ACE": "ACE_Anybody"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_deletemethod_missing_accesscontrol_row_returns_not_authorized(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "DeleteMethod",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "DataStore", "MethodID": "DeleteRow"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_addace_requires_admin_authority(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record("AddACE", "0000000700000000", "AccessControl", "SUCCESS", optional={"ACE": "ACE_00038000"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_addace_not_authorized_response_is_valid_without_admin(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "AccessControl", "MethodID": "GetACL"},
+                optional={"ACE": "ACE_00038000"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_addace_rejects_access_control_getacl_self_association_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "AccessControl", "MethodID": "GetACL"},
+                optional={"ACE": "ACE_00038000"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_removeace_rejects_access_control_getacl_self_association_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            raw_method_record(
+                "RemoveACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                args=[("InvokingID", "AccessControl"), ("MethodID", "GetACL"), ("ACE", "ACE_00038000")],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_setacl_rejects_access_control_getacl_self_association_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "SetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "AccessControl", "MethodID": "GetACL"},
+                optional={"ACL": ["ACE_00038000"]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_setacl_rejects_missing_ace_reference_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("SetACL", "0000000700000000", "AccessControl", "SUCCESS", required={"InvokingID": "AccessControl", "MethodID": "GetACL"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_addace_rejects_missing_ace_reference_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("AddACE", "0000000700000000", "AccessControl", "SUCCESS", required={"InvokingID": "AccessControl", "MethodID": "GetACL"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_addace_rejects_missing_invokingid_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("AddACE", "0000000700000000", "AccessControl", "SUCCESS", required={"MethodID": "GetACL"}, optional={"ACE": "ACE_00038000"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_addace_spinfo_get_allows_anybody_meta_acl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPInfo", "MethodID": "Get"},
+                optional={"ACE": "ACE_00038000"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_addace_spinfo_get_rejects_already_present_ace(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPInfo", "MethodID": "Get"},
+                optional={"ACE": "ACE_Anybody"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_addace_spinfo_get_rejects_duplicate_after_prior_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPInfo", "MethodID": "Get"},
+                optional={"ACE": "ACE_Admin"},
+            ),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPInfo", "MethodID": "Get"},
+                optional={"ACE": "0000000800000002"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_addace_spinfo_get_rejects_nonexistent_ace_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPInfo", "MethodID": "Get"},
+                optional={"ACE": "0000000800FFFFFF"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_addace_success_requires_empty_return(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPInfo", "MethodID": "Get"},
+                optional={"ACE": "ACE_00038000"},
+                return_values=["unexpected"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_spinfo_get_empty_getaclacl_returns_not_authorized(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "SPInfo", "MethodID": "Get"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_spinfo_get_empty_getaclacl_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPInfo", "MethodID": "Get"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_removeace_spinfo_get_empty_removeaceacl_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "RemoveACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPInfo", "MethodID": "Get"},
+                optional={"ACE": "ACE_Anybody"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_deletemethod_spinfo_get_empty_deletemethodacl_rejects_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "DeleteMethod",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPInfo", "MethodID": "Get"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_cpin_user_set_empty_addaceacl_rejects_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_User1", "MethodID": "Set"},
+                optional={"ACE": "ACE_00038000"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_cpin_user_set_empty_removeaceacl_rejects_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "RemoveACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_User1", "MethodID": "Set"},
+                optional={"ACE": "ACE_C_PIN_User1_Set_PIN"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "RemoveACE",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "C_PIN_User1", "MethodID": "Set"},
+                optional={"ACE": "ACE_C_PIN_User1_Set_PIN"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_removeace_rejects_unknown_acl_association_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "RemoveACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000100100000000", "MethodID": "Next"},
+                optional={"ACE": "ACE_00038000"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_addace_rejects_non_access_control_target_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("AddACE", "0000000B00000000", "C_PIN", "SUCCESS", optional={"ACE": "ACE_00038000"}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_cpin_user_set_empty_deletemethodacl_rejects_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "DeleteMethod",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_User1", "MethodID": "Set"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "DeleteMethod",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "C_PIN_User1", "MethodID": "Set"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_deletemethod_success_requires_empty_return(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "DeleteMethod",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_SID", "MethodID": "Get"},
+                return_values=["unexpected"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_band_erase_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Band1", "MethodID": "Erase"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_access_control_addace_self_association_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "AccessControl", "MethodID": "AddACE"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_access_control_addace_self_association_scalar_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "AccessControl", "MethodID": "AddACE"},
+                return_values="ACE_00038000",
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_access_control_setacl_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "AccessControl", "MethodID": "SetACL"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_cpin_table_get_free_rows_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN", "MethodID": "GetFreeRows"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_cpin_pin_get_omits_unreadable_cell_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "",
+                "C_PIN_User1",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 3}]},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_cpin_pin_get_not_authorized_is_invalid(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "Get",
+                "",
+                "C_PIN_User1",
+                "NOT_AUTHORIZED",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 3}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_byte_table_get_free_space_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "DataStore", "MethodID": "GetFreeSpace"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_thissp_get_free_space_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "ThisSP", "MethodID": "GetFreeSpace"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_adminsp_get_free_space_alias_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "AdminSP", "MethodID": "GetFreeSpace"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_lockingsp_create_table_alias_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "LockingSP", "MethodID": "CreateTable"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_sptemplates_create_row_system_table_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000300000000", "MethodID": "CreateRow"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_template_get_free_rows_system_table_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000020400000000", "MethodID": "GetFreeRows"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_admin_spinfo_set_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPInfo", "MethodID": "Set"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_spinfo_set_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000200000001", "MethodID": "Set"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_admin_lockinginfo_cross_sp_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "LockingInfo", "MethodID": "Get"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_tperinfo_cross_sp_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000020100030001", "MethodID": "Set"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_keeps_admin_tperinfo_set_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "TPerInfo", "MethodID": "Set"},
+                return_values=["ACE_00030003"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_keeps_locking_lockinginfo_get_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "LockingInfo", "MethodID": "Get"},
+                return_values=["ACE_00000001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_metadata_table_create_row_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "ACETable", "MethodID": "CreateRow"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_metadata_table_set_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "AuthorityTable", "MethodID": "Set"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_metadata_table_get_free_rows_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000600000000", "MethodID": "GetFreeRows"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_accesscontrol_table_set_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "AccessControlTable", "MethodID": "Set"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_keeps_locking_ace_row_set_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000800038000", "MethodID": "Set"},
+                return_values=["0000000800038001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_keeps_admin_authority_row_set_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Authority_Makers", "MethodID": "Set"},
+                return_values=["ACE_00030001"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_admin_sp_table_set_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPTable", "MethodID": "Set"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_admin_sp_table_get_exact_acl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPTable", "MethodID": "Get"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_admin_sp_table_get_wrong_acl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000020500000000", "MethodID": "Get"},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_template_table_get_wrong_acl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "TemplateTable", "MethodID": "Get"},
+                return_values=["ACE_Admin"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_template_table_get_exact_acl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000020400000000", "MethodID": "Get"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_secretprotect_table_create_row_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SecretProtectTable", "MethodID": "CreateRow"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_table_get_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "LockingTable", "MethodID": "Get"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_table_set_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "LockingTable", "MethodID": "Set"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_table_delete_row_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000080200000000", "MethodID": "DeleteRow"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_table_get_free_rows_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000080200000000", "MethodID": "GetFreeRows"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_kaes_table_get_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000080500000000", "MethodID": "Get"},
+                return_values=["ACE_K_AES_Mode"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_kaes_table_next_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "K_AES_128Table", "MethodID": "Next"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_keeps_locking_table_next_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "LockingTable", "MethodID": "Next"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_keeps_kaes_key_row_get_exact_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000080500000001", "MethodID": "Get"},
+                return_values=["ACE_K_AES_Mode"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_secretprotect_table_get_exact_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SecretProtectTable", "MethodID": "Get"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_secretprotect_table_get_wrong_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000001D00000000", "MethodID": "Get"},
+                return_values=["ACE_Admin"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_kaes_table_get_free_rows_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000080500000000", "MethodID": "GetFreeRows"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_table_create_row_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                args=[("InvokingID", "Locking"), ("MethodID", "CreateRow")],
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_method_rejects_empty_preconfigured_acl_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "DeleteMethod",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_SID", "MethodID": "Get"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_delete_method_empty_preconfigured_acl_returns_not_authorized(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "DeleteMethod",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "C_PIN_SID", "MethodID": "Get"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_delete_method_rejects_missing_args_success(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("DeleteMethod", "0000000700000000", "AccessControl", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_deleted_method_association_blocks_later_invocation(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "DeleteMethod",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_SID", "MethodID": "Get"},
+            ),
+            method_record("Get", "0000000B00000001", "C_PIN", "SUCCESS", required={"Cellblock": [{"startColumn": 2, "endColumn": 2}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_global_range_erase_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Band0", "MethodID": "Erase"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_tper_sign_association_by_name(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "TPerSign", "MethodID": "Sign"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_firmware_attestation_association_by_name(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "TperAttestation", "MethodID": "FirmwareAttestation"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_locking_sptemplates_object_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000300000001", "MethodID": "SPTemplatesObj"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_sptemplates_object_get_alias(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000300000001", "MethodID": "Get"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_sptemplates_object_get_uid_alias_exact_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000300000001", "MethodID": "0000000600000016"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_sptemplates_object_get_uid_alias_wrong_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000300000001", "MethodID": "0000000600000016"},
+                return_values=["ACE_Admin"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_locking_methodid_object_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000600000008", "MethodID": "MethodIDObj"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_methodid_object_get_alias(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000600000008", "MethodID": "Get"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_byte_table_create_row_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000100100000000", "MethodID": "0000000600000004"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_byte_table_next_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000100100000000", "MethodID": "0000000600000008"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_name_only_locking_set_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": {"name": "Band1"}, "MethodID": "Set"},
+                return_values=[
+                    "ACE_Locking_Admins_RangeStartToLOR",
+                    "ACE_Locking_Range1_Set_RdLocked",
+                    "ACE_Locking_Range1_Set_WrLocked",
+                    "ACE_Admins_Set_CommonName",
+                ],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_raw_name_only_create_row_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            raw_method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                args=[("InvokingID", "Locking"), ("MethodID", "CreateRow")],
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_table_locking_create_row_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000100000802", "MethodID": "CreateRow"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_name_only_key_set_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "K_AES_256_Range1_Key", "MethodID": "Set"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_exact_global_range_set_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Locking_GlobalRange", "MethodID": "Set"},
+                return_values=[
+                    "ACE_Locking_GlblRng_Admins_Set",
+                    "ACE_Locking_GlobalRange_Set_RdLocked",
+                    "ACE_Locking_GlobalRange_Set_WrLocked",
+                    "ACE_Admins_Set_CommonName",
+                ],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_global_range_set_acl_missing_write_lock_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Locking_GlobalRange", "MethodID": "Set"},
+                return_values=[
+                    "ACE_Locking_GlblRng_Admins_Set",
+                    "ACE_Locking_GlobalRange_Set_RdLocked",
+                    "ACE_Admins_Set_CommonName",
+                ],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_exact_k_aes_128_range1_genkey_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "K_AES_128_Range1_Key", "MethodID": "GenKey"},
+                return_values=["ACE_K_AES_128_Range1_GenKey"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_k_aes_128_range1_genkey_acl_using_256_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "K_AES_128_Range1_Key", "MethodID": "GenKey"},
+                return_values=["ACE_K_AES_256_Range1_GenKey"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_range2_get_acl_using_range1_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Locking_Range2", "MethodID": "Get"},
+                return_values=["ACE_Locking_Range1_Get_RangeStartToActiveKey", "ACE_Anybody_Get_CommonName"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_range8_set_acl_mixed_with_range1_write_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Locking_Range8", "MethodID": "Set"},
+                return_values=[
+                    "ACE_Locking_Admins_RangeStartToLOR",
+                    "ACE_Locking_Range8_Set_RdLocked",
+                    "ACE_Locking_Range1_Set_WrLocked",
+                    "ACE_Admins_Set_CommonName",
+                ],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_k_aes_256_range8_genkey_acl_using_128_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "K_AES_256_Range8_Key", "MethodID": "GenKey"},
+                return_values=["ACE_K_AES_128_Range8_GenKey"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_unobserved_optional_locking_range9_exact_acl_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Locking_Range9", "MethodID": "Get"},
+                return_values=["ACE_Locking_Range9_Get_RangeStartToActiveKey", "ACE_Anybody_Get_CommonName"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_unobserved_optional_locking_range9_absence_is_not_authorized(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "Locking_Range9", "MethodID": "Get"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_unobserved_optional_locking_range9_wrong_acl_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Locking_Range9", "MethodID": "Get"},
+                return_values=["ACE_Locking_Range1_Get_RangeStartToActiveKey", "ACE_Anybody_Get_CommonName"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_default_supported_locking_range8_exact_acl_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Locking_Range8", "MethodID": "Get"},
+                return_values=["ACE_Locking_Range8_Get_RangeStartToActiveKey", "ACE_Anybody_Get_CommonName"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_unobserved_optional_k_aes_range9_exact_acl_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "K_AES_256_Range9_Key", "MethodID": "GenKey"},
+                return_values=["ACE_K_AES_256_Range9_GenKey"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_default_supported_k_aes_range8_exact_acl_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "K_AES_256_Range8_Key", "MethodID": "GenKey"},
+                return_values=["ACE_K_AES_256_Range8_GenKey"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_maxranges_rejects_after_locking_range9_observed(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030009", "Locking", "SUCCESS", return_values=[[{"3": 0}, {"4": 0}]]),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 8}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockinginfo_maxranges_rejects_after_k_aes_range9_key_observed(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("GenKey", "0000080600030009", "K_AES_256", "SUCCESS"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 8}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockinginfo_maxranges_rejects_after_locking_range9_getacl_observed(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Locking_Range9", "MethodID": "Get"},
+                return_values=["ACE_Locking_Range9_Get_RangeStartToActiveKey", "ACE_Anybody_Get_CommonName"],
+            ),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 8}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockinginfo_maxranges_accepts_after_locking_range8_observed(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030008", "Locking", "SUCCESS", return_values=[[{"3": 0}, {"4": 0}]]),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 8}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_maxranges_rejects_later_locking_range9_get_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 8}),
+            method_record("Get", "0000080200030009", "Locking", "SUCCESS", return_values=[[{"3": 0}, {"4": 0}]]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_optional_locking_range9_get_failure_is_possible_before_maxranges_observed(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030009", "Locking", "INVALID_PARAMETER"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_maxranges_rejects_later_locking_range9_set_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 8}),
+            method_record("Set", "0000080200030009", "Locking", "SUCCESS", optional={"Values": [{"7": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockinginfo_maxranges_rejects_later_setrange_wrapper_range9_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 8}),
+            {
+                "input": {"function": "setRange", "args": [{"rangeId": 9, "RangeStart": 100, "RangeLength": 4, "authAs": ("Admin1", "new")}]},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockinginfo_maxranges_rejects_later_setrangestart_wrapper_range9_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 8}),
+            {
+                "input": {"function": "setRangeStart", "args": [{"rangeId": 9, "RangeStart": 100, "authAs": ("Admin1", "new")}]},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_optional_locking_range9_set_failure_is_possible_before_maxranges_observed(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030009", "Locking", "INVALID_PARAMETER", optional={"Values": [{"7": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_maxranges_rejects_later_k_aes_range9_genkey_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 8}),
+            method_record("GenKey", "0000080600030009", "K_AES_256", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_optional_k_aes_range9_genkey_failure_is_possible_before_maxranges_observed(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("GenKey", "0000080600030009", "K_AES_256", "INVALID_PARAMETER"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_maxranges_rejects_later_createrow_returning_range9_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 8}),
+            method_record(
+                "CreateRow",
+                "0000080200000000",
+                "Locking",
+                "SUCCESS",
+                optional={"Row": [{"3": 100}, {"4": 8}]},
+                return_values=["0000080200030009"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockinginfo_maxranges_rejects_later_locking_range9_deleterow_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 8}),
+            method_record(
+                "DeleteRow",
+                "0000080200000000",
+                "Locking",
+                "SUCCESS",
+                required={"Rows": ["0000080200030009"]},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_optional_locking_range9_deleterow_failure_is_possible_before_maxranges_observed(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "DeleteRow",
+                "0000080200000000",
+                "Locking",
+                "INVALID_PARAMETER",
+                required={"Rows": ["0000080200030009"]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_maxranges_rejects_later_locking_range9_delete_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 8}),
+            method_record("Delete", "0000080200030009", "Locking", "SUCCESS", return_values=[]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_optional_locking_range9_delete_failure_is_possible_before_maxranges_observed(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Delete", "0000080200030009", "Locking", "INVALID_PARAMETER"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_maxranges_nine_allows_later_locking_range9_get_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 9}),
+            method_record("Get", "0000080200030009", "Locking", "SUCCESS", return_values=[[{"3": 0}, {"4": 0}]]),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_maxranges_nine_allows_later_locking_range9_set_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 9}),
+            method_record("Set", "0000080200030009", "Locking", "SUCCESS", optional={"Values": [{"7": 1}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_maxranges_nine_allows_later_setrange_wrapper_range9_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 9}),
+            {
+                "input": {"function": "setRange", "args": [{"rangeId": 9, "RangeStart": 100, "RangeLength": 4, "authAs": ("Admin1", "new")}]},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_maxranges_nine_allows_later_k_aes_range9_genkey_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 9}),
+            method_record("GenKey", "0000080600030009", "K_AES_256", "SUCCESS"),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_maxranges_nine_allows_later_locking_range9_getacl_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 9}),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Locking_Range9", "MethodID": "Get"},
+                return_values=["ACE_Locking_Range9_Get_RangeStartToActiveKey", "ACE_Anybody_Get_CommonName"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_maxranges_nine_allows_later_k_aes_range9_getacl_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080100000000", "LockingInfo", "SUCCESS", return_values={"MaxRanges": 9}),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "K_AES_256_Range9_Key", "MethodID": "GenKey"},
+                return_values=["ACE_K_AES_256_Range9_GenKey"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_exact_k_aes_256_global_genkey_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "K_AES_256_GlobalRange_Key", "MethodID": "GenKey"},
+                return_values=["ACE_K_AES_256_GlobalRange_GenKey"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_exact_admin_cpin_sid_get_acl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_SID", "MethodID": "Get"},
+                return_values=["ACE_C_PIN_SID_Get_NOPIN"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_admin_cpin_sid_get_acl_using_set_ace(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_SID", "MethodID": "Get"},
+                return_values=["ACE_C_PIN_SID_Set_PIN"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_exact_admin_cpin_msid_get_acl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_MSID", "MethodID": "Get"},
+                return_values=["ACE_C_PIN_MSID_Get_PIN"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_admin_cpin_msid_get_acl_using_sid_get_ace(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_MSID", "MethodID": "Get"},
+                return_values=["ACE_C_PIN_SID_Get_NOPIN"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_exact_admin_tperinfo_set_acl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "TPerInfo", "MethodID": "Set"},
+                return_values=["ACE_TPerInfo_Set_ProgrammaticResetEnable"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_admin_data_removal_set_acl_using_tperinfo_ace(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "DataRemovalMechanism", "MethodID": "Set"},
+                return_values=["ACE_TPerInfo_Set_ProgrammaticResetEnable"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_exact_admin_revert_acl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": ADMIN_SP, "MethodID": "Revert"},
+                return_values=["ACE_SP_SID", "ACE_Admin"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_admin_locking_sp_activate_acl_with_extra_admin_ace(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": LOCKING_SP, "MethodID": "Activate"},
+                return_values=["ACE_SP_SID", "ACE_Admin"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_exact_admin_locking_sp_activate_acl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": LOCKING_SP, "MethodID": "Activate"},
+                return_values=["ACE_SP_SID"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_admin_thissp_random_acl(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "ThisSP", "MethodID": "Random"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_admin_table_next_acl_using_admin_ace(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000100000000", "MethodID": "Next"},
+                return_values=["ACE_Admin"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_admin_table_table_next_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000100000000", "MethodID": "Next"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_admin_tperinfo_set_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000020100030001", "MethodID": "Set"},
+                return_values=["ACE_TPerInfo_Set_ProgrammaticResetEnable"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_admin_template_table_next_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000020400000000", "MethodID": "Next"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_admin_template_row_get_association(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000020400000001", "MethodID": "Get"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_locking_sptemplates_table_next_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000300000000", "MethodID": "Next"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_sptemplates_table_next_commonname_as_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000300000000", "MethodID": "Next"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_locking_table_next_empty_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000100000000", "MethodID": "Next"},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_table_next_commonname_as_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000100000000", "MethodID": "Next"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_locking_table_next_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000080200000000", "MethodID": "Next"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_table_next_empty_return(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000080200000000", "MethodID": "Next"},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_methodid_object_get_uid_alias_exact_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000600000008", "MethodID": "0000000600000016"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_locking_methodid_object_get_uid_alias_wrong_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000600000008", "MethodID": "0000000600000016"},
+                return_values=["ACE_ACE_Get_All"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_locking_sptemplates_row_object_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000300000002", "MethodID": "SPTemplatesObj"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_accepts_locking_thissp_authenticate_empty_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "ThisSP", "MethodID": "Authenticate"},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_thissp_authenticate_commonname_as_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "ThisSP", "MethodID": "Authenticate"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_locking_spinfo_get_empty_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPInfo", "MethodID": "Get"},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_spinfo_get_commonname_as_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "SPInfo", "MethodID": "Get"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_locking_authority_user1_get_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Authority_User1", "MethodID": "Get"},
+                return_values=["ACE_Authority_Get_All", "ACE_Anybody_Get_CommonName"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_authority_user1_get_using_set_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Authority_User1", "MethodID": "Get"},
+                return_values=["ACE_Authority_Set_Enabled", "ACE_Anybody_Get_CommonName"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_locking_cpin_user1_get_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_User1", "MethodID": "Get"},
+                return_values=["ACE_C_PIN_Admins_Get_All_NOPIN"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_cpin_user1_get_using_user_set_pin_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_User1", "MethodID": "Get"},
+                return_values=["ACE_C_PIN_User1_Set_PIN"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_locking_ace_object_get_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "000000080003A000", "MethodID": "Get"},
+                return_values=["ACE_ACE_Get_All"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_ace_object_get_returning_itself(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "000000080003A000", "MethodID": "Get"},
+                return_values=["ACE_C_PIN_Admins_Get_All_NOPIN"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_locking_ace_object_set_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "000000080003A801", "MethodID": "Set"},
+                return_values=["ACE_ACE_Set_BooleanExpression"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_ace_object_set_returning_target_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "000000080003A801", "MethodID": "Set"},
+                return_values=["ACE_C_PIN_User1_Set_PIN"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_locking_authority_admin1_set_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000900010001", "MethodID": "Set"},
+                return_values=["ACE_Admins_Set_CommonName"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_authority_admin1_set_with_extra_enabled_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "0000000900010001", "MethodID": "Set"},
+                return_values=["ACE_Authority_Set_Enabled", "ACE_Admins_Set_CommonName"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_accepts_locking_mbr_set_admin_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "MBR", "MethodID": "Set"},
+                return_values=["ACE_Admin"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_locking_mbr_set_anybody_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "MBR", "MethodID": "Set"},
+                return_values=["ACE_Anybody"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_datastore_get_wrong_preconfigured_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "DataStore", "MethodID": "Get"},
+                return_values=["ACE_DataStore_Set_All"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_direct_accesscontrol_get_acl_column_may_return_empty(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "000000070003FC00",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 4}, {"endColumn": 4}]},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_direct_accesscontrol_get_acl_column_cannot_leak_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "000000070003FC00",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 4}, {"endColumn": 4}]},
+                return_values={"ACL": ["ACE_DataStore_Get_All"]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_direct_accesscontrol_get_mixed_acl_column_may_be_rejected(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "000000070003A802",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"Cellblock": [{"startColumn": 1}, {"endColumn": 4}]},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_direct_accesscontrol_get_cpin_user2_identity_is_validated(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "000000070003A802",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 1}, {"endColumn": 2}]},
+                return_values=[[{"InvokingID": "00 00 00 0B 00 03 00 02", "MethodID": "Set"}]],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Get",
+                "000000070003A802",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 1}, {"endColumn": 2}]},
+                return_values=[[{"InvokingID": "00 00 00 0B 00 03 00 01", "MethodID": "Set"}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_direct_accesscontrol_get_kaes_range1_genkey_identity_is_validated(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "000000070003B801",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 1}, {"endColumn": 2}]},
+                return_values=[[{"InvokingID": "00 00 08 06 00 03 00 01", "MethodID": "GenKey"}]],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Get",
+                "000000070003B801",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 1}, {"endColumn": 2}]},
+                return_values=[[{"InvokingID": "00 00 08 06 00 03 00 01", "MethodID": "Get"}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_getacl_accepts_mbrcontrol_set_exact_preconfigured_aces(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "MBRControl", "MethodID": "Set"},
+                return_values=["ACE_MBRControl_Admins_Set", "ACE_MBRControl_Set_DoneToDOR"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_rejects_mbrcontrol_set_missing_preconfigured_ace(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "MBRControl", "MethodID": "Set"},
+                return_values=["ACE_MBRControl_Admins_Set", "ACE_DataStore_Get_All"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_getacl_rejects_unknown_symbol_association(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "DefinitelyNotAnOpalObject", "MethodID": "Get"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_revertsp_getacl_requires_admin(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "NOT_AUTHORIZED",
+                required={"InvokingID": "ThisSP", "MethodID": "RevertSP"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_locking_revertsp_getacl_rejects_unauthenticated_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "ThisSP", "MethodID": "RevertSP"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_revertsp_addace_empty_acl_rejects_admin_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "AddACE",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "ThisSP", "MethodID": "RevertSP"},
+                optional={"ACE": "ACE_00000001"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_revertsp_delete_method_empty_acl_rejects_admin_success(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "DeleteMethod",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "ThisSP", "MethodID": "RevertSP"},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_ace_get_accepts_preconfigured_booleanexpr_and_columns(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "000000080003E001",
+                "ACE_Locking_Range1_Set_RdLocked",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 4}]},
+                return_values=[[{"3": "Admins"}, {"4": ["ReadLocked"]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_ace_get_rejects_wrong_preconfigured_columns(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "000000080003E001",
+                "ACE_Locking_Range1_Set_RdLocked",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 4}]},
+                return_values=[[{"3": "Admins"}, {"4": ["WriteLocked"]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_ace_get_accepts_document_booleanexpr_string_format(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "000000080003A801",
+                "ACE_C_PIN_User1_Set_PIN",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 4}]},
+                return_values=[[{"3": "Admins OR User1"}, {"4": ["PIN"]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_ace_get_accepts_personalized_booleanexpr(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "000000080003E001",
+                "ACE_Locking_Range1_Set_RdLocked",
+                "SUCCESS",
+                optional={"Values": [{"3": ["User1"]}]},
+            ),
+            method_record(
+                "Get",
+                "000000080003E001",
+                "ACE_Locking_Range1_Set_RdLocked",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 3}]},
+                return_values=[[{"3": ["User1"]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_ace_get_rejects_stale_booleanexpr_after_personalization(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "000000080003E001",
+                "ACE_Locking_Range1_Set_RdLocked",
+                "SUCCESS",
+                optional={"Values": [{"3": ["User1"]}]},
+            ),
+            method_record(
+                "Get",
+                "000000080003E001",
+                "ACE_Locking_Range1_Set_RdLocked",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 3}]},
+                return_values=[[{"3": "Admins"}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_ace_get_rejects_datastore_alias_wrong_default_booleanexpr(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "000000080003FC00",
+                "ACE_DataStore_Get_All",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 4}]},
+                return_values=[[{"3": ["0000000900030001"]}, {"4": ["All"]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_ace_datastore_alias_personalization_updates_canonical_row(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "000000080003FC00",
+                "ACE_DataStore_Get_All",
+                "SUCCESS",
+                optional={"Values": [{"3": ["0000000900030001"]}]},
+            ),
+            method_record(
+                "Get",
+                "000000080003FC00",
+                "ACE_0003FC00",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3, "endColumn": 3}]},
+                return_values=[[{"3": ["User1"]}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_getacl_cpin_user2_set_requires_user2_set_pin_ace(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        correct = context + [
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_User2", "MethodID": "Set"},
+                return_values=["ACE_C_PIN_User2_Set_PIN"],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "C_PIN_User2", "MethodID": "Set"},
+                return_values=["ACE_C_PIN_User1_Set_PIN"],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_ace_get_cpin_user2_set_pin_uses_user2_expression(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "000000080003A802",
+                "ACE_C_PIN_User2_Set_PIN",
+                "SUCCESS",
+                return_values=[{"3": ["Admins", "OR", "User2"], "4": ["PIN"]}],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Get",
+                "000000080003A802",
+                "ACE_C_PIN_User2_Set_PIN",
+                "SUCCESS",
+                return_values=[{"3": ["Admins", "OR", "User1"], "4": ["PIN"]}],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_getacl_authority_user2_set_requires_user2_commonname_ace(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        correct = context + [
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Authority_User2", "MethodID": "Set"},
+                return_values=["ACE_Authority_Set_Enabled", "ACE_User2_Set_CommonName"],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                "SUCCESS",
+                required={"InvokingID": "Authority_User2", "MethodID": "Set"},
+                return_values=["ACE_Authority_Set_Enabled", "ACE_User1_Set_CommonName"],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_accesscontrol_datastore_get_logto_default_is_empty(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "000000070003FC00",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 14}, {"endColumn": 14}]},
+                return_values=[[{"14": ""}]],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Get",
+                "000000070003FC00",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 14}, {"endColumn": 14}]},
+                return_values=[[{"14": "0000000A02000002"}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_accesscontrol_mbrcontrol_set_logto_default_is_empty(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "000000070003F800",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": "LogTo"}, {"endColumn": "LogTo"}]},
+                return_values=[[{"LogTo": ""}]],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Get",
+                "000000070003F800",
+                "AccessControl",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": "LogTo"}, {"endColumn": "LogTo"}]},
+                return_values=[[{"LogTo": "0000000A02000002"}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_authority_makers_default_cells_are_validated(self):
+        context = [start_session(ADMIN_SP, SID, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "0000000900000003",
+                "Authority_Makers",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "IsClass"}, {"endColumn": "Class"}]},
+                return_values=[[{"IsClass": True}, {"Class": ""}]],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Get",
+                "0000000900000003",
+                "Authority_Makers",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "IsClass"}, {"endColumn": "Class"}]},
+                return_values=[[{"IsClass": False}, {"Class": ""}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_authority_maker_credentials_class_and_operation_cells_are_validated(self):
+        context = [start_session(ADMIN_SP, SID, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "0000000900000004",
+                "Authority_MakerSymK",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "Class"}, {"endColumn": "Operation"}]},
+                return_values=[[{"Class": "0000000900000003"}, {"Operation": "SymK"}]],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Get",
+                "0000000900000004",
+                "Authority_MakerSymK",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "Class"}, {"endColumn": "Operation"}]},
+                return_values=[[{"Class": "0000000900000003"}, {"Operation": "Sign"}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_authority_tperexch_operation_is_not_admin_exchange(self):
+        context = [start_session(ADMIN_SP, SID, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "0000000900000008",
+                "Authority_TPerExch",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "Operation"}, {"endColumn": "Operation"}]},
+                return_values=[[{"Operation": "TPerExchange"}]],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Get",
+                "0000000900000008",
+                "Authority_TPerExch",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "Operation"}, {"endColumn": "Operation"}]},
+                return_values=[[{"Operation": "Exchange"}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_authority_admin1_operation_is_password_not_any_auth_method(self):
+        context = [start_session(ADMIN_SP, SID, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "0000000900000201",
+                "Authority_Admin1",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "Operation"}, {"endColumn": "Operation"}]},
+                return_values=[[{"Operation": "Password"}]],
+            )
+        ]
+        wrong_valid_enum = context + [
+            method_record(
+                "Get",
+                "0000000900000201",
+                "Authority_Admin1",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "Operation"}, {"endColumn": "Operation"}]},
+                return_values=[[{"Operation": "Sign"}]],
+            )
+        ]
+        wrong_reserved = context + [
+            method_record(
+                "Get",
+                "0000000900000201",
+                "Authority_Admin1",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "Operation"}, {"endColumn": "Operation"}]},
+                return_values=[[{"Operation": 8}]],
+            )
+        ]
+        wrong_bool = context + [
+            method_record(
+                "Get",
+                "0000000900000201",
+                "Authority_Admin1",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "Operation"}, {"endColumn": "Operation"}]},
+                return_values=[[{"Operation": True}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong_valid_enum), "FAIL")
+        self.assertEqual(predict_trajectory(wrong_reserved), "FAIL")
+        self.assertEqual(predict_trajectory(wrong_bool), "FAIL")
+
+    def test_authority_user1_operation_is_password(self):
+        context = owned_admin_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "0000000900030001",
+                "Authority_User1",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "Operation"}, {"endColumn": "Operation"}]},
+                return_values=[[{"Operation": "Password"}]],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Get",
+                "0000000900030001",
+                "Authority_User1",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "Operation"}, {"endColumn": "Operation"}]},
+                return_values=[[{"Operation": "Exchange"}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_get_set_delete_reject_definitely_absent_invoking_object_uid(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        null_get = context + [method_record("Get", "0000000000000000", "", "SUCCESS")]
+        all_ones_get = context + [method_record("Get", "FFFFFFFFFFFFFFFF", "", "SUCCESS")]
+        null_set = context + [method_record("Set", "0000000000000000", "", "SUCCESS", optional={"Values": [{"1": "x"}]})]
+        all_ones_set = context + [method_record("Set", "FFFFFFFFFFFFFFFF", "", "SUCCESS", optional={"Values": [{"1": "x"}]})]
+        null_delete = context + [method_record("Delete", "0000000000000000", "", "SUCCESS", return_values=[])]
+        all_ones_delete = context + [method_record("Delete", "FFFFFFFFFFFFFFFF", "", "SUCCESS", return_values=[])]
+        self.assertEqual(predict_trajectory(null_get), "FAIL")
+        self.assertEqual(predict_trajectory(all_ones_get), "FAIL")
+        self.assertEqual(predict_trajectory(null_set), "FAIL")
+        self.assertEqual(predict_trajectory(all_ones_set), "FAIL")
+        self.assertEqual(predict_trajectory(null_delete), "FAIL")
+        self.assertEqual(predict_trajectory(all_ones_delete), "FAIL")
+
+    def test_secretprotect_protectmechanisms_get_rejects_invalid_protect_types(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP)]
+        valid_vendor_unique = context + [
+            method_record(
+                "Get",
+                "0000001D0000001D",
+                "SecretProtect",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 3}, {"endColumn": 3}]},
+                return_values=[[{"3": "VU"}]],
+            )
+        ]
+        boolean_value = context + [
+            method_record(
+                "Get",
+                "0000001D0000001D",
+                "SecretProtect",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 3}, {"endColumn": 3}]},
+                return_values=[[{"3": True}]],
+            )
+        ]
+        out_of_range_value = context + [
+            method_record(
+                "Get",
+                "0000001D0000001D",
+                "SecretProtect",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 3}, {"endColumn": 3}]},
+                return_values=[[{"3": [256]}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(valid_vendor_unique), "PASS")
+        self.assertEqual(predict_trajectory(boolean_value), "FAIL")
+        self.assertEqual(predict_trajectory(out_of_range_value), "FAIL")
+
+    def test_authority_adminexch_class_ref_is_admins(self):
+        context = [start_session(ADMIN_SP, SID, "new")]
+        correct = context + [
+            method_record(
+                "Get",
+                "0000000900000009",
+                "Authority_AdminExch",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "Class"}, {"endColumn": "Operation"}]},
+                return_values=[[{"Class": "0000000900000002"}, {"Operation": "Exchange"}]],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Get",
+                "0000000900000009",
+                "Authority_AdminExch",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": "Class"}, {"endColumn": "Operation"}]},
+                return_values=[[{"Class": "0000000900000003"}, {"Operation": "Exchange"}]],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_admin_sp_authority_set_enabled_uses_admin_sp_ace(self):
+        context = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Set",
+                "0000000800030001",
+                "ACE_Authority_Set_Enabled",
+                "SUCCESS",
+                optional={"Values": [{"3": ["Anybody"]}]},
+            ),
+            method_record("EndSession"),
+            start_session(ADMIN_SP),
+        ]
+        correct = context + [
+            method_record(
+                "Set",
+                "0000000900000003",
+                "Authority_Makers",
+                "SUCCESS",
+                optional={"Values": [{"5": False}]},
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Set",
+                "0000000900000003",
+                "Authority_Makers",
+                "NOT_AUTHORIZED",
+                optional={"Values": [{"5": False}]},
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_makerpuk_authentication_satisfies_makers_class_ace(self):
+        context = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Set",
+                "0000000800030001",
+                "ACE_Authority_Set_Enabled",
+                "SUCCESS",
+                optional={"Values": [{"3": ["Makers"]}]},
+            ),
+            method_record("EndSession"),
+            start_session(ADMIN_SP, "MakerPuK", "manufacturer-proof"),
+        ]
+        correct = context + [
+            method_record(
+                "Set",
+                "0000000900000003",
+                "Authority_Makers",
+                "SUCCESS",
+                optional={"Values": [{"5": True}]},
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Set",
+                "0000000900000003",
+                "Authority_Makers",
+                "NOT_AUTHORIZED",
+                optional={"Values": [{"5": True}]},
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_created_cec_row_get_uses_documented_default_curve_values(self):
+        row_uid = "0000000D00000192"
+        context = [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateRow",
+                "",
+                "C_EC_192Table",
+                "SUCCESS",
+                optional={
+                    "Row": [
+                        {"1": "EC192_Row"},
+                        {"2": "EC192_Row"},
+                        {"8": "11"},
+                        {"9": "22"},
+                        {"10": "33"},
+                        {"11": "SHA_256"},
+                        {"12": 0},
+                        {"13": "0000000000000000"},
+                    ]
+                },
+                return_values=[row_uid],
+            ),
+        ]
+        correct = context + [
+            method_record(
+                "Get",
+                row_uid,
+                "C_EC_192_Row",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3}, {"endColumn": 7}]},
+                return_values=[
+                    [
+                        {"3": "FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE FFFFFFFF FFFFFFFF"},
+                        {"4": "FFFFFFFFFFFFFFFFFFFFFFFF99DEF836146BC9B1B4D22831"},
+                        {"5": "64210519E59C80E70FA7E9AB72243049FEB8DEECC146B9B1"},
+                        {"6": "188DA80EB03090F67CBF20EB43A18800F4FF0AFD82FF1012"},
+                        {"7": "07192B95FFC8DA78631011ED6B24CDD573F977A11E794811"},
+                    ]
+                ],
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "Get",
+                row_uid,
+                "C_EC_192_Row",
+                "SUCCESS",
+                required={"CellBlock": [{"startColumn": 3}, {"endColumn": 7}]},
+                return_values=[
+                    [
+                        {"3": "0001"},
+                        {"4": "FFFFFFFFFFFFFFFFFFFFFFFF99DEF836146BC9B1B4D22831"},
+                        {"5": "64210519E59C80E70FA7E9AB72243049FEB8DEECC146B9B1"},
+                        {"6": "188DA80EB03090F67CBF20EB43A18800F4FF0AFD82FF1012"},
+                        {"7": "07192B95FFC8DA78631011ED6B24CDD573F977A11E794811"},
+                    ]
+                ],
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_xor_returns_bytewise_result_without_bufferout(self):
+        context = owned_admin_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", optional={"Bytes": "0F0F"}),
+        ]
+        correct = context + [
+            method_record(
+                "XOR",
+                "0000000000000001",
+                "ThisSP",
+                required={"PatternInput": "DataStore", "Input": {"Data": "F00F"}},
+                return_values="FF00",
+            )
+        ]
+        wrong = context + [
+            method_record(
+                "XOR",
+                "0000000000000001",
+                "ThisSP",
+                required={"PatternInput": "DataStore", "Input": {"Data": "F00F"}},
+                return_values="0000",
+            )
+        ]
+        self.assertEqual(predict_trajectory(correct), "PASS")
+        self.assertEqual(predict_trajectory(wrong), "FAIL")
+
+    def test_xor_with_bufferout_returns_empty_result(self):
+        trajectory = owned_admin_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", optional={"Bytes": "FFFF"}),
+            method_record(
+                "XOR",
+                "0000000000000001",
+                "ThisSP",
+                required={"PatternInput": "DataStore", "Input": {"Data": "00FF"}},
+                optional={"BufferOut": {"Bytes": "0000"}},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_xor_domain_request_envelopes_preserve_payload_and_bufferout_shape(self):
+        context = owned_admin_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", optional={"Bytes": "0F0F"}),
+        ]
+        values = {"PatternInput": "DataStore", "Input": {"Data": "F00F"}, "authAs": ("Admin1", "new")}
+        for envelope in ("xorRequest", "cryptoRequest", "byteTableRequest", "operationRequest"):
+            with self.subTest(path="direct", envelope=envelope):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "xor", "kwargs": {envelope: {"values": values}}}, "output": {"status": "SUCCESS", "return_values": "FF00"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "xor", "kwargs": {envelope: {"values": values}}}, "output": {"status": "SUCCESS", "return_values": "0F0F"}}]),
+                    "FAIL",
+                )
+
+        bufferout_values = {
+            "PatternInput": "DataStore",
+            "Input": {"Data": "F00F"},
+            "BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 1}},
+            "authAs": ("Admin1", "new"),
+        }
+        for envelope in ("xorRequest", "byteTableRequest"):
+            with self.subTest(path="bufferout", envelope=envelope):
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {"input": {"function": "xor", "kwargs": {envelope: {"values": bufferout_values}}}, "output": {"status": "SUCCESS", "return_values": []}},
+                            method_record("Get", "0000100100000000", "DataStore", required={"Cellblock": [{"startRow": 0}, {"endRow": 1}]}, return_values="FF00"),
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "xor", "kwargs": {envelope: {"values": bufferout_values}}}, "output": {"status": "SUCCESS", "return_values": True}}]),
+                    "FAIL",
+                )
+
+    def test_xor_rejects_pattern_input_shorter_than_input(self):
+        trajectory = owned_admin_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", optional={"Bytes": "FF"}),
+            method_record(
+                "XOR",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"PatternInput": "DataStore", "Input": {"Data": "0001"}},
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_xor_delete_pattern_zeros_pattern_input(self):
+        trajectory = owned_admin_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000100100000000", "DataStore", optional={"Bytes": "A5A5"}),
+            method_record(
+                "XOR",
+                "0000000000000001",
+                "ThisSP",
+                required={"PatternInput": "DataStore", "Input": {"Data": "FFFF"}},
+                optional={"DeletePattern": True},
+                return_values="5A5A",
+            ),
+            method_record(
+                "Get",
+                "0000100100000000",
+                "DataStore",
+                required={"Cellblock": [{"startRow": 0}, {"endRow": 1}]},
+                return_values="0000",
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_verify_success_requires_boolean_result(self):
+        good_true = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Verify", "0000080600030001", "H_SHA_256", return_values=True),
+        ]
+        good_false = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Verify", "0000080600030001", "H_SHA_256", return_values=False),
+        ]
+        bad = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Verify", "0000080600030001", "H_SHA_256", return_values="not-a-boolean"),
+        ]
+        self.assertEqual(predict_trajectory(good_true), "PASS")
+        self.assertEqual(predict_trajectory(good_false), "PASS")
+        self.assertEqual(predict_trajectory(bad), "FAIL")
+
+    def test_generic_sign_with_bufferout_requires_empty_result(self):
+        good = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Sign",
+                "0000080600030001",
+                "H_SHA_256",
+                required={"Input": {"Data": "AABB"}},
+                optional={"BufferOut": {"Bytes": "0000"}},
+                return_values=[],
+            ),
+        ]
+        bad = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Sign",
+                "0000080600030001",
+                "H_SHA_256",
+                required={"Input": {"Data": "AABB"}},
+                optional={"BufferOut": {"Bytes": "0000"}},
+                return_values="AABB",
+            ),
+        ]
+        self.assertEqual(predict_trajectory(good), "PASS")
+        self.assertEqual(predict_trajectory(bad), "FAIL")
+
+        bad_scalar = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "Sign",
+                "0000080600030001",
+                "H_SHA_256",
+                required={"Input": {"Data": "AABB"}},
+                optional={"BufferOut": {"Bytes": "0000"}},
+                return_values=1,
+            ),
+        ]
+        self.assertEqual(predict_trajectory(bad_scalar), "FAIL")
+
+    def test_encrypt_with_bufferout_requires_empty_result(self):
+        good = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("EncryptInit", "0000080500000001", "K_AES_128_GlobalRange_Key"),
+            method_record(
+                "Encrypt",
+                "0000080500000001",
+                "K_AES_128_GlobalRange_Key",
+                required={"Input": {"Data": "AABB"}},
+                optional={"BufferOut": {"Bytes": "0000"}},
+                return_values=[],
+            ),
+        ]
+        bad = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("EncryptInit", "0000080500000001", "K_AES_128_GlobalRange_Key"),
+            method_record(
+                "Encrypt",
+                "0000080500000001",
+                "K_AES_128_GlobalRange_Key",
+                required={"Input": {"Data": "AABB"}},
+                optional={"BufferOut": {"Bytes": "0000"}},
+                return_values="CCDD",
+            ),
+        ]
+        self.assertEqual(predict_trajectory(good), "PASS")
+        self.assertEqual(predict_trajectory(bad), "FAIL")
+
+    def test_encrypt_datastore_input_cellblock_requires_get_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "000000080003FC00", "ACE_DataStore_Get_All", optional={"Values": [{"3": []}]}),
+            method_record("EncryptInit", "0000080600030001", "K_AES_256"),
+            method_record(
+                "Encrypt",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                required={"Input": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 1}}},
+                return_values="AABB",
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_encrypt_datastore_bufferout_cellblock_requires_set_acl(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "000000080003FC01", "ACE_DataStore_Set_All", optional={"Values": [{"3": []}]}),
+            method_record("EncryptInit", "0000080600030001", "K_AES_256"),
+            method_record(
+                "Encrypt",
+                "0000080600030001",
+                "K_AES_256",
+                "SUCCESS",
+                required={"Input": {"Data": "AABB"}},
+                optional={"BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 1}}},
+                return_values=[],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_hmac_init_bufferout_makes_hmac_return_empty_result(self):
+        good = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("HMACInit", "0000080600030001", "H_SHA_256", optional={"BufferOut": {"Bytes": "0000"}}),
+            method_record("HMAC", "0000080600030001", "H_SHA_256", required={"Input": {"Data": "AABB"}}, return_values=[]),
+        ]
+        bad = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("HMACInit", "0000080600030001", "H_SHA_256", optional={"BufferOut": {"Bytes": "0000"}}),
+            method_record("HMAC", "0000080600030001", "H_SHA_256", required={"Input": {"Data": "AABB"}}, return_values="AABB"),
+        ]
+        self.assertEqual(predict_trajectory(good), "PASS")
+        self.assertEqual(predict_trajectory(bad), "FAIL")
+
+    def test_hash_stream_requires_init_and_finalize_closes_it(self):
+        before_init = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Hash", "0000080600030001", "H_SHA_256", required={"Input": {"Data": "AABB"}}, return_values="AABB"),
+        ]
+        after_finalize = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("HashInit", "0000080600030001", "H_SHA_256"),
+            method_record("HashFinalize", "0000080600030001", "H_SHA_256", return_values=[]),
+            method_record("Hash", "0000080600030001", "H_SHA_256", required={"Input": {"Data": "AABB"}}, return_values="AABB"),
+        ]
+        good = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("HashInit", "0000080600030001", "H_SHA_256"),
+            method_record("Hash", "0000080600030001", "H_SHA_256", required={"Input": {"Data": "AABB"}}, return_values="AABB"),
+        ]
+        self.assertEqual(predict_trajectory(before_init), "FAIL")
+        self.assertEqual(predict_trajectory(after_finalize), "FAIL")
+        self.assertEqual(predict_trajectory(good), "PASS")
+
+    def test_hash_init_bufferout_makes_hash_return_empty_result(self):
+        good = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("HashInit", "0000080600030001", "H_SHA_256", optional={"BufferOut": {"Bytes": "0000"}}),
+            method_record("Hash", "0000080600030001", "H_SHA_256", required={"Input": {"Data": "AABB"}}, return_values=[]),
+        ]
+        bad = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("HashInit", "0000080600030001", "H_SHA_256", optional={"BufferOut": {"Bytes": "0000"}}),
+            method_record("Hash", "0000080600030001", "H_SHA_256", required={"Input": {"Data": "AABB"}}, return_values="AABB"),
+        ]
+        self.assertEqual(predict_trajectory(good), "PASS")
+        self.assertEqual(predict_trajectory(bad), "FAIL")
+
+    def test_tcgstorageapi_hash_digest_aliases_share_hash_stream(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        for init_alias in ("hashBegin", "digestStart"):
+            with self.subTest(init_alias=init_alias):
+                initialized = context + [{"input": {"function": init_alias, "kwargs": {"algorithm": "sha256", "authAs": "Anybody"}}, "output": {"return": []}}]
+                self.assertEqual(
+                    predict_trajectory(initialized + [{"input": {"function": "hash", "kwargs": {"algorithm": "sha256", "data": "AABB", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "PASS",
+                )
+        stream = context + [{"input": {"function": "hashInit", "kwargs": {"algorithm": "sha256", "authAs": "Anybody"}}, "output": {"return": []}}]
+        for update_alias in ("processDigest", "digestUpdate"):
+            with self.subTest(update_alias=update_alias):
+                self.assertEqual(
+                    predict_trajectory(stream + [{"input": {"function": update_alias, "kwargs": {"algorithm": "sha256", "data": "AABB", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": update_alias, "kwargs": {"algorithm": "sha256", "data": "AABB", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "FAIL",
+                )
+        self.assertEqual(
+            predict_trajectory(stream + [{"input": {"function": "finalDigest", "kwargs": {"algorithm": "sha256", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+            "PASS",
+        )
+
+    def test_tcgstorageapi_hmac_mac_aliases_share_hmac_stream(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        initialized = context + [{"input": {"function": "initMAC", "kwargs": {"algorithm": "sha256", "authAs": "Anybody"}}, "output": {"return": []}}]
+        self.assertEqual(
+            predict_trajectory(initialized + [{"input": {"function": "hmac", "kwargs": {"algorithm": "sha256", "data": "AABB", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+            "PASS",
+        )
+        stream = context + [{"input": {"function": "hmacInit", "kwargs": {"algorithm": "sha256", "authAs": "Anybody"}}, "output": {"return": []}}]
+        for update_alias in ("processMAC", "digestHMAC", "macDigest"):
+            with self.subTest(update_alias=update_alias):
+                self.assertEqual(
+                    predict_trajectory(stream + [{"input": {"function": update_alias, "kwargs": {"algorithm": "sha256", "data": "AABB", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": update_alias, "kwargs": {"algorithm": "sha256", "data": "AABB", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "FAIL",
+                )
+        for final_alias in ("finalMAC", "completeMAC"):
+            with self.subTest(final_alias=final_alias):
+                self.assertEqual(
+                    predict_trajectory(stream + [{"input": {"function": final_alias, "kwargs": {"algorithm": "sha256", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "PASS",
+                )
+
+    def test_tcgstorageapi_encrypt_aliases_share_encrypt_stream(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        for init_alias in ("initEncrypt", "encryptBegin", "beginEncryption", "initEncryption"):
+            with self.subTest(init_alias=init_alias):
+                initialized = context + [{"input": {"function": init_alias, "kwargs": {"algorithm": "aes256", "iv": "AABB", "authAs": "Anybody"}}, "output": {"return": []}}]
+                self.assertEqual(
+                    predict_trajectory(initialized + [{"input": {"function": "encrypt", "kwargs": {"algorithm": "aes256", "data": "AABB", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "PASS",
+                )
+        stream = context + [{"input": {"function": "encryptInit", "kwargs": {"algorithm": "aes256", "iv": "AABB", "authAs": "Anybody"}}, "output": {"return": []}}]
+        for update_alias in ("encryptUpdate", "updateEncryption", "processEncryption"):
+            with self.subTest(update_alias=update_alias):
+                self.assertEqual(
+                    predict_trajectory(stream + [{"input": {"function": update_alias, "kwargs": {"algorithm": "aes256", "data": "AABB", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": update_alias, "kwargs": {"algorithm": "aes256", "data": "AABB", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "FAIL",
+                )
+        for final_alias in ("finalEncryption", "finishEncryption", "completeEncryption"):
+            with self.subTest(final_alias=final_alias):
+                self.assertEqual(
+                    predict_trajectory(stream + [{"input": {"function": final_alias, "kwargs": {"algorithm": "aes256", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "PASS",
+                )
+
+    def test_tcgstorageapi_decrypt_aliases_share_decrypt_stream(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        for init_alias in ("initDecrypt", "decryptBegin", "beginDecryption", "initDecryption"):
+            with self.subTest(init_alias=init_alias):
+                initialized = context + [{"input": {"function": init_alias, "kwargs": {"algorithm": "aes256", "iv": "AABB", "authAs": "Anybody"}}, "output": {"return": []}}]
+                self.assertEqual(
+                    predict_trajectory(initialized + [{"input": {"function": "decrypt", "kwargs": {"algorithm": "aes256", "data": "AABB", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "PASS",
+                )
+        stream = context + [{"input": {"function": "decryptInit", "kwargs": {"algorithm": "aes256", "iv": "AABB", "authAs": "Anybody"}}, "output": {"return": []}}]
+        for update_alias in ("decryptUpdate", "updateDecryption", "processDecryption"):
+            with self.subTest(update_alias=update_alias):
+                self.assertEqual(
+                    predict_trajectory(stream + [{"input": {"function": update_alias, "kwargs": {"algorithm": "aes256", "data": "AABB", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": update_alias, "kwargs": {"algorithm": "aes256", "data": "AABB", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "FAIL",
+                )
+        for final_alias in ("finalDecryption", "finishDecryption", "completeDecryption"):
+            with self.subTest(final_alias=final_alias):
+                self.assertEqual(
+                    predict_trajectory(stream + [{"input": {"function": final_alias, "kwargs": {"algorithm": "aes256", "authAs": "Anybody"}}, "output": {"return": "CCDD"}}]),
+                    "PASS",
+                )
+
+    def test_type_size_is_not_host_modifiable(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Set", "0000000500001001", "Type_HostDefined", optional={"Values": [{"4": 8}]}),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_column_and_type_table_uids_are_known_metadata_tables(self):
+        trajectory = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "GetACL",
+                "0000000700000000",
+                "AccessControl",
+                required={"InvokingID": {"uid": "0000000500000000"}, "MethodID": "Set"},
+                return_values=["ACE_Admins"],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_locking_range_set_accesscontrol_log_defaults_to_logalways(self):
+        good = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "000000070003F001",
+                "AccessControl",
+                required={"Cellblock": [{"startColumn": 5}, {"endColumn": 5}]},
+                return_values=[[{"Log": "LogAlways"}]],
+            ),
+        ]
+        bad = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "000000070003F001",
+                "AccessControl",
+                required={"Cellblock": [{"startColumn": 5}, {"endColumn": 5}]},
+                return_values=[[{"Log": ""}]],
+            ),
+        ]
+        self.assertEqual(predict_trajectory(good), "PASS")
+        self.assertEqual(predict_trajectory(bad), "FAIL")
+
+    def test_raw_empty_result_methods_reject_boolean_success_payload(self):
+        admin_context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        locking_context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        cases = [
+            admin_context
+            + [
+                method_record(
+                    "Set",
+                    "0000080300000001",
+                    "MBRControl",
+                    optional={"Values": [{"1": True}]},
+                    return_values=True,
+                )
+            ],
+            locking_context
+            + [
+                method_record(
+                    "Set",
+                    "0000080200030001",
+                    "Locking",
+                    optional={"Values": [{"7": True}]},
+                    return_values=True,
+                )
+            ],
+            locking_context + [method_record("GenKey", "0000080600030001", "K_AES_256", return_values=True)],
+            locking_context + [method_record("Delete", "0000080200030001", "Locking", return_values=True)],
+            owned_admin_context()
+            + [
+                start_session(ADMIN_SP, SID, "new"),
+                method_record("Activate", "0000020500000002", "LockingSP", return_values=True),
+            ],
+            locking_context + [method_record("RevertSP", "0000020500000002", "LockingSP", return_values=True)],
+            admin_context
+            + [
+                method_record(
+                    "AddLog",
+                    "0000000A00000001",
+                    "Log",
+                    required={"LogEntryName": "x", "Data": "AA"},
+                    return_values=True,
+                )
+            ],
+            admin_context + [method_record("ClearLog", "0000000A00000001", "Log", return_values=True)],
+            admin_context + [method_record("FlushLog", "0000000A00000001", "Log", return_values=True)],
+            locking_context
+            + [
+                method_record(
+                    "SetACL",
+                    "0000000700000000",
+                    "AccessControl",
+                    required={"InvokingID": "Locking_Range1", "MethodID": "Get", "ACL": ["ACE_00000003"]},
+                    return_values=True,
+                )
+            ],
+            admin_context + [method_record("HashInit", "0000080600030001", "H_SHA_256", return_values=True)],
+            admin_context + [method_record("HMACInit", "0000080600030001", "H_SHA_256", return_values=True)],
+            admin_context + [method_record("EncryptInit", "0000080600030001", "K_AES_256", return_values=True)],
+            admin_context + [method_record("DecryptInit", "0000080600030001", "K_AES_256", return_values=True)],
+        ]
+        for trajectory in cases:
+            with self.subTest(target=trajectory[-1]["input"]["method"]["name"]):
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_wrapper_boolean_success_still_allowed_for_empty_result_methods(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        self.assertEqual(
+            predict_trajectory(
+                context
+                + [
+                    {
+                        "input": {"function": "setRange", "args": [1], "kwargs": {"authAs": ("Admin1", "new"), "RangeStart": 120, "RangeLength": 8}},
+                        "output": {"return": True},
+                    }
+                ]
+            ),
+            "PASS",
+        )
+        admin_context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        self.assertEqual(
+            predict_trajectory(
+                admin_context
+                + [
+                    {
+                        "input": {"function": "activateLockingSP", "kwargs": {"authAs": ("SID", "new")}},
+                        "output": {"return": True},
+                    }
+                ]
+            ),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(
+                admin_context
+                + [
+                    {
+                        "input": {"function": "addLog", "kwargs": {"log": "Log", "LogEntryName": "x", "Data": "AA", "authAs": ("SID", "new")}},
+                        "output": {"return": True},
+                    }
+                ]
+            ),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(
+                admin_context
+                + [
+                    {
+                        "input": {"function": "clearLog", "kwargs": {"log": "Log", "authAs": ("SID", "new")}},
+                        "output": {"return": True},
+                    }
+                ]
+            ),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(
+                context
+                + [
+                    {
+                        "input": {"function": "rollKey", "kwargs": {"range_key": "K_AES_256_Range1_Key", "authAs": ("Admin1", "new")}},
+                        "output": {"return": True},
+                    }
+                ]
+            ),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(
+                context
+                + [
+                    {
+                        "input": {"function": "genRangeKey", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}},
+                        "output": {"return": True},
+                    }
+                ]
+            ),
+            "PASS",
+        )
+        media_key_context = context + [
+            method_record("Set", "0000080200030001", "Locking", "SUCCESS", optional={"Values": [{"10": "K_AES_256_Range1_Key"}]})
+        ]
+        self.assertEqual(
+            predict_trajectory(
+                media_key_context
+                + [
+                    {
+                        "input": {"function": "getRangeMediaKey", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                        "output": {"return": {"K_AES_256_Range1_Key_UID": b"\x00\x00\x08\x06\x00\x03\x00\x01"}},
+                    }
+                ]
+            ),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(
+                media_key_context
+                + [
+                    {
+                        "input": {"function": "getRangeActiveKey", "args": [1, "Admin1"], "kwargs": {"authAs": ("Admin1", "new")}},
+                        "output": {"return": {"K_AES_256_Range2_Key_UID": b"\x00\x00\x08\x06\x00\x03\x00\x02"}},
+                    }
+                ]
+            ),
+            "FAIL",
+        )
+
+    def test_table_query_results_require_uinteger_payloads(self):
+        locking_context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        admin_context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        bad_free_rows = [
+            {"ok": True},
+            {"return": True},
+            ["extra"],
+            [True],
+            {"value": True},
+        ]
+        for value in bad_free_rows:
+            with self.subTest(method="GetFreeRows", value=value):
+                self.assertEqual(
+                    predict_trajectory(locking_context + [method_record("GetFreeRows", "0000000100000008", "LockingTable", return_values=value)]),
+                    "FAIL",
+                )
+        for value in ([4], {"FreeRows": 4}, {"return": [4]}, {"Rows": 4}):
+            with self.subTest(method="GetFreeRows-good", value=value):
+                self.assertEqual(
+                    predict_trajectory(locking_context + [method_record("GetFreeRows", "0000000100000008", "LockingTable", return_values=value)]),
+                    "PASS",
+                )
+        for value in ([1024, 8], {"FreeSpace": 1024, "TableRows": 8}, {"return": [1024, 8]}):
+            with self.subTest(method="GetFreeSpace-good", value=value):
+                self.assertEqual(
+                    predict_trajectory(admin_context + [method_record("GetFreeSpace", "0000000000000001", "ThisSP", return_values=value)]),
+                    "PASS",
+                )
+        for value in (["x", "y"], [True, 8], {"ok": True, "other": 1}):
+            with self.subTest(method="GetFreeSpace", value=value):
+                self.assertEqual(
+                    predict_trajectory(admin_context + [method_record("GetFreeSpace", "0000000000000001", "ThisSP", return_values=value)]),
+                    "FAIL",
+                )
+
+    def test_typed_get_requires_requested_public_column_payload(self):
+        cases = [
+            method_record("Get", "", "TPerInfo", required={"Cellblock": [{"startColumn": 2, "endColumn": 2}]}, return_values="SUCCESS"),
+            method_record("Get", "0000000B00008402", "C_PIN_MSID", required={"Cellblock": [{"startColumn": 3, "endColumn": 3}]}, return_values={}),
+            method_record("Get", "", "LockingInfo", required={"Cellblock": [{"startColumn": 4, "endColumn": 4}]}, return_values=[]),
+        ]
+        for event in cases:
+            with self.subTest(symbol=event["input"]["invoking_id"]["name"]):
+                self.assertEqual(predict_trajectory([event]), "FAIL")
+
+    def test_sign_rejects_nested_boolean_payload(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        for value in ({"ok": True}, {"return": True}, [True], {"Data": True}):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    predict_trajectory(context + [method_record("Sign", "0000080600030001", "K_AES_256", required={"Input": {"Data": "AA"}}, return_values=value)]),
+                    "FAIL",
+                )
+        for value in ("AABB", {"Data": "AABB"}, ["AABB"]):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    predict_trajectory(context + [method_record("Sign", "0000080600030001", "K_AES_256", required={"Input": {"Data": "AA"}}, return_values=value)]),
+                    "PASS",
+                )
+
+    def test_crypto_stream_byte_output_rejects_nested_boolean_payload(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        hash_context = context + [method_record("HashInit", "0000000900000006", "H_SHA_256")]
+        for value in ({"ok": True}, {"return": True}, [True], {"Data": True}):
+            with self.subTest(method="Hash", value=value):
+                self.assertEqual(
+                    predict_trajectory(hash_context + [method_record("Hash", "0000000900000006", "H_SHA_256", required={"Data": "AA"}, return_values=value)]),
+                    "FAIL",
+                )
+            with self.subTest(method="hash-wrapper", value=value):
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {"input": {"function": "hashInit", "kwargs": {"algorithm": "sha256", "authAs": "Anybody"}}, "output": {"return": []}},
+                            {"input": {"function": "hash", "kwargs": {"algorithm": "sha256", "data": "AA", "authAs": "Anybody"}}, "output": {"return": value}},
+                        ]
+                    ),
+                    "FAIL",
+                )
+        for value in ("AABB", {"Data": "AABB"}, ["AABB"]):
+            with self.subTest(method="Hash-good", value=value):
+                self.assertEqual(
+                    predict_trajectory(hash_context + [method_record("Hash", "0000000900000006", "H_SHA_256", required={"Data": "AA"}, return_values=value)]),
+                    "PASS",
+                )
+
+    def test_aes_stream_update_requires_bytes_without_bufferout(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        encrypt_context = context + [method_record("EncryptInit", "0000080600030001", "K_AES_256")]
+        decrypt_context = context + [method_record("DecryptInit", "0000080600030001", "K_AES_256")]
+        for method, trajectory in (("Encrypt", encrypt_context), ("Decrypt", decrypt_context)):
+            with self.subTest(method=method, value="bytes"):
+                self.assertEqual(
+                    predict_trajectory(trajectory + [method_record(method, "0000080600030001", "K_AES_256", required={"Data": "AA"}, return_values="AABB")]),
+                    "PASS",
+                )
+            for value in ({}, [], {"return": []}):
+                with self.subTest(method=method, value=value):
+                    self.assertEqual(
+                        predict_trajectory(trajectory + [method_record(method, "0000080600030001", "K_AES_256", required={"Data": "AA"}, return_values=value)]),
+                        "FAIL",
+                    )
+
+    def test_certificate_byte_table_rejects_nested_boolean_payload(self):
+        for alias in ("getAttestationCert", "getSignCert", "getSignCertificate", "getSigningCertificate", "readSignCertificate", "readSigningCertificate", "fetchSignCertificate", "fetchSigningCertificate"):
+            for value in ({"ok": True}, {"return": True}, [True], {"Data": True}):
+                with self.subTest(alias=alias, value=value):
+                    self.assertEqual(
+                        predict_trajectory([{"input": {"function": alias, "kwargs": {}}, "output": {"status": "SUCCESS", "return": value}}]),
+                        "FAIL",
+                    )
+            for value in ("AABB", {"Data": "AABB"}, ["AABB"]):
+                with self.subTest(alias=alias, value=value):
+                    self.assertEqual(
+                        predict_trajectory([{"input": {"function": alias, "kwargs": {}}, "output": {"status": "SUCCESS", "return": value}}]),
+                        "PASS",
+                    )
+
+    def test_sign_and_firmware_wrappers_reject_nested_boolean_payloads(self):
+        for value in ({"ok": True}, {"return": True}, [True], {"Data": True}):
+            with self.subTest(alias="sign", value=value):
+                self.assertEqual(
+                    predict_trajectory(
+                        [{"input": {"function": "sign", "kwargs": {"payload": "AABB", "authAs": "Anybody"}}, "output": {"return": value}}]
+                    ),
+                    "FAIL",
+                )
+            with self.subTest(alias="firmwareAttestation", value=value):
+                self.assertEqual(
+                    predict_trajectory(
+                        [{"input": {"function": "firmwareAttestation", "kwargs": {"nonce": "AABB", "authAs": "Anybody"}}, "output": {"return": value}}]
+                    ),
+                    "FAIL",
+                )
+        for value in ("AABB", {"Data": "AABB"}, ["AABB"]):
+            with self.subTest(alias="sign-good", value=value):
+                self.assertEqual(
+                    predict_trajectory(
+                        [{"input": {"function": "sign", "kwargs": {"payload": "AABB", "authAs": "Anybody"}}, "output": {"return": value}}]
+                    ),
+                    "PASS",
+                )
+            with self.subTest(alias="firmwareAttestation-good", value=value):
+                self.assertEqual(
+                    predict_trajectory(
+                        [{"input": {"function": "firmwareAttestation", "kwargs": {"nonce": "AABB", "authAs": "Anybody"}}, "output": {"return": value}}]
+                    ),
+                    "PASS",
+                )
+
+    def test_firmware_attestation_read_aliases_preserve_payload_shape(self):
+        for alias in ("readFirmwareAttestation", "fetchFirmwareAttestation", "readFirmwareQuote", "fetchFirmwareQuote", "quoteTPer"):
+            with self.subTest(alias=alias, case="bytes"):
+                self.assertEqual(
+                    predict_trajectory([{"input": {"function": alias, "kwargs": {"nonce": "AABB", "authAs": "Anybody"}}, "output": {"return": b"attestation"}}]),
+                    "PASS",
+                )
+            with self.subTest(alias=alias, case="boolean"):
+                self.assertEqual(
+                    predict_trajectory([{"input": {"function": alias, "kwargs": {"nonce": "AABB", "authAs": "Anybody"}}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_datastore_and_mbr_reset_wrappers_reject_boolean_payload_shapes(self):
+        datastore_context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        for alias in ("readData", "readDatastore", "getData"):
+            for value in ({"Data": True}, {"ok": True}, [True]):
+                with self.subTest(alias=alias, value=value):
+                    self.assertEqual(
+                        predict_trajectory(datastore_context + [{"input": {"function": alias, "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": value}}]),
+                        "FAIL",
+                    )
+        mbr_context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "", "MBRControl", optional={"Values": [{"3": [0]}]}),
+        ]
+        for alias in ("getMBRDoneOnReset", "getDoneOnReset", "getMBRDOR", "getMBRResetTypes", "isMBRDoneOnReset"):
+            with self.subTest(alias=alias, value=[True]):
+                self.assertEqual(
+                    predict_trajectory(mbr_context + [{"input": {"function": alias, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": [True]}}]),
+                    "FAIL",
+                )
+        for return_key in ("resetTypes", "types", "resetEvents", "reset_on", "resetList"):
+            with self.subTest(return_key=return_key):
+                self.assertEqual(
+                    predict_trajectory(mbr_context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {return_key: [0]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(mbr_context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {return_key: [3]}}}]),
+                    "FAIL",
+                )
+
+    def test_ordered_range_lock_aliases_update_locking_state(self):
+        for alias, column, good, stale in (
+            ("lockReadRange", "ReadLocked", 1, 0),
+            ("readLockRange", "ReadLocked", 1, 0),
+            ("unlockReadRange", "ReadLocked", 0, 1),
+            ("readUnlockRange", "ReadLocked", 0, 1),
+            ("lockWriteRange", "WriteLocked", 1, 0),
+            ("writeLockRange", "WriteLocked", 1, 0),
+            ("unlockWriteRange", "WriteLocked", 0, 1),
+            ("writeUnlockRange", "WriteLocked", 0, 1),
+            ("lockReadForRange", "ReadLocked", 1, 0),
+            ("readLockForRange", "ReadLocked", 1, 0),
+            ("unlockReadForRange", "ReadLocked", 0, 1),
+            ("readUnlockForRange", "ReadLocked", 0, 1),
+            ("lockWriteForRange", "WriteLocked", 1, 0),
+            ("writeLockForRange", "WriteLocked", 1, 0),
+            ("unlockWriteForRange", "WriteLocked", 0, 1),
+            ("writeUnlockForRange", "WriteLocked", 0, 1),
+            ("enableReadLockRange", "ReadLockEnabled", 1, 0),
+            ("disableReadLockRange", "ReadLockEnabled", 0, 1),
+            ("enableWriteLockRange", "WriteLockEnabled", 1, 0),
+            ("disableWriteLockRange", "WriteLockEnabled", 0, 1),
+            ("enableReadLockForRange", "ReadLockEnabled", 1, 0),
+            ("disableReadLockForRange", "ReadLockEnabled", 0, 1),
+            ("enableWriteLockForRange", "WriteLockEnabled", 1, 0),
+            ("disableWriteLockForRange", "WriteLockEnabled", 0, 1),
+            ("setReadLockedForRange", "ReadLocked", 1, 0),
+            ("setWriteLockedForRange", "WriteLocked", 1, 0),
+            ("setRangeReadLockedState", "ReadLocked", 1, 0),
+            ("setRangeWriteLockedState", "WriteLocked", 1, 0),
+        ):
+            with self.subTest(alias=alias):
+                context = activated_locking_context() + [
+                    {"input": {"function": alias, "args": [1], "kwargs": {"authAs": ("Admin1", "new"), "value": bool(good)}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getRange", "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {column: good}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getRange", "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {column: stale}}}]),
+                    "FAIL",
+                )
+
+    def test_ordered_range_lock_getter_aliases_validate_boolean_state(self):
+        for setter, getter, good, stale in (
+            ("enableReadLockRange", "getReadLockEnabledRange", True, False),
+            ("disableReadLockForRange", "isReadLockEnabledForRange", False, True),
+            ("enableWriteLockRange", "getWriteLockEnabledRange", True, False),
+            ("disableWriteLockForRange", "isWriteLockEnabledForRange", False, True),
+            ("lockReadRange", "getReadLockedRange", True, False),
+            ("readLock", "rangeReadLocked", True, False),
+            ("unlockReadForRange", "isReadLockedForRange", False, True),
+            ("lockWriteRange", "getWriteLockedRange", True, False),
+            ("writeLock", "rangeWriteLocked", True, False),
+            ("unlockWriteForRange", "isWriteLockedForRange", False, True),
+            ("markReadLocked", "isRangeReadLockSet", True, False),
+            ("markWriteLocked", "isRangeWriteLockSet", True, False),
+        ):
+            with self.subTest(getter=getter):
+                context = activated_locking_context() + [
+                    {"input": {"function": setter, "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": good}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": stale}}]),
+                    "FAIL",
+                )
+
+    def test_range_cell_update_and_reader_aliases_share_locking_state(self):
+        for alias, column, good, stale in (
+            ("updateRangeStart", "RangeStart", 144, 0),
+            ("putRangeLength", "RangeLength", 12, 0),
+            ("storeRangeReadLockEnabled", "ReadLockEnabled", True, False),
+            ("configureRangeWriteLockEnabled", "WriteLockEnabled", True, False),
+            ("updateRangeReadLocked", "ReadLocked", True, False),
+            ("clearRangeWriteLocked", "WriteLocked", False, True),
+        ):
+            with self.subTest(alias=alias):
+                args = [1] if alias.lower().startswith("clear") else [1, good]
+                context = activated_locking_context() + [
+                    {"input": {"function": alias, "args": args, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getRange", "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {column: good}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getRange", "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {column: stale}}}]),
+                    "FAIL",
+                )
+        getter_context = activated_locking_context() + [
+            {"input": {"function": "setRange", "args": [1, 144, 12, True, True, True, True], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for alias, column, good, stale in (
+            ("queryRangeStart", "RangeStart", 144, 0),
+            ("loadRangeSize", "RangeLength", 12, 0),
+            ("fetchRangeReadLockEnabled", "ReadLockEnabled", True, False),
+            ("readRangeWriteLockEnabled", "WriteLockEnabled", True, False),
+            ("queryReadLockState", "ReadLocked", True, False),
+            ("loadRangeWriteLocked", "WriteLocked", True, False),
+        ):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(getter_context + [{"input": {"function": alias, "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {column: good}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(getter_context + [{"input": {"function": alias, "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {column: stale}}}]),
+                    "FAIL",
+                )
+        for alias, payload_key in (
+            ("fetchReadLocked", "locked"),
+            ("queryRangeWriteLocked", "locked"),
+            ("readReadLockState", "state"),
+            ("loadWriteLockState", "state"),
+        ):
+            with self.subTest(alias=alias, payload_key=payload_key):
+                self.assertEqual(
+                    predict_trajectory(getter_context + [{"input": {"function": alias, "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {payload_key: True}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(getter_context + [{"input": {"function": alias, "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {payload_key: False}}}]),
+                    "FAIL",
+                )
+
+    def test_tcgstorageapi_lock_singular_getter_aliases_validate_boolean_state(self):
+        for setter, getter, good, stale in (
+            ("readLock", "getReadLock", True, False),
+            ("writeLock", "getWriteLock", True, False),
+        ):
+            with self.subTest(getter=getter):
+                context = activated_locking_context() + [
+                    {"input": {"function": setter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": good}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": stale}}]),
+                    "FAIL",
+                )
+
+    def test_datastore_byte_aliases_share_sparse_state(self):
+        for write_fn, read_fn in (
+            ("setUserData", "getUserData"),
+            ("writeDataStoreBytes", "getDataStoreBytes"),
+            ("setDataStoreBytes", "readDataStoreBytes"),
+            ("putDataStoreBytes", "getDataStoreBytes"),
+            ("setDSBytes", "getDSBytes"),
+            ("writeDataBytes", "readDataBytes"),
+            ("setDataBytes", "getDataBytes"),
+            ("saveUserData", "loadUserData"),
+            ("saveDataStore", "fetchUserData"),
+            ("saveDS", "loadDS"),
+            ("writeDataStorePayload", "getDataStorePayload"),
+            ("updateDataStore", "readData"),
+            ("writeUserDataStore", "readUserDataStore"),
+            ("setUserDataStore", "getUserDataStore"),
+            ("putUserDataStore", "fetchUserDataStore"),
+            ("storeUserDataStore", "loadUserDataStore"),
+            ("saveUserDataStore", "readUserDataStore"),
+            ("setDataPayload", "readDataPayload"),
+            ("writeUserPayload", "readUserPayload"),
+            ("saveUserPayload", "fetchUserPayload"),
+            ("storeUserPayload", "loadUserPayload"),
+            ("setUserPayload", "getUserPayload"),
+            ("writeDataBlock", "readDataBlock"),
+            ("storeDataBlock", "fetchDataBlock"),
+            ("saveDataBlock", "loadDataBlock"),
+            ("setDataBlock", "getDataBlock"),
+            ("writeUserDataBlock", "readUserDataBlock"),
+            ("storeUserDataBlock", "fetchUserDataBlock"),
+            ("writeDataSegment", "readDataSegment"),
+            ("storeDataSegment", "fetchDataSegment"),
+            ("writeDataRange", "readDataRange"),
+            ("storeDataRange", "fetchDataRange"),
+            ("writeDataChunk", "readDataChunk"),
+            ("storeDataChunk", "fetchDataChunk"),
+            ("writeDataWindow", "readDataWindow"),
+            ("storeDataWindow", "fetchDataWindow"),
+            ("writeDataSlice", "readDataSlice"),
+            ("storeDataSlice", "fetchDataSlice"),
+        ):
+            with self.subTest(write_fn=write_fn, read_fn=read_fn):
+                context = activated_locking_context() + [
+                    {"input": {"function": write_fn, "args": [0, "AABB"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": read_fn, "args": [0, 2], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": "AABB"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": read_fn, "args": [0, 2], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": "0000"}}]),
+                    "FAIL",
+                )
+
+    def test_datastore_payload_read_aliases_preserve_windows(self):
+        context = activated_locking_context() + [
+            {
+                "input": {"function": "writeData", "kwargs": {"authAs": ("Admin1", "new"), "offset": 2, "data": "AABBCC"}},
+                "output": {"return": True},
+            },
+        ]
+        for read_fn in ("fetchDataStore", "fetchDS", "loadDSBytes", "loadDataStoreBytes", "readDataStorePayload", "loadDataPayload", "fetchDataPayload"):
+            with self.subTest(read_fn=read_fn):
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": read_fn, "kwargs": {"authAs": ("Admin1", "new"), "offset": 3, "length": 2}},
+                                "output": {"return": "BBCC"},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": read_fn, "kwargs": {"authAs": ("Admin1", "new"), "offset": 3, "length": 2}},
+                                "output": {"return": "AABB"},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+        for offset_key in ("startByte", "byteIndex", "bytePosition"):
+            with self.subTest(offset_key=offset_key):
+                offset_context = activated_locking_context() + [
+                    {
+                        "input": {"function": "writeData", "kwargs": {"authAs": ("Admin1", "new"), offset_key: 4, "data": "AABBCC"}},
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(offset_context + [{"input": {"function": "readData", "kwargs": {"authAs": ("Admin1", "new"), "offset": 5, "length": 2}}, "output": {"return": "BBCC"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(offset_context + [{"input": {"function": "readData", "kwargs": {"authAs": ("Admin1", "new"), "offset": 5, "length": 2}}, "output": {"return": "AABB"}}]),
+                    "FAIL",
+                )
+        for length_key in ("readSize", "windowSize"):
+            with self.subTest(length_key=length_key):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readData", "kwargs": {"authAs": ("Admin1", "new"), "offset": 3, length_key: 2}}, "output": {"return": "BBCC"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readData", "kwargs": {"authAs": ("Admin1", "new"), "offset": 3, length_key: 2}}, "output": {"return": "AABB"}}]),
+                    "FAIL",
+                )
+        nested_context = activated_locking_context() + [
+            {
+                "input": {"function": "writeData", "kwargs": {"authAs": ("Admin1", "new"), "offset": 10, "data": "AABBCCDD"}},
+                "output": {"return": True},
+            },
+        ]
+        for label, nested_payload, expected in (
+            ("window startByte/readSize", {"authAs": ("Admin1", "new"), "window": {"startByte": 11, "readSize": 2}}, "BBCC"),
+            ("values byteIndex/windowSize", {"authAs": ("Admin1", "new"), "values": {"byteIndex": 12, "windowSize": 2}}, "CCDD"),
+        ):
+            with self.subTest(nested_label=label):
+                self.assertEqual(
+                    predict_trajectory(nested_context + [{"input": {"function": "readData", "kwargs": nested_payload}, "output": {"return": expected}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(nested_context + [{"input": {"function": "readData", "kwargs": nested_payload}, "output": {"return": "AABB"}}]),
+                    "FAIL",
+                )
+
+    def test_datastore_deep_window_envelopes_share_sparse_state(self):
+        def wrap(payload, chain):
+            value = payload
+            for key in reversed(chain):
+                value = {key: value}
+            return value
+
+        chains = (
+            ("dataStoreRequest", "byteTableRequest", "window", "values"),
+            ("request", "dataStoreRequest", "range", "payload"),
+            ("config", "target", "byteWindow", "values"),
+            ("policy", "request", "slice", "values"),
+            ("values", "dataStoreRequest", "payload", "values"),
+            ("operationRequest", "dataRequest", "window", "payload"),
+        )
+        for write_chain, read_chain in zip(chains, reversed(chains)):
+            with self.subTest(write_chain=write_chain, read_chain=read_chain):
+                context = activated_locking_context() + [
+                    {
+                        "input": {
+                            "function": "writeData",
+                            "kwargs": wrap({"user": "Admin1", "bytes": "AABBCCDD", "offset": 2, "authAs": ("Admin1", "new")}, write_chain),
+                        },
+                        "output": {"return": True},
+                    },
+                ]
+                read_kwargs = wrap({"user": "Admin1", "offset": 2, "length": 4, "authAs": ("Admin1", "new")}, read_chain)
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readData", "kwargs": read_kwargs}, "output": {"return": "AABBCCDD"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readData", "kwargs": read_kwargs}, "output": {"return": "0000AABB"}}]),
+                    "FAIL",
+                )
+
+    def test_datastore_access_aliases_grant_user_permissions(self):
+        base = activated_locking_context() + [
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+            {"input": {"function": "writeData", "args": ["Admin1", "AABB"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for alias in ("grantDataRead", "grantUserDataRead", "grantPayloadRead", "grantUserPayloadRead", "allowDataRead", "allowPayloadRead", "allowReadAccess", "setReadAccess", "setPayloadReadAccess"):
+            with self.subTest(alias=alias):
+                trajectory = base + [
+                    {"input": {"function": alias, "kwargs": {"user": "User1", "table": "DataStore", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                    {"input": {"function": "readData", "args": ["User1", 0, 2], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": "AABB"}},
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+        for label, kwargs in (
+            ("policy user table", {"policy": {"user": "User1", "table": "DataStore"}, "authAs": ("Admin1", "new")}),
+            ("access identity object", {"access": {"identity": "User1", "object": "DataStore"}, "authAs": ("Admin1", "new")}),
+            ("permission subject resource", {"permission": {"subject": "User1", "resource": "DataStore"}, "authAs": ("Admin1", "new")}),
+            ("request access user table", {"request": {"access": {"user": "User1", "table": "DataStore"}}, "authAs": ("Admin1", "new")}),
+        ):
+            with self.subTest(access_envelope=label):
+                trajectory = base + [
+                    {"input": {"function": "grantDataRead", "kwargs": kwargs}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(trajectory + [{"input": {"function": "readData", "args": ["User1", 0, 2], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": "AABB"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(trajectory + [{"input": {"function": "readData", "args": ["User1", 0, 2], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": []}}]),
+                    "FAIL",
+                )
+        for alias in ("grantDataWrite", "grantUserDataWrite", "grantPayloadWrite", "grantUserPayloadWrite", "allowDataWrite", "allowPayloadWrite", "allowWriteAccess", "setWriteAccess", "setPayloadWriteAccess"):
+            with self.subTest(alias=alias):
+                trajectory = base + [
+                    {"input": {"function": alias, "kwargs": {"user": "User1", "table": "DataStore", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                    {"input": {"function": "writeData", "args": ["User1", "CCDD"], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+        for alias, mode, final_call in (
+            ("grantDataAccess", "read", {"input": {"function": "readData", "args": ["User1", 0, 2], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": "AABB"}}),
+            ("grantUserDataAccess", "read", {"input": {"function": "readData", "args": ["User1", 0, 2], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": "AABB"}}),
+            ("allowDataAccess", "read", {"input": {"function": "readData", "args": ["User1", 0, 2], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": "AABB"}}),
+            ("setDataAccess", "read", {"input": {"function": "readData", "args": ["User1", 0, 2], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": "AABB"}}),
+            ("grantDataAccess", "write", {"input": {"function": "writeData", "args": ["User1", "CCDD"], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": True}}),
+            ("grantUserDataAccess", "write", {"input": {"function": "writeData", "args": ["User1", "CCDD"], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": True}}),
+            ("allowDataAccess", "write", {"input": {"function": "writeData", "args": ["User1", "CCDD"], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": True}}),
+            ("setDataAccess", "write", {"input": {"function": "writeData", "args": ["User1", "CCDD"], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": True}}),
+        ):
+            with self.subTest(alias=alias, mode=mode):
+                trajectory = base + [
+                    {"input": {"function": alias, "kwargs": {"user": "User1", "table": "DataStore", "mode": mode, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                    final_call,
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
+        for label, kwargs in (
+            ("access identity object", {"access": {"identity": "User1", "object": "DataStore"}, "authAs": ("Admin1", "new")}),
+            ("permission subject resource", {"permission": {"subject": "User1", "resource": "DataStore"}, "authAs": ("Admin1", "new")}),
+            ("request access user table", {"request": {"access": {"user": "User1", "table": "DataStore"}}, "authAs": ("Admin1", "new")}),
+        ):
+            for mode_key in ("mode", "operation", "access", "permission"):
+                with self.subTest(generic_write_envelope=label, mode_key=mode_key):
+                    shaped_kwargs = dict(kwargs)
+                    if "access" in shaped_kwargs:
+                        shaped_kwargs["access"] = {**shaped_kwargs["access"], mode_key: "write"}
+                    elif "permission" in shaped_kwargs:
+                        shaped_kwargs["permission"] = {**shaped_kwargs["permission"], mode_key: "write"}
+                    else:
+                        shaped_kwargs["request"] = {"access": {**shaped_kwargs["request"]["access"], mode_key: "write"}}
+                    trajectory = base + [
+                        {"input": {"function": "grantDataAccess", "kwargs": shaped_kwargs}, "output": {"return": True}},
+                        {"input": {"function": "writeData", "args": ["User1", "EEFF"], "kwargs": {"authAs": ("User1", "userpin")}}, "output": {"return": True}},
+                    ]
+                    self.assertEqual(
+                        predict_trajectory(trajectory + [{"input": {"function": "readData", "args": ["Admin1", 0, 2], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": "EEFF"}}]),
+                        "PASS",
+                    )
+                    self.assertEqual(
+                        predict_trajectory(trajectory + [{"input": {"function": "readData", "args": ["Admin1", 0, 2], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": "AABB"}}]),
+                        "FAIL",
+                    )
+
+    def test_locking_range_composite_aliases_share_geometry_state(self):
+        for setter, getter, expected_start in (
+            ("updateRange", "readRange", 228),
+            ("modifyRange", "fetchRange", 232),
+            ("setRangeConfig", "queryRange", 236),
+            ("setLockingRangeState", "rangeStatus", 240),
+            ("updateLockingRange", "getLockingRangeState", 244),
+            ("setLockingRange", "readLockingRange", 248),
+            ("configureRange", "loadRange", 252),
+            ("configureLockingRange", "queryLockingRange", 256),
+            ("configRange", "fetchLockingRange", 260),
+            ("setRangeGeometry", "readRangeGeometry", 264),
+            ("updateRangeGeometry", "getRangeGeometry", 268),
+            ("setBandConfig", "readBandConfig", 272),
+            ("configureLockingBand", "getBandGeometry", 276),
+        ):
+            with self.subTest(setter=setter, getter=getter):
+                context = activated_locking_context() + [
+                    {
+                        "input": {
+                            "function": setter,
+                            "kwargs": {"rangeId": 1, "start": expected_start, "length": 4, "authAs": ("Admin1", "new")},
+                        },
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": getter, "args": [1], "kwargs": {"authAs": ("Admin1", "new")}},
+                                "output": {"return": {"RangeStart": expected_start, "RangeLength": 4}},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": getter, "args": [1], "kwargs": {"authAs": ("Admin1", "new")}},
+                                "output": {"return": {"RangeStart": 0, "RangeLength": 0}},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+
+    def test_locking_range_selector_aliases_share_geometry_state(self):
+        for selector_key in ("rangeName", "name", "rangeUid", "range_uid", "bandName", "band_name"):
+            with self.subTest(selector_key=selector_key):
+                context = activated_locking_context() + [
+                    {
+                        "input": {
+                            "function": "setRange",
+                            "kwargs": {selector_key: 1, "start": 120, "length": 8, "authAs": ("Admin1", "new")},
+                        },
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": {selector_key: 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"RangeStart": 120, "RangeLength": 8}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": {selector_key: 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"RangeStart": 0, "RangeLength": 8}}}]),
+                    "FAIL",
+                )
+        for selector_key in ("rangeName", "range_name", "bandName", "band_name"):
+            with self.subTest(values_selector_key=selector_key):
+                context = activated_locking_context() + [
+                    {
+                        "input": {
+                            "function": "setRange",
+                            "kwargs": {"values": {selector_key: 1, "start": 132, "length": 8, "authAs": ("Admin1", "new")}},
+                        },
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}}, "output": {"return": {"RangeStart": 132, "RangeLength": 8}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}}, "output": {"return": {"RangeStart": 0, "RangeLength": 8}}}]),
+                    "FAIL",
+                )
+
+    def test_lockonreset_and_lock_values_range_name_aliases_share_state(self):
+        for selector_key in ("rangeName", "range_name", "bandName", "band_name"):
+            with self.subTest(lockonreset_selector_key=selector_key):
+                context = activated_locking_context() + [
+                    {
+                        "input": {
+                            "function": "setLockOnReset",
+                            "kwargs": {"values": {selector_key: 1, "lockOnReset": [0, 3], "authAs": ("Admin1", "new")}},
+                        },
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getLockOnReset", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}},
+                                "output": {"return": {"LockOnReset": [0, 3]}},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getLockOnReset", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}},
+                                "output": {"return": {"LockOnReset": [0]}},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+            with self.subTest(readlock_selector_key=selector_key):
+                context = activated_locking_context() + [
+                    {
+                        "input": {
+                            "function": "setRange",
+                            "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new"), "ReadLockEnabled": True, "ReadLocked": False},
+                        },
+                        "output": {"return": True},
+                    },
+                    {
+                        "input": {"function": "readLock", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}},
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getReadLocked", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}},
+                                "output": {"return": {"locked": True}},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getReadLocked", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}},
+                                "output": {"return": {"locked": False}},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getRangeLocks", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}},
+                                "output": {"return": {"ReadLocked": True, "WriteLocked": False}},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getRangeLocks", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}},
+                                "output": {"return": {"ReadLocked": False, "WriteLocked": False}},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+            with self.subTest(advanced_selector_key=selector_key):
+                context = activated_locking_context() + [
+                    {
+                        "input": {
+                            "function": "setRange",
+                            "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new"), "AdvKeyMode": 1, "GeneralStatus": 0},
+                        },
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getAdvKeyMode", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}},
+                                "output": {"return": {"advancedKeyMode": 1}},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getAdvKeyMode", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}},
+                                "output": {"return": {"advancedKeyMode": 0}},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getGeneralStatus", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}},
+                                "output": {"return": {"rangeStatus": 0}},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getGeneralStatus", "kwargs": {"values": {selector_key: 1, "authAs": ("Admin1", "new")}}},
+                                "output": {"return": {"rangeStatus": 1}},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+
+    def test_locking_advanced_getter_return_field_aliases(self):
+        context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Set",
+                "0000080200030001",
+                "Locking",
+                optional={"Values": [{"14": 1}, {"15": 0}, {"16": 1}, {"17": 12345}, {"18": 1}, {"19": 0}]},
+            ),
+        ]
+        for alias, return_key, good, stale in (
+            ("getAdvKeyMode", "advancedKeyMode", 1, 2),
+            ("getAdvKeyMode", "adv_key_mode", 1, 2),
+            ("getVerifyMode", "verify_mode", 0, 1),
+            ("getVerifyMode", "verificationMode", 0, 1),
+            ("getContOnReset", "continueOnReset", 1, 0),
+            ("getContOnReset", "cont_on_reset", 1, 0),
+            ("getContOnReset", "resetContinue", 1, 0),
+            ("getLastReEncryptLBA", "lastReEncryptionLBA", 12345, 999),
+            ("getLastReEncryptLBA", "reEncryptLBA", 12345, 999),
+            ("getLastReEncryptStatus", "lastReEncryptStatus", 1, 0),
+            ("getLastReEncryptStatus", "lastReEncryptionStatus", 1, 0),
+            ("getGeneralStatus", "rangeStatus", 0, 1),
+            ("getGeneralStatus", "lockingRangeStatus", 0, 1),
+        ):
+            with self.subTest(alias=alias, return_key=return_key):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {return_key: good}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "args": [1], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {return_key: stale}}}]),
+                    "FAIL",
+                )
+
+    def test_locking_lock_state_aliases_share_locked_state(self):
+        for alias, column, expected_value, base_values in (
+            ("lockRangeForRead", "ReadLocked", True, {"readLockEnabled": True, "readLocked": False}),
+            ("unlockRangeForRead", "ReadLocked", False, {"readLockEnabled": True, "readLocked": True}),
+            ("clearRangeReadLock", "ReadLocked", False, {"readLockEnabled": True, "readLocked": True}),
+            ("lockRangeForWrite", "WriteLocked", True, {"writeLockEnabled": True, "writeLocked": False}),
+            ("unlockRangeForWrite", "WriteLocked", False, {"writeLockEnabled": True, "writeLocked": True}),
+            ("clearRangeWriteLock", "WriteLocked", False, {"writeLockEnabled": True, "writeLocked": True}),
+        ):
+            with self.subTest(alias=alias):
+                context = activated_locking_context() + [
+                    {"input": {"function": "setRange", "kwargs": {"authAs": ("Admin1", "new"), "rangeId": 1, "start": 104, "length": 4, **base_values}}, "output": {"return": True}},
+                    {"input": {"function": alias, "kwargs": {"authAs": ("Admin1", "new"), "rangeId": 1}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getRange", "args": [1], "kwargs": {"authAs": ("Admin1", "new")}},
+                                "output": {"return": {column: expected_value}},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getRange", "args": [1], "kwargs": {"authAs": ("Admin1", "new")}},
+                                "output": {"return": {column: not expected_value}},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+
+    def test_credential_retry_limit_aliases_read_trylimit(self):
+        context = activated_locking_context() + [
+            {"input": {"function": "setTryLimit", "values": {"identity": "User1", "limit": 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for alias in ("getRetryLimit", "getUserRetryLimit", "getCredentialRetryLimit", "getMaxRetries", "getUserMaxRetries", "getRetryCountLimit", "getAttemptLimit", "getPINAttemptLimit", "getPinAttemptLimit", "getMaxPINAttempts", "getMaxPinAttempts", "getCredentialAttemptLimit", "getAuthAttemptLimit"):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"TryLimit": 1}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"TryLimit": 2}}}]),
+                    "FAIL",
+                )
+        for return_key in ("retryLimit", "attemptLimit", "maxAttempts", "pinAttemptLimit"):
+            with self.subTest(return_key=return_key):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getTryLimit", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {return_key: 1}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getTryLimit", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {return_key: 2}}}]),
+                    "FAIL",
+                )
+
+    def test_credential_user_tries_alias_reads_tries(self):
+        context = activated_locking_context() + [
+            {"input": {"function": "setTries", "kwargs": {"identity": "User1", "Tries": 2, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for alias in ("getUserTries", "getPINAttempts", "getPinAttempts", "getUserAttempts", "getCredentialAttempts", "getRetryCount", "getUserRetryCount"):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Tries": 2}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {"Tries": 0}}}]),
+                    "FAIL",
+                )
+        for return_key in ("retryCount", "pinAttempts", "credentialAttempts"):
+            with self.subTest(return_key=return_key):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getTries", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {return_key: 2}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getTries", "kwargs": {"identity": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {return_key: 1}}}]),
+                    "FAIL",
+                )
+
+    def test_counter_update_put_aliases_mutate_tracked_values(self):
+        for setter, getter, column, expected, stale in (
+            ("updateTryLimit", "getTryLimit", "TryLimit", 2, 3),
+            ("putTryLimit", "getRetryLimit", "TryLimit", 2, 3),
+            ("updateTries", "getTries", "Tries", 1, 2),
+            ("putTries", "getUserRetries", "Tries", 1, 2),
+            ("updateUses", "getAuthorityUses", "Uses", 2, 3),
+            ("putUses", "getUserUses", "Uses", 2, 3),
+            ("updateUserUses", "getCredentialUses", "Uses", 2, 3),
+            ("putUserUses", "getUses", "Uses", 2, 3),
+        ):
+            with self.subTest(setter=setter, getter=getter):
+                context = activated_locking_context() + [
+                    {"input": {"function": setter, "kwargs": {"user": "User1", "value": expected, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"user": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {column: expected}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"user": "User1", "authAs": ("Admin1", "new")}}, "output": {"return": {column: stale}}}]),
+                    "FAIL",
+                )
+
+    def test_mbrcontrol_done_on_reset_aliases_share_state(self):
+        for alias in ("markMBRDoneOnReset", "setMBRDoneAfterReset", "setMBRDoneOnResetTypes", "setMBRResetTypes"):
+            with self.subTest(alias=alias):
+                context = activated_locking_context() + [
+                    {"input": {"function": alias, "kwargs": {"DoneOnReset": [1], "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"DoneOnReset": [1]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"DoneOnReset": [0]}}}]),
+                    "FAIL",
+                )
+
+    def test_mbrcontrol_read_aliases_compare_cells(self):
+        context = activated_locking_context() + [
+            method_record("Set", "0000080300000001", "MBRControl", optional={"Values": [{"1": True}, {"2": True}, {"3": [1]}]}),
+        ]
+        for alias in ("readMBRControl", "fetchMBRControl", "queryMBRControl"):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Enabled": True, "Done": True, "DoneOnReset": [1]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Enabled": False, "Done": False, "DoneOnReset": [0]}}}]),
+                    "FAIL",
+                )
+
+    def test_mbrcontrol_update_put_store_aliases_share_state(self):
+        whole_aliases = ("putMBRControl", "storeMBRControl", "saveMBRControl", "writeMBRControl", "programMBRControl", "setMBRState", "updateMBRState", "putMBRStatus")
+        for alias in whole_aliases:
+            with self.subTest(alias=alias, column="whole"):
+                context = activated_locking_context() + [
+                    {"input": {"function": alias, "kwargs": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "queryMBRState", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Enabled": True, "Done": True, "DoneOnReset": [1]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "queryMBRState", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Enabled": False, "Done": False, "DoneOnReset": [0]}}}]),
+                    "FAIL",
+                )
+        for alias, getter, good, stale, kwargs in (
+            ("updateMBREnabled", "queryMBREnabled", {"Enabled": True}, {"Enabled": False}, {"enabled": True}),
+            ("putMBREnable", "readMBREnable", {"Enabled": True}, {"Enabled": False}, {"enabled": True}),
+            ("storeMBRDone", "fetchMBRDoneFlag", {"Done": True}, {"Done": False}, {"done": True}),
+            ("saveMBRComplete", "queryMBRCompleteFlag", {"Done": True}, {"Done": False}, {"done": True}),
+            ("updateMBRDoneOnReset", "queryMBRDoneOnReset", {"DoneOnReset": [1]}, {"DoneOnReset": [0]}, {"DoneOnReset": [1]}),
+            ("putDoneOnReset", "readDoneOnReset", {"DoneOnReset": [1]}, {"DoneOnReset": [0]}, {"DoneOnReset": [1]}),
+            ("storeMBRDOR", "queryMBRDOR", {"DoneOnReset": [1]}, {"DoneOnReset": [0]}, {"DoneOnReset": [1]}),
+            ("saveMBRResetTypes", "fetchMBRResetTypes", {"DoneOnReset": [1]}, {"DoneOnReset": [0]}, {"DoneOnReset": [1]}),
+        ):
+            with self.subTest(alias=alias, getter=getter):
+                context = activated_locking_context() + [
+                    {"input": {"function": alias, "kwargs": {**kwargs, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": good}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": stale}}]),
+                    "FAIL",
+                )
+
+    def test_mbrcontrol_policy_config_envelopes_preserve_state(self):
+        for label, kwargs in (
+            ("policy", {"policy": {"Enabled": True, "Done": True, "DoneOnReset": [1]}, "authAs": ("Admin1", "new")}),
+            ("config", {"config": {"enabled": True, "done": True, "doneOnReset": [1]}, "authAs": ("Admin1", "new")}),
+            ("state", {"state": {"MBREnable": True, "MBRDone": True, "MBRDoneOnReset": [1]}, "authAs": ("Admin1", "new")}),
+            ("control", {"control": {"Enabled": True, "Done": True, "DoneOnReset": [1]}, "authAs": ("Admin1", "new")}),
+            ("request policy", {"request": {"policy": {"enabled": True, "done": True, "resetTypes": [1]}}, "authAs": ("Admin1", "new")}),
+            ("mbrControlRequest", {"mbrControlRequest": {"values": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}}),
+            ("mbrRequest", {"mbrRequest": {"control": {"enabled": True, "done": True, "doneOnReset": [1]}, "authAs": ("Admin1", "new")}}),
+            ("bootRequest", {"bootRequest": {"state": {"MBREnable": True, "MBRDone": True, "MBRDoneOnReset": [1]}, "authAs": ("Admin1", "new")}}),
+        ):
+            with self.subTest(envelope=label):
+                context = activated_locking_context() + [
+                    {"input": {"function": "setMBRControl", "kwargs": kwargs}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Enabled": True, "Done": True, "DoneOnReset": [1]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Enabled": False, "Done": False, "DoneOnReset": [0]}}}]),
+                    "FAIL",
+                )
+        for label, kwargs in (
+            ("policy resetTypes", {"policy": {"resetTypes": [1]}, "authAs": ("Admin1", "new")}),
+            ("config DOR", {"config": {"DOR": [1]}, "authAs": ("Admin1", "new")}),
+            ("request reset", {"request": {"reset": {"doneOnReset": [1]}}, "authAs": ("Admin1", "new")}),
+        ):
+            with self.subTest(done_on_reset_envelope=label):
+                context = activated_locking_context() + [
+                    {"input": {"function": "setMBRDoneOnReset", "kwargs": kwargs}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"DoneOnReset": [1]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"DoneOnReset": [0]}}}]),
+                    "FAIL",
+                )
+
+    def test_mbrcontrol_done_on_reset_getter_aliases_accept_list_payloads(self):
+        context = activated_locking_context() + [
+            {"input": {"function": "setMBRControl", "kwargs": {"DoneOnReset": [1], "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for getter in ("queryMBRDoneOnReset", "loadMBRDoneOnReset", "readDoneOnReset", "fetchDoneOnReset", "queryMBRDOR", "fetchMBRResetTypes"):
+            with self.subTest(getter=getter):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": [1]}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": [0]}}]),
+                    "FAIL",
+                )
+
+    def test_lockonreset_getter_aliases_accept_list_payloads(self):
+        context = activated_locking_context() + [
+            {"input": {"function": "setLockingRangeLockOnReset", "kwargs": {"range": 1, "LockOnReset": [1], "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for getter in ("getLockOnReset", "queryLockOnReset", "loadRangeLockOnReset", "getLOR", "queryLOR", "fetchRangeLOR"):
+            with self.subTest(getter=getter):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"range": 1, "authAs": ("Admin1", "new")}}, "output": {"return": [1]}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"range": 1, "authAs": ("Admin1", "new")}}, "output": {"return": [0]}}]),
+                    "FAIL",
+                )
+
+    def test_reencrypt_query_aliases_compare_state(self):
+        context = activated_locking_context() + [
+            {"input": {"function": "updateReEncryptRequest", "kwargs": {"range": 1, "request": 2, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for getter in ("fetchReEncryptionStatus", "queryReEncryptStatus", "queryReEncryptState", "queryReEncryptionStatus", "fetchReEncryptionState"):
+            with self.subTest(getter=getter, shape="scalar"):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"range": 1, "authAs": ("Admin1", "new")}}, "output": {"return": 2}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"range": 1, "authAs": ("Admin1", "new")}}, "output": {"return": 0}}]),
+                    "FAIL",
+                )
+            with self.subTest(getter=getter, shape="state"):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"range": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"state": 2}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"range": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"state": 0}}}]),
+                    "FAIL",
+                )
+
+    def test_reencrypt_policy_config_envelopes_preserve_request_state(self):
+        for label, kwargs in (
+            ("policy", {"policy": {"rangeId": 1, "request": "START_req"}, "authAs": ("Admin1", "new")}),
+            ("config", {"config": {"band": 1, "reencryptRequest": "START_req"}, "authAs": ("Admin1", "new")}),
+            ("request", {"request": {"reencrypt": {"range": 1, "request": "START_req"}}, "authAs": ("Admin1", "new")}),
+            ("request values", {"request": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}),
+            ("policy request values", {"policy": {"request": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}}),
+            ("config target request", {"config": {"target": {"range": 1}, "request": {"value": "START_req"}, "authAs": ("Admin1", "new")}}),
+            ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}),
+            ("rangeRequest values", {"rangeRequest": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}),
+            ("reencryptRequest values", {"reencryptRequest": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}),
+        ):
+            with self.subTest(envelope=label):
+                context = activated_locking_context() + [
+                    {"input": {"function": "setReEncryptRequest", "kwargs": kwargs}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getReEncryptStatus", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"ReEncryptState": "PENDING"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getReEncryptStatus", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"ReEncryptState": "IDLE"}}}]),
+                    "FAIL",
+                )
+
+    def test_reencrypt_deep_envelopes_preserve_request_and_getter_range(self):
+        def wrap(payload, chain):
+            current = payload
+            for key in reversed(chain):
+                current = {key: current}
+            return current
+
+        chains = (
+            ("policy", "request", "values"),
+            ("config", "target", "request"),
+            ("lockingRequest", "rangeRequest", "reencryptRequest", "values"),
+            ("request", "lockingRequest", "rangeRequest", "values"),
+            ("policy", "query", "target", "request"),
+        )
+        for chain in chains:
+            with self.subTest(path="setter", chain=chain):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "IDLE"}]]),
+                    {"input": {"function": "setReEncryptRequest", "kwargs": wrap({"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}, chain)}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getReEncryptStatus", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"ReEncryptState": "PENDING"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getReEncryptStatus", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"ReEncryptState": "IDLE"}}}]),
+                    "FAIL",
+                )
+        base = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "IDLE"}]]),
+            {"input": {"function": "setReEncryptRequest", "kwargs": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for chain in chains:
+            with self.subTest(path="getter", chain=chain):
+                kwargs = wrap({"rangeId": 1, "authAs": ("Admin1", "new")}, chain)
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "getReEncryptStatus", "kwargs": kwargs}, "output": {"return": {"ReEncryptState": "PENDING"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "getReEncryptStatus", "kwargs": kwargs}, "output": {"return": {"ReEncryptState": "IDLE"}}}]),
+                    "FAIL",
+                )
+
+    def test_data_removal_query_aliases_compare_active_mechanism(self):
+        context = owned_admin_context() + [
+            {"input": {"function": "setDataRemovalMechanism", "kwargs": {"mechanism": 1, "authAs": ("SID", "new")}}, "output": {"return": True}},
+        ]
+        for getter in ("queryDataRemovalMechanism", "loadDataRemovalMechanism", "readActiveDataRemovalMechanism", "fetchActiveDataRemovalMechanism", "queryActiveDataRemovalMechanism"):
+            with self.subTest(getter=getter, shape="cell"):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": {"ActiveDataRemovalMechanism": 1}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": {"ActiveDataRemovalMechanism": 0}}}]),
+                    "FAIL",
+                )
+            with self.subTest(getter=getter, shape="scalar"):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": 1}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": 0}}]),
+                    "FAIL",
+                )
+
+    def test_data_removal_policy_config_envelopes_preserve_mechanism(self):
+        for label, kwargs in (
+            ("policy", {"policy": {"mechanism": 2}, "authAs": ("SID", "new")}),
+            ("config", {"config": {"ActiveDataRemovalMechanism": 2}, "authAs": ("SID", "new")}),
+            ("request", {"request": {"dataRemoval": {"mechanism": 2}}, "authAs": ("SID", "new")}),
+            ("request values", {"request": {"values": {"ActiveDataRemovalMechanism": 2, "authAs": ("SID", "new")}}}),
+            ("policy request values", {"policy": {"request": {"values": {"mechanism": 2, "authAs": ("SID", "new")}}}}),
+            ("request activeDataRemoval", {"request": {"activeDataRemoval": {"mechanism": 2}}, "authAs": ("SID", "new")}),
+            ("dataRemovalRequest values", {"dataRemovalRequest": {"values": {"mechanism": 2, "authAs": ("SID", "new")}}}),
+            ("removalRequest values", {"removalRequest": {"values": {"mechanism": 2, "authAs": ("SID", "new")}}}),
+            ("adminRequest values", {"adminRequest": {"values": {"mechanism": 2, "authAs": ("SID", "new")}}}),
+        ):
+            with self.subTest(envelope=label):
+                context = owned_admin_context() + [
+                    {"input": {"function": "setDataRemovalMechanism", "kwargs": kwargs}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getDataRemovalMechanism", "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": {"ActiveDataRemovalMechanism": 2}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getDataRemovalMechanism", "kwargs": {"authAs": ("SID", "new")}}, "output": {"return": {"ActiveDataRemovalMechanism": 1}}}]),
+                    "FAIL",
+                )
+
+    def test_getacl_read_fetch_query_acl_list_aliases(self):
+        context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        for alias in (
+            "readAccessControlList",
+            "fetchAccessControlList",
+            "queryAccessControlList",
+            "listAccessControlList",
+            "readACEList",
+            "queryAceEntries",
+            "fetchAceEntries",
+            "readObjectACL",
+            "fetchMethodACL",
+            "queryAssociationACL",
+            "getACLForObject",
+            "readACLForMethod",
+            "queryObjectMethodACL",
+            "fetchMethodAccessControl",
+            "getAccessControlForObject",
+            "loadAccessControlForMethod",
+        ):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": alias, "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}},
+                                "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": alias, "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}},
+                                "output": {"return": {"ACL": ["ACE_0003D001"]}},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+
+    def test_accesscontrol_mutation_aliases_update_dynamic_acl(self):
+        context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        for alias in ("addAccessControlEntry", "appendACEToACL", "grantAccessControlEntry", "addAccessControlACE"):
+            with self.subTest(alias=alias, op="add"):
+                add_record = {"input": {"function": alias, "kwargs": {"object": "Locking_Range1", "method": "Get", "ace": "ACE_0003E001", "authAs": ("Admin1", "new")}}, "output": {"return": True}}
+                self.assertEqual(
+                    predict_trajectory(context + [add_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001", "ACE_0003E001"]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [add_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}}}]),
+                    "FAIL",
+                )
+        for alias in ("removeAccessControlEntry", "deleteACEFromACL", "revokeAccessControlEntry", "removeAccessControlACE"):
+            with self.subTest(alias=alias, op="remove"):
+                base = context + [{"input": {"function": "addACE", "kwargs": {"object": "Locking_Range1", "method": "Get", "ace": "ACE_0003E001", "authAs": ("Admin1", "new")}}, "output": {"return": True}}]
+                remove_record = {"input": {"function": alias, "kwargs": {"object": "Locking_Range1", "method": "Get", "ace": "ACE_0003E001", "authAs": ("Admin1", "new")}}, "output": {"return": True}}
+                self.assertEqual(
+                    predict_trajectory(base + [remove_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(base + [remove_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001", "ACE_0003E001"]}}}]),
+                    "FAIL",
+                )
+        for alias in ("addACLForObject", "grantACEForMethod", "appendObjectMethodACE", "grantMethodAccessControlEntry"):
+            with self.subTest(alias=alias, op="phrase-add"):
+                add_record = {"input": {"function": alias, "kwargs": {"object": "Locking_Range1", "method": "Get", "ace": "ACE_0003E001", "authAs": ("Admin1", "new")}}, "output": {"return": True}}
+                self.assertEqual(
+                    predict_trajectory(context + [add_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001", "ACE_0003E001"]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [add_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}}}]),
+                    "FAIL",
+                )
+        for alias in ("removeACLForObject", "revokeACEForMethod", "deleteObjectMethodACE", "removeMethodAccessControlEntry"):
+            with self.subTest(alias=alias, op="phrase-remove"):
+                base = context + [{"input": {"function": "addACE", "kwargs": {"object": "Locking_Range1", "method": "Get", "ace": "ACE_0003E001", "authAs": ("Admin1", "new")}}, "output": {"return": True}}]
+                remove_record = {"input": {"function": alias, "kwargs": {"object": "Locking_Range1", "method": "Get", "ace": "ACE_0003E001", "authAs": ("Admin1", "new")}}, "output": {"return": True}}
+                self.assertEqual(
+                    predict_trajectory(base + [remove_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(base + [remove_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001", "ACE_0003E001"]}}}]),
+                    "FAIL",
+                )
+        for alias in ("replaceAccessControlACL", "updateAccessControlList", "replaceObjectACL", "updateMethodACL"):
+            with self.subTest(alias=alias, op="set"):
+                set_record = {"input": {"function": alias, "kwargs": {"object": "Locking_Range1", "method": "Get", "acl": ["ACE_0003D001"], "authAs": ("Admin1", "new")}}, "output": {"return": True}}
+                self.assertEqual(
+                    predict_trajectory(context + [set_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_0003D001"]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [set_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}}}]),
+                    "FAIL",
+                )
+        nested_set_record = {
+            "input": {
+                "function": "setACL",
+                "kwargs": {"policy": {"request": {"values": {"object": "Locking_Range1", "method": "Get", "acl": ["ACE_0003D001"], "authAs": ("Admin1", "new")}}}},
+            },
+            "output": {"return": True},
+        }
+        self.assertEqual(
+            predict_trajectory(context + [nested_set_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_0003D001"]}}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [nested_set_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}}}]),
+            "FAIL",
+        )
+        nested_remove_base = context + [
+            {"input": {"function": "addACE", "kwargs": {"object": "Locking_Range1", "method": "Get", "ace": "ACE_0003E001", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+            {
+                "input": {
+                    "function": "removeACE",
+                    "kwargs": {"policy": {"request": {"values": {"object": "Locking_Range1", "method": "Get", "ace": "ACE_0003E001", "authAs": ("Admin1", "new")}}}},
+                },
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(
+            predict_trajectory(nested_remove_base + [{"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(nested_remove_base + [{"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001", "ACE_0003E001"]}}}]),
+            "FAIL",
+        )
+        for label, payload_key in (("accessControlRequest", "accessControlRequest"), ("ACLRequest", "ACLRequest")):
+            with self.subTest(label=label, op="request-values-add"):
+                add_record = {
+                    "input": {
+                        "function": "addACE",
+                        "kwargs": {payload_key: {"values": {"object": "Locking_Range1", "method": "Get", "ace": "ACE_0003E001", "authAs": ("Admin1", "new")}}},
+                    },
+                    "output": {"return": True},
+                }
+                self.assertEqual(
+                    predict_trajectory(context + [add_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001", "ACE_0003E001"]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [add_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}}}]),
+                    "FAIL",
+                )
+            with self.subTest(label=label, op="request-values-set"):
+                set_record = {
+                    "input": {
+                        "function": "setACL",
+                        "kwargs": {payload_key: {"values": {"object": "Locking_Range1", "method": "Get", "acl": ["ACE_0003E001"], "authAs": ("Admin1", "new")}}},
+                    },
+                    "output": {"return": True},
+                }
+                self.assertEqual(
+                    predict_trajectory(context + [set_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_0003E001"]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [set_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}}}]),
+                    "FAIL",
+                )
+            with self.subTest(label=label, op="request-values-remove"):
+                remove_base = context + [
+                    {"input": {"function": "addACE", "kwargs": {"object": "Locking_Range1", "method": "Get", "ace": "ACE_0003E001", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                    {
+                        "input": {
+                            "function": "removeACE",
+                            "kwargs": {payload_key: {"values": {"object": "Locking_Range1", "method": "Get", "ace": "ACE_0003E001", "authAs": ("Admin1", "new")}}},
+                        },
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(remove_base + [{"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(remove_base + [{"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001", "ACE_0003E001"]}}}]),
+                    "FAIL",
+                )
+        for alias in ("replaceACLForObject", "putACLForMethod", "updateObjectMethodACL", "setMethodAccessControl"):
+            with self.subTest(alias=alias, op="phrase-set"):
+                set_record = {"input": {"function": alias, "kwargs": {"object": "Locking_Range1", "method": "Get", "acl": ["ACE_0003D001"], "authAs": ("Admin1", "new")}}, "output": {"return": True}}
+                self.assertEqual(
+                    predict_trajectory(context + [set_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_0003D001"]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [set_record, {"input": {"function": "getACL", "args": ["Locking_Range1", "Get"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"ACL": ["ACE_00000003", "ACE_0003D001"]}}}]),
+                    "FAIL",
+                )
+
+    def test_session_sync_and_begin_session_aliases(self):
+        self.assertEqual(
+            predict_trajectory(owned_admin_context() + [{"input": {"function": "sessionSync"}, "output": {"return": True}}]),
+            "FAIL",
+        )
+        for alias in ("resyncSession", "refreshSession", "disconnectSession"):
+            with self.subTest(alias=alias, case="requires_open_session"):
+                self.assertEqual(
+                    predict_trajectory(owned_admin_context() + [{"input": {"function": alias}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+        for alias in ("resyncSession", "refreshSession"):
+            with self.subTest(alias=alias, case="preserves_session"):
+                sync_context = owned_admin_context() + [
+                    {"input": {"function": "beginAdminSession", "kwargs": {"authAs": ("SID", "new"), "write": True}}, "output": {"return": True}},
+                    {"input": {"function": alias}, "output": {"return": True}},
+                ]
+                self.assertEqual(predict_trajectory(sync_context + [method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "after-sync"}]})]), "PASS")
+        disconnect_context = owned_admin_context() + [
+            {"input": {"function": "beginAdminSession", "kwargs": {"authAs": ("SID", "new"), "write": True}}, "output": {"return": True}},
+            {"input": {"function": "disconnectSession"}, "output": {"return": True}},
+        ]
+        self.assertEqual(predict_trajectory(disconnect_context + [method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "after-disconnect"}]})]), "FAIL")
+        for alias in ("logout", "logOut", "disconnectSP"):
+            with self.subTest(alias=alias, case="closes_session"):
+                close_context = owned_admin_context() + [
+                    {"input": {"function": "beginAdminSession", "kwargs": {"authAs": ("SID", "new"), "write": True}}, "output": {"return": True}},
+                    {"input": {"function": alias}, "output": {"return": True}},
+                ]
+                self.assertEqual(predict_trajectory(close_context + [method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "after-close"}]})]), "FAIL")
+        for alias in ("beginAdminSession", "createAdminSession"):
+            with self.subTest(alias=alias):
+                admin_context = owned_admin_context() + [
+                    {"input": {"function": alias, "kwargs": {"authAs": ("SID", "new"), "write": True}}, "output": {"return": True}},
+                ]
+                self.assertEqual(predict_trajectory(admin_context + [method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "after-begin"}]})]), "PASS")
+        for alias in ("beginSession", "startSPSession", "openSPSession", "beginSPSession", "createSession", "connectSession"):
+            with self.subTest(alias=alias):
+                explicit_context = owned_admin_context() + [
+                    {"input": {"function": alias, "kwargs": {"sp": "AdminSP", "authAs": ("SID", "new"), "write": True}}, "output": {"return": True}},
+                ]
+                self.assertEqual(predict_trajectory(explicit_context + [method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "after-explicit"}]})]), "PASS")
+        locking_context = activated_locking_context() + [
+            {"input": {"function": "beginLockingSession", "kwargs": {"authAs": ("Admin1", "new"), "write": True}}, "output": {"return": True}},
+        ]
+        self.assertEqual(predict_trajectory(locking_context + [method_record("Set", "0000080200030001", "Locking_Range1", optional={"Values": [{"3": 120}]})]), "PASS")
+
+    def test_session_control_policy_config_request_envelopes_validate_ids(self):
+        context = [
+            method_record(
+                "StartSession",
+                "00000000000000FF",
+                "Session Manager UID",
+                required={"SPID": ADMIN_SP, "Write": 1, "HostSessionID": "7"},
+                optional={"HostSigningAuthority": SID, "HostChallenge": "new"},
+                return_values={"HostSessionID": "7", "SPSessionID": "9"},
+            )
+        ]
+        matching_payloads = (
+            ("policy", {"HostSessionID": "7", "SPSessionID": "9"}),
+            ("config", {"HostSID": "7", "TPerSessionID": "9"}),
+            ("request", {"session": {"HostSessionID": "7", "SPSessionID": "9"}}),
+            ("syncSessionRequest", {"values": {"HostSessionID": "7", "SPSessionID": "9"}}),
+            ("sessionRequest", {"values": {"HostSessionID": "7", "SPSessionID": "9"}}),
+            ("spSessionRequest", {"values": {"HostSessionID": "7", "SPSessionID": "9"}}),
+        )
+        mismatched_payloads = (
+            ("policy", {"HostSessionID": "7", "SPSessionID": "8"}),
+            ("config", {"HostSID": "7", "TPerSessionID": "8"}),
+            ("request", {"session": {"HostSessionID": "7", "SPSessionID": "8"}}),
+            ("syncSessionRequest", {"values": {"HostSessionID": "7", "SPSessionID": "8"}}),
+            ("sessionRequest", {"values": {"HostSessionID": "7", "SPSessionID": "8"}}),
+            ("spSessionRequest", {"values": {"HostSessionID": "7", "SPSessionID": "8"}}),
+        )
+        for function_name in ("syncSession", "endSession", "startTrustedSession", "startTlsSession"):
+            for label, payload in matching_payloads:
+                with self.subTest(function_name=function_name, label=label, case="match"):
+                    self.assertEqual(
+                        predict_trajectory(context + [{"input": {"function": function_name, "kwargs": {label: payload}}, "output": {"return": True}}]),
+                        "PASS",
+                    )
+            for label, payload in mismatched_payloads:
+                with self.subTest(function_name=function_name, label=label, case="mismatch"):
+                    self.assertEqual(
+                        predict_trajectory(context + [{"input": {"function": function_name, "kwargs": {label: payload}}, "output": {"return": True}}]),
+                        "FAIL",
+                    )
+
+    def test_startsession_domain_request_envelopes_preserve_required_fields_and_echo(self):
+        for wrapper in ("startSessionRequest", "sessionRequest", "spSessionRequest", "securityProviderRequest"):
+            payload = {
+                wrapper: {
+                    "values": {
+                        "SPID": ADMIN_SP,
+                        "Write": 1,
+                        "HostSessionID": "7",
+                        "HostSigningAuthority": SID,
+                        "HostChallenge": "new",
+                    }
+                }
+            }
+            with self.subTest(wrapper=wrapper, case="echo"):
+                self.assertEqual(
+                    predict_trajectory(
+                        [
+                            {
+                                "input": {"function": "startSession", "kwargs": payload},
+                                "output": {"return": {"required": {"HostSessionID": "7", "SPSessionID": "1"}, "optional": {}}},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+            with self.subTest(wrapper=wrapper, case="mismatch"):
+                self.assertEqual(
+                    predict_trajectory(
+                        [
+                            {
+                                "input": {"function": "startSession", "kwargs": payload},
+                                "output": {"return": {"required": {"HostSessionID": "8", "SPSessionID": "1"}, "optional": {}}},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+
+    def test_startsession_deep_operation_request_envelope_opens_persistent_session(self):
+        base = owned_admin_context()
+        payloads = {
+            "operationRequest.session.values": {
+                "operationRequest": {
+                    "session": {
+                        "values": {
+                            "SPID": "AdminSP",
+                            "HostSigningAuthority": "SID",
+                            "HostChallenge": "new",
+                            "Write": True,
+                        },
+                    },
+                },
+            },
+            "startupRequest.session.values": {
+                "startupRequest": {
+                    "session": {
+                        "values": {
+                            "SPID": "AdminSP",
+                            "HostSigningAuthority": "SID",
+                            "HostChallenge": "new",
+                            "Write": True,
+                        },
+                    },
+                },
+            },
+            "operationRequest.session.target credential options": {
+                "operationRequest": {
+                    "session": {"target": {"SPID": "AdminSP"}},
+                    "credential": {"HostSigningAuthority": "SID", "HostChallenge": "new"},
+                    "options": {"Write": True},
+                },
+            },
+            "startupRequest.request.target auth proof settings": {
+                "startupRequest": {
+                    "request": {"target": {"sp": "AdminSP"}, "auth": {"identity": "SID"}, "proof": {"password": "new"}},
+                    "settings": {"readWrite": True},
+                },
+            },
+            "config.session.start.values": {
+                "config": {
+                    "session": {
+                        "start": {
+                            "values": {
+                                "sp": "AdminSP",
+                                "identity": "SID",
+                                "secret": "new",
+                                "writable": True,
+                            },
+                        },
+                    },
+                },
+            },
+        }
+        for label, payload in payloads.items():
+            with self.subTest(label=label):
+                context = base + [
+                    {
+                        "input": {"function": "startSession", **payload},
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [method_record("Set", C_PIN_SID, "C_PIN", optional={"Values": [{"3": "pin2"}]})]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [method_record("Set", C_PIN_SID, "C_PIN", "NOT_AUTHORIZED", optional={"Values": [{"3": "pin2"}]})]),
+                    "FAIL",
+                )
+
+    def test_get_key_package_alias_preserves_getpackage_shape(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "getKeyPackage", "kwargs": {"auth": "SID", "purpose": "backup", "authAs": ("SID", "new")}}, "output": {"return": "pkg"}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "getKeyPackage", "kwargs": {"auth": "SID", "purpose": "backup", "authAs": ("SID", "new")}}, "output": {"return": True}}]),
+            "FAIL",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "getKeyPackage", "kwargs": {"auth": "SID", "purpose": "backup", "authAs": ("SID", "new")}}, "output": {"return": {}}}]),
+            "FAIL",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "getKeyPackage", "kwargs": {"auth": "SID", "authAs": ("SID", "new")}}, "output": {"return": "pkg"}}]),
+            "FAIL",
+        )
+        for alias in (
+            "backupCredential",
+            "exportCredential",
+            "readCredentialPackage",
+            "getCredentialBackup",
+            "readCredentialBackup",
+            "fetchCredentialBackup",
+            "dumpCredentialPackage",
+            "exportCredentialBackup",
+            "backupPIN",
+            "backupPINPackage",
+            "exportPIN",
+            "exportPINPackage",
+            "getPINPackage",
+            "readKeyBackup",
+            "exportKeyBackup",
+            "getWrappedKey",
+            "exportWrappedKey",
+            "getWrappedPackage",
+        ):
+            with self.subTest(get_alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"auth": "SID", "purpose": "backup", "authAs": ("SID", "new")}}, "output": {"return": "pkg"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"auth": "SID", "purpose": "backup", "authAs": ("SID", "new")}}, "output": {"return": {}}}]),
+                    "FAIL",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"auth": "SID", "authAs": ("SID", "new")}}, "output": {"return": "pkg"}}]),
+                    "FAIL",
+                )
+        for alias in (
+            "restoreCredential",
+            "importCredential",
+            "setCredentialBackup",
+            "restoreCredentialBackup",
+            "importCredentialBackup",
+            "restorePIN",
+            "restorePINPackage",
+            "importPIN",
+            "importPINPackage",
+            "setPINPackage",
+            "writeKeyBackup",
+            "importKeyBackup",
+            "setWrappedKey",
+            "importWrappedKey",
+            "setWrappedPackage",
+        ):
+            with self.subTest(set_alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"auth": "SID", "value": "pkg", "authAs": ("SID", "new")}}, "output": {"return": []}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"auth": "SID", "value": [], "authAs": ("SID", "new")}}, "output": {"return": []}}]),
+                    "FAIL",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"credential": "SID", "package": "pkg", "authAs": ("SID", "new")}}, "output": {"return": True}}]),
+                    "PASS",
+                )
+
+    def test_crypto_signature_and_verify_aliases_preserve_result_shape(self):
+        admin_context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        for alias in ("makeSignature", "signatureCreate", "signatureGenerate", "signMessage", "signDigest", "tpersignPayload", "makeTPerSignature", "createTPerSignature", "generateTPerSignature"):
+            with self.subTest(sign_alias=alias):
+                self.assertEqual(
+                    predict_trajectory(admin_context + [{"input": {"function": alias, "kwargs": {"payload": "AABB", "authAs": "Anybody"}}, "output": {"return": "signature"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(admin_context + [{"input": {"function": alias, "kwargs": {"payload": "AABB", "authAs": "Anybody"}}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+        for alias in ("validateProof", "checkHash", "validateHash", "verifyDigest", "checkDigest", "validateDigest", "verifyMAC", "checkMAC", "validateMAC"):
+            with self.subTest(verify_alias=alias):
+                self.assertEqual(
+                    predict_trajectory([{"input": {"function": alias, "kwargs": {"algorithm": "sha256", "proof": "AABB", "authAs": "Anybody"}}, "output": {"return": True}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory([{"input": {"function": alias, "kwargs": {"algorithm": "sha256", "proof": "AABB", "authAs": "Anybody"}}, "output": {"return": "SUCCESS"}}]),
+                    "FAIL",
+                )
+
+    def test_next_wrapper_aliases_preserve_uid_list_shape(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        for alias in ("nextRows", "listNext", "nextUIDs", "getNextUIDs", "readNext", "fetchNext", "enumerateNext", "listRows", "scanNext", "fetchRows", "readRows", "enumerateRows", "listUIDs", "scanRows"):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "args": ["C_PIN"], "kwargs": {"Count": 2}}, "output": {"return": ["0000000B00010001"]}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "args": ["C_PIN"], "kwargs": {"Count": 2}}, "output": {"return": [True]}}]),
+                    "FAIL",
+                )
+
+    def test_random_wrapper_aliases_preserve_count_and_byte_shape(self):
+        for alias in (
+            "generateRandomBytes",
+            "readRandomBytes",
+            "fetchRandomBytes",
+            "rngBytes",
+            "readRandom",
+            "fetchRandom",
+            "randomBuffer",
+            "entropy",
+            "getEntropy",
+            "readEntropy",
+            "fetchEntropy",
+            "generateEntropy",
+            "entropyBytes",
+        ):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory([{"input": {"function": alias, "kwargs": {"count": 2}}, "output": {"return": bytes([1, 2])}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory([{"input": {"function": alias, "kwargs": {"count": 2}}, "output": {"return": bytes([1])}}]),
+                    "FAIL",
+                )
+                self.assertEqual(
+                    predict_trajectory([{"input": {"function": alias, "kwargs": {"count": 2}}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_get_free_rows_wrapper_aliases_preserve_uinteger_shape(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        for alias in ("queryFreeRows", "availableRows", "getAvailableRows", "remainingRows", "freeRowCount", "availableRowCount", "getRemainingRows"):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "args": ["Locking"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"FreeRows": 4}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "args": ["Locking"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_get_free_space_wrapper_aliases_preserve_two_field_shape(self):
+        context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        for alias in ("getRemainingSpace", "remainingBytes", "freeBytes", "getFreeBytes", "spaceFree", "availableStorage", "getAvailableStorage"):
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias}, "output": {"return": {"FreeSpace": 1024, "TableRows": []}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_table_row_lifecycle_aliases_preserve_shape_and_required_fields(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        for alias in ("makeRow", "allocateRow", "createObjectRow", "insertTableRow", "appendTableRow", "addTableRow"):
+            with self.subTest(create_alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "args": ["Locking", {"RangeStart": 100, "RangeLength": 8}]}, "output": {"return": ["0000080200030002"]}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "args": ["Locking", {}]}, "output": {"return": ["0000080200030002"]}}]),
+                    "FAIL",
+                )
+        for alias in ("deleteObjectRow", "removeObjectRow", "destroyTableRow", "eraseRow", "deleteRows", "removeRows"):
+            with self.subTest(delete_alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "args": ["Locking", "0000080200030002"]}, "output": {"return": []}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "args": ["Locking"]}, "output": {"return": []}}]),
+                    "FAIL",
+                )
+
+    def test_datastore_bytes_payload_aliases_share_sparse_byte_state(self):
+        write_aliases = (
+            "saveDataStoreBytes",
+            "programDataStore",
+            "programDataStoreBytes",
+            "putDataStorePayload",
+            "setDataStorePayload",
+            "putDSBytes",
+            "updateDataStoreBytes",
+            "updateDataStorePayload",
+            "updateDSBytes",
+            "writeDSPayload",
+            "storeDataStorePayload",
+            "storeDataStoreBytes",
+            "storeDSPayload",
+            "saveDataStorePayload",
+            "saveDSPayload",
+            "programDSPayload",
+            "programDataStorePayload",
+            "programDSBytes",
+            "putDSPayload",
+            "updateDSPayload",
+        )
+        for alias in write_aliases:
+            with self.subTest(write_alias=alias):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    {"input": {"function": alias, "args": [0, "AABB"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readData", "args": [0, 2], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": "AABB"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readData", "args": [0, 2], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": "0000"}}]),
+                    "FAIL",
+                )
+
+        read_aliases = (
+            "fetchDataStoreBytes",
+            "fetchDataStorePayload",
+            "fetchDSBytes",
+            "loadDataStorePayload",
+            "fetchDSPayload",
+            "loadDSPayload",
+            "getDSPayload",
+            "readDSPayload",
+        )
+        context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {"input": {"function": "writeData", "kwargs": {"authAs": ("Admin1", "new"), "offset": 2, "data": "AABBCC"}}, "output": {"return": True}},
+        ]
+        for alias in read_aliases:
+            with self.subTest(read_alias=alias):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"authAs": ("Admin1", "new"), "offset": 3, "length": 2}}, "output": {"return": "BBCC"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": alias, "kwargs": {"authAs": ("Admin1", "new"), "offset": 3, "length": 2}}, "output": {"return": "AABB"}}]),
+                    "FAIL",
+                )
+
+    def test_lockonreset_update_put_lor_aliases_share_column_state(self):
+        for setter, getter in (
+            ("updateLockOnReset", "getLockOnReset"),
+            ("putLockOnReset", "readLockOnReset"),
+            ("setLockingRangeLockOnReset", "fetchLockOnReset"),
+            ("updateRangeLOR", "getRangeLOR"),
+            ("putRangeLOR", "readRangeLOR"),
+            ("configureLOR", "fetchLOR"),
+        ):
+            with self.subTest(setter=setter, getter=getter):
+                context = activated_locking_context() + [
+                    {"input": {"function": setter, "kwargs": {"range": 1, "LockOnReset": [0, 3], "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"range": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"LockOnReset": [0, 3]}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"range": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"LockOnReset": [0]}}}]),
+                    "FAIL",
+                )
+
+    def test_locking_update_put_aliases_share_boolean_cell_state(self):
+        for setter, getter, column in (
+            ("updateReadLockEnabled", "getReadLockEnabled", "ReadLockEnabled"),
+            ("putReadLockEnabled", "getReadLockEnabled", "ReadLockEnabled"),
+            ("updateWriteLockEnabled", "getWriteLockEnabled", "WriteLockEnabled"),
+            ("putWriteLockEnabled", "getWriteLockEnabled", "WriteLockEnabled"),
+            ("updateReadLocked", "getReadLocked", "ReadLocked"),
+            ("putReadLocked", "getReadLocked", "ReadLocked"),
+            ("updateWriteLocked", "getWriteLocked", "WriteLocked"),
+            ("putWriteLocked", "getWriteLocked", "WriteLocked"),
+        ):
+            with self.subTest(setter=setter, getter=getter, column=column):
+                context = activated_locking_context() + [
+                    {"input": {"function": setter, "kwargs": {"range": 1, column: True, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"range": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {column: True}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"range": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {column: False}}}]),
+                    "FAIL",
+                )
+
+    def test_reencrypt_update_put_and_read_fetch_aliases_share_state(self):
+        for setter, getter in (
+            ("updateReEncryptRequest", "readReEncryptStatus"),
+            ("putReEncryptRequest", "fetchReEncryptState"),
+        ):
+            with self.subTest(setter=setter, getter=getter):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "IDLE"}]]),
+                    {"input": {"function": setter, "kwargs": {"rangeId": 1, "request": "START", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"ReEncryptState": "PENDING"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"ReEncryptState": "IDLE"}}}]),
+                    "FAIL",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"status": "PENDING"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"state": "IDLE"}}}]),
+                    "FAIL",
+                )
+
+    def test_lockinginfo_read_query_aliases_feed_maxranges_boundary(self):
+        for alias in ("readLockingInfo", "fetchLockingInfo", "queryLockingInfo", "loadLockingInfo", "getMaxRanges", "queryRangeSupport"):
+            with self.subTest(alias=alias):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    {"input": {"function": alias, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"MaxRanges": 8}}},
+                ]
+                target = {
+                    "input": {"function": "setRange", "kwargs": {"rangeId": 9, "RangeStart": 100, "RangeLength": 4, "authAs": ("Admin1", "new")}},
+                    "output": {"return": True},
+                }
+                self.assertEqual(predict_trajectory(context + [target]), "FAIL")
+
+    def test_lockinginfo_alias_maxranges_nine_allows_range9_wrapper(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {"input": {"function": "queryLockingInfo", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"MaxRanges": 9}}},
+            {
+                "input": {"function": "setRange", "kwargs": {"rangeId": 9, "RangeStart": 100, "RangeLength": 4, "authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_lockinginfo_alias_rejects_empty_success_payload(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {"input": {"function": "fetchLockingInfo", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {}}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_maxranges_scalar_getter_aliases_feed_range_boundary(self):
+        for alias, payload in (
+            ("getMaxRanges", 8),
+            ("getMaxLockingRanges", {"value": 8}),
+            ("queryLockingRangeCount", {"MaxRanges": 8}),
+            ("getRangeLimit", 8),
+        ):
+            with self.subTest(alias=alias):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    {"input": {"function": alias, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": payload}},
+                ]
+                self.assertEqual(predict_trajectory(context), "PASS")
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "setRange", "kwargs": {"rangeId": 9, "RangeStart": 100, "RangeLength": 4, "authAs": ("Admin1", "new")}},
+                                "output": {"return": True},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+
+    def test_whole_lockinginfo_alias_does_not_accept_scalar_maxranges(self):
+        trajectory = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {"input": {"function": "queryLockingInfo", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": 8}},
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_lockinginfo_geometry_scalar_getter_aliases_share_state(self):
+        for alias, good, stale in (
+            ("getAlignmentRequired", True, False),
+            ("isAlignmentRequired", False, True),
+            ("getLogicalBlockSize", 512, 4096),
+            ("queryAlignmentGranularity", 8, 16),
+            ("fetchLowestAlignedLBA", 0, 1),
+        ):
+            with self.subTest(alias=alias):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    {"input": {"function": alias, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": good}},
+                ]
+                self.assertEqual(predict_trajectory(context), "PASS")
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {"input": {"function": alias, "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": stale}},
+                        ]
+                    ),
+                    "FAIL",
+                )
+
+    def test_range_geometry_setter_aliases_share_getrange_state(self):
+        for alias in (
+            "putRangeGeometry",
+            "configureRangeGeometry",
+            "defineRange",
+            "resizeRange",
+            "setLockingRangeGeometry",
+            "configureBandGeometry",
+            "setLbaRange",
+        ):
+            with self.subTest(alias=alias):
+                context = activated_locking_context() + [
+                    {"input": {"function": alias, "kwargs": {"rangeId": 1, "RangeStart": 240, "RangeLength": 8, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"RangeStart": 240, "RangeLength": 8}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"RangeStart": 0, "RangeLength": 8}}}]),
+                    "FAIL",
+                )
+
+    def test_range_lock_field_setter_state_envelopes_share_getter_state(self):
+        cases = (
+            ("setReadLockEnabled", {"state": {"enabled": True}}, "getReadLockEnabled", True, False),
+            ("setWriteLockEnabled", {"state": {"enabled": True}}, "getWriteLockEnabled", True, False),
+            ("setReadLocked", {"state": {"locked": True}}, "getReadLocked", True, False),
+            ("setWriteLocked", {"state": {"locked": True}}, "getWriteLocked", True, False),
+            ("configureRangeReadLock", {"locks": {"read": True}}, "getReadLockEnabled", True, False),
+            ("configureRangeWriteLock", {"locks": {"write": True}}, "getWriteLockEnabled", True, False),
+        )
+        for setter, payload, getter, current, stale in cases:
+            with self.subTest(setter=setter):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    {
+                        "input": {"function": setter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new"), **payload}},
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": current}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": stale}}]),
+                    "FAIL",
+                )
+
+    def test_range_lock_getter_output_envelopes_compare_directional_values(self):
+        cases = (
+            ("setReadLockEnabled", {"enabled": True}, "getReadLockEnabled", {"locks": {"read": True}}, {"locks": {"read": False}}),
+            ("setWriteLockEnabled", {"enabled": True}, "getWriteLockEnabled", {"locks": {"write": True}}, {"locks": {"write": False}}),
+            ("setReadLocked", {"locked": True}, "getReadLocked", {"lockState": {"read": True}}, {"lockState": {"read": False}}),
+            ("setWriteLocked", {"locked": True}, "getWriteLocked", {"lockState": {"write": True}}, {"lockState": {"write": False}}),
+        )
+        for setter, setter_payload, getter, current, stale in cases:
+            with self.subTest(getter=getter):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    {
+                        "input": {"function": setter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new"), **setter_payload}},
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": current}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": getter, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": stale}}]),
+                    "FAIL",
+                )
+
+    def test_getrange_output_envelopes_compare_directional_lock_values(self):
+        context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "setReadLockEnabled", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new"), "state": {"enabled": True}}},
+                "output": {"return": True},
+            },
+            {
+                "input": {"function": "setReadLocked", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new"), "state": {"locked": True}}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"rangeInfo": {"locks": {"read": True}}}}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"rangeInfo": {"locks": {"read": False}}}}}]),
+            "FAIL",
+        )
+
+    def test_getrange_window_output_envelope_compares_lba_blocks(self):
+        context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "configureRangeGeometry", "kwargs": {"rangeId": 1, "RangeStart": 240, "RangeLength": 8, "authAs": ("Admin1", "new")}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"window": {"lba": 240, "blocks": 8}}}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"window": {"lba": 241, "blocks": 8}}}}]),
+            "FAIL",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"window": {"sector": 240, "sectors": 8}}}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"window": {"sector": 241, "sectors": 8}}}}]),
+            "FAIL",
+        )
+        for label, kwargs in (
+            ("request values", {"request": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+            ("policy query target", {"policy": {"query": {"target": {"rangeId": 1}}, "authAs": ("Admin1", "new")}}),
+            ("config target", {"config": {"target": {"range": 1}, "authAs": ("Admin1", "new")}}),
+        ):
+            with self.subTest(getter_envelope=label):
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": kwargs}, "output": {"return": {"RangeStart": 240, "RangeLength": 8}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getRange", "kwargs": kwargs}, "output": {"return": {"RangeStart": 0, "RangeLength": 8}}}]),
+                    "FAIL",
+                )
+
+    def test_locking_range_policy_envelopes_preserve_state(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        geometry_context = context + [
+            {"input": {"function": "configureRangeGeometry", "kwargs": {"rangeId": 1, "policy": {"lba": 200, "blocks": 5}, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        self.assertEqual(
+            predict_trajectory(geometry_context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"window": {"lba": 200, "blocks": 5}}}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(geometry_context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"window": {"lba": 0, "blocks": 0}}}}]),
+            "FAIL",
+        )
+        for label, kwargs in (
+            ("request values geometry", {"request": {"values": {"geometry": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}}),
+            ("policy request values", {"policy": {"request": {"values": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}}),
+            ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}),
+            ("lockingRangeRequest values", {"lockingRangeRequest": {"values": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}),
+        ):
+            with self.subTest(envelope=label):
+                nested_geometry_context = context + [
+                    {"input": {"function": "setRange", "kwargs": kwargs}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(nested_geometry_context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"RangeStart": 222, "RangeLength": 7}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(nested_geometry_context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"RangeStart": 0, "RangeLength": 7}}}]),
+                    "FAIL",
+                )
+        getter_context = context + [
+            {"input": {"function": "setRange", "kwargs": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for label, kwargs in (
+            ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+            ("rangeRequest values", {"rangeRequest": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+            ("lockingRangeRequest target", {"lockingRangeRequest": {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}}),
+        ):
+            with self.subTest(getter_envelope=label):
+                self.assertEqual(
+                    predict_trajectory(getter_context + [{"input": {"function": "getRange", "kwargs": kwargs}, "output": {"return": {"RangeStart": 222, "RangeLength": 7}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(getter_context + [{"input": {"function": "getRange", "kwargs": kwargs}, "output": {"return": {"RangeStart": 0, "RangeLength": 7}}}]),
+                    "FAIL",
+                )
+        def wrap(payload, chain):
+            value = payload
+            for key in reversed(chain):
+                value = {key: value}
+            return value
+
+        deep_chains = (
+            ("lockingRequest", "rangeRequest", "geometry", "values"),
+            ("request", "lockingRangeRequest", "window", "values"),
+            ("config", "target", "rangeValues", "geometry"),
+            ("policy", "request", "rangeRequest", "values"),
+            ("values", "lockingRequest", "rangeValues", "values"),
+            ("operationRequest", "lockingRangeRequest", "target", "values"),
+        )
+        for set_chain, get_chain in zip(deep_chains, reversed(deep_chains)):
+            with self.subTest(deep_set_chain=set_chain, deep_get_chain=get_chain):
+                deep_context = context + [
+                    {
+                        "input": {
+                            "function": "setRange",
+                            "kwargs": wrap(
+                                {
+                                    "rangeId": 1,
+                                    "RangeStart": 120,
+                                    "RangeLength": 8,
+                                    "ReadLockEnabled": True,
+                                    "WriteLockEnabled": True,
+                                    "authAs": ("Admin1", "new"),
+                                },
+                                set_chain,
+                            ),
+                        },
+                        "output": {"return": True},
+                    },
+                ]
+                get_kwargs = wrap({"rangeId": 1, "authAs": ("Admin1", "new")}, get_chain)
+                self.assertEqual(
+                    predict_trajectory(
+                        deep_context
+                        + [
+                            {
+                                "input": {"function": "getRange", "kwargs": get_kwargs},
+                                "output": {"return": {"RangeStart": 120, "RangeLength": 8, "ReadLockEnabled": True, "WriteLockEnabled": True}},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        deep_context
+                        + [
+                            {
+                                "input": {"function": "getRange", "kwargs": get_kwargs},
+                                "output": {"return": {"RangeStart": 80, "RangeLength": 8, "ReadLockEnabled": False, "WriteLockEnabled": True}},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+        lock_context = context + [
+            {"input": {"function": "setRange", "kwargs": {"rangeId": 1, "security": {"locks": {"read": True, "write": True}}, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        self.assertEqual(
+            predict_trajectory(lock_context + [{"input": {"function": "getReadLocked", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(lock_context + [{"input": {"function": "getReadLocked", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": False}}]),
+            "FAIL",
+        )
+        for label, function, kwargs, expected in (
+            ("lock request values", "lockRange", {"request": {"values": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
+            ("lock policy request values", "lockRange", {"policy": {"request": {"values": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}}, True),
+            ("lock config target locks", "lockRange", {"config": {"target": {"rangeId": 1}, "locks": {"read": True, "write": True}, "authAs": ("Admin1", "new")}}, True),
+            ("lock lockingRequest values", "lockRange", {"lockingRequest": {"values": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
+            ("lock rangeRequest values", "lockRange", {"rangeRequest": {"values": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
+            ("lock lockingRangeRequest locks", "lockRange", {"lockingRangeRequest": {"locks": {"read": True, "write": True}, "rangeId": 1, "authAs": ("Admin1", "new")}}, True),
+            ("unlock request values", "unlockRange", {"request": {"values": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}, False),
+        ):
+            with self.subTest(lock_envelope=label):
+                prefix = context
+                if not expected:
+                    prefix = prefix + [
+                        {"input": {"function": "setRange", "kwargs": {"rangeId": 1, "ReadLocked": True, "WriteLocked": True, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                    ]
+                nested_lock_context = prefix + [
+                    {"input": {"function": function, "kwargs": kwargs}, "output": {"return": True}},
+                ]
+                self.assertEqual(
+                    predict_trajectory(nested_lock_context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"ReadLocked": expected, "WriteLocked": expected}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(nested_lock_context + [{"input": {"function": "getRange", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"ReadLocked": (not expected), "WriteLocked": (not expected)}}}]),
+                    "FAIL",
+                )
+        enabled_context = context + [
+            {"input": {"function": "configureRangeReadLock", "kwargs": {"rangeId": 1, "config": {"locks": {"read": True}}, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        self.assertEqual(
+            predict_trajectory(enabled_context + [{"input": {"function": "getReadLockEnabled", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}}]),
+            "PASS",
+        )
+        field_getter_context = context + [
+            {"input": {"function": "setRange", "kwargs": {"rangeId": 1, "ReadLocked": True, "WriteLocked": True, "ReadLockEnabled": True, "WriteLockEnabled": True, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for getter, good_value, stale_value in (
+            ("getReadLocked", True, False),
+            ("getWriteLockEnabled", True, False),
+            ("getRangeLocks", {"ReadLocked": True, "WriteLocked": True}, {"ReadLocked": False, "WriteLocked": False}),
+        ):
+            for label, kwargs in (
+                ("request values", {"request": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+                ("policy query target", {"policy": {"query": {"target": {"rangeId": 1}}, "authAs": ("Admin1", "new")}}),
+                ("config target", {"config": {"target": {"range": 1}, "authAs": ("Admin1", "new")}}),
+            ):
+                with self.subTest(field_getter=getter, envelope=label):
+                    self.assertEqual(
+                        predict_trajectory(field_getter_context + [{"input": {"function": getter, "kwargs": kwargs}, "output": {"return": good_value}}]),
+                        "PASS",
+                    )
+                    self.assertEqual(
+                        predict_trajectory(field_getter_context + [{"input": {"function": getter, "kwargs": kwargs}, "output": {"return": stale_value}}]),
+                        "FAIL",
+                    )
+        self.assertEqual(
+            predict_trajectory(enabled_context + [{"input": {"function": "getReadLockEnabled", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": False}}]),
+            "FAIL",
+        )
+
+    def test_getacl_wrapper_accepts_access_control_list_result_aliases(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        expected_acl = ["ACE_0003D001", "ACE_00000003"]
+        for payload in (
+            {"accessControlList": expected_acl},
+            {"aceEntries": expected_acl},
+            {"entries": expected_acl},
+            {"aclEntries": expected_acl},
+            {"ACLEntries": expected_acl},
+            {"acl_entries": expected_acl},
+            {"aceList": expected_acl},
+            {"ACEList": expected_acl},
+            {"ace_list": expected_acl},
+            {"accessList": expected_acl},
+            {"accessEntries": expected_acl},
+            {"access_list": expected_acl},
+            {"access_entries": expected_acl},
+            [{"uid": "ACE_0003D001"}, {"uid": "ACE_00000003"}],
+            {"rows": [{"uid": "ACE_0003D001"}, {"uid": "ACE_00000003"}]},
+            {"entries": [{"object": "ACE_0003D001"}, {"object": "ACE_00000003"}]},
+            {"acl": [{"ref": "ACE_0003D001"}, {"ref": "ACE_00000003"}]},
+        ):
+            with self.subTest(payload=payload):
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getACL", "kwargs": {"object": "Locking_Range1", "method": "Get", "authAs": ("Admin1", "new")}},
+                                "output": {"return": payload},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+        self.assertEqual(
+            predict_trajectory(
+                context
+                + [
+                    {
+                        "input": {"function": "getACL", "kwargs": {"object": "Locking_Range1", "method": "Get", "authAs": ("Admin1", "new")}},
+                        "output": {"return": {"accessControlList": ["ACE_0003D001"]}},
+                    }
+                ]
+            ),
+            "FAIL",
+        )
+
+    def test_getacl_wrapper_accepts_association_request_argument_shapes(self):
+        context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        expected_acl = ["ACE_0003D001", "ACE_00000003"]
+        shapes = (
+            {"association": ["Locking_Range1", "Get"], "authAs": ("Admin1", "new")},
+            {"association": {"object": "Locking_Range1", "method": "Get"}, "authAs": ("Admin1", "new")},
+            {"aclRequest": {"object": "Locking_Range1", "method": "Get"}, "authAs": ("Admin1", "new")},
+            {"request": {"object": "Locking_Range1", "method": "Get"}, "authAs": ("Admin1", "new")},
+            {"target": "Locking_Range1", "targetMethod": "Get", "authAs": ("Admin1", "new")},
+            {"values": {"association": {"object": "Locking_Range1", "method": "Get"}, "authAs": ("Admin1", "new")}},
+            {"request": {"values": {"association": {"object": "Locking_Range1", "method": "Get"}}, "authAs": ("Admin1", "new")}},
+            {"policy": {"request": {"association": {"object": "Locking_Range1", "method": "Get"}}, "authAs": ("Admin1", "new")}},
+        )
+        for kwargs in shapes:
+            with self.subTest(kwargs=kwargs):
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getACL", "kwargs": kwargs},
+                                "output": {"return": expected_acl},
+                            }
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            {
+                                "input": {"function": "getACL", "kwargs": kwargs},
+                                "output": {"return": ["ACE_0003D001"]},
+                            }
+                        ]
+                    ),
+                    "FAIL",
+                )
+
+    def test_datastore_write_window_envelopes_update_read_windows(self):
+        context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {
+                "input": {"function": "writeDataStore", "kwargs": {"authAs": ("Admin1", "new"), "window": {"offset": 4, "length": 3}, "bytes": "AABBCC"}},
+                "output": {"return": True},
+            },
+        ]
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "readDataStore", "kwargs": {"authAs": ("Admin1", "new"), "window": {"offset": 4, "length": 3}}}, "output": {"return": "AABBCC"}}]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [{"input": {"function": "readDataStore", "kwargs": {"authAs": ("Admin1", "new"), "range": {"start": 4, "count": 3}}}, "output": {"return": {"data": "000000"}}}]),
+            "FAIL",
+        )
+
+    def test_datastore_write_range_slice_envelopes_update_read_windows(self):
+        for setter_payload, getter_payload in (
+            ({"range": {"start": 4, "count": 3}, "data": "AABBCC"}, {"range": {"start": 4, "count": 3}}),
+            ({"slice": {"startOffset": 4, "byteCount": 3}, "payload": "AABBCC"}, {"slice": {"startOffset": 4, "byteCount": 3}}),
+            ({"request": {"window": {"offset": 4, "length": 3}, "bytes": "AABBCC"}}, {"window": {"offset": 4, "length": 3}}),
+            ({"policy": {"range": {"start": 4, "count": 3}, "data": "AABBCC"}}, {"request": {"values": {"window": {"offset": 4, "length": 3}}}}),
+            ({"config": {"slice": {"startOffset": 4, "byteCount": 3}, "payload": "AABBCC"}}, {"range": {"start": 4, "count": 3}}),
+            ({"request": {"values": {"window": {"offset": 4, "length": 3}, "bytes": "AABBCC"}}}, {"window": {"offset": 4, "length": 3}}),
+        ):
+            with self.subTest(setter_payload=setter_payload):
+                context = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    {
+                        "input": {"function": "writeDataStore", "kwargs": {"authAs": ("Admin1", "new"), **setter_payload}},
+                        "output": {"return": True},
+                    },
+                ]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readDataStore", "kwargs": {"authAs": ("Admin1", "new"), **getter_payload}}, "output": {"return": "AABBCC"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "readDataStore", "kwargs": {"authAs": ("Admin1", "new"), **getter_payload}}, "output": {"return": "000000"}}]),
+                    "FAIL",
+                )
+
+    def test_byte_table_reads_accept_hex_list_and_prefixed_hex_payloads(self):
+        for write_fn, read_fn in (("writeDataStore", "readDataStore"), ("writeMBR", "readMBR")):
+            for current_payload, stale_payload in (
+                (["AA", "BB", "CC"], ["00", "00", "00"]),
+                (["0xAA", "0xBB", "0xCC"], ["0x00", "0x00", "0x00"]),
+                ("0xAABBCC", "0x000000"),
+            ):
+                with self.subTest(write_fn=write_fn, current_payload=current_payload):
+                    context = activated_locking_context() + [
+                        start_session(LOCKING_SP, ADMIN1, "new"),
+                        {"input": {"function": write_fn, "kwargs": {"offset": 4, "bytes": "AABBCC", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+                    ]
+                    self.assertEqual(
+                        predict_trajectory(context + [{"input": {"function": read_fn, "kwargs": {"offset": 4, "length": 3, "authAs": ("Admin1", "new")}}, "output": {"return": current_payload}}]),
+                        "PASS",
+                    )
+                    self.assertEqual(
+                        predict_trajectory(context + [{"input": {"function": read_fn, "kwargs": {"offset": 4, "length": 3, "authAs": ("Admin1", "new")}}, "output": {"return": stale_payload}}]),
+                        "FAIL",
+                    )
+
+    def test_authenticate_top_level_credential_result_aliases_compare_proof_truth(self):
+        base = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        for result_key in ("verified", "isVerified", "matched", "isMatched", "credentialMatched", "pinMatched", "valid", "isValid", "accepted", "authorized"):
+            with self.subTest(result_key=result_key):
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "authenticate", "values": {"authority": "Admin1", "proof": "new"}}, "output": {result_key: True}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "authenticate", "values": {"authority": "Admin1", "proof": "wrong"}}, "output": {result_key: False}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "authenticate", "values": {"authority": "Admin1", "proof": "wrong"}}, "output": {result_key: True}}]),
+                    "FAIL",
+                )
+
+    def test_authenticate_nested_credential_result_envelopes_compare_proof_truth(self):
+        base = activated_locking_context() + [
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+        ]
+        for wrapper in ("credential", "auth", "authentication", "verification", "response", "output"):
+            for result_key in ("verified", "matched", "credentialMatched", "pinMatched", "valid", "accepted", "authorized", "authenticated"):
+                with self.subTest(wrapper=wrapper, result_key=result_key):
+                    self.assertEqual(
+                        predict_trajectory(base + [{"input": {"function": "authenticate", "values": {"authority": "User1", "proof": "userpin"}}, "output": {"return": {wrapper: {result_key: True}}}}]),
+                        "PASS",
+                    )
+                    self.assertEqual(
+                        predict_trajectory(base + [{"input": {"function": "authenticate", "values": {"authority": "User1", "proof": "wrong"}}, "output": {"return": {wrapper: {result_key: False}}}}]),
+                        "PASS",
+                    )
+                    self.assertEqual(
+                        predict_trajectory(base + [{"input": {"function": "authenticate", "values": {"authority": "User1", "proof": "wrong"}}, "output": {"return": {wrapper: {result_key: True}}}}]),
+                        "FAIL",
+                    )
+
+    def test_authenticate_domain_request_envelopes_preserve_authority_and_proof(self):
+        base = activated_locking_context() + [
+            method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+        ]
+        for envelope in ("credentialRequest", "authRequest", "authenticationRequest", "proofRequest", "pinRequest"):
+            with self.subTest(envelope=envelope):
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "authenticate", "kwargs": {envelope: {"values": {"auth": "User1", "proof": "userpin"}}}}, "output": {"return": True}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "authenticate", "kwargs": {envelope: {"values": {"auth": "User1", "proof": "wrong"}}}}, "output": {"return": False}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "authenticate", "kwargs": {envelope: {"values": {"auth": "User1", "proof": "wrong"}}}}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_reencrypt_getter_policy_config_envelopes_select_range(self):
+        base = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {"input": {"function": "startReEncrypt", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
+        ]
+        for kwargs in (
+            {"policy": {"rangeId": 1, "authAs": ("Admin1", "new")}},
+            {"config": {"range": 1, "authAs": ("Admin1", "new")}},
+            {"request": {"reencrypt": {"rangeId": 1, "authAs": ("Admin1", "new")}}},
+            {"request": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}},
+            {"query": {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}},
+            {"policy": {"query": {"target": {"rangeId": 1}}, "authAs": ("Admin1", "new")}},
+        ):
+            with self.subTest(kwargs=kwargs):
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "getReEncryptStatus", "kwargs": kwargs}, "output": {"return": {"ReEncryptState": "PENDING"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "getReEncryptStatus", "kwargs": kwargs}, "output": {"return": {"ReEncryptState": "IDLE"}}}]),
+                    "FAIL",
+                )
+
+    def test_locking_column_getter_policy_config_envelopes_select_range(self):
+        base = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000080200030001", "Locking", optional={"Values": [{"11": "K_AES_256_Range1_Key"}, {"14": 1}, {"17": 12345}, {"18": 1}, {"19": 0}]}),
+        ]
+        getter_cases = (
+            ("getAdvKeyMode", "AdvKeyMode", 1, 2),
+            ("getLastReEncryptLBA", "LastReEncryptLBA", 12345, 999),
+            ("getLastReEncryptStatus", "LastReEncStat", 1, 0),
+            ("getGeneralStatus", "GeneralStatus", 0, 1),
+            ("getNextKey", "NextKey", "K_AES_256_Range1_Key", "K_AES_256_Range2_Key"),
+        )
+        selector_cases = (
+            {"policy": {"rangeId": 1, "authAs": ("Admin1", "new")}},
+            {"config": {"range": 1, "authAs": ("Admin1", "new")}},
+            {"request": {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}},
+            {"query": {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}},
+        )
+        for function_name, return_key, current, stale in getter_cases:
+            for kwargs in selector_cases:
+                with self.subTest(function_name=function_name, kwargs=kwargs):
+                    self.assertEqual(
+                        predict_trajectory(base + [{"input": {"function": function_name, "kwargs": kwargs}, "output": {"return": {return_key: current}}}]),
+                        "PASS",
+                    )
+                    self.assertEqual(
+                        predict_trajectory(base + [{"input": {"function": function_name, "kwargs": kwargs}, "output": {"return": {return_key: stale}}}]),
+                        "FAIL",
+                    )
+
+    def test_crypto_bufferout_policy_config_envelopes_return_empty_result(self):
+        session = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
+        buffer_out = {"table": "DataStore", "row": 0, "offset": 0, "length": 2}
+        wrappers = (
+            {"policy": {"data": "AABB", "BufferOut": buffer_out, "authAs": ("Admin1", "new")}},
+            {"config": {"input": "AABB", "output": buffer_out, "authAs": ("Admin1", "new")}},
+            {"request": {"crypto": {"payload": "AABB", "bufferOut": buffer_out}, "authAs": ("Admin1", "new")}},
+            {"operation": {"input": {"bytes": "AABB"}, "destination": buffer_out, "authAs": ("Admin1", "new")}},
+            {"cryptoRequest": {"values": {"data": "AABB", "BufferOut": buffer_out, "authAs": ("Admin1", "new")}}},
+            {"cipherRequest": {"values": {"input": "AABB", "output": buffer_out, "authAs": ("Admin1", "new")}}},
+            {"operationRequest": {"crypto": {"payload": "AABB", "bufferOut": buffer_out}, "authAs": ("Admin1", "new")}},
+            {"hashRequest": {"values": {"data": "AABB", "BufferOut": buffer_out, "authAs": ("Admin1", "new")}}},
+        )
+        encrypt_base = session + [{"input": {"function": "encryptInit", "kwargs": {"target": "AES256", "authAs": ("Admin1", "new")}}, "output": {"return": []}}]
+        for kwargs in wrappers:
+            with self.subTest(path="encrypt", kwargs=kwargs):
+                self.assertEqual(
+                    predict_trajectory(encrypt_base + [{"input": {"function": "encrypt", "kwargs": kwargs}, "output": {"return": []}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(encrypt_base + [{"input": {"function": "encrypt", "kwargs": kwargs}, "output": {"return": "AABB"}}]),
+                    "FAIL",
+                )
+            with self.subTest(path="hash-init", kwargs=kwargs):
+                hash_base = session + [{"input": {"function": "hashInit", "kwargs": kwargs}, "output": {"return": []}}]
+                self.assertEqual(
+                    predict_trajectory(hash_base + [{"input": {"function": "hash", "kwargs": {"data": "AABB", "authAs": ("Admin1", "new")}}, "output": {"return": []}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(hash_base + [{"input": {"function": "hash", "kwargs": {"data": "AABB", "authAs": ("Admin1", "new")}}, "output": {"return": "AABB"}}]),
+                    "FAIL",
+                )
+
+    def test_sign_bufferout_policy_config_envelopes_return_empty_result(self):
+        session = owned_admin_context() + [start_session(ADMIN_SP, SID, "old")]
+        buffer_out = {"table": "DataStore", "row": 0, "offset": 0, "length": 2}
+        wrappers = (
+            {"policy": {"target": "C_AES_256", "data": "AABB", "BufferOut": buffer_out, "authAs": ("SID", "old")}},
+            {"config": {"target": "C_AES_256", "input": "AABB", "output": buffer_out, "authAs": ("SID", "old")}},
+            {"request": {"sign": {"target": "C_AES_256", "payload": "AABB", "bufferOut": buffer_out}, "authAs": ("SID", "old")}},
+            {"operation": {"target": "C_AES_256", "input": {"bytes": "AABB"}, "destination": buffer_out, "authAs": ("SID", "old")}},
+            {"signRequest": {"values": {"target": "C_AES_256", "data": "AABB", "BufferOut": buffer_out, "authAs": ("SID", "old")}}},
+            {"signatureRequest": {"values": {"target": "C_AES_256", "payload": "AABB", "bufferOut": buffer_out, "authAs": ("SID", "old")}}},
+            {"operationRequest": {"sign": {"target": "C_AES_256", "payload": "AABB", "bufferOut": buffer_out}, "authAs": ("SID", "old")}},
+        )
+        for kwargs in wrappers:
+            with self.subTest(kwargs=kwargs):
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "signPayload", "kwargs": kwargs}, "output": {"return": []}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "signPayload", "kwargs": kwargs}, "output": {"return": "AABB"}}]),
+                    "FAIL",
+                )
+
+    def test_random_policy_config_envelopes_preserve_count_and_bufferout(self):
+        session = owned_admin_context() + [start_session(ADMIN_SP, SID, "old")]
+        count_wrappers = (
+            {"policy": {"count": 8}},
+            {"config": {"length": 8}},
+            {"request": {"random": {"bytes": 8}}},
+            {"operation": {"count": 8}},
+            {"randomRequest": {"values": {"count": 8}}},
+            {"rngRequest": {"values": {"bytes": 8}}},
+        )
+        for kwargs in count_wrappers:
+            with self.subTest(path="count", kwargs=kwargs):
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "getRandomBytes", "kwargs": kwargs}, "output": {"return": "AABBCCDDEEFF0011"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "getRandomBytes", "kwargs": kwargs}, "output": {"return": "AABB"}}]),
+                    "FAIL",
+                )
+        buffer_out = {"CellBlock": {"Table": "DataStore", "startRow": 4, "endRow": 11}}
+        buffer_wrappers = (
+            {"policy": {"count": 8, "BufferOut": buffer_out}},
+            {"config": {"length": 8, "output": buffer_out}},
+            {"request": {"random": {"count": 8, "output": buffer_out}}},
+            {"operation": {"count": 8, "destination": buffer_out}},
+            {"randomRequest": {"random": {"count": 8, "output": buffer_out}}},
+            {"operationRequest": {"random": {"count": 8, "destination": buffer_out}}},
+        )
+        for kwargs in buffer_wrappers:
+            with self.subTest(path="bufferout", kwargs=kwargs):
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "getRandomBytes", "kwargs": kwargs}, "output": {"return": []}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "getRandomBytes", "kwargs": kwargs}, "output": {"return": "AABBCCDDEEFF0011"}}]),
+                    "FAIL",
+                )
+
+    def test_random_deep_envelopes_preserve_count_and_bufferout(self):
+        def wrap(payload, chain):
+            current = payload
+            for key in reversed(chain):
+                current = {key: current}
+            return current
+
+        session = owned_admin_context() + [start_session(ADMIN_SP, SID, "old")]
+        chains = (
+            ("policy", "request", "random", "values"),
+            ("config", "operation", "random", "values"),
+            ("request", "randomRequest", "values"),
+            ("operationRequest", "random", "request", "values"),
+            ("randomRequest", "operation", "rng", "values"),
+        )
+        for chain in chains:
+            with self.subTest(path="count", chain=chain):
+                kwargs = wrap({"count": 8}, chain)
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "getRandomBytes", "kwargs": kwargs}, "output": {"return": "AABBCCDDEEFF0011"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "getRandomBytes", "kwargs": kwargs}, "output": {"return": "AABB"}}]),
+                    "FAIL",
+                )
+        buffer_out = {"CellBlock": {"Table": "DataStore", "startRow": 4, "endRow": 11}}
+        for chain in chains:
+            with self.subTest(path="bufferout", chain=chain):
+                kwargs = wrap({"count": 8, "output": buffer_out}, chain)
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "getRandomBytes", "kwargs": kwargs}, "output": {"return": []}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "getRandomBytes", "kwargs": kwargs}, "output": {"return": "AABBCCDDEEFF0011"}}]),
+                    "FAIL",
+                )
+
+    def test_firmware_attestation_policy_config_envelopes_preserve_nonce(self):
+        session = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        wrappers = (
+            {"policy": {"nonce": "AABB"}},
+            {"config": {"challenge": "AABB"}},
+            {"request": {"attestation": {"nonce": "AABB"}}},
+            {"operation": {"input": {"nonce": "AABB"}}},
+            {"attestationRequest": {"values": {"nonce": "AABB"}}},
+            {"firmwareRequest": {"quote": {"challenge": "AABB"}}},
+            {"quoteRequest": {"input": {"nonce": "AABB"}}},
+        )
+        for kwargs in wrappers:
+            with self.subTest(kwargs=kwargs):
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "firmwareAttestation", "kwargs": kwargs}, "output": {"return": b"attestation"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "firmwareAttestation", "kwargs": kwargs}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+
+    def test_cpin_counter_getter_policy_config_envelopes_select_credential(self):
+        session = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"5": 3}, {"6": 1}, {"7": 2}]}),
+        ]
+        getter_cases = (
+            ("getRetryLimit", "TryLimit", 3, 1),
+            ("getRetryCount", "Tries", 1, 0),
+        )
+        selector_cases = (
+            {"policy": {"auth": "User1", "authAs": ("Admin1", "new")}},
+            {"config": {"credentialId": "User1", "authAs": ("Admin1", "new")}},
+            {"request": {"credential": {"user": "User1"}, "authAs": ("Admin1", "new")}},
+        )
+        for function_name, return_key, current, stale in getter_cases:
+            for kwargs in selector_cases:
+                with self.subTest(function_name=function_name, kwargs=kwargs):
+                    self.assertEqual(
+                        predict_trajectory(session + [{"input": {"function": function_name, "kwargs": kwargs}, "output": {"return": {return_key: current}}}]),
+                        "PASS",
+                    )
+                    self.assertEqual(
+                        predict_trajectory(session + [{"input": {"function": function_name, "kwargs": kwargs}, "output": {"return": {return_key: stale}}}]),
+                        "FAIL",
+                    )
+
+    def test_authority_counter_getter_policy_config_envelopes_select_authority(self):
+        session = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record("Set", "", "Authority_User1", optional={15: 2, "authAs": ("Admin1", "new")}),
+            method_record("Set", "", "Authority_User1", optional={16: 3, "authAs": ("Admin1", "new")}),
+        ]
+        getter_cases = (
+            ("getAuthorityLimit", "Limit", 2, 0),
+            ("getAuthorityUses", "Uses", 3, 0),
+        )
+        selector_cases = (
+            {"policy": {"identity": "User1", "authAs": ("Admin1", "new")}},
+            {"config": {"authorityId": "User1", "authAs": ("Admin1", "new")}},
+            {"request": {"target": {"user": "User1"}, "authAs": ("Admin1", "new")}},
+        )
+        for function_name, return_key, current, stale in getter_cases:
+            for kwargs in selector_cases:
+                with self.subTest(function_name=function_name, kwargs=kwargs):
+                    self.assertEqual(
+                        predict_trajectory(session + [{"input": {"function": function_name, "kwargs": kwargs}, "output": {"return": {return_key: current}}}]),
+                        "PASS",
+                    )
+                    self.assertEqual(
+                        predict_trajectory(session + [{"input": {"function": function_name, "kwargs": kwargs}, "output": {"return": {return_key: stale}}}]),
+                        "FAIL",
+                    )
+
+    def test_port_policy_config_envelopes_update_and_select_port_state(self):
+        session = [start_session(ADMIN_SP, SID, "new")]
+        setter_cases = (
+            {"policy": {"port": "Port2", "locked": True, "authAs": ("SID", "new")}},
+            {"config": {"portId": "Port2", "PortLocked": True, "authAs": ("SID", "new")}},
+            {"request": {"target": {"port": "Port2"}, "state": {"locked": True}, "authAs": ("SID", "new")}},
+            {"portRequest": {"values": {"port": "Port2", "PortLocked": True, "authAs": ("SID", "new")}}},
+            {"portRequest": {"target": {"port": "Port2"}, "state": {"locked": True}, "authAs": ("SID", "new")}},
+            {"adminRequest": {"port": {"portId": "Port2", "locked": True}, "authAs": ("SID", "new")}},
+        )
+        for kwargs in setter_cases:
+            with self.subTest(path="setter", kwargs=kwargs):
+                context = session + [{"input": {"function": "setPort", "kwargs": kwargs}, "output": {"return": True}}]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getPort", "kwargs": {"port": "Port2", "authAs": ("SID", "new")}}, "output": {"return": {"PortLocked": True}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getPort", "kwargs": {"port": "Port2", "authAs": ("SID", "new")}}, "output": {"return": {"PortLocked": False}}}]),
+                    "FAIL",
+                )
+        base = session + [{"input": {"function": "setPort", "kwargs": {"port": "Port2", "PortLocked": True, "authAs": ("SID", "new")}}, "output": {"return": True}}]
+        getter_cases = (
+            ("getPort", {"PortLocked": True}, {"PortLocked": False}),
+            ("getPortLocked", True, False),
+            ("getPortLocked", {"PortLocked": True}, {"PortLocked": False}),
+        )
+        selector_cases = (
+            {"policy": {"port": "Port2", "authAs": ("SID", "new")}},
+            {"config": {"portId": "Port2", "authAs": ("SID", "new")}},
+            {"request": {"target": {"port": "Port2"}, "authAs": ("SID", "new")}},
+            {"portRequest": {"target": {"port": "Port2"}, "authAs": ("SID", "new")}},
+            {"adminRequest": {"port": {"portId": "Port2"}, "authAs": ("SID", "new")}},
+        )
+        for function_name, current, stale in getter_cases:
+            for kwargs in selector_cases:
+                with self.subTest(path="getter", function_name=function_name, kwargs=kwargs):
+                    self.assertEqual(
+                        predict_trajectory(base + [{"input": {"function": function_name, "kwargs": kwargs}, "output": {"return": current}}]),
+                        "PASS",
+                    )
+                    self.assertEqual(
+                        predict_trajectory(base + [{"input": {"function": function_name, "kwargs": kwargs}, "output": {"return": stale}}]),
+                        "FAIL",
+                    )
+
+    def test_accesscontrol_addace_policy_request_envelopes_update_dynamic_acl(self):
+        base = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record(
+                "CreateTable",
+                "0000000000000001",
+                "ThisSP",
+                "SUCCESS",
+                required={"NewTableName": "Dyn", "Kind": 1, "GetSetACL": ["ACE_Anybody"], "Columns": [["Entry", "uid"]], "MinSize": 0},
+                return_values={"UID": "000001AB00000000", "Rows": 0},
+            ),
+            method_record(
+                "CreateRow",
+                "000001AB00000000",
+                "",
+                "SUCCESS",
+                optional={"Values": [{"1": "row"}]},
+                return_values=["000001AB00000001"],
+            ),
+        ]
+        addace_cases = (
+            {"policy": {"association": {"object": {"uid": "000001AB00000001", "name": "RowAlias"}, "method": "Get"}, "aceRef": "ACE_Admin"}},
+            {"request": {"accessControlRequest": {"InvokingID": {"uid": "000001AB00000001", "name": "RowAlias"}, "MethodID": "Get"}, "entry": "ACE_Admin"}},
+            {"params": {"target": {"object": {"uid": "000001AB00000001", "name": "RowAlias"}, "method": "Get"}, "ACE": {"uid": "0000010800000003", "name": "ACE_Admin"}}},
+        )
+        for kwargs in addace_cases:
+            with self.subTest(kwargs=kwargs):
+                context = base + [{"input": {"function": "addACE", "kwargs": kwargs}, "output": {"return": []}}]
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            method_record(
+                                "GetACL",
+                                "0000000700000000",
+                                "AccessControl",
+                                "SUCCESS",
+                                required={"InvokingID": "000001AB00000001", "MethodID": "Get"},
+                                return_values=["ACE_Anybody", "ACE_Admin"],
+                            )
+                        ]
+                    ),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(
+                        context
+                        + [
+                            method_record(
+                                "GetACL",
+                                "0000000700000000",
+                                "AccessControl",
+                                "SUCCESS",
+                                required={"InvokingID": "000001AB00000001", "MethodID": "Get"},
+                                return_values=["ACE_Anybody"],
+                            )
+                        ]
+                    ),
+                    "FAIL",
+                )
+
+    def test_package_policy_config_request_envelopes_preserve_required_payload(self):
+        session = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        getter_cases = (
+            {"policy": {"auth": "SID", "purpose": "backup", "authAs": ("SID", "new")}},
+            {"config": {"credential": "SID", "Purpose": "backup", "authAs": ("SID", "new")}},
+            {"request": {"target": {"auth": "SID"}, "purpose": "backup", "authAs": ("SID", "new")}},
+            {"packageRequest": {"values": {"auth": "SID", "purpose": "backup", "authAs": ("SID", "new")}}},
+            {"credentialPackageRequest": {"package": {"auth": "SID", "purpose": "backup"}, "authAs": ("SID", "new")}},
+            {"keyPackageRequest": {"target": {"auth": "SID"}, "purpose": "backup", "authAs": ("SID", "new")}},
+        )
+        for kwargs in getter_cases:
+            with self.subTest(path="get", kwargs=kwargs):
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "getPackage", "kwargs": kwargs}, "output": {"return": "pkg"}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "getPackage", "kwargs": kwargs}, "output": {"return": True}}]),
+                    "FAIL",
+                )
+        setter_cases = (
+            {"policy": {"auth": "SID", "value": "pkg", "authAs": ("SID", "new")}},
+            {"request": {"credential": "SID", "package": "pkg", "authAs": ("SID", "new")}},
+            {"packageRequest": {"values": {"auth": "SID", "value": "pkg", "authAs": ("SID", "new")}}},
+            {"credentialPackageRequest": {"credential": "SID", "package": "pkg", "authAs": ("SID", "new")}},
+        )
+        for kwargs in setter_cases:
+            with self.subTest(path="set", kwargs=kwargs):
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "setPackage", "kwargs": kwargs}, "output": {"return": []}}]),
+                    "PASS",
+                )
+        empty_setter_cases = (
+            {"policy": {"auth": "SID", "value": [], "authAs": ("SID", "new")}},
+            {"request": {"credential": "SID", "package": [], "authAs": ("SID", "new")}},
+            {"packageRequest": {"values": {"auth": "SID", "value": [], "authAs": ("SID", "new")}}},
+            {"credentialPackageRequest": {"credential": "SID", "package": [], "authAs": ("SID", "new")}},
+        )
+        for kwargs in empty_setter_cases:
+            with self.subTest(path="set-empty", kwargs=kwargs):
+                self.assertEqual(
+                    predict_trajectory(session + [{"input": {"function": "setPackage", "kwargs": kwargs}, "output": {"return": []}}]),
+                    "FAIL",
+                )
+
+    def test_psk_policy_config_request_envelopes_update_and_select_metadata(self):
+        session = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+        setter_cases = (
+            {"policy": {"psk": 1, "Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301", "authAs": ("SID", "new")}},
+            {"config": {"psk_id": 1, "enabled": True, "secret": b"secret", "cipher_suite": "0x1301", "authAs": ("SID", "new")}},
+            {"request": {"target": {"psk": 1}, "state": {"Enabled": True}, "payload": {"PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}},
+            {"pskRequest": {"values": {"psk": 1, "Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301", "authAs": ("SID", "new")}}},
+            {"tlsPskRequest": {"target": {"psk": 1}, "state": {"Enabled": True}, "payload": {"PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}},
+            {"preSharedKeyRequest": {"target": {"psk": 1}, "state": {"Enabled": True}, "payload": {"PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}},
+        )
+        for kwargs in setter_cases:
+            with self.subTest(path="setter", kwargs=kwargs):
+                context = session + [{"input": {"function": "setPskEntry", "kwargs": kwargs}, "output": {"return": True}}]
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getPskEntry", "kwargs": {"psk_id": 1, "authAs": ("SID", "new")}}, "output": {"return": {"Enabled": True, "CipherSuite": "0x1301"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(context + [{"input": {"function": "getPskEntry", "kwargs": {"psk_id": 1, "authAs": ("SID", "new")}}, "output": {"return": {"Enabled": False, "CipherSuite": "0x1301"}}}]),
+                    "FAIL",
+                )
+        base = session + [{"input": {"function": "setPskEntry", "kwargs": {"psk_id": 1, "Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301", "authAs": ("SID", "new")}}, "output": {"return": True}}]
+        getter_cases = (
+            {"policy": {"psk": 1, "authAs": ("SID", "new")}},
+            {"config": {"psk_id": 1, "authAs": ("SID", "new")}},
+            {"request": {"target": {"psk": 1}, "authAs": ("SID", "new")}},
+            {"pskRequest": {"target": {"psk": 1}, "authAs": ("SID", "new")}},
+            {"tlsPskRequest": {"target": {"psk": 1}, "authAs": ("SID", "new")}},
+            {"preSharedKeyRequest": {"target": {"psk": 1}, "authAs": ("SID", "new")}},
+        )
+        for kwargs in getter_cases:
+            with self.subTest(path="getter", kwargs=kwargs):
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "getPskEntry", "kwargs": kwargs}, "output": {"return": {"Enabled": True, "CipherSuite": "0x1301"}}}]),
+                    "PASS",
+                )
+                self.assertEqual(
+                    predict_trajectory(base + [{"input": {"function": "getPskEntry", "kwargs": kwargs}, "output": {"return": {"Enabled": False, "CipherSuite": "0x1301"}}}]),
+                    "FAIL",
+                )
+
+    def test_startsession_policy_config_request_envelopes_open_persistent_session(self):
+        cases = (
+            {"policy": {"SPID": "AdminSP", "auth": "SID", "proof": "new", "write": True}},
+            {"config": {"sp": "AdminSP", "identity": "SID", "password": "new", "readWrite": True}},
+            {"request": {"session": {"sp": "AdminSP"}, "credential": {"user": "SID", "proof": "new"}, "write": True}},
+        )
+        for kwargs in cases:
+            with self.subTest(kwargs=kwargs):
+                context = owned_admin_context() + [{"input": {"function": "startSession", "kwargs": kwargs}, "output": {"return": True}}]
+                self.assertEqual(
+                    predict_trajectory(context + [method_record("Set", C_PIN_SID, "C_PIN", "SUCCESS", optional={"Values": [{3: "after"}]})]),
+                    "PASS",
+                )
+
+
+if __name__ == "__main__":
+    unittest.main()

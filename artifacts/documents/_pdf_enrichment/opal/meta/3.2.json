@@ -1,0 +1,22 @@
+{
+  "added_blocks": 0,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/3.2.md",
+  "existing_chars": 32,
+  "existing_path": "artifacts/documents/opal/3.2.txt",
+  "extracted_chars": 36,
+  "family": "opal",
+  "pages": [
+    28
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 0,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/3.2.jsonl",
+  "section": "3.2",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/3.2.jsonl",
+  "title": "Security Protocol 2 Support"
+}

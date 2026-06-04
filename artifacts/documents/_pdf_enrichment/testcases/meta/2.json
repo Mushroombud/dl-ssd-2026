@@ -1,0 +1,22 @@
+{
+  "added_blocks": 3,
+  "detail_path": "artifacts/documents/_pdf_enrichment/testcases/details/2.md",
+  "existing_chars": 0,
+  "existing_path": "",
+  "extracted_chars": 921,
+  "family": "testcases",
+  "pages": [
+    25
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/testcases/Opal_Family_Test_Case_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 2,
+  "rules_path": "artifacts/documents/_pdf_enrichment/testcases/rules/2.jsonl",
+  "section": "2",
+  "source_pdf": "materials/Opal_Family_Test_Case_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/testcases/tables/2.jsonl",
+  "title": "Test Cases Outline"
+}

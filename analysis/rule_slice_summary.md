@@ -1,0 +1,1001 @@
+# Rule Slice Summary
+
+This file records cartography output at the "small rule slice" level so the exhaustive document loop can resume without re-reading the same area from scratch.
+
+## 2026-05-22 - Batch A-auth-cpin-session-001
+
+Scope:
+
+- Authority/session docs from Core.
+- C_PIN, AccessControl, ACE, and Get semantics from Core and Opal.
+- Related INVALID_PARAMETER/session-startup snippets that surfaced during the pass.
+
+Cartography result:
+
+- Actioned slice: `GET-NONBYTE-OMIT-C_PIN-PIN`
+  - Rule: a non-byte table `Get` omits requested cells that are not readable by currently authenticated authorities; requesting inaccessible columns is not itself an error.
+  - Cross-doc binding:
+    - `core/5.3.2.12.txt`: C_PIN column 3 is `PIN`.
+    - `core/5.3.4.2.2.txt`: non-byte table `Get` omits inaccessible requested cells.
+    - `opal/4.3.1.6.txt`: Locking SP `C_PIN_User1.Get` uses `ACE_C_PIN_Admins_Get_All_NOPIN`.
+    - `opal/4.3.1.7.txt`: `ACE_C_PIN_Admins_Get_All_NOPIN` requires `Admins` and excludes `PIN`.
+    - `opal/4.3.2.txt`: Locking SP base template method context.
+  - Implemented as tag: `get-access-doc`.
+  - Accepted cases: 2.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get`.
+- Actioned slice: `SET-ROWVALUES-DUPLICATE-COLUMN`
+  - Rule: `Set` RowValues columns may be sent in any order, but including the same column multiple times in a single invocation fails with `INVALID_PARAMETER`. The duplicate-column check must happen before the parsed row values are collapsed into a column-value dictionary.
+  - Cross-doc binding:
+    - `core/5.3.4.2.6.txt`: `Set` RowValues order is arbitrary, all parameterized changes are atomic for success, and duplicate columns fail with `INVALID_PARAMETER`.
+    - `core/5.7.2.2.8.txt`: Locking column 7 is `ReadLocked`.
+    - `core/5.7.2.2.9.txt`: Locking column 8 is `WriteLocked`.
+  - Implemented as tag: `set-rowvalues-doc`.
+  - Accepted cases: 6.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_set`, `src/solver_components/semantics.py::_set_has_duplicate_value_columns`, `src/solver_components/parsing.py::_values`.
+- Actioned slice: `SET-WHERE-VALUES-PARAMETER-SHAPE`
+  - Rule: `Set` succeeds with an empty result list. `Object.Set` must omit `Where`. `Table.Set` on an object table must include `Where` as a UID and use RowValues. `Table.Set` on a byte table may omit `Where` or use Row addressing and must use Bytes when `Values` is present. Omitting `Values` from an otherwise correct invocation succeeds with no effect.
+  - Cross-doc binding:
+    - `core/5.3.3.7.txt`: `Set` method shape and empty result list.
+    - `core/5.3.3.7.1.txt`, `core/5.3.3.7.1.1.txt`, and `core/5.3.3.7.1.2.txt`: `Where` rules for object, object table, and byte table invocations.
+    - `core/5.3.3.7.2.txt`, `core/5.3.3.7.2.1.txt`, and `core/5.3.3.7.2.2.txt`: `Values` option rules for RowValues vs Bytes and the omitted-Values no-op success case.
+    - `core/5.3.3.7.3.txt` and `core/5.3.3.7.4.txt`: result and failure conditions.
+    - `core/5.3.2.12.txt`, `core/5.7.3.6.txt`, and `opal/4.3.5.4.txt`: concrete C_PIN object-table and MBR byte-table targets.
+  - Implemented as tag: `set-where-values-doc`.
+  - Accepted cases: 8.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_set`, `src/solver_components/semantics.py::_set_values_omitted`, `src/solver_components/parsing.py::_byte_table_where_invalid`, `src/solver_components/parsing.py::_byte_table_set_invalid`.
+- Actioned slice: `GENKEY-C_PIN-ROTATES-PIN`
+  - Rule: successful `GenKey` on a C_PIN object generates and stores a new PIN value, returns an empty list, and therefore invalidates the previous host-known PIN. Omitted `PinLength` uses the default value 32; `PinLength` remains capped at 32.
+  - Cross-doc binding:
+    - `core/5.3.3.16.2.txt`: C_PIN `GenKey` generates/stores a new PIN value, omitted `PinLength` defaults to 32, and maximum `PinLength` is 32.
+    - `core/5.3.3.16.3.1.txt`: successful `GenKey` returns an empty list and success/failure is determined by status.
+    - `core/5.3.3.16.4.txt`: invalid `PinLength`/wrong target failure rules.
+    - `core/5.3.4.1.1.1.txt`: C_PIN `GenKey` character-set source for generated PIN values.
+  - Implemented as tag: `genkey-cpin-doc`.
+  - Accepted cases: 8.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_genkey`, `src/solver_components/expectations.py::_expected_start_session`, `src/solver_components/expectations.py::_expected_authenticate`, `src/solver_components/semantics.py::_credential_was_invalidated`, `src/solver_components/transitions.py::apply_transition`, `src/solver_components/models.py::State`.
+- Actioned slice: `AUTHENTICATE-MISSING-AUTHORITY`
+  - Rule: explicit `Authenticate` in Awaiting Challenge state returns `INVALID_PARAMETER` with an empty result list when no authority is supplied.
+  - Rework note: the first generated packet relied on the default initial Authenticate state and one reviewer recorded a concern. The accepted packet now includes a preceding `Authenticate(Anybody)` success, which the same source says remains in Awaiting Challenge state, before the no-authority target.
+  - Cross-doc binding:
+    - `core/5.3.4.1.2.1.txt`: `Anybody` Authenticate succeeds when syntax is otherwise correct.
+    - `core/5.3.4.1.14.1.txt`: successful password/Anybody-style Authenticate remains in Awaiting Challenge; no supplied authority in Awaiting Challenge returns `INVALID_PARAMETER`.
+  - Implemented as tag: `auth-missing-doc`.
+  - Accepted cases: 2.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_authenticate`.
+- Actioned slice: `AUTHENTICATE-PASSWORD-ANYBODY-RESULT-BOOL`
+  - Rule: `Authenticate` is invoked on `ThisSP`. For Password authorities, a single call carries `Authority` and `Proof`; the response is True if authentication succeeded and False if authentication failed. The C_PIN `PIN` column is the bytes value matched by authentication attempts, and successful `Set` applies all parameterized changes. The Anybody authority has Admin SP UID `0000000900000001` and Authenticate using Anybody always succeeds when syntax is otherwise correct.
+  - Harness note: two review rounds were discarded before acceptance. The accepted packet uses `Proof`, cites Set/PIN semantics for the prior SID PIN mutation, and uses the concrete Anybody UID rather than a symbolic name.
+  - Cross-doc binding:
+    - `core/5.3.3.12.txt`, `core/5.3.3.12.1.txt`, `core/5.3.3.12.2.txt`, and `core/5.3.3.12.3.1.txt`: `Authenticate` signature and Success boolean result.
+    - `core/5.3.4.1.14.txt` and `core/5.3.4.1.14.1.txt`: Password/Anybody success/failure result behavior.
+    - `core/5.3.3.7.txt`, `core/5.3.4.2.6.txt`, and `core/5.3.2.12.4.txt`: Set applies C_PIN PIN changes used as later authentication proof.
+    - `core/5.3.4.1.2.1.txt` and `opal/4.2.1.7.txt`: Anybody behavior and concrete Admin SP Authority UID.
+  - Implemented as tag: `authenticate-result-doc`.
+  - Accepted cases: 7.
+  - Solver repair path used: `src/solver_components/parsing.py::parse_event`, `src/solver_components/expectations.py::_expected_authenticate`, and `src/solver_components/engine.py::compare_expected_actual`.
+- Actioned slice: `AUTHENTICATE-TPERSIGN-OPERATION`
+  - Rule: `TPerSign` is an individual authority with Operation `TPerSign`; when explicitly invoked through `Authenticate`, this is not an appropriate Password-style authentication and returns `SUCCESS` with result `False`, not `True`.
+  - Cross-doc binding:
+    - `core/5.3.4.1.2.txt`: default Base Template authorities include `TPerSign` with Operation `TPerSign`.
+    - `core/5.3.4.1.2.4.txt`: `TPerSign`/`TPerExch` operations use TPer credentials.
+    - `core/5.3.4.1.14.1.txt`: valid authorities with inappropriate attributes, including Operation `Exchange` or `TPerSign`, return `SUCCESS False`.
+  - Implemented as tag: `auth-operation-doc`.
+  - Accepted cases: 2.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_authenticate`.
+- Actioned slice: `STARTSESSION-AUTHORITY-OPERATION-ROLE-MISMATCH`
+  - Rule: `Authority.Operation` must match the session-startup parameter role. Exchange authorities (`AdminExch`, `TPerExch`) are invalid as `HostSigningAuthority`; password/signing-only authorities (`SID`, `TPerSign`) are invalid as `HostExchangeAuthority`; and `TPerSign` may be used during startup only as `SPSigningAuthority`.
+  - Cross-doc binding:
+    - `core/5.3.4.1.2.txt`: default Base Template authorities include `TPerSign` with Operation `TPerSign`.
+    - `core/5.3.4.1.3.txt`: operation values must match startup parameter roles; `Exchange`/`TPerExchange` are exchange-authority roles, Password/Sign/SymK/HMAC are signing-authority roles, and `TPerSign` is only `SPSigningAuthority`.
+    - `core/5.3.4.1.5.txt`: `HostSigningAuthority` is a host control authority parameter in `StartSession`.
+    - `core/5.3.4.1.10.txt`: startup authorities participate in the session startup authentication flow.
+  - Implemented as tag: `auth-operation-startup-doc`.
+  - Accepted cases: 5.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_start_session`.
+- Actioned slice: `STARTTRUSTEDSESSION-ORDER-AND-TARGET`
+  - Rule: `StartTrustedSession` is an SMUID method in the optional trusted startup exchange; if needed, it SHALL occur after `StartSession`/`SyncSession`, and an invocation at any other time returns an error. Its session IDs must match the preceding startup exchange.
+  - Cross-doc binding:
+    - `core/5.2.3.3.txt`: `StartTrustedSession`/`SyncTrustedSession` occurs after `StartSession`/`SyncSession`; other timing returns an error.
+    - `core/5.2.3.3.1.txt`: `HostSessionID` must match the `StartSession` invocation.
+    - `core/5.2.3.3.2.txt`: `SPSessionID` comes from the preceding `SyncSession`.
+    - `core/3.3.7.1.4.txt`: startup method sequence is `StartSession`, `SyncSession`, optional `StartTrustedSession`, then `SyncTrustedSession`.
+  - Implemented as tag: `starttrusted-doc`.
+  - Accepted cases: 3.
+  - Solver repair path checked: `src/solver_components/expectations.py::_expected_start_trusted_session`.
+- Actioned slice: `SESSION-KEY-EXCHANGE-MISSING-CREDENTIAL`
+  - Rule: when a startup control authority requires secure messaging, session keys must be encrypted using an SP Exchange Authority credential when available, otherwise a Host Exchange Authority credential; if no usable exchange credential exists, startup returns an error, so `SUCCESS` is invalid.
+  - Cross-doc binding:
+    - `core/5.3.2.10.txt`: Authority columns define `Secure`, `Credential`, and `ResponseExch`.
+    - `core/5.3.4.1.6.txt`: `HostSigningAuthority` or, absent that, `HostExchangeAuthority` is the Host Control Authority for secure messaging.
+    - `core/5.3.4.1.9.txt`: missing or credentialless exchange authorities cause session key exchange failure.
+  - Implemented as tag: `session-key-exchange-doc`.
+  - Accepted cases: 3.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_start_session`, `src/solver_components/transitions.py::_apply_get_success`, `src/solver_components/transitions.py::_apply_set_success`, `src/solver_components/models.py::State`.
+- Actioned slice: `STARTSESSION-HASHANDSIGN-SIGNEDHASH`
+  - Rule: if the Host Control Authority's `Authority.HashAndSign` value requires hashing/signing, `StartSession`/`StartTrustedSession` parameters from host to TPer must include the `SignedHash` parameter. Session startup fails when hashing/signing is required and `SignedHash` is omitted. `HashAndSign` is enforced only during session startup and ignored for explicit `Authenticate`.
+  - Cross-doc binding:
+    - `core/5.3.2.10.txt`: Authority column 7 is `HashAndSign`; non-None values require a signed hash during session startup and are ignored otherwise.
+    - `core/5.3.4.1.6.txt`: the invoked host signing or host exchange authority determines the host control authority.
+    - `core/5.3.4.1.7.txt`: host control authority `HashAndSign` controls hashing/signing of host-to-TPer startup methods.
+    - `core/5.3.4.1.8.txt`: session startup fails if required hashing/signing omits the signed hash parameter.
+    - `core/5.2.3.1.txt` and `core/5.2.3.1.12.txt`: `StartSession` includes optional `SignedHash`, present when required.
+  - Implemented as tag: `startup-hash-sign-doc`.
+  - Accepted cases: 6.
+  - Solver repair path used: `src/solver_components/expectations.py::_startup_signed_hash_error`, `src/solver_components/transitions.py::_update_authority_from_columns`, `src/solver_components/models.py::State`.
+- Actioned slice: `STARTSESSION-SESSIONTIMEOUT-BOUNDS`
+  - Rule: a supplied `StartSession` `SessionTimeout` must satisfy observed TPer `MinSessionTimeout`/`MaxSessionTimeout` limits and the SP's nonzero `SPInfo.SPSessionTimeout` cap. `SPInfo.SPSessionTimeout` zero/empty is ignored as a cap. A zero `SessionTimeout` is permitted only when `MaxSessionTimeout` and that SP's `SPSessionTimeout` are both zero; otherwise startup fails with `INVALID_PARAMETER`.
+  - Cross-doc binding:
+    - `core/3.3.7.1.6.txt`: session timeout derives from Properties, SPInfo, and StartSession; SPInfo changes affect future sessions; zero timeout has the explicit `INVALID_PARAMETER` rule.
+    - `core/5.2.2.2.txt`: Properties response includes TPer `MinSessionTimeout`.
+    - `core/5.2.3.1.9.txt`: StartSession `SessionTimeout` outside TPer/SP limits fails.
+    - `core/5.3.2.1.6.txt`: `SPSessionTimeout` is the SP default timeout interval.
+    - `opal/4.1.1.2.txt`: Opal StartSession supports the optional timeout parameter and states the Max/SP/Min conditions.
+    - `opal/4.2.1.1.txt`: Opal says missing or zero `SPSessionTimeout` is ignored as an SP cap.
+  - Implemented as tag: `session-timeout-doc`.
+  - Accepted cases: 12.
+  - Solver repair path used: `src/solver_components/expectations.py::_startup_session_timeout_error`, `src/solver_components/transitions.py::_apply_properties_success`, `src/solver_components/transitions.py::_apply_set_success`, `src/solver_components/models.py::State`.
+- Actioned slice: `STARTSESSION-TRANSTIMEOUT-BOUNDS`
+  - Rule: a supplied `StartSession` `TransTimeout` request must satisfy observed TPer `MinTransTimeout`/`MaxTransTimeout` Properties bounds. Values outside those bounds fail startup; `MaxTransTimeout=0` means no upper transmission-timeout limit.
+  - Harness note: for out-of-range values the sourced cases assert impossible `SUCCESS` rather than a concrete error code, because the cited startup sections say the invocation fails but do not map that failure to a single status code.
+  - Cross-doc binding:
+    - `core/3.3.9.4.txt`: transmission timeout is set during session startup and must be within Properties-reported bounds.
+    - `core/5.2.2.2.txt`: Properties response defines `DefTransTimeout`, `MaxTransTimeout`, and `MinTransTimeout`; `MaxTransTimeout=0` means no limit.
+    - `core/5.2.3.1.10.txt`: `StartSession.TransTimeout` outside TPer limits fails.
+    - `core/5.2.3.2.6.txt`: `SyncSession.TransTimeout` relationship to the StartSession request and Properties bounds.
+  - Implemented as tag: `trans-timeout-doc`.
+  - Accepted cases: 6.
+  - Solver repair path used: `src/solver_components/expectations.py::_startup_trans_timeout_error`, `src/solver_components/transitions.py::_apply_properties_success`, `src/solver_components/models.py::State`.
+- Actioned slice: `CPIN-TRYLIMIT-BOUNDARY-AND-TRIES-RESET`
+  - Rule: a nonzero `TryLimit` blocks authentication when `Tries` equals `TryLimit`; below the limit, a correct PIN can still authenticate. `Tries` is reset by successful authentication, by host `Set Tries=0`, and by C_PIN PIN modification. `TryLimit=0` disables the lockout behavior.
+  - Cross-doc binding:
+    - `core/5.3.4.1.1.2.txt`: `TryLimit`/`Tries` semantics and reset conditions.
+    - `opal/4.3.1.9.txt`: Locking SP C_PIN preconfiguration exposes the `TryLimit`, `Tries`, and `Persistence` fields.
+    - Existing C_PIN auth snippets in `core/5.3.4.1.14.txt` and `core/5.3.4.1.14.1.txt` supply the password authentication result shape.
+  - Implemented as tag: `trylimit-doc`.
+  - Accepted cases: 10.
+  - Solver repair path checked: `src/solver_components/expectations.py::_expected_start_session`, `src/solver_components/transitions.py::_apply_auth_failure`, `src/solver_components/transitions.py::_apply_set_success`, `src/solver_components/transitions.py::_apply_reset`.
+- Actioned slice: `CPIN-TRYLIMIT-TRIES-GET-STATE-OBSERVATION`
+  - Rule: the `Tries` and `TryLimit` cells are observable C_PIN table state. Failed authentication increments `Tries` only when `TryLimit` is nonzero; successful authentication and successful PIN modification reset `Tries` to 0; `PowerCycle` resets nonpersistent `Tries`, while Hardware Reset does not.
+  - Harness note: the accepted cases are intentionally long. They establish Locking SP C_PIN_User1 provenance, mutate TryLimit/Persistence/PIN state, perform authentication or reset events, and use a final `Get` of column `0x05` or `0x06` as the checked postcondition.
+  - Cross-doc binding:
+    - `core/5.3.4.1.1.2.txt`: failed-authentication accounting, reset conditions, no-limit behavior, and PIN-modification reset.
+    - `opal/4.3.1.9.txt`: concrete Locking SP C_PIN_User1 row and columns.
+  - Implemented as tag: `trylimit-tries-get-doc`.
+  - Accepted cases: 14.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/engine.py::_return_cell_matches`, `src/solver_components/transitions.py::apply_transition`.
+- Actioned slice: `AUTHORITY-LIMIT-USES-AUTHENTICATABLE`
+  - Rule: Authority `Limit` caps the total number of successful authentications, including session startup and explicit `Authenticate`; `Uses` counts successful authentications. If `Limit` is nonzero and `Uses >= Limit`, the authority is no longer authenticatable. `Limit=0` means no limit.
+  - Cross-doc binding:
+    - `core/3.4.2.2.txt`: `Authority.Limit` and `Authority.Uses` define the authentication cap and successful-authentication count.
+    - `core/5.3.2.10.txt`: Authority table column mapping for `Limit` and `Uses`.
+    - `core/5.3.4.1.10.txt`: session startup authentication is part of the session startup sequence.
+    - `core/5.3.4.1.14.1.txt`: explicit password-style `Authenticate` result shape.
+    - `opal/4.3.1.8.txt`: Locking SP `User1` is an individual Password authority.
+  - Implemented as tag: `authority-limit-doc`.
+  - Accepted cases: 7.
+  - Solver repair path used: `src/solver_components/expectations.py::_authority_limit_reached`, `src/solver_components/expectations.py::_expected_start_session`, `src/solver_components/expectations.py::_expected_authenticate`, `src/solver_components/transitions.py::_increment_authority_use`, `src/solver_components/transitions.py::_update_authority_from_columns`, `src/solver_components/parsing.py::_column_from_name`, `src/solver_components/models.py::State`.
+- Actioned slice: `SYNCSESSION-CLASS-HSA-INVALID_PARAMETER`
+  - Rule: a `StartSession` whose `HostSigningAuthority` parameter names a class authority fails startup; the TPer returns a `SyncSession`-formatted response with `INVALID_PARAMETER` status, so a `SUCCESS` startup is invalid.
+  - Harness note: the sourced trajectory records the startup target step status directly; the evidence binding explains that a failed `StartSession` is formatted as `SyncSession` with the same non-success status.
+  - Cross-doc binding:
+    - `core/5.1.5.11.txt`: class `HostSigningAuthority` in the preceding `StartSession` requires `INVALID_PARAMETER` as the `SyncSession` status.
+    - `core/5.3.2.10.txt`: `IsClass` distinguishes class vs individual Authority rows.
+    - `core/5.3.4.1.5.txt`: failed `StartSession` returns a `SyncSession` with non-success status.
+    - `core/5.3.4.1.10.txt` and `core/3.3.7.1.4.txt`: `HostSigningAuthority` participates in session startup authentication.
+    - `opal/4.2.1.7.txt` and `opal/4.3.1.8.txt`: `Admins`, `Makers`, and `Users` are class Authority rows in the Opal preconfiguration.
+  - Implemented as tag: `session-class-authority-doc`.
+  - Accepted cases: 6.
+  - Solver repair path checked: `src/solver_components/expectations.py::_expected_start_session`.
+- Actioned slice: `TPER-RESET-ENABLE-SESSION-ABORT`
+  - Rule: `TPER_RESET` is accepted only when `TPerInfo.ProgrammaticResetEnable` is enabled; an accepted `TPER_RESET` aborts open sessions before the next IF-SEND/IF-RECV.
+  - Cross-doc binding:
+    - `opal/3.2.3.txt`: `TPER_RESET` command enablement and side effects, including open-session abort and buffer invalidation.
+    - `opal/4.2.3.1.txt`: `TPerInfo.ProgrammaticResetEnable` is the controlling enable bit, default false, readable by Anybody and modifiable by SID.
+  - Implemented as tag: `tper-reset-doc`.
+  - Accepted cases: 3.
+  - Solver repair path checked: `src/solver_components/expectations.py::_expected_host_io`, `src/solver_components/transitions.py::_apply_reset_event`, `src/solver_components/parsing.py::_reset_event_type`.
+- Actioned slice: `MBR-DONE-ON-RESET`
+  - Rule: reset types listed in `MBRDoneOnReset` set MBRControl Done to false; an empty set leaves Done unchanged across resets.
+  - Cross-doc binding:
+    - `core/5.7.2.5.4.txt`: `MBRDoneOnReset` listed reset types set Done false; empty set does not change Done.
+    - `core/5.7.2.5.3.txt`: Done false with MBR shadowing active redirects MBR-range reads to MBR-table data.
+    - `core/5.7.2.5.2.txt` and `core/5.7.3.2.txt`: MBRControl Enable/Done interactions for host LBA reads.
+  - Implemented as tag: `mbr-done-reset-doc`.
+  - Accepted cases: 3.
+  - Solver repair path checked: `src/solver_components/transitions.py::_apply_reset_event`, `src/solver_components/expectations.py::_expected_host_io`, `src/solver_components/semantics.py::_mbr_shadow_relation`.
+- Actioned slice: `MBR-TABLE-PAYLOAD-PROVENANCE`
+  - Rule: the MBR table is a byte-addressable table whose values are modifiable only by properly authenticated `Set` invocations. When MBR shadowing is active (`Enable=true`, `Done=false`), LBA requests in the MBR range are fulfilled from the MBR table, so a trajectory that first writes known MBR table bytes may assert the exact active-shadow read payload.
+  - Rework note: this is the trusted replacement for the older quarantined MBR payload case that asserted an exact payload without first proving the MBR table bytes.
+  - Cross-doc binding:
+    - `core/5.7.3.6.txt`: MBR table stores boot code, is byte-addressable, and values are modifiable only by properly authenticated `Set`.
+    - `core/5.7.2.5.2.txt`: MBR shadowing is active when `Enable` is true and `Done` is false.
+    - `core/5.7.2.5.3.txt`: while `Done` is false, MBR-range LBA requests are fulfilled from the MBR table.
+  - Implemented as tag: `mbr-table-doc`.
+  - Accepted cases: 4.
+  - Quarantined cases: 2, due to reviewer concerns about exact post-`Done=true` read source and exact unauthenticated error-code mapping.
+  - Solver repair path used: `src/solver_components/models.py::State`, `src/solver_components/transitions.py::_apply_set_success`, `src/solver_components/expectations.py::_expected_host_io`.
+  - Pipeline repair: `tools/label_consensus.py` now treats textual confidence values (`high`, `medium`, `low`) as numeric confidence scores.
+- Actioned slice: `REENCRYPT-PROGRESS-HOST-READONLY`
+  - Rule: `LastReEncryptLBA` and `LastReEncStat` report re-encryption progress/status and SHALL NOT be modifiable by the host.
+  - Cross-doc binding:
+    - `core/5.7.2.2.18.txt`: `LastReEncryptLBA` validity and host-read-only constraint.
+    - `core/5.7.2.2.19.txt`: `LastReEncStat` validity and host-read-only constraint.
+  - Implemented as tag: `reencrypt-progress-doc`.
+  - Accepted cases: 2.
+  - Solver repair path used: `src/solver_components/semantics.py::_invalid_set_values`; tests added in `tests/test_solver_rules.py`.
+- Actioned slice: `REENCRYPT-EMPTY-CONTONRESET-RESET-STOP`
+  - Rule: an empty `ContOnReset` set means any reset stops re-encryption and sets `ReEncryptState` to `PAUSED`; `GeneralStatus` distinguishes prior ACTIVE (`34`) from prior PENDING (`5`).
+  - Cross-doc binding:
+    - `core/5.7.2.2.17.txt`: empty `ContOnReset` sets `TPer_Reset_Stop` for any reset and sets `ReEncryptState` to `PAUSED`.
+    - `core/5.1.3.34.txt`: `active_reset_stop_detect=34` and `pend_reset_stop_detect=5`.
+  - Implemented as tag: `reencrypt-reset-doc`.
+  - Accepted cases: 4.
+  - Solver repair path used: `src/solver_components/transitions.py::_apply_reset_event`, `src/solver_components/expectations.py::_expected_get`, `src/solver_components/engine.py::compare_expected_actual`.
+- Actioned slice: `REENCRYPT-COLUMN-TYPES-AND-GET-EMPTY`
+  - Rule: Locking `ActiveKey` uses `mediakey_object_uidref`, whose type-checking validates that the uidref points to a media encryption key object in a K_AES table. `ReEncryptRequest` is request state, and a successful `Get` of that column SHALL return no value.
+  - Harness note: this slice started with 8 candidate cases but was reduced to 2 accepted cases after independent reviewers raised concerns about implicit valid-media-key UID mapping, missing explicit `NextKey` state context, and reserved enum/value interpretations. The discarded review rounds are preserved under `analysis/label_reviews/discarded/reencrypt_column_types_*`.
+  - Cross-doc binding:
+    - `core/5.7.2.2.txt`: Locking table columns, including ActiveKey, NextKey, and ReEncryptRequest.
+    - `core/5.7.2.2.11.txt`: ActiveKey points to the range media encryption key.
+    - `core/5.1.3.53.txt`: `mediakey_object_uidref` is restricted to K_AES_128/K_AES_256 media encryption key objects and must be validated during type checking.
+    - `core/5.7.2.2.14.txt`: successful `Get` on ReEncryptRequest returns no value.
+    - `opal/4.3.5.2.txt`: Opal preconfigures ActiveKey as a K_AES_128[256] object reference.
+  - Implemented as tag: `reencrypt-column-types-doc`.
+  - Accepted cases: 2.
+  - Solver repair path used: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/semantics.py::_media_key_ref_invalid`, and `src/solver_components/expectations.py::_expected_get`.
+- Actioned slice: `CPIN-CHARSET-BYTE-TABLE-REF`
+  - Rule: C_PIN `CharSet` column `0x04` has `byte_table_ref` type. During type checking, the TPer must validate that the uidref points to a byte table; therefore a C_PIN object UID cannot be accepted as a successful `CharSet` value.
+  - Harness note: a symbolic `CharSet` column variant was discarded after one reviewer noted the name-to-column mapping was an inference in the blind packet. The accepted case uses numeric column `0x04`.
+  - Cross-doc binding:
+    - `core/5.3.2.12.txt`: C_PIN table description, including CharSet column `0x04` with `byte_table_ref` type.
+    - `core/5.3.2.12.5.txt`: CharSet references the byte table used for TPer-generated PIN values, with NULL UID using the default character set.
+    - `core/5.1.3.13.txt`: `byte_table_ref` must be validated as a uidref to a byte table.
+  - Implemented as tag: `cpin-charset-doc`.
+  - Accepted cases: 1.
+  - Solver repair path checked: `src/solver_components/parsing.py::_column_from_name`, `src/solver_components/semantics.py::_byte_table_ref_invalid`, and `src/solver_components/semantics.py::_invalid_set_values`.
+- Actioned slice: `GENKEY-PUBLIC-EXPONENT-NON-RSA`
+  - Rule: GenKey `PublicExponent` is only for C_RSA_1024 and C_RSA_2048 targets. Providing `PublicExponent` when GenKey is invoked on a non-C_RSA credential object is a fail condition.
+  - Cross-doc binding:
+    - `core/5.3.3.16.txt`: GenKey target credential families and method signature.
+    - `core/5.3.3.16.1.txt`: PublicExponent is used for C_RSA_1024/C_RSA_2048 GenKey.
+    - `core/5.3.3.16.4.txt`: GenKey fails if PublicExponent is provided on a non-C_RSA credential object.
+    - `core/5.3.2.12.txt`: C_PIN is a credential object table.
+    - `core/5.7.2.4.txt`: K_AES_256 is a media encryption key object table.
+  - Implemented as tag: `genkey-public-exponent-doc`.
+  - Accepted cases: 2.
+  - Solver repair path checked: `src/solver_components/expectations.py::_expected_genkey`.
+- Actioned slice: `DATA-REMOVAL-ACTIVE-MECHANISM`
+  - Rule: `DataRemovalMechanism.ActiveDataRemovalMechanism` uses the Opal `data_removal_mechanism` enum; Cryptographic Erase value 2 is mandatory/supported, reserved values such as 4 fail with `INVALID_PARAMETER`, and the Set ACL is Admins OR SID.
+  - Cross-doc binding:
+    - `opal/4.2.6.1.txt` and `opal/4.2.6.1.2.txt`: DataRemovalMechanism row/column and unsupported-value failure rule.
+    - `opal/4.2.5.1.txt`: enum values and reserved ranges.
+    - `opal/3.1.1.6.3.txt`: Cryptographic Erase is mandatory.
+    - `opal/4.2.7.1.txt`: Admin SP table preconfiguration and row UID.
+    - `opal/4.2.1.5.txt` and `opal/4.2.1.6.txt`: Set ACL maps to `Admins OR SID`.
+  - Implemented as tag: `data-removal-doc`.
+  - Accepted cases: 6.
+  - Solver repair path checked: `src/solver_components/semantics.py::_parse_data_removal_mechanism`, `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/semantics.py::_set_required_authorities`, `src/solver_components/expectations.py::_expected_set`.
+- Actioned slice: `REVERTSP-LOCKINGSP-KEEP-GLOBAL-LIFECYCLE`
+  - Rule: for a manufactured Locking SP whose Original Factory State is Manufactured-Inactive, `Activate` transitions it to Manufactured and copies the current SID PIN into `C_PIN_Admin1`. `RevertSP` is a read-write SP method that reverts the invoked manufactured SP to its Original Factory State, reports status, and immediately aborts the session. `KeepGlobalRangeKey=True` preserves Global Range data when the Global Range is read-unlocked or write-unlocked, but fails with status `FAIL` and leaves lifecycle unchanged when the Global Range is both read-locked and write-locked. In Manufactured-Inactive, sessions cannot be opened to the Locking SP and locking/media-encryption management is disabled.
+  - Harness note: the accepted cases are deliberately long, with explicit SID ownership, observed `Manufactured-Inactive` lifecycle, activation, host data writes, Global Range lock-state setup, `RevertSP`, and a postcondition target. The first review pass quarantined two postcondition cases because OFS was implicit; the accepted pass made the OFS/activation context explicit.
+  - Cross-doc binding:
+    - `opal/5.1.1.txt`: `Activate` applies to manufactured SPs whose initial lifecycle state is Manufactured-Inactive.
+    - `opal/5.1.1.2.txt`: successful activation changes lifecycle to Manufactured and copies SID PIN into `C_PIN_Admin1`.
+    - `opal/5.1.3.txt`: `RevertSP` reports status and then immediately aborts the session.
+    - `opal/5.1.3.2.txt`: `KeepGlobalRangeKey` preservation and both-locked failure rule.
+    - `opal/5.1.3.3.txt`: successful `RevertSP` erases media keys/user data unless KeepGlobalRangeKey preserves the Global Range key.
+    - `opal/5.2.2.txt` and `opal/5.2.2.1.txt`: manufactured Locking SP Original Factory State is Manufactured-Inactive.
+    - `opal/5.2.2.3.1.txt`: sessions cannot be opened to Manufactured-Inactive SPs.
+    - `opal/5.2.2.3.2.txt`: Manufactured state enables locking/media-encryption management.
+  - Implemented as tag: `revertsp-lifecycle-doc`.
+  - Accepted cases: 11.
+  - Solver repair path checked: `src/solver_components/expectations.py::_expected_revert`, `src/solver_components/transitions.py::_reset_locking_sp`, `src/solver_components/transitions.py::apply_transition`, `src/solver_components/expectations.py::_expected_start_session`, `src/solver_components/expectations.py::_expected_host_io`.
+- Actioned slice: `DELETESP-LIFECYCLE-SESSION-CLOSE`
+  - Rule: `DeleteSP` is invoked on `ThisSP`/the current SP, returns an empty list, and takes effect only after the session is successfully closed. Once the SP has been deleted, the host can no longer open sessions to that SP. Disabled Base-template SPs still permit `DeleteSP` with normal access control, and the Admin SP cannot be deleted.
+  - Harness note: reviewer concerns on exact non-success status and LockingInfo access were resolved by keeping only impossible-success/postcondition cases whose source support is direct.
+  - Cross-doc binding:
+    - `core/5.3.3.1.txt`: `ThisSP.DeleteSP[] => []`.
+    - `core/5.3.3.1.1.1.txt`: successful `DeleteSP` returns an empty list.
+    - `core/5.3.4.4.txt`: `DeleteSP` does not delete until successful session close.
+    - `core/5.4.4.2.txt`: after deletion, the host can no longer open sessions to the SP.
+    - `core/4.5.2.txt` and `core/5.3.5.1.txt`: disabled SPs still allow `DeleteSP` with normal access control.
+    - `core/3.4.1.1.txt`: Admin SP cannot be deleted.
+  - Implemented as tag: `deletesp-lifecycle-doc`.
+  - Accepted cases: 5.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_delete_sp`.
+- Actioned slice: `ADMINSP-REVERT-SID-MSID-RESET`
+  - Rule: AdminSP `Revert` is mandatory on the Admin SP object, operates in a read-write Admin SP session, returns an empty list, aborts the session immediately after reporting status, reverts the TPer to Original Factory State, and removes active Locking SP user data. If SID was successfully authenticated and the Opal SSC V2 `Behavior of C_PIN_SID PIN upon TPer Revert` field is `0x00`, `C_PIN_SID` is set to `C_PIN_MSID`.
+  - Harness note: the VU SID branch was intentionally not asserted as exact failure because the source only says the value is vendor unique and may not equal MSID. One LockingSP OFS session-start case was removed after reviewers recorded concerns about relying on an OFS inference.
+  - Cross-doc binding:
+    - `opal/3.1.1.5.txt`: Opal SSC V2 feature descriptor fields for initial SID and SID-on-Revert behavior.
+    - `opal/5.1.2.txt` and `opal/5.1.2.1.txt`: AdminSP `Revert` method support, read-write Admin SP session, immediate session abort.
+    - `opal/5.1.2.2.txt`: AdminSP `Revert` reverts the TPer and removes active Locking SP user data.
+    - `opal/5.1.2.2.1.txt`: `C_PIN_SID` behavior after AdminSP `Revert`.
+    - `core/5.3.2.12.txt`: C_PIN table and PIN column.
+  - Implemented as tag: `admin-revert-sid-doc`.
+  - Accepted cases: 7.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_revert`, `src/solver_components/transitions.py::_reset_factory_state`, `src/solver_components/transitions.py::apply_transition`.
+- Actioned slice: `LOG-ADDLOG-RESULT-AND-DATA-LIMIT`
+  - Rule: `AddLog` is a Log table method. A successful invocation adds a user-generated log entry, automatically gives it `LogKind=9`, returns an empty result list, is not subject to transactional rollback, and may persist even from a read-only session. The log-entry Data field holds up to 64 bytes.
+  - Cross-doc binding:
+    - `core/5.8.2.1.txt`: Log is an object table with LogKind, Name, and Data columns.
+    - `core/5.8.4.2.txt`: log-entry Data holds up to 64 bytes and LogKind value 9 means user generated.
+    - `core/5.8.4.3.txt`: log entries update LogKind and read-only/concurrent log effects are atomic/persistent.
+    - `core/5.8.3.1.txt`: `AddLog` adds an entry, sets LogKind to 9, and is not subject to transactional abort/rollback.
+    - `core/5.8.3.1.3.1.txt`: `AddLog` success/failure is determined by status code and returns an empty list.
+  - Implemented as tag: `log-addlog-doc`.
+  - Accepted cases: 4.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_add_log`, `src/solver_components/constants.py::SUPPORTED_METHODS_BY_SP`, `src/solver_components/expectations.py::_return_payload_length`.
+- Actioned slice: `LOG-CLEAR-FLUSH-EMPTY-RESULT`
+  - Rule: `ClearLog` and `FlushLog` are Log table methods. `ClearLog` removes all entries in the indicated Log table and returns an empty list on success. `FlushLog` commits memory-only entries to the indicated Log table on media, returns an empty list on success, and generates its result only after the persistent-storage commit completes. Both methods fail if the referenced Log table does not exist.
+  - Harness note: the first review pass recorded concerns on non-Log target cases because the packet did not directly define C_PIN. The accepted pass adds `core/5.3.2.12.txt` so the packet proves that C_PIN is a credential object table, not a Log table.
+  - Cross-doc binding:
+    - `core/5.8.2.1.txt`: Log is the Log object-table template.
+    - `core/5.8.3.3.txt`, `core/5.8.3.3.1.1.txt`, and `core/5.8.3.3.2.txt`: `ClearLog` signature, empty success result, and non-existent referenced log table failure.
+    - `core/5.8.3.4.txt`, `core/5.8.3.4.1.1.txt`, and `core/5.8.3.4.2.txt`: `FlushLog` signature, empty success result after persistent commit, and non-existent referenced log table failure.
+    - `core/5.8.4.3.txt`: Log table operation context.
+    - `core/5.3.2.12.txt`: C_PIN is a credential object table used as the concrete non-Log target.
+  - Implemented as tag: `log-clear-flush-doc`.
+  - Accepted cases: 6.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_log_maintenance`, `src/solver_components/expectations.py::_is_log_table_target`, `src/solver_components/constants.py::SUPPORTED_METHODS_BY_SP`.
+- Actioned slice: `LOG-CREATELOG-RESULT-AND-DUPLICATE-NAME`
+  - Rule: `CreateLog` is a LogList table method that creates a LogList row and corresponding Log table. `NewLogTableName` names the new Log table, `HighSecurity` is boolean, `MinSize` is an unsigned integer row count, and the `NewLogTableName`/`CommonName` combination is unique. A successful invocation returns exactly `LogListUID`, `LogTableUID`, and `Rows`; the method fails if a log table with the specified name already exists.
+  - Harness note: one reviewer initially missed the duplicate-name context step. A fresh independent review pass over the same packet resolved the disagreement, with all three reviewers labeling the duplicate second `CreateLog` success as FAIL.
+  - Cross-doc binding:
+    - `core/5.8.2.1.txt`: Log tables are created with `CreateLog` and have associated LogList rows.
+    - `core/5.8.2.2.txt`: LogList is the object table containing one row for each Log table.
+    - `core/5.8.3.2.txt`: `CreateLog` creates both the LogList row and Log table and returns the result tuple.
+    - `core/5.8.3.2.1.txt`, `core/5.8.3.2.2.txt`, `core/5.8.3.2.3.txt`, and `core/5.8.3.2.6.txt`: required and uniqueness parameters.
+    - `core/5.8.3.2.7.1.txt`, `core/5.8.3.2.7.2.txt`, and `core/5.8.3.2.7.3.txt`: result fields.
+    - `core/5.8.3.2.8.txt`: duplicate log table name and resource failure cases.
+    - `core/5.1.3.82.txt`: `uinteger` is unsigned.
+    - `core/5.3.2.12.txt`: C_PIN is a credential object table used as the concrete non-LogList target.
+  - Implemented as tag: `log-createlog-doc`.
+  - Accepted cases: 7.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_create_log`, `src/solver_components/expectations.py::_is_log_list_target`, `src/solver_components/transitions.py::_apply_create_log_success`, `src/solver_components/expectations.py::_return_payload_length`, `src/solver_components/constants.py::SUPPORTED_METHODS_BY_SP`.
+- Actioned slice: `RANDOM-COUNT-BUFFEROUT-PARAMETERS`
+  - Rule: `Random` is an SP method whose `Count` parameter specifies the requested random-byte length. `Count` is a `uinteger`, Opal support is mandatory for values less than or equal to 32, successful non-`BufferOut` results carry exactly that many bytes, `BufferOut` makes the returned `Result` empty, and unsupported Random parameters fail with `INVALID_PARAMETER`.
+  - Harness note: the first packet was discarded because one reviewer marked `Count=0` and omitted-`Count` assertions as somewhat implicit. The accepted packet replaced those with direct `BufferOut` success and unsupported-parameter failure cases, then passed three fresh independent reviewers with no concerns.
+  - Cross-doc binding:
+    - `core/5.6.4.1.txt`: `Random` signature and `Count`/`BufferOut`/`Result` shape.
+    - `core/5.6.4.1.1.txt`: `Count` specifies the size in bytes of the generated random sequence.
+    - `core/5.6.4.1.2.txt`: `BufferOut` identifies cells/ranges where generated bytes are stored.
+    - `core/5.6.4.1.3.1.txt`: `Result` is the generated value, and if `BufferOut` is specified `Result SHALL be empty`.
+    - `core/5.1.3.82.txt`: `uinteger` is unsigned.
+    - `opal/4.2.9.1.txt`: Opal requires `Count` support up to 32 and unsupported parameters fail with `INVALID_PARAMETER`.
+    - `opal/4.3.4.1.txt`: Locking SP inherits the Admin SP `Random` constraints.
+  - Implemented as tag: `random-doc`.
+  - Accepted cases: 6.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_random`, `src/solver_components/expectations.py::_random_unsupported_arg`.
+- Actioned slice: `PACKAGE-CREDENTIAL-UIDREFS-AND-RESULTS`
+  - Rule: `GetPackage` and `SetPackage` operate on credential objects and move key material as a package. `GetPackage` requires `Purpose` and fails when `WrappingKey` or `SigningKey` is not a valid credential. `SetPackage` requires `Value`, fails when `WrappingKey` or `SigningKey` is not a valid credential, and returns an empty result list on success.
+  - Harness note: this slice intentionally keeps only impossible-success/status-shape cases. Positive `GetPackage`/`SetPackage` success depends on access-control preconditions and package cryptographic validity that are not fully proven by the packet.
+  - Cross-doc binding:
+    - `core/5.3.3.17.txt`, `core/5.3.3.17.1.txt`, `core/5.3.3.17.2.txt`, `core/5.3.3.17.3.txt`, `core/5.3.3.17.6.1.txt`, and `core/5.3.3.17.7.txt`: `GetPackage` signature, `Purpose`, wrapping/signing credential uidrefs, result package, and fail rules.
+    - `core/5.3.3.18.txt`, `core/5.3.3.18.1.txt`, `core/5.3.3.18.2.txt`, `core/5.3.3.18.3.txt`, `core/5.3.3.18.4.txt`, and `core/5.3.3.18.5.txt`: `SetPackage` signature, `Value`, wrapping/signing credential uidrefs, empty result, and fail rules.
+    - `core/5.3.4.5.txt`: `SetPackage` decrypts/verifies package contents and sets invoking credential columns.
+    - `core/5.1.4.2.12.txt`: package structure is generated by `GetPackage` and consumed by `SetPackage`.
+    - `core/5.3.2.12.txt`: C_PIN rows are password credentials.
+    - `core/5.7.2.1.txt`: LockingInfo is a non-credential object table used as the concrete invalid target/wrapping-key reference.
+  - Implemented as tag: `package-doc`.
+  - Accepted cases: 7.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get_package`, `src/solver_components/expectations.py::_expected_set_package`, `src/solver_components/semantics.py::_credential_ref_invalid`.
+- Actioned slice: `TABLE-QUERY-FREE-SPACE-ROWS`
+  - Rule: `GetFreeSpace` is a `ThisSP` SP method whose successful result has exactly `FreeSpace` and `TableRows`. `GetFreeRows` is a table object method whose successful result has exactly `FreeRows`.
+  - Harness note: this slice asserts result arity and method target shape only; it does not assert implementation-specific free-space or free-row numeric values.
+  - Cross-doc binding:
+    - `core/5.3.3.9.txt`, `core/5.3.3.9.1.txt`, `core/5.3.3.9.1.1.txt`, and `core/5.3.3.9.1.2.txt`: `GetFreeSpace` signature and `FreeSpace`/`TableRows` result fields.
+    - `core/5.3.3.10.txt`: `GetFreeRows` signature, `FreeRows` result field, and fail condition for non-existent table references.
+    - `core/5.3.2.12.txt`: C_PIN is an existing object table used as the concrete `GetFreeRows` target.
+  - Implemented as tag: `table-query-doc`.
+  - Accepted cases: 7.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get_free_space`, `src/solver_components/expectations.py::_expected_table_query`, `src/solver_components/expectations.py::_return_payload_length`.
+- Actioned slice: `SECRETPROTECT-READONLY-COLUMNS`
+  - Rule: SecretProtect rows identify protected key-material columns. `UID`, `Table`, `ColumnNumber`, and `ProtectMechanisms` are all not host-modifiable.
+  - Harness note: all cases are impossible-success `Set` attempts on Opal Locking SP SecretProtect rows. The rule does not require proving a particular vendor-unique ProtectMechanisms value, only that the column is read-only to the host.
+  - Cross-doc binding:
+    - `core/5.3.2.8.txt`: SecretProtect table definition and column list.
+    - `core/5.3.2.8.1.txt`, `core/5.3.2.8.2.txt`, `core/5.3.2.8.3.txt`, and `core/5.3.2.8.4.txt`: `UID`, `Table`, `ColumnNumber`, and `ProtectMechanisms` are not modifiable by the host.
+    - `opal/4.3.1.10.txt`: Opal Locking SP supports at least one SecretProtect row for K_AES key-column protection.
+  - Implemented as tag: `secretprotect-doc`.
+  - Accepted cases: 3.
+  - Solver repair path checked: `src/solver_components/expectations.py::_expected_set`, `src/solver_components/semantics.py::_invalid_set_values`.
+- Actioned slice: `TABLE-KIND-CREATETABLE-RESULTS`
+  - Rule: `table_kind` has valid values `1=Object` and `2=Byte`; `3-8` are reserved and `0` is outside the valid abstract-type range. `CreateTable` takes `Kind: table_kind`, and a successful result contains exactly `UID` and `Rows`.
+  - Harness note: cases assert kind validity and result arity only. They avoid implementation-specific row capacity or byte-table payload contents.
+  - Cross-doc binding:
+    - `core/3.2.5.1.txt`: byte vs object table semantics, including byte rows existing at creation and object rows being created via `CreateRow`.
+    - `core/5.1.3.74.txt` and `core/5.1.4.2.16.txt`: `table_kind` enumeration/abstract type values.
+    - `core/5.3.3.2.txt`, `core/5.3.3.2.9.1.txt`, and `core/5.3.3.2.9.2.txt`: `CreateTable` signature and `UID`/`Rows` result fields.
+    - `core/5.3.4.2.1.txt`: table creation behavior for byte and object tables.
+  - Implemented as tag: `table-kind-doc`.
+  - Accepted cases: 8.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_create_table`, `src/solver_components/semantics.py::_create_table_kind`, `src/solver_components/expectations.py::_return_payload_length`.
+- Actioned slice: `GET-CELLBLOCK-CONTEXT`
+  - Rule: `Get` uses `Cellblock` to select cells and returns `Bytes` for byte tables or `RowValues` for object tables. `Cellblock` components are context-sensitive: `Table` is omitted for object/table invocations; object-method Cellblocks omit `startRow` and `endRow`; object-table `Get` requires `startRow` and rejects `endRow`; byte-table `Get` may use row bounds but rejects column bounds.
+  - Harness note: the accepted cases avoid exact DataStore/MBR payload contents and focus on Cellblock legality plus result type shape.
+  - Cross-doc binding:
+    - `core/5.1.4.2.3.txt`: normative `cell_block` component rules.
+    - `core/5.3.3.6.txt`, `core/5.3.3.6.1.txt`, `core/5.3.3.6.2.1.txt`, `core/5.3.3.6.2.2.txt`, and `core/5.3.3.6.3.txt`: `Get` signature, result type, and fail conditions.
+    - `core/5.3.4.2.2.txt`: table data retrieval and inaccessible-cell omission rules.
+    - `core/5.7.2.1.txt` and `opal/4.3.5.1.txt`: `LockingInfo` object-table row and Anybody-readable Opal geometry columns.
+    - `core/5.3.2.12.txt`: `C_PIN` is an object table.
+    - `opal/4.3.8.1.txt`, `opal/4.3.1.6.txt`, `opal/4.3.1.7.txt`, `opal/4.3.1.8.txt`, and `opal/5.1.1.2.txt`: DataStore byte-table status, initial Admins ACL, Admin1 class membership, and Activate credential transfer.
+  - Implemented as tag: `get-cellblock-doc`.
+  - Accepted cases: 8.
+  - Solver repair path used: `src/solver_components/parsing.py::_cellblock_components`, `src/solver_components/expectations.py::_get_cellblock_parameter_error`, and `src/solver_components/expectations.py::_expected_get`.
+- Actioned slice: `NEXT-OBJECT-TABLE-ITERATION`
+  - Rule: `Next` is a table method for iterating object tables and returns a list of UID column values. `Where`, when present, identifies the row after which iteration starts; `Count` is a `uinteger`; byte tables are not valid `Next` targets.
+  - Harness note: one initial invalid-`Where` case was removed because reviewers wanted an explicit fail clause for a row outside the target table. Accepted cases avoid exact ordering/count assertions and check target type, Count unsignedness, and result type only.
+  - Cross-doc binding:
+    - `core/5.3.3.8.txt`, `core/5.3.3.8.1.txt`, `core/5.3.3.8.2.txt`, `core/5.3.3.8.3.1.txt`, and `core/5.3.3.8.4.txt`: `Next` signature, `Where`, `Count`, result shape, and fail condition.
+    - `core/5.3.4.2.7.txt`: object-table iteration semantics and omitted-parameter scope.
+    - `core/5.1.3.82.txt`: `uinteger` basis for `Count`.
+    - `core/5.3.2.12.txt`, `opal/4.2.1.3.txt`, and `opal/4.2.1.5.txt`: C_PIN object-table status and Admin SP `Next` access.
+    - `opal/4.3.1.3.txt` and `opal/4.3.8.1.txt`: DataStore byte-table status.
+  - Implemented as tag: `next-doc`.
+  - Accepted cases: 6.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_next`, `src/solver_components/engine.py::_return_is_uid_list`, and `src/solver_components/parsing.py::_next_count_invalid`.
+- Actioned slice: `TABLE-LIFECYCLE-OBJECT-BYTE-RESULTS`
+  - Rule: `CreateTable` creates a table descriptor and a table. Name/CommonName combinations are unique. Object tables start with no rows and may use `CreateRow`; byte tables are created in full and do not support `CreateRow` or `DeleteRow`. `DeleteRow` and object `Delete` successes return an empty list. `DeleteRow` is not permitted for protected system tables such as AccessControl.
+  - Harness note: one initial `GetFreeRows` exact-count case was removed because reviewers correctly noted that the official text proves the method shape but not the implementation-specific free-row count.
+  - Cross-doc binding:
+    - `core/5.3.3.2.txt`, `core/5.3.3.2.9.1.txt`, and `core/5.3.3.2.9.2.txt`: `CreateTable` signature and result fields.
+    - `core/5.3.3.2.10.txt` and `core/5.3.4.2.1.txt`: duplicate Name/CommonName and table creation constraints.
+    - `core/5.3.3.4.txt`, `core/5.3.3.4.2.1.txt`, and `core/5.3.4.2.3.txt`: `CreateRow` result and object-table row creation constraints.
+    - `core/5.3.3.5.txt`, `core/5.3.3.5.2.1.txt`, and `core/5.3.4.2.4.txt`: `DeleteRow` result and protected-table restrictions.
+    - `core/5.3.3.3.1.1.txt`: `Delete` success returns an empty list.
+  - Implemented as tag: `table-lifecycle-doc`.
+  - Accepted cases: 7.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_delete_row`, `src/solver_components/expectations.py::_expected_delete`.
+- Actioned slice: `ACCESSCONTROL-META-ACL-METHODS`
+  - Rule: each AccessControl row has distinct meta-ACL columns for `AddACE`, `RemoveACE`, `GetACL`, and `DeleteMethod`. The corresponding meta-method is authorized by the row-specific `AddACEACL`, `RemoveACEACL`, `GetACLACL`, or `DeleteMethodACL`. If the relevant meta-ACL is empty, the meta-method is not invocable and returns `NOT_AUTHORIZED`. Successful `AddACE`, `RemoveACE`, and `DeleteMethod` return empty lists.
+  - Harness note: one initial positive `AddACE` success case was removed because reviewers wanted independent proof that all non-meta-ACL fail preconditions, such as ACE existence/full ACL, were false. The accepted cases keep only directly sourced negative/status-shape claims.
+  - Cross-doc binding:
+    - `core/5.3.4.3.txt`: empty ACL columns make an InvokingID/MethodID combination not invocable with `NOT_AUTHORIZED`.
+    - `core/5.3.4.3.1.txt`: meta-ACL methods are governed by the row's AddACEACL, RemoveACEACL, GetACLACL, and DeleteMethodACL.
+    - `core/5.3.3.14.txt`, `core/5.3.3.14.4.1.txt`, and `core/5.3.3.14.5.txt`: `AddACE` signature, empty result, and fail conditions.
+    - `core/5.3.3.15.txt`, `core/5.3.3.15.4.1.txt`, and `core/5.3.3.15.5.txt`: `RemoveACE` signature, empty result, and fail conditions.
+    - `core/5.3.3.11.txt`: `DeleteMethod` removes an access control association and returns an empty list.
+    - `opal/4.2.1.5.txt` and `opal/4.3.1.6.txt`: concrete Admin SP and Locking SP AccessControl preconfiguration rows.
+    - `opal/4.3.1.7.txt`: Locking SP ACE names used by the sourced trajectories.
+  - Implemented as tag: `meta-acl-doc`.
+  - Accepted cases: 6.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get_acl`, `src/solver_components/expectations.py::_expected_acl_mutation`, `src/solver_components/expectations.py::_expected_delete_method`.
+- Actioned slice: `ACCESSCONTROL-META-METHOD-PARAMS-AND-RESULTS`
+  - Rule: `DeleteMethod`, `GetACL`, `AddACE`, and `RemoveACE` are invoked on `AccessControlTableUID`. `DeleteMethod` and `GetACL` require `InvokingID` and `MethodID`; `AddACE` and `RemoveACE` require `InvokingID`, `MethodID`, and `ACE`. `GetACL` returns an `access_control_list`, specifically a list of ACE uidrefs. `AddACE`, `RemoveACE`, and `DeleteMethod` return empty lists on success.
+  - Harness note: cases assert impossible `SUCCESS` for missing required parameters and non-AccessControl targets. The positive authorization path is used only to test success-result shape.
+  - Cross-doc binding:
+    - `core/5.3.2.7.txt`: AccessControl table stores access-control associations.
+    - `core/5.3.3.11.txt` through `core/5.3.3.11.3.1.txt`: `DeleteMethod` target/signature and empty success result.
+    - `core/5.3.3.13.txt` through `core/5.3.3.13.3.1.txt`: `GetACL` target/signature and list-of-ACE-uidrefs result.
+    - `core/5.3.3.14.txt` through `core/5.3.3.14.4.1.txt`: `AddACE` target/signature and empty success result.
+    - `core/5.3.3.15.txt` through `core/5.3.3.15.4.1.txt`: `RemoveACE` target/signature and empty success result.
+  - Implemented as tag: `acl-method-params-doc`.
+  - Accepted cases: 18.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get_acl` and `src/solver_components/engine.py::_return_is_uid_list`.
+- Actioned slice: `ADMINSP-SPINFO-GET-EMPTY-META-ACLS`
+  - Rule: the Admin SP `SPInfo/Get` AccessControl row has base ACL `ACE_Anybody` but empty `RemoveACEACL`, `GetACLACL`, and `DeleteMethodACL`. The base method `Get` is therefore publicly invocable, but those meta-methods are not invocable and fail with `NOT_AUTHORIZED`.
+  - Harness note: this slice deliberately avoids positive `RemoveACE`/`DeleteMethod` success because the row's meta-ACL columns are empty. It asserts only the exact empty-meta-ACL `NOT_AUTHORIZED` path and impossible-success negatives.
+  - Cross-doc binding:
+    - `opal/4.2.1.5.txt`: Admin SP AccessControl preconfiguration for `SPInfo/Get`, including `ACL=ACE_Anybody`, `AddACEACL=ACE_Anybody`, and empty `RemoveACEACL`, `GetACLACL`, `DeleteMethodACL`.
+    - `core/5.3.4.3.txt`: empty ACL columns are not invocable and fail with `NOT_AUTHORIZED`.
+    - `core/5.3.4.3.1.txt`: meta-ACL methods must satisfy the corresponding row-specific meta-ACL column.
+    - `core/5.3.3.13.txt` and `core/5.3.3.13.4.txt`: `GetACL` signature and fail condition when `GetACLACL` is not authenticated.
+    - `core/5.3.3.15.txt` and `core/5.3.3.15.5.txt`: `RemoveACE` signature and fail condition when `RemoveACEACL` is not authenticated.
+    - `core/5.3.3.11.txt` and `core/5.3.3.11.3.1.txt`: `DeleteMethod` signature and empty success-result shape; success is blocked here by the empty `DeleteMethodACL`.
+  - Implemented as tag: `meta-acl-empty-doc`.
+  - Accepted cases: 6.
+  - Solver repair path checked: `src/solver_components/expectations.py::_expected_get_acl`, `src/solver_components/expectations.py::_expected_acl_mutation`, `src/solver_components/expectations.py::_expected_delete_method`.
+- Actioned slice: `K-AES-MODE-GET-SECRETPROTECT`
+  - Rule: K_AES object rows store Key in column `0x03` and Mode in column `0x04`. Opal grants K_AES `Get` through `ACE_K_AES_Mode`, whose BooleanExpr is `Anybody` and whose Columns field is `Mode`. SecretProtect protects K_AES Key column `0x03`. A successful Mode `Get` must return a valid `symmetric_mode_media` Mode cell and must not expose protected Key material.
+  - Harness note: the first review pass surfaced concerns about a symbolic `Mode` return key and a no-Cellblock full-row inference. Those review files were moved to `analysis/label_reviews/discarded/kaes_get_initial_concerns/`; accepted cases now use numeric RowValues column identifiers and direct column-targeted trajectories.
+  - Cross-doc binding:
+    - `core/5.7.2.3.txt`, `core/5.7.2.3.4.txt`, and `core/5.7.2.3.5.txt`: K_AES_128 table columns, Key, and Mode.
+    - `core/5.7.2.4.txt`, `core/5.7.2.4.4.txt`, and `core/5.7.2.4.5.txt`: K_AES_256 table columns, Key, and Mode.
+    - `core/5.1.3.73.txt`: `symmetric_mode_media` valid and reserved values.
+    - `core/5.3.2.8.txt`, `core/5.3.2.8.2.txt`, `core/5.3.2.8.3.txt`, and `core/5.3.2.8.4.txt`: SecretProtect protected table-column semantics.
+    - `core/5.3.3.6.txt`, `core/5.3.3.6.1.txt`, `core/5.3.3.6.2.txt`, `core/5.3.3.6.2.2.txt`, and `core/5.3.4.2.2.txt`: `Get` Cellblock/result and inaccessible-cell omission rules.
+    - `opal/4.3.1.6.txt`, `opal/4.3.1.7.txt`, `opal/4.3.1.10.txt`, and `opal/4.3.5.5.txt`: concrete Opal K_AES preconfiguration, AccessControl rows, `ACE_K_AES_Mode`, and SecretProtect rows.
+  - Implemented as tag: `kaes-get-doc`.
+  - Accepted cases: 8.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/engine.py::compare_expected_actual`, and `src/solver_components/parsing.py::_flatten_return_values`.
+- Actioned slice: `CREATELOG-PARAMETER-TYPES`
+  - Rule: `CreateLog` requires `NewLogTableName`, `HighSecurity`, and `MinSize`. `HighSecurity` is a boolean (`0/False` or `1/True`), `MinSize` and optional `HintSize` are `uinteger`, and successful invocation returns exactly `LogListUID`, `LogTableUID`, and `Rows`.
+  - Harness note: `MaxSize < MinSize` was deliberately not added because the short source snippets define `MaxSize` type and purpose but do not explicitly state that this relation is a protocol failure. Accepted cases stick to required-parameter and type/range assertions.
+  - Cross-doc binding:
+    - `core/5.8.3.2.txt`: `CreateLog` signature and result fields.
+    - `core/5.8.3.2.1.txt`, `core/5.8.3.2.2.txt`, `core/5.8.3.2.3.txt`, and `core/5.8.3.2.5.txt`: parameter-specific descriptions for NewLogTableName, HighSecurity, MinSize, and HintSize.
+    - `core/5.8.3.2.7.1.txt`, `core/5.8.3.2.7.2.txt`, and `core/5.8.3.2.7.3.txt`: success result fields.
+    - `core/5.1.4.2.2.txt`: boolean value range.
+    - `core/5.1.3.82.txt`: `uinteger` base type.
+  - Implemented as tag: `log-createlog-params-doc`.
+  - Accepted cases: 4.
+  - Solver repair path checked: `src/solver_components/expectations.py::_expected_create_log`, `src/solver_components/parsing.py::_create_table_arg`, and `src/solver_components/parsing.py::_is_bool_literal`.
+- Actioned slice: `LOGLIST-READONLY-COLUMNS`
+  - Rule: LogList `Log` column `0x03` references the associated Log table and SHALL NOT be modifiable by the host. LogList `Serial` column `0x04` is the circular-log cursor and SHALL NOT be modifiable by the host.
+  - Harness note: an initially included direct Log table `Delete` case was discarded twice. Reviewers first found an ambiguous target name (`Log` could mean the initial LogList row or the Log table), and then a wording concern remained because the source says no ACL permits deletion "via the Table table" while the trajectory invoked `Delete` on a `LogTable` object. The accepted slice therefore keeps only the two unambiguous read-only `Set` cases.
+  - Cross-doc binding:
+    - `core/5.8.2.2.txt`: LogList table columns.
+    - `core/5.8.2.2.4.txt`: Log column meaning and host non-modifiability.
+    - `core/5.8.2.2.5.txt`: Serial column meaning, null-UID initial state, and host non-modifiability.
+  - Implemented as tag: `loglist-readonly-doc`.
+  - Accepted cases: 2.
+  - Solver repair path used: `src/solver_components/parsing.py::_column_from_name` and `src/solver_components/semantics.py::_invalid_set_values`.
+- Actioned slice: `CPIN-COLUMN-TYPE-RANGES`
+  - Rule: C_PIN `TryLimit` column `0x05` is `uinteger_4`; C_PIN `Persistence` column `0x07` is `boolean`, whose valid values are integers `0` and `1`. A final `SUCCESS` response for negative `TryLimit` or `Persistence=2` is therefore not protocol-compliant.
+  - Harness note: an initial review round was moved to `analysis/label_reviews/discarded/cpin_column_types_status_unspecified_concern/` because one reviewer correctly noted that the source proves impossible `SUCCESS` but not the exact alternate error status. The accepted cases assert only impossible success.
+  - Cross-doc binding:
+    - `core/5.3.2.12.txt`: C_PIN table column numbers and types.
+    - `core/5.3.2.12.6.txt`: TryLimit meaning and default/no-limit value.
+    - `core/5.3.2.12.8.txt`: Persistence meaning.
+    - `core/5.1.3.93.txt`: `uinteger_4` type.
+    - `core/5.1.4.2.2.txt`: boolean valid value range.
+  - Implemented as tag: `cpin-column-types-doc`.
+  - Accepted cases: 2.
+  - Solver repair path checked: `src/solver_components/semantics.py::_type_violation`, `src/solver_components/semantics.py::_invalid_set_values`, and `src/solver_components/expectations.py::_expected_set`.
+- Actioned slice: `LOGLIST-HIGHSECURITY-BOOLEAN`
+  - Rule: LogList `HighSecurity` column `0x05` is a boolean. It identifies whether every log message is committed to persistent storage when received. `CreateLog` uses its `HighSecurity` parameter as the initial value for the newly created LogList object's `HighSecurity` column. A final `SUCCESS` response for `HighSecurity=2` is therefore not protocol-compliant.
+  - Harness note: an initial review round was moved to `analysis/label_reviews/discarded/loglist_highsecurity_status_caveat_concern/` because reviewers noted exact-status caveats in `concerns`. The accepted review round kept concerns limited to PASS/FAIL ambiguity, and all reviewers agreed without concerns.
+  - Cross-doc binding:
+    - `core/5.8.2.2.txt`: LogList column table and `HighSecurity` type.
+    - `core/5.8.2.2.6.txt`: HighSecurity semantics.
+    - `core/5.8.3.2.txt` and `core/5.8.3.2.2.txt`: CreateLog initializes the new LogList object's HighSecurity value.
+    - `core/5.1.4.2.2.txt`: boolean valid value range.
+  - Implemented as tag: `loglist-highsecurity-doc`.
+  - Accepted cases: 1.
+  - Solver repair path checked: `src/solver_components/parsing.py::_column_from_name`, `src/solver_components/semantics.py::_invalid_set_values`, and `src/solver_components/expectations.py::_expected_set`.
+- Actioned slice: `LOG-ENTRY-ROW-READONLY-CELLS`
+  - Rule: Log tables are object tables whose rows are log entries, all rows are pre-allocated, and individual Log table rows do not have AccessControl rows. Log row `MonotonicTime` column `0x08` and `Data` column `0x0D` both `SHALL NOT` be modifiable by the host. A final `SUCCESS` response for direct host `Set` of either cell is therefore not protocol-compliant.
+  - Harness note: accepted cases use numeric columns only to avoid symbolic-column inference. They assert only impossible `SUCCESS`, not exact alternate status.
+  - Cross-doc binding:
+    - `core/5.8.2.1.txt`: Log table row structure and row AccessControl absence.
+    - `core/5.8.2.1.9.txt`: `MonotonicTime` host non-modifiability.
+    - `core/5.8.2.1.14.txt`: `Data` host non-modifiability.
+    - `core/5.8.4.3.txt`: Log rows are pre-allocated and managed cyclically by the TPer.
+  - Implemented as tag: `log-row-readonly-doc`.
+  - Accepted cases: 2.
+  - Solver repair path used: `src/solver_components/parsing.py::_column_from_name`, `src/solver_components/semantics.py::_invalid_set_values`, and `src/solver_components/expectations.py::_expected_set`.
+- Actioned slice: `LOCKING-ADVKEYMODE-ENUM`
+  - Rule: Locking `AdvKeyMode` column `0x0E` uses the `adv_key_mode` enum. Value `0` means wait for `AdvKey_Req`, value `1` means auto-advance keys, and values `2` through `7` are reserved. A final `SUCCESS` response for `AdvKeyMode=2` is therefore not protocol-compliant.
+  - Harness note: the subagent initially suggested column `15`; implementation corrected this to column `14` per the Locking table column list and constants.
+  - Cross-doc binding:
+    - `core/5.1.3.6.txt`: `adv_key_mode` enum values and reserved range.
+    - `core/5.7.2.2.txt`: Locking table column number for `AdvKeyMode`.
+    - `core/5.7.2.2.15.txt`: `AdvKeyMode` column semantics.
+    - `core/5.7.3.7.5.txt`: behavior of valid `AdvKeyMode` values.
+  - Implemented as tag: `advkeymode-doc`.
+  - Accepted cases: 1.
+  - Solver repair path used: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/transitions.py::_update_range_from_columns`.
+- Actioned slice: `REENCRYPTSTATE-ENUM-POSTCONDITIONS`
+  - Rule: `ReEncryptState` uses the `reencrypt_state` enum. Values `1..5` are `IDLE`, `PENDING`, `ACTIVE`, `COMPLETED`, and `PAUSED`; values `6..16` are reserved. When the current state is `COMPLETED` and `ADVKEY_req` succeeds, the TPer changes `ReEncryptState` to `IDLE`.
+  - Harness note: these are successful `Get` payload/postcondition cases. They do not assert exact alternate status for invalid states; they assert the returned payload is not protocol-compliant.
+  - Cross-doc binding:
+    - `core/5.1.3.66.txt`: `reencrypt_state` enum and reserved range.
+    - `core/5.7.2.2.13.txt`: `ReEncryptState` meaning.
+    - `core/5.7.3.7.1.txt`: state transition descriptions.
+    - `core/5.7.3.7.3.txt`: state value names.
+    - `core/5.7.3.7.4.txt`: `ADVKEY_req` transition from `COMPLETED`/`PAUSED` to `IDLE`.
+  - Implemented as tag: `reencrypt-state-values-doc`.
+  - Accepted cases: 2.
+  - Solver repair path checked: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/engine.py::_return_cell_matches`, and `src/solver_components/transitions.py::_apply_reencrypt_request_success`.
+- Actioned slice: `LOCKING-C_PIN-USER1-EMPTY-META-ACL-STATUS`
+  - Rule: The Locking SP preconfiguration row for `C_PIN_User1/Set` has empty `RemoveACEACL` and `DeleteMethodACL`. The corresponding meta-methods are not invocable and return `NOT_AUTHORIZED`.
+  - Harness note: existing `meta-acl-doc` cases already rejected impossible `SUCCESS`; this slice adds the exact-status PASS counterparts for `RemoveACE` and `DeleteMethod`.
+  - Cross-doc binding:
+    - `core/5.3.4.3.txt`: empty ACL columns are not invocable and fail with `NOT_AUTHORIZED`.
+    - `core/5.3.4.3.1.txt`: meta-ACL methods use row-specific meta-ACL columns.
+    - `core/5.3.3.15.txt` and `core/5.3.3.15.5.txt`: `RemoveACE` signature/failure.
+    - `core/5.3.3.11.txt` and `core/5.3.3.11.3.1.txt`: `DeleteMethod` signature/success shape, blocked here by meta-ACL.
+    - `opal/4.3.1.6.txt` and `opal/4.3.1.7.txt`: concrete Locking SP AccessControl/ACE preconfiguration.
+  - Implemented as tag: `meta-acl-locking-status-doc`.
+  - Accepted cases: 2.
+  - Solver repair path checked: `src/solver_components/expectations.py::_expected_acl_mutation`, `src/solver_components/expectations.py::_expected_delete_method`, and `src/solver_components/semantics.py::_access_control_combo_key`.
+- Actioned slice: `LOCKINGINFO-READONLY-COLUMNS`
+  - Rule: LockingInfo has exactly one row describing TPer configuration. `UID`, `Name`, `Version`, `EncryptSupport`, `MaxRanges`, and `MaxReEncryptions` SHALL NOT be modifiable by the host.
+  - Cross-doc binding:
+    - `core/5.7.2.1.txt`: LockingInfo object-table row and column list.
+    - `core/5.7.2.1.1.txt` through `core/5.7.2.1.6.txt`: per-column meanings and host non-modifiability.
+  - Implemented as tag: `lockinginfo-readonly-doc`.
+  - Accepted cases: 6.
+  - Solver repair path checked: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/parsing.py::_column_from_name`.
+- Actioned slice: `LOG-ENTRY-READONLY-EXPANDED`
+  - Rule: Log table rows are log entries, and all Log entry columns `UID`, `Prev`, `Next`, `Session`, `SigningAuthority`, `SigningAuthName`, `ExchangeAuthority`, `ExchangeAuthName`, `MonotonicTime`, `ExactTime`, `TimeKind`, `LogKind`, `Name`, and `Data` SHALL NOT be modifiable by the host.
+  - Harness note: this expands the earlier `log-row-readonly-doc` slice beyond `MonotonicTime` and `Data`; cases still assert only impossible `SUCCESS`.
+  - Cross-doc binding:
+    - `core/5.8.2.1.txt`: Log table row structure.
+    - `core/5.8.2.1.1.txt` through `core/5.8.2.1.14.txt`: per-column host non-modifiability.
+  - Implemented as tag: `log-entry-readonly-expanded-doc`.
+  - Accepted cases: 12.
+  - Solver repair path checked: `src/solver_components/parsing.py::_column_from_name`, `src/solver_components/semantics.py::_invalid_set_values`, and `src/solver_components/expectations.py::_expected_set`.
+- Actioned slice: `LOGLIST-INITIAL-ROW-DEFAULTS`
+  - Rule: the default Log is the initial Log table for an SP with the Log Template. The initial LogList row UID `0000000A02000001` is automatically created with `Name=Log`, and at creation its `HighSecurity` value is `false`.
+  - Harness note: cases are limited to a fresh initial row with no prior successful `HighSecurity` mutation. A separate unit regression verifies that a successful `Set HighSecurity=true` updates later `Get` expectations.
+  - Cross-doc binding:
+    - `core/5.8.1.1.txt`: default log terminology.
+    - `core/5.8.2.2.txt`: initial LogList row UID/name/default values and column table.
+    - `core/5.8.2.2.6.txt`: `HighSecurity` semantics.
+  - Implemented as tag: `loglist-initial-row-doc`.
+  - Accepted cases: 4.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/semantics.py::_loglist_expected_cells`, `src/solver_components/transitions.py::_apply_set_success`, and `src/solver_components/models.py::State`.
+- Actioned slice: `MBRCONTROL-UID-READONLY`
+  - Rule: MBRControl has a single row that controls MBR shadowing, and its `UID` column is the row identifier. The host SHALL NOT modify that `UID` column.
+  - Cross-doc binding:
+    - `core/5.7.2.5.txt`: MBRControl table and single-row description.
+    - `core/5.7.2.5.1.txt`: MBRControl `UID` column meaning and host non-modifiability.
+  - Implemented as tag: `mbrcontrol-readonly-doc`.
+  - Accepted cases: 1.
+  - Solver repair path checked: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/parsing.py::_column_from_name`.
+- Actioned slice: `MBRCONTROL-PRECONFIGURED-DEFAULTS`
+  - Rule: Opal Locking SP preconfigures MBRControl row `0000080300000001` with `Enable=false`, `Done=false`, and `DoneOnReset=PowerCycle`. Successful Admins `Set` of `Enable`, `Done`, and `DoneOnReset` updates the cells atomically, so a later successful `Get` must reflect the updated cells.
+  - Cross-doc binding:
+    - `core/5.7.2.5.txt`: MBRControl row UID and columns.
+    - `core/5.7.2.5.2.txt`, `core/5.7.2.5.3.txt`, and `core/5.7.2.5.4.txt`: `Enable`, `Done`, and `MBRDoneOnReset` meanings and default.
+    - `core/5.3.4.2.6.txt`: successful `Set` applies all parameterized changes.
+    - `opal/4.3.1.6.txt` and `opal/4.3.1.7.txt`: Locking SP AccessControl/ACE rows permitting Admins `Set` of MBRControl columns.
+    - `opal/4.3.5.3.txt` and `opal/4.3.5.3.1.txt`: Opal MBRControl preconfiguration and required supported `DoneOnReset` sets.
+  - Implemented as tag: `mbrcontrol-defaults-doc`.
+  - Accepted cases: 8.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/engine.py::_return_cell_matches`, and `src/solver_components/transitions.py::_apply_set_success`.
+- Actioned slice: `DATAREMOVAL-RESERVED-ENUMS`
+  - Rule: Opal marks `data_removal_mechanism` enum values `3`, `4`, `6`, and `7` as reserved. `ActiveDataRemovalMechanism` selects a supported data-removal mechanism, and a `Set` to an unsupported value fails with `INVALID_PARAMETER`.
+  - Harness note: value `4` was already covered by `data-removal-doc`; this slice adds PASS/FAIL pairs for reserved values `3`, `6`, and `7`.
+  - Cross-doc binding:
+    - `opal/3.1.1.6.4.txt`: Supported Data Removal Mechanism table and reserved bits.
+    - `opal/4.2.5.1.txt`: `data_removal_mechanism` enum values and reserved ranges.
+    - `opal/4.2.6.1.txt` and `opal/4.2.6.1.2.txt`: `ActiveDataRemovalMechanism` column and unsupported-value failure.
+    - `opal/4.2.7.1.txt`, `opal/4.2.1.5.txt`, and `opal/4.2.1.6.txt`: Admin SP row and ACL context.
+  - Implemented as tag: `data-removal-reserved-doc`.
+  - Accepted cases: 6.
+  - Solver repair path checked: `src/solver_components/semantics.py::_parse_data_removal_mechanism`, `src/solver_components/semantics.py::_invalid_set_values`, and `src/solver_components/constants.py::DATA_REMOVAL_MECHANISM_VALUES`.
+- Actioned slice: `LOCKINGSP-METHODID-PRECONFIGURATION`
+  - Rule: the MethodID table associates method UIDs with method names, is readable by Anybody, and issued MethodID rows are not host-modifiable. Opal Locking SP preconfigures MethodID rows for `Next`, `GenKey`, `RevertSP`, `Get`, `Set`, `Authenticate`, and `Random` at their listed UIDs.
+  - Cross-doc binding:
+    - `core/5.3.2.6.txt`: MethodID table purpose, Anybody read access, no host modification, and row uniqueness.
+    - `core/5.3.2.6.1.txt` and `core/5.3.2.6.2.txt`: MethodID `UID` and issued `Name` non-modifiability.
+    - `opal/4.3.1.5.txt`: Locking SP MethodID preconfiguration rows and UID/name mappings.
+  - Implemented as tag: `methodid-locking-preconfig-doc`.
+  - Accepted cases: 16.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/parsing.py::_method_by_uid`, `src/solver_components/engine.py::_return_cell_matches`, and `src/solver_components/semantics.py::_invalid_set_values`.
+- Actioned slice: `ADMINSP-METHODID-PRECONFIGURATION`
+  - Rule: the MethodID table associates method UIDs with method names, is readable by Anybody, and issued MethodID rows are not host-modifiable. Opal Admin SP preconfigures MethodID rows for `Next`, `GetACL`, `Get`, `Set`, `Authenticate`, `Revert`, `Activate`, and `Random`.
+  - Harness note: cases include correct Name-cell PASS, wrong Name-cell FAIL, and impossible-success host `Set` for issued `UID`, `Name`, `CommonName`, and `TemplateID`.
+  - Cross-doc binding:
+    - `core/5.3.2.6.txt`: MethodID table purpose, Anybody read access, no host modification, and row uniqueness.
+    - `core/5.3.2.6.1.txt` through `core/5.3.2.6.4.txt`: per-column host non-modifiability.
+    - `opal/4.2.1.4.txt`: Admin SP MethodID preconfiguration rows and UID/name mappings.
+  - Implemented as tag: `methodid-admin-preconfig-doc`.
+  - Accepted cases: 48.
+  - Solver repair path checked: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/parsing.py::_method_by_uid`, `src/solver_components/engine.py::_return_cell_matches`, and `src/solver_components/semantics.py::_invalid_set_values`.
+- Actioned slice: `LOCKINGSP-METHODID-COMMONNAME-TEMPLATEID-READONLY`
+  - Rule: for MethodID objects that exist at issuance, `CommonName` column `0x02` SHALL NOT be modifiable by the host. `TemplateID` column `0x03` SHALL NOT be modifiable by the host.
+  - Cross-doc binding:
+    - `core/5.3.2.6.txt`: MethodID table read/no-modification rule.
+    - `core/5.3.2.6.3.txt`: MethodID `CommonName` meaning and host non-modifiability for issued rows.
+    - `core/5.3.2.6.4.txt`: MethodID `TemplateID` meaning and host non-modifiability.
+    - `opal/4.3.1.5.txt`: Locking SP issued MethodID rows used as concrete targets.
+  - Implemented as tag: `methodid-locking-extra-readonly-doc`.
+  - Accepted cases: 14.
+  - Solver repair path checked: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/parsing.py::_column_from_name`.
+- Actioned slice: `CPIN-ISSUED-IDENTITY-COLUMNS-READONLY`
+  - Rule: C_PIN `UID` is not modifiable by the host, and for issued C_PIN objects the `Name` and `CommonName` cells are also not host-modifiable.
+  - Harness note: cases assert only impossible `SUCCESS`, avoiding exact alternate status where the cited table-column rules do not map the failure to one concrete status.
+  - Cross-doc binding:
+    - `core/5.3.2.12.txt`: C_PIN table purpose and column list.
+    - `core/5.3.2.12.1.txt`, `core/5.3.2.12.2.txt`, and `core/5.3.2.12.3.txt`: C_PIN `UID`, issued `Name`, and issued `CommonName` host non-modifiability.
+    - `opal/4.2.1.8.txt`: Admin SP C_PIN preconfiguration rows.
+    - `opal/4.3.1.9.txt`: Locking SP C_PIN preconfiguration rows.
+  - Implemented as tag: `cpin-issued-readonly-doc`.
+  - Accepted cases: 15.
+  - Solver repair path checked: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/parsing.py::_column_from_name`.
+- Actioned slice: `AUTHORITY-ISSUED-IDENTITY-COLUMNS-READONLY`
+  - Rule: Authority `UID` is not modifiable by the host, and for Authority objects that exist at issuance, `Name` and `CommonName` are also not host-modifiable.
+  - Harness note: cases assert only impossible `SUCCESS`, avoiding exact alternate status where the cited table-column rules do not map the failure to one concrete status.
+  - Cross-doc binding:
+    - `core/5.3.2.10.txt`: Authority table columns and host non-modifiability for `UID`, issued `Name`, and issued `CommonName`.
+    - `opal/4.2.1.7.txt`: Admin SP Authority preconfiguration rows.
+    - `opal/4.3.1.8.txt`: Locking SP Authority preconfiguration rows.
+  - Implemented as tag: `authority-issued-readonly-doc`.
+  - Accepted cases: 21.
+  - Solver repair path used: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/parsing.py::_object_by_uid`.
+- Actioned slice: `ACE-ISSUED-IDENTITY-COLUMNS-READONLY`
+  - Rule: ACE `UID` is not modifiable by the host, and for ACE objects that exist at issuance, `Name` and `CommonName` are also not host-modifiable.
+  - Harness note: cases assert only impossible `SUCCESS`, avoiding exact alternate status where the cited table-column rules do not map the failure to one concrete status.
+  - Cross-doc binding:
+    - `core/5.3.2.9.txt`: ACE table purpose and column list.
+    - `core/5.3.2.9.1.txt`, `core/5.3.2.9.2.txt`, and `core/5.3.2.9.3.txt`: ACE `UID`, issued `Name`, and issued `CommonName` host non-modifiability.
+    - `opal/4.2.1.6.txt`: Admin SP ACE preconfiguration rows.
+    - `opal/4.3.1.7.txt`: Locking SP ACE preconfiguration rows.
+  - Implemented as tag: `ace-issued-readonly-doc`.
+  - Accepted cases: 30.
+  - Solver repair path used: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/parsing.py::_object_by_uid`.
+- Actioned slice: `SPINFO-READONLY-COLUMNS`
+  - Rule: each SPInfo table has exactly one row, and SPInfo `UID`, `SPID`, `Name`, `Size`, and `SizeInUse` SHALL NOT be modifiable by the host.
+  - Harness note: cases assert only impossible `SUCCESS`; writable SPInfo columns such as `SPSessionTimeout` and `Enabled` are deliberately excluded.
+  - Cross-doc binding:
+    - `core/5.3.2.1.txt`: SPInfo table structure and single-row rule.
+    - `core/5.3.2.1.1.txt` through `core/5.3.2.1.5.txt`: per-column host non-modifiability.
+    - `opal/4.2.1.1.txt`: Admin SP SPInfo preconfiguration row.
+    - `opal/4.3.1.1.txt`: Locking SP SPInfo preconfiguration row.
+  - Implemented as tag: `spinfo-readonly-doc`.
+  - Accepted cases: 10.
+  - Solver repair path checked: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/parsing.py::_column_from_name`.
+- Actioned slice: `TABLE-DESCRIPTOR-READONLY-COLUMNS`
+  - Rule: issued Table descriptor rows have host non-modifiable `UID`, `Name`, `CommonName`, `TemplateID`, `Kind`, `Column`, `NumColumns`, `Rows`, `RowsFree`, `RowBytes`, and `LastID` columns.
+  - Harness note: cases assert only impossible `SUCCESS`; `MinSize` and `MaxSize` are deliberately excluded because their Core column definitions describe them as user-settable.
+  - Cross-doc binding:
+    - `core/5.3.2.3.txt`: Table table/descriptor structure and column list.
+    - `core/5.3.2.3.1.txt` through `core/5.3.2.3.11.txt`: per-column host non-modifiability for the accepted columns.
+    - `opal/4.2.1.2.txt`: Admin SP Table descriptor preconfiguration rows.
+    - `opal/4.3.1.2.txt`: Locking SP Table descriptor preconfiguration rows.
+  - Implemented as tag: `table-descriptor-readonly-doc`.
+  - Accepted cases: 44.
+  - Solver repair path checked: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/parsing.py::_column_from_name`.
+- Actioned slice: `SPTEMPLATES-READONLY-COLUMNS`
+  - Rule: SPTemplates rows are host read-only for `UID`, `TemplateID`, `Name`, and `Version`.
+  - Harness note: cases assert only impossible `SUCCESS` against concrete Admin SP and Locking SP preconfigured template rows.
+  - Cross-doc binding:
+    - `core/5.3.2.2.txt`: SPTemplates table structure and columns.
+    - `core/5.3.2.2.1.txt` through `core/5.3.2.2.4.txt`: per-column host non-modifiability.
+    - `opal/4.2.1.2.txt`: Admin SP template preconfiguration rows.
+    - `opal/4.3.1.2.txt`: Locking SP template preconfiguration rows.
+  - Implemented as tag: `sptemplates-readonly-doc`.
+  - Accepted cases: 16.
+  - Solver repair path checked: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/parsing.py::_column_from_name`.
+- Actioned slice: `TEMPLATE-READONLY-COLUMNS`
+  - Rule: Admin SP Template rows have host non-modifiable `UID`, `Name`, `RevisionNumber`, `Instances`, and `MaxInstances` columns.
+  - Harness note: cases assert only impossible `SUCCESS` against Opal preconfigured Base/Admin/Locking Template rows.
+  - Cross-doc binding:
+    - `core/5.4.2.3.8.txt` through `core/5.4.2.3.12.txt`: per-column host non-modifiability.
+    - `opal/4.2.3.2.txt`: Admin SP Template preconfiguration rows.
+  - Implemented as tag: `template-readonly-doc`.
+  - Accepted cases: 15.
+  - Solver repair path checked: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/parsing.py::_column_from_name`.
+- Actioned slice: `SP-TABLE-READONLY-COLUMNS`
+  - Rule: Admin SP SP-table rows have host non-modifiable `UID`, `Name`, `ORG`, `EffectiveAuth`, `DateOfIssue`, `Bytes`, and `LifeCycleState` columns.
+  - Harness note: cases assert only impossible `SUCCESS`; `Frozen` is deliberately excluded because it is an owner-control column with separate modeled behavior.
+  - Cross-doc binding:
+    - `core/5.4.2.4.txt`: SP table structure.
+    - `core/5.4.2.4.1.txt` through `core/5.4.2.4.7.txt`: per-column host non-modifiability.
+    - `opal/4.2.3.3.txt`: Admin SP SP-table preconfiguration rows.
+  - Implemented as tag: `sp-table-readonly-doc`.
+  - Accepted cases: 14.
+  - Solver repair path checked: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/parsing.py::_column_from_name`.
+- Actioned slice: `TPERINFO-READONLY-COLUMNS`
+  - Rule: Admin SP TPerInfo has exactly one row, and Core columns `UID`, `Bytes`, `GUDID`, `Generation`, `FirmwareVersion`, `ProtocolVersion`, `SpaceForIssuance`, and `SSC` SHALL NOT be modifiable by the host.
+  - Harness note: cases assert only impossible `SUCCESS`; Opal `ProgrammaticResetEnable` column `0x08` is deliberately excluded because it is SID-modifiable.
+  - Cross-doc binding:
+    - `core/5.4.2.1.txt`: TPerInfo single-row structure and columns.
+    - `core/5.4.2.1.1.txt` through `core/5.4.2.1.8.txt`: per-column host non-modifiability.
+    - `opal/4.2.3.1.txt`: Opal TPerInfo preconfiguration and `ProgrammaticResetEnable` extension.
+  - Implemented as tag: `tperinfo-readonly-doc`.
+  - Accepted cases: 8.
+  - Solver repair path checked: `src/solver_components/semantics.py::_invalid_set_values`, `src/solver_components/expectations.py::_expected_set`, and `src/solver_components/parsing.py::_column_from_name`.
+- Actioned slice: `AUTHORITY-USES-GET-POSTCONDITION`
+  - Rule: Authority `Uses` counts successful explicit and implicit authentications, and `Limit` remains observable through Authority `Get`.
+  - Cross-doc binding:
+    - `core/3.4.2.2.txt`: successful session startup authorities are authenticated for the session.
+    - `core/5.3.2.10.txt`: Authority `Limit` and `Uses` semantics.
+    - `opal/4.3.1.8.txt`: concrete Locking SP User1 Authority row.
+  - Implemented as tag: `authority-uses-get-doc`.
+  - Accepted cases: 12.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/transitions.py::_increment_authority_use`, and `src/solver_components/transitions.py::_update_authority_from_columns`.
+- Actioned slice: `LOCKONRESET-LOCKED-CELL-POSTRESET-OBSERVATION`
+  - Rule: matching reset types in `LockOnReset` set `ReadLocked`/`WriteLocked` true for enabled lock features; empty or nonmatching reset types do not change the lock cells.
+  - Cross-doc binding:
+    - `core/5.7.2.2.6.txt` through `core/5.7.2.2.10.txt`: Locking lock-enable, lock-state, and `LockOnReset` cells.
+    - `core/5.1.3.67.txt`: `reset_types` set values.
+  - Implemented as tag: `lockonreset-get-doc`.
+  - Accepted cases: 8.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get` and `src/solver_components/engine.py::_return_cell_matches`.
+- Actioned slice: `LOCKING-RANGE-STATE-GET-POSTCONDITION`
+  - Rule: successful Locking `Set` updates stored `RangeStart`, `RangeLength`, `ReadLockEnabled`, and `WriteLockEnabled`; later `Get` responses must reflect those tracked cells.
+  - Cross-doc binding:
+    - `core/5.3.4.2.2.txt` and `core/5.3.4.2.6.txt`: readable table cells and successful `Set` modification semantics.
+    - `core/5.7.2.2.txt` through `core/5.7.2.2.7.txt`: Locking table cell definitions.
+    - `opal/4.3.1.6.txt`, `opal/4.3.1.7.txt`, and `opal/4.3.5.2.txt`: Admin access and Locking range preconfiguration.
+  - Implemented as tag: `locking-range-get-doc`.
+  - Accepted cases: 12.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/transitions.py::_update_range_from_columns`.
+- Actioned slice: `LOCKING-LOCKONRESET-GET-POSTCONDITION`
+  - Rule: `LockOnReset` is a stored `reset_types` Locking cell; successful `Set` changes must be reflected by later `Get`, and equality is set-based rather than scalar-string based.
+  - Cross-doc binding:
+    - `core/5.7.2.2.10.txt`: `LockOnReset` behavior.
+    - `core/5.1.3.67.txt`: `reset_types` values.
+    - `opal/4.3.5.2.txt` and `opal/4.3.5.2.2.txt`: Locking preconfiguration and required supported reset-type sets.
+  - Implemented as tag: `locking-lockonreset-get-doc`.
+  - Accepted cases: 8.
+  - Solver repair path used: `src/solver_components/semantics.py::_range`, `src/solver_components/expectations.py::_expected_get`, and `src/solver_components/engine.py::_return_cell_matches`.
+- In-progress slice: `LOCKING-COMPOSITE-CELLBLOCK-GET-POSTCONDITION`
+  - Rule: a multi-column Locking `Get` Cellblock must satisfy every requested tracked state cell simultaneously, including geometry, lock-enable, lock-state, and `LockOnReset`.
+  - Implemented as tag: `locking-composite-get-doc`.
+  - Accepted cases: 8.
+  - Three independent reviewers accepted all 8 labels with no concerns.
+  - Verification: targeted sourced, full sourced, unit, and synthetic runs are all mismatch-free.
+- Actioned slice: `DATASTORE-BYTE-PAYLOAD-POSTCONDITION`
+  - Rule: successful DataStore byte-table `Set(Bytes)` writes known bytes, and later authorized `Get` must return the most recent written bytes.
+  - Cross-doc binding:
+    - `opal/4.3.8.1.txt`: DataStore is a Locking SP byte table with Admins initial ACL.
+    - `core/5.3.3.7.2.1.txt`: byte-table `Set` uses `Bytes`.
+    - `core/5.3.3.6.2.1.txt`: byte-table `Get` returns `Bytes`.
+    - `core/5.3.4.2.6.txt`: successful `Set` applies all requested changes.
+  - Implemented as tag: `datastore-payload-doc`.
+  - Accepted cases: 6.
+  - Solver repair path used: `src/solver_components/transitions.py::_apply_set_success`, `src/solver_components/expectations.py::_expected_get`, and `src/solver_components/engine.py::compare_expected_actual`.
+- Actioned slice: `DATASTORE-USER-ACE-PAYLOAD-AND-EMPTY-GET`
+  - Rule: DataStore Get/Set ACE `BooleanExpr` may be personalized to User1; User1 can perform only the covered operation(s). If byte-table `Get` access is not satisfied, the method returns an empty results list rather than leaking bytes.
+  - Cross-doc binding:
+    - `core/5.3.4.3.3.txt`: ACE `BooleanExpr` is modifiable.
+    - `core/5.3.4.2.2.txt`: unauthorized byte-table `Get` returns empty results.
+    - `opal/4.3.1.7.txt`: concrete `ACE_DataStore_Get_All` and `ACE_DataStore_Set_All` rows.
+    - `opal/4.3.1.8.txt` and `opal/4.3.1.9.txt`: concrete User1 and C_PIN_User1 rows.
+  - Implemented as tag: `datastore-user-payload-doc`.
+  - Accepted cases: 8.
+  - Solver repair path used: `src/solver_components/semantics.py::_user_acl_allows_datastore`, `src/solver_components/expectations.py::_expected_get`, and `src/solver_components/transitions.py::_apply_set_success`.
+- Actioned slice: `BYTE-TABLE-DESCRIPTOR-KIND-ROWS-GET`
+  - Rule: Opal Locking SP MBR and DataStore table descriptor rows are Byte table descriptors. Successful `Get` responses for `Kind` must report Byte, DataStore `Rows` must be at least `0x00A00000`, and MBR `Rows` must be at least `0x08000000`.
+  - Cross-doc binding:
+    - `core/5.3.2.3.txt`: Table descriptor structure.
+    - `core/5.3.2.3.4.txt`: `Kind` column.
+    - `core/5.3.2.3.7.txt`: `Rows` column.
+    - `opal/4.3.1.3.txt`: concrete Locking SP Table descriptor rows.
+    - `opal/4.3.5.4.txt`: MBR minimum size.
+    - `opal/4.3.8.1.txt`: DataStore minimum rows.
+  - Implemented as tag: `byte-table-descriptor-rows-doc`.
+  - Accepted cases: 12.
+  - Solver repair path used: `src/solver_components/expectations.py::_table_descriptor_expected_cells`, `src/solver_components/engine.py::_return_cell_at_least`, and `src/solver_components/parsing.py::_column_from_name`.
+- Actioned slice: `BYTE-TABLE-MANDATORY-GRANULARITY-SET`
+  - Rule: Opal Table descriptor columns `MandatoryWriteGranularity` and `RecommendedAccessGranularity` are host read-only. Object-table descriptor rows report zero for both. Byte-table descriptor rows must have `MandatoryWriteGranularity <= RecommendedAccessGranularity` and `MandatoryWriteGranularity <= 8192`; later byte-table `Set` operations fail with `INVALID_PARAMETER` when start offset or byte length is not aligned to observed mandatory granularity.
+  - Cross-doc binding:
+    - `opal/5.3.1.txt`: Opal additional Table descriptor columns.
+    - `opal/5.3.1.1.txt` through `opal/5.3.1.1.2.txt`: mandatory write granularity semantics and failure rule.
+    - `opal/5.3.1.2.txt` through `opal/5.3.1.2.2.txt`: recommended access granularity semantics.
+    - `core/5.3.3.7.1.2.txt`: byte-table `Set` `Where` row offset.
+    - `core/5.3.3.7.2.1.txt`: byte-table `Set` `Bytes` payload.
+  - Implemented as tag: `byte-table-granularity-doc`.
+  - Accepted cases: 16.
+  - Solver repair path used: `src/solver_components/transitions.py::_apply_get_success`, `src/solver_components/expectations.py::_table_descriptor_expected_cells`, `src/solver_components/semantics.py::_invalid_set_values`, and `src/solver_components/parsing.py::_byte_table_set_mandatory_granularity_invalid`.
+- Actioned slice: `CREATE-TABLE-ROW-ALLOCATION`
+  - Rule: successful `CreateTable` returns `UID` and allocated `Rows`; `Rows` must be at least `MinSize`, and when `MaxSize` is supplied it must not exceed `MaxSize`. `HintSize` is a non-guaranteed request, while byte tables require empty `Columns` and reject `MaxSize`/`HintSize` with `INVALID_PARAMETER`.
+  - Cross-doc binding:
+    - `core/5.3.3.2.txt`: `CreateTable` method signature and `UID, Rows` result.
+    - `core/5.3.3.2.4.txt`: byte-table `Columns` must be empty.
+    - `core/5.3.3.2.5.txt`: `MinSize` defines initial row allocation.
+    - `core/5.3.3.2.6.txt`: `MaxSize` byte-table failure and maximum row guarantee.
+    - `core/5.3.3.2.7.txt`: `HintSize` byte-table failure and suggestion semantics.
+    - `core/5.3.4.2.1.txt`: allocated rows and non-guaranteed `HintSize`.
+  - Implemented as tag: `create-table-row-allocation-doc`.
+  - Accepted cases: 14.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_create_table`, `src/solver_components/engine.py::compare_expected_actual`, and generic return-value selector helpers.
+  - Review correction: removed an ambiguous draft `HintSize < MinSize` failure case after reviewers noted that the sources do not prove an exact failure status.
+- Actioned slice: `CREATE-ROW-UNIQUE-COLUMNS`
+  - Rule: host-created object tables may declare a unique-column set in `CreateTable.Columns`; later `CreateRow` must supply the declared row columns, must not include undeclared columns, must fail on duplicate unique-column combinations, and must return a UID list for created rows.
+  - Cross-doc binding:
+    - `core/3.2.5.4.txt`: unique and multi-column unique value combinations.
+    - `core/5.3.4.2.1.txt`: `CreateTable.Columns` simple vs unique/non-unique forms.
+    - `core/5.3.4.2.3.txt`: row creation side effects, required row values, unique conflict failure.
+    - `core/5.3.3.4.txt` and `core/5.3.3.4.2.1.txt`: `CreateRow` method and UID-list result.
+    - `core/5.3.3.4.3.txt`: `CreateRow` failure conditions.
+  - Implemented as tag: `create-row-unique-columns-doc`.
+  - Accepted cases: 10.
+  - Solver repair path used: `src/solver_components/models.py::State`, `src/solver_components/transitions.py::_apply_create_table_success`, `src/solver_components/transitions.py::_apply_create_row_success`, `src/solver_components/expectations.py::_expected_create_row`, and `src/solver_components/engine.py::_return_uid_list_length`.
+- Actioned slice: `TABLE-DESCRIPTOR-MINSIZE-MAXSIZE-SET`
+  - Rule: host-created Table descriptor rows expose user-settable `MinSize` and `MaxSize`; `MinSize` cannot be lowered below the recorded value, and `MaxSize` below `MinSize` or current `Rows` fails with `INVALID_PARAMETER`.
+  - Cross-doc binding:
+    - `core/3.2.5.3.txt`: actual table UID to Table descriptor row UID derivation.
+    - `core/5.3.2.3.txt`: Table descriptor structure and column numbers.
+    - `core/5.3.2.3.12.txt`: `MinSize` semantics.
+    - `core/5.3.2.3.13.txt`: `MaxSize` semantics and zero-as-unlimited value.
+    - `core/5.3.4.2.1.txt`: `CreateTable` side effects and size-change failure rules.
+    - `core/5.3.4.2.3.txt`: later `CreateRow` creates object-table rows.
+  - Implemented as tag: `table-descriptor-size-set-doc`.
+  - Accepted cases: 13.
+  - Solver repair path used: `src/solver_components/models.py::State`, `src/solver_components/expectations.py::_expected_table_descriptor_size_set`, `src/solver_components/transitions.py::_apply_create_table_success`, `src/solver_components/transitions.py::_apply_set_success`, `src/solver_components/transitions.py::_apply_create_row_success`, and `src/solver_components/semantics.py::_set_effective_event`.
+- Actioned slice: `DELETE-ROW-CREATED-TABLE-LIFECYCLE`
+  - Rule: successful `DeleteRow` deletes created object-table rows and returns an empty result list; deleted row unique values are no longer present in the table, but rows not deleted continue to block duplicate unique-column combinations.
+  - Cross-doc binding:
+    - `core/3.2.5.3.txt`: object row UID identity.
+    - `core/3.2.5.4.txt`: unique-column value combinations.
+    - `core/5.3.3.4.2.1.txt`: `CreateRow` returns assigned row UIDs.
+    - `core/5.3.3.5.txt` and `core/5.3.3.5.1.txt`: `DeleteRow` and its `Rows` uidref list.
+    - `core/5.3.3.5.2.1.txt`: empty success result and atomic deletion behavior.
+    - `core/5.3.4.2.3.txt` and `core/5.3.4.2.4.txt`: row creation/deletion semantics.
+  - Implemented as tag: `delete-row-created-table-doc`.
+  - Accepted cases: 5.
+  - Solver repair path used: `src/solver_components/models.py::State`, `src/solver_components/transitions.py::_apply_create_row_success`, `src/solver_components/transitions.py::_apply_delete_row_success`, `src/solver_components/expectations.py::_expected_create_row`, and `src/solver_components/expectations.py::_expected_delete_row`.
+  - Review correction: removed exact `INVALID_PARAMETER` assertion for omitted `Rows`; retained only the sourced impossible-success form.
+- Actioned slice: `LOCKING-RESET-STATE-MACHINE`
+  - Rule: Locking reset recovery is a state machine over LockEnabled, ReadLocked/WriteLocked, LockOnReset, and the current reset type. Matching reset types set enabled ReadLocked/WriteLocked cells true; nonmatching reset types and empty LockOnReset preserve the prior lock cells; disabled lock features are disregarded for host I/O; hardware resets and power cycles abort open sessions; enabled TPER_RESET is the Programmatic reset path.
+  - Cross-doc binding:
+    - `core/5.7.2.2.6.txt` through `core/5.7.2.2.10.txt`: Locking range lock-enable, locked, and LockOnReset cells.
+    - `core/5.7.3.1.1.txt` and `core/5.7.3.1.2.txt`: reset state descriptions and recovery transitions.
+    - `core/3.3.7.1.5.txt`: hardware resets and power cycles abort all open sessions.
+    - `opal/3.2.3.txt`: enabled TPER_RESET aborts open sessions and applies Programmatic LockOnReset.
+    - `opal/3.3.5.2.txt`: Opal reset_types values.
+    - `opal/4.2.3.1.txt`: ProgrammaticResetEnable controls whether TPER_RESET is enabled.
+    - `opal/4.3.5.2.2.txt`: required and optional Opal LockOnReset sets.
+  - Implemented as tag: `locking-reset-state-machine-doc`.
+  - Accepted cases: 13.
+  - Solver repair path used: `src/solver_components/transitions.py::_apply_reset_event`, `src/solver_components/expectations.py::_expected_get`, `src/solver_components/expectations.py::_expected_host_io`, `src/solver_components/parsing.py::_reset_types`, and `src/solver_components/parsing.py::_reset_event_type`.
+  - Review correction: the initial reviewer packets were archived under `analysis/label_reviews/superseded/2026-05-24-locking-reset-evidence-refresh/`; the final packet added explicit TPER_RESET and session-abort sources and passed all three reviewers with no concerns.
+- Actioned slice: `DATASTORE-OFFSET-PAYLOAD`
+  - Rule: DataStore is a byte table. `Set` with `Bytes` modifies the byte table beginning at `Where.Row`, or row zero if `Where` is omitted. `Get` over byte-table Cellblock row bounds returns `Bytes` from lowest row to highest. Therefore subrange reads and partial overwrites must be reflected byte-for-byte in later `Get` payloads.
+  - Cross-doc binding:
+    - `core/5.3.3.6.txt`, `core/5.3.3.6.1.txt`, and `core/5.3.3.6.2.1.txt`: `Get` Cellblock and byte-table `Bytes` result ordering.
+    - `core/5.3.3.6.3.txt`: byte-table Cellblock failure conditions.
+    - `core/5.3.3.7.txt`, `core/5.3.3.7.1.2.txt`, and `core/5.3.3.7.2.1.txt`: byte-table `Set` `Where.Row` offset and `Bytes` payload semantics.
+    - `core/5.3.4.2.2.txt` and `core/5.3.4.2.6.txt`: readable table data and successful `Set` update semantics.
+    - `opal/4.3.8.1.txt`, `opal/4.3.1.6.txt`, `opal/4.3.1.7.txt`, and `opal/5.1.1.2.txt`: DataStore as a Locking SP byte table with Admins access after activation.
+  - Implemented as tag: `datastore-offset-payload-doc`.
+  - Accepted cases: 8.
+  - Solver repair path used: `src/solver_components/models.py::State`, `src/solver_components/transitions.py::_apply_set_success`, `src/solver_components/expectations.py::_expected_get`, `src/solver_components/parsing.py::_byte_table_set_start_offset`, `src/solver_components/parsing.py::_byte_table_get_range`, and `src/solver_components/engine.py::compare_expected_actual`.
+- Actioned slice: `ACL-REVERTSP-META`
+  - Rule: the Locking SP preconfigured AccessControl row for `ThisSP/RevertSP` has `GetACLACL=ACE_Admin`, while `AddACEACL`, `RemoveACEACL`, and `DeleteMethodACL` are empty. Therefore unauthenticated `GetACL` cannot succeed, Admin `GetACL` can return an ACE uidref list, and Add/Remove/Delete meta-methods cannot succeed even for Admin.
+  - Cross-doc binding:
+    - `core/5.3.4.3.txt`: AccessControl rows bind `InvokingID`, `MethodID`, `ACL`, and row-specific meta-ACL columns.
+    - `core/5.3.4.3.1.txt`: AddACE/RemoveACE/GetACL/DeleteMethod are governed by the corresponding meta-ACL columns.
+    - `core/5.1.5.2.txt`: failed authorization for these methods reports `NOT_AUTHORIZED`.
+    - `core/5.3.3.11.txt`, `core/5.3.3.13.txt`, `core/5.3.3.14.txt`, and `core/5.3.3.15.txt`: meta-method argument/result shapes.
+    - `opal/4.3.1.6.txt`: Locking SP AccessControl preconfigured rows, including `ThisSP/RevertSP` meta-ACL values.
+    - `opal/4.3.1.7.txt`: Locking SP ACE rows used by the referenced meta-ACL values.
+  - Implemented as tag: `acl-revertsp-meta-doc`.
+  - Accepted cases: 9.
+  - Solver repair path used: `src/solver_components/expectations.py::_known_meta_acl_authorization`, `src/solver_components/expectations.py::_expected_get_acl`, `src/solver_components/expectations.py::_expected_acl_mutation`, `src/solver_components/expectations.py::_expected_delete_method`, and `src/solver_components/semantics.py::_combo_exists_for_get_acl`.
+- Actioned slice: `CPIN-USER-ACE-BOOLEANEXPR`
+  - Rule: `ACE_C_PIN_User1_Set_PIN` is the Locking SP ACE governing the `C_PIN_User1.Set` PIN column. Its supported BooleanExpr values include `Admins` and `Admins OR User1`; the ACE evaluates against currently authenticated authorities. Therefore an Admins-only ACE blocks a User1-only session from changing `C_PIN_User1.PIN`, while `Admins OR User1` permits it after User1 is enabled and credentialed.
+  - Cross-doc binding:
+    - `core/3.4.2.1.txt`: authenticated authorities evaluate True inside ACE Boolean expressions.
+    - `core/5.3.2.9.txt` and `core/5.3.2.9.4.txt`: ACE table and BooleanExpr column semantics.
+    - `core/5.3.4.3.txt`, `core/5.3.4.3.2.txt`, and `core/5.3.4.3.3.txt`: AccessControl ACLs, ACE expression format, and BooleanExpr modifiability.
+    - `core/5.3.3.7.3.txt`: successful `Set` returns an empty list.
+    - `opal/4.3.1.6.txt`: Locking SP `C_PIN_User1/Set` uses `ACE_C_PIN_User1_Set_PIN`.
+    - `opal/4.3.1.7.txt`: `ACE_C_PIN_User1_Set_PIN` supports `Admins` and `Admins OR User1`.
+    - `opal/4.3.1.8.txt` and `opal/4.3.1.9.txt`: User1 authority and C_PIN preconfiguration.
+  - Implemented as tag: `cpin-user-ace-booleanexpr-doc`.
+  - Accepted cases: 5.
+  - Solver repair path used: no production solver change required; existing `_ace_expression_from_value`, `_evaluate_ace_expression`, `_invalid_set_values`, `_ace_authorizes_set`, and `_expected_set` already matched the cleaned official-doc trajectories.
+  - Review correction: two initial `User1`-only unsupported-value cases were superseded because reviewers correctly noted the cited Opal text proves required support for `Admins` and `Admins OR UserMMMM`, but does not by itself prove all possible implementation extensions are forbidden.
+- Actioned slice: `LOCKING-FEATURE-DESCRIPTOR`
+  - Rule: the Opal Level 0 Locking Feature descriptor exposes current `LockingEnabled`, `Locked`, `MBREnabled`, and `MBRDone` bits. `Locked` is true only when Locking is enabled and some LBA range has an enabled read/write lock cell set; disabled lock features do not count. `MBREnabled` and `MBRDone` are derived from LockingEnabled plus MBRControl `Enable`/`Done`.
+  - Cross-doc binding:
+    - `core/3.3.6.5.3.txt`: `Locked` bit formula.
+    - `core/3.3.6.5.5.txt`: `MBREnabled` bit formula.
+    - `core/3.3.6.5.6.txt`: `MBRDone` bit formula.
+    - `core/5.7.2.2.6.txt` through `core/5.7.2.2.9.txt`: lock-enable and locked cells.
+    - `core/5.7.2.5.2.txt` and `core/5.7.2.5.3.txt`: MBRControl Enable/Done cells.
+    - `opal/3.1.1.3.txt` and `opal/3.1.1.3.1.txt`: Opal Locking Feature descriptor layout and LockingEnabled definition.
+    - `opal/4.3.5.3.txt`: Opal MBRControl preconfiguration.
+  - Implemented as tag: `locking-feature-descriptor-doc`.
+  - Accepted cases: 10.
+  - Solver repair path used: `src/solver_components/expectations.py::_expected_host_io`, `src/solver_components/expectations.py::_expected_level0_locking_feature`, `src/solver_components/expectations.py::_locking_feature_locked`, and `src/solver_components/engine.py::compare_expected_actual`.
+  - Public/private relevance: high for hidden dashboard traces that call `hasLockedRange()` or include Level 0 Locking Feature descriptor snapshots after `SetRange`, `LockOnReset`, or MBRControl changes.
+- Actioned slice: `LOCKING-FEATURE-LIFECYCLE`
+  - Rule: successful Locking SP RevertSP returns the Locking SP to Original Factory State. If that state is Manufactured-Inactive, Locking-template functionality becomes inactive and the Level 0 `LockingEnabled` bit returns to zero. A failed locked-global-range `KeepGlobalRangeKey=True` RevertSP does not revert the SP, so descriptor state remains enabled/locked.
+  - Cross-doc binding:
+    - `opal/5.1.3.2.txt` and `opal/5.1.3.3.txt`: RevertSP parameter/effects and Original Factory State consequences.
+    - `opal/5.2.2.2.2.txt`: successful Revert/RevertSP changes LifeCycleState to Original Factory State.
+    - `opal/5.2.2.3.1.txt`: Manufactured-Inactive disables template functionality and sessions.
+    - `opal/3.1.1.3.1.txt`: LockingEnabled bit is zero for Nonexistent or Manufactured-Inactive Locking-template SPs.
+    - `core/3.3.6.5.3.txt` through `core/3.3.6.5.6.txt`: descriptor `Locked`, `MBREnabled`, and `MBRDone` bit formulas.
+  - Implemented as tag: `locking-feature-lifecycle-doc`.
+  - Accepted cases: 6.
+  - Solver repair path used: no additional production solver change required; the previous descriptor-state repair and existing `_reset_locking_sp` transition already covered these longer RevertSP trajectories.
+
+Other actionable slices found but not yet implemented:
+- `AUTHORITY-OPERATION-MATCH-STARTUP`
+  - Source lead: `core/5.3.4.1.3.txt`.
+  - Candidate rule: an Authority Operation value must match the purpose for which the authority is used during session startup.
+  - Risk: needs a concrete preconfigured authority row from Opal or a setup trajectory proving the operation value.
+- `SESSION-STARTUP-AUTHORITY-MODES`
+  - Source leads: `core/5.3.4.1.5.txt`, `core/5.3.4.1.6.txt`, `core/5.3.4.1.9.txt`, `core/5.3.4.1.10.txt`.
+  - Candidate rule: Password, Signing, Exchange, SymK, HMAC, and TPerSign/TPerExch authorities alter StartSession/SyncSession requirements.
+  - Risk: many cases need secure-messaging packet fields that current synthetic helpers may not model.
+- `LOG-TABLE-CYCLIC-ROWS`
+  - Source leads: `core/5.8.2.1.txt`, `core/5.8.4.3.txt`.
+  - Candidate rule: log tables are preallocated and cyclical; cursor/serial behavior can create side-effect cases.
+  - Risk: current solver state likely lacks durable log-row modeling. Basic AddLog result/target/data-limit behavior is now covered by `log-addlog-doc`.
+
+Current resume point:
+
+- Continue from `analysis/doc_cartography_queue.md`, prioritizing table-method shards around `core/5.3.4.2.*`, ACL/ACE documents around `core/3.4.2.*`, and high-yield lifecycle/revert rules. Interrupted data-removal operation docs such as `opal/3.1.1.6.1`/`opal/3.1.1.6.2` were inspected but deferred because the current trajectory/model does not yet expose Level 0 Discovery data-removal operation bit state cleanly enough for trusted cases.
+- When a slice needs multiple documents, keep the official txt paths in `Evidence.sources` and put the narrower row/paragraph locator in the rule summary.

@@ -1,0 +1,22 @@
+{
+  "added_blocks": 1,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/4.2.4.md",
+  "existing_chars": 77,
+  "existing_path": "artifacts/documents/opal/4.2.4.txt",
+  "extracted_chars": 405,
+  "family": "opal",
+  "pages": [
+    51
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 0,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/4.2.4.jsonl",
+  "section": "4.2.4",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 3,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/4.2.4.jsonl",
+  "title": "Admin Template Methods"
+}

@@ -1,0 +1,20 @@
+{
+  "added_blocks": 0,
+  "detail_path": "",
+  "existing_chars": 28,
+  "existing_path": "artifacts/documents/opal/4.2.3.txt",
+  "extracted_chars": 0,
+  "family": "opal",
+  "pages": [],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "no extracted section nodes",
+  "rules": 0,
+  "rules_path": "",
+  "section": "4.2.3",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "skipped",
+  "tables": 0,
+  "tables_path": "",
+  "title": "Admin Template Tables"
+}

@@ -1,0 +1,22 @@
+{
+  "added_blocks": 1,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/4.2.9.1.md",
+  "existing_chars": 357,
+  "existing_path": "artifacts/documents/opal/4.2.9.1.txt",
+  "extracted_chars": 252,
+  "family": "opal",
+  "pages": [
+    52
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 1,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/4.2.9.1.jsonl",
+  "section": "4.2.9.1",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 0,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/4.2.9.1.jsonl",
+  "title": "Random"
+}

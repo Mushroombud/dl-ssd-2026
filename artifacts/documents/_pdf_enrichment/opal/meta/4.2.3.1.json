@@ -1,0 +1,23 @@
+{
+  "added_blocks": 5,
+  "detail_path": "artifacts/documents/_pdf_enrichment/opal/details/4.2.3.1.md",
+  "existing_chars": 1389,
+  "existing_path": "artifacts/documents/opal/4.2.3.1.txt",
+  "extracted_chars": 1661,
+  "family": "opal",
+  "pages": [
+    49,
+    50
+  ],
+  "parser": "opendataloader-pdf",
+  "parser_json": "analysis/pdf_extract/opendataloader/opal/Opal_Core_Spec.json",
+  "reason": "new detailed blocks, tables, rules, or sparse existing shard",
+  "rules": 1,
+  "rules_path": "artifacts/documents/_pdf_enrichment/opal/rules/4.2.3.1.jsonl",
+  "section": "4.2.3.1",
+  "source_pdf": "materials/Opal_Core_Spec.pdf",
+  "status": "written",
+  "tables": 2,
+  "tables_path": "artifacts/documents/_pdf_enrichment/opal/tables/4.2.3.1.jsonl",
+  "title": "TPerInfo (M)"
+}
