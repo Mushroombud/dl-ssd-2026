@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.rag_retrieval import build_query_from_trajectory, hit_to_json, load_chunks, retrieve
+from src.rag_retrieval import build_query_from_trajectory, hit_to_json, json_default, load_chunks, retrieve
 from src.solver import parse_event, predict_trajectory
 
 
@@ -57,7 +57,7 @@ def write_jsonl(path: Path, records: Iterable[dict[str, Any]]) -> int:
     count = 0
     with path.open("w", encoding="utf-8") as handle:
         for record in records:
-            handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+            handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True, default=json_default) + "\n")
             count += 1
     return count
 

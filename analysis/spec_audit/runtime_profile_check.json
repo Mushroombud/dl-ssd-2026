@@ -1,0 +1,40 @@
+{
+  "chunks": 1551,
+  "cwd": "/workspace/daeyu/dl-ssd-2026",
+  "dense_embeddings": {
+    "exists": true,
+    "path": "/workspace/daeyu/dl-ssd-2026/artifacts/rag_index/dense_embeddings.npy"
+  },
+  "embedding_model": {
+    "exists": true,
+    "path": "/workspace/daeyu/dl-ssd-2026/artifacts/models/Qwen3-Embedding-0.6B"
+  },
+  "env": {
+    "CUDA_VISIBLE_DEVICES": null,
+    "PYTORCH_ENABLE_MPS_FALLBACK": null,
+    "RAG_EMBEDDING_BATCH_SIZE": null,
+    "RAG_RERANKER_BATCH_SIZE": null
+  },
+  "recommendation": "local_safe_for_lexical; run model benchmark only on GPU server or with --run-models intentionally",
+  "reranker_model": {
+    "exists": true,
+    "path": "/workspace/daeyu/dl-ssd-2026/artifacts/models/Qwen3-Reranker-0.6B"
+  },
+  "schema": 1,
+  "timings": {
+    "dense": {
+      "skipped": "pass --run-models to benchmark; default avoids accidental embedding rebuilds"
+    },
+    "lexical": {
+      "hits": [
+        "_pdf_enrichment/testcases/details/SPF-19.md",
+        "_pdf_enrichment/testcases/details/SPF-03.md",
+        "_pdf_enrichment/testcases/details/ETC-21.md"
+      ],
+      "seconds": 0.057
+    },
+    "reranker": {
+      "skipped": "pass --run-models to benchmark"
+    }
+  }
+}

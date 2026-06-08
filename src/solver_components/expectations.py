@@ -1082,7 +1082,7 @@ def _start_session_forbidden_return_names(event: Event) -> set[str]:
         return set()
     host_signing = _startup_authority_arg(event, "HostSigningAuthority", "Authority", "authAs", "AuthAs")
     operation = STARTUP_AUTHORITY_OPERATIONS.get(host_signing or "")
-    if operation == "Sign":
+    if operation in {"Sign", "SymK", "HMAC"}:
         return set()
     return {"SPChallenge"}
 
@@ -1247,6 +1247,9 @@ def _start_session_success_kwargs(state: State, event: Event) -> dict[str, Any]:
         max_values["TransTimeout"] = state.tper_max_trans_timeout
     if _startup_exchange_certificate_flow(event):
         required_names.update({"SPChallenge", "SPExchangeCert"})
+    host_signing = _startup_authority_arg(event, "HostSigningAuthority", "Authority", "authAs", "AuthAs")
+    if STARTUP_AUTHORITY_OPERATIONS.get(host_signing or "") in {"Sign", "SymK", "HMAC"}:
+        required_names.add("SPChallenge")
 
     return {
         "required_return_names": required_names,
@@ -1265,6 +1268,13 @@ def _startup_initial_credit_error(event: Event) -> str | None:
 
 
 def _expected_start_session_while_open(state: State, event: Event) -> ExpectedResponse:
+    if state.tper_max_sessions == 1:
+        return ExpectedResponse(
+            {FAIL, INVALID_PARAMETER, NOT_AUTHORIZED, SP_BUSY},
+            forbidden_statuses={SUCCESS},
+            reason="Observed TPer MaxSessions=1 means the single open session consumes all available session slots",
+            confidence="high",
+        )
     if state.session.sp == event.sp:
         if state.session.write or event.write_session:
             return ExpectedResponse(
@@ -1314,6 +1324,13 @@ def _expected_start_session(state: State, event: Event) -> ExpectedResponse:
             {NOT_AUTHORIZED, INVALID_PARAMETER, FAIL},
             forbidden_statuses={SUCCESS},
             reason=f"{event.sp} has been deleted and no longer accepts sessions",
+            confidence="high",
+        )
+    if event.sp in state.sp_failed:
+        return ExpectedResponse(
+            {FAIL, INVALID_PARAMETER, NOT_AUTHORIZED},
+            forbidden_statuses={SUCCESS},
+            reason=f"{event.sp} is in the observed Failed lifecycle state and cannot complete session startup",
             confidence="high",
         )
     if state.sp_frozen.get(event.sp, False):
@@ -1382,6 +1399,14 @@ def _expected_start_session(state: State, event: Event) -> ExpectedResponse:
             reason=f"{authority} has reached its nonzero Authority.Limit",
             confidence="high",
         )
+    operation = STARTUP_AUTHORITY_OPERATIONS.get(authority)
+    if operation in {"Sign", "SymK", "HMAC"}:
+        return ExpectedResponse(
+            {SUCCESS},
+            **success_kwargs,
+            reason=f"{authority} startup uses {operation} challenge-response; host proof is supplied by StartTrustedSession",
+            confidence="high",
+        )
     challenge = _credential_text(event.challenge)
     if not challenge:
         return ExpectedResponse({NOT_AUTHORIZED}, reason="Credential authority requires a host challenge", confidence="high")
@@ -1442,6 +1467,15 @@ def _expected_start_trusted_session(state: State, event: Event) -> ExpectedRespo
             reason=f"{event.method} SPSessionID does not match the preceding StartSession exchange",
             confidence="high",
         )
+    if state.session.startup_sp_challenge:
+        host_response = _raw_arg_value(event.required, event.optional, _method_raw_args(event), "HostResponse", "hostResponse", "Response", "response")
+        if _empty_payload(host_response):
+            return ExpectedResponse(
+                {INVALID_PARAMETER, FAIL},
+                forbidden_statuses={SUCCESS},
+                reason=f"{event.method} requires HostResponse because SyncSession returned SPChallenge",
+                confidence="high",
+            )
     forbidden_return_names = set() if state.session.startup_host_challenge else {"SPResponse"}
     return ExpectedResponse(
         {SUCCESS},
@@ -1565,6 +1599,27 @@ def _crypto_stream_object_error(kind: str, event: Event) -> str | None:
     return None
 
 
+def _hash_result_size_bytes(symbol: str) -> int | None:
+    if symbol.startswith("H_SHA_1"):
+        return 20
+    if symbol.startswith("H_SHA_256"):
+        return 32
+    if symbol.startswith("H_SHA_384"):
+        return 48
+    if symbol.startswith("H_SHA_512"):
+        return 64
+    return None
+
+
+def _hash_symbol_for_event(event: Event) -> str:
+    symbol = event.invoking_name or ""
+    if not symbol.startswith("H_SHA_"):
+        symbol = event.invoking_symbol or symbol
+    if not symbol.startswith("H_SHA_") and event.invoking_uid:
+        symbol = _object_by_uid(event.invoking_uid)
+    return symbol
+
+
 def _expected_crypto_stream_method(state: State, event: Event) -> ExpectedResponse:
     if not state.session.open:
         return ExpectedResponse({NOT_AUTHORIZED, INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason=f"{event.method} requires an open session", confidence="medium")
@@ -1581,6 +1636,12 @@ def _expected_crypto_stream_method(state: State, event: Event) -> ExpectedRespon
     if event.method.endswith("Init"):
         if stream_open:
             return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason=f"{event.method} cannot start a second open {key[0]} stream for the same object", confidence="high")
+        found_buffer_out, buffer_out = _named_method_arg_value(event, "BufferOut", "bufferOut", "Output", "output")
+        if event.method == "HashInit" and found_buffer_out:
+            digest_size = _hash_result_size_bytes(_hash_symbol_for_event(event))
+            capacity = _byte_table_cellblock_capacity(buffer_out)
+            if digest_size is not None and capacity is not None and capacity < digest_size:
+                return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="HashInit BufferOut cellblock must be large enough to hold the hash result", confidence="high")
         return ExpectedResponse(
             {SUCCESS},
             expected_return_length=0,
@@ -1590,9 +1651,19 @@ def _expected_crypto_stream_method(state: State, event: Event) -> ExpectedRespon
         )
     if not stream_open:
         return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason=f"{event.method} requires an open {key[0]} stream", confidence="high")
-    found_buffer_out, _ = _named_method_arg_value(event, "BufferOut", "bufferOut", "Output", "output")
+    found_buffer_out, buffer_out = _named_method_arg_value(event, "BufferOut", "bufferOut", "Output", "output")
     if event.method in {"Encrypt", "Decrypt"} and found_buffer_out:
+        input_value = _xor_named_arg(event, "DataInput", "dataInput", "Input", "input", "Buffer", "buffer")
+        input_pattern = _xor_payload_pattern(input_value)
+        capacity = _byte_table_cellblock_capacity(buffer_out)
+        if input_pattern is not None and capacity is not None and capacity < len(input_pattern) // 2:
+            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason=f"{event.method} BufferOut cellblock must be large enough to hold the input byte size", confidence="high")
         return ExpectedResponse({SUCCESS}, expected_return_length=0, forbid_return_bool_literal=True, reason=f"{event.method} with BufferOut stores output bytes and returns an empty result", confidence="high")
+    if event.method == "HMACFinalize" and key in state.crypto_stream_bufferout:
+        digest_size = _hash_result_size_bytes(_hash_symbol_for_event(event))
+        capacity = _byte_table_cellblock_capacity(state.crypto_stream_bufferout_value.get(key))
+        if digest_size is not None and capacity is not None and capacity < digest_size:
+            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="HMACFinalize cannot succeed when HMACInit BufferOut is smaller than the HMAC result", confidence="high")
     if event.method in {"Hash", "HMAC"} and key in state.crypto_stream_bufferout:
         return ExpectedResponse({SUCCESS}, expected_return_length=0, forbid_return_bool_literal=True, reason=f"{key[0]}Init BufferOut stores output and makes {event.method} return an empty result", confidence="high")
     return ExpectedResponse(
@@ -1761,13 +1832,36 @@ def _xor_cellblock_pattern(state: State, value: Any) -> str | None:
     return "".join(f"{known_bytes[offset]:02X}" for offset in range(start, end + 1))
 
 
+def _byte_table_cellblock_capacity(value: Any) -> int | None:
+    has_byte_row_window = False
+
+    def walk(item: Any) -> None:
+        nonlocal has_byte_row_window
+        if isinstance(item, dict):
+            for key, nested in item.items():
+                normalized = re.sub(r"[^A-Za-z0-9]", "", _as_text(key)).lower()
+                if normalized in {"startrow", "endrow", "row", "startindex", "endindex", "startoffset", "endoffset", "offset", "length", "len", "size"}:
+                    has_byte_row_window = True
+                walk(nested)
+            return
+        if isinstance(item, (list, tuple, set)):
+            for nested in item:
+                walk(nested)
+
+    walk(value)
+    if not has_byte_row_window:
+        return None
+    row_range = _xor_cellblock_range(value)
+    if row_range is None:
+        return None
+    start, end = row_range
+    return end - start + 1
+
+
 def _explicit_byte_table_ref_symbol(value: Any) -> str:
     if value is None:
         return ""
     if isinstance(value, dict):
-        found, cellblock = _dict_lookup(value, "CellBlock", "Cellblock", "cellblock")
-        if found:
-            return _explicit_byte_table_ref_symbol(cellblock)
         for key in ("Table", "TableUID", "table", "tableUID", "Object", "ObjectID", "UID", "uid", "Name", "name"):
             found, item = _dict_lookup(value, key)
             if found:
@@ -1775,6 +1869,11 @@ def _explicit_byte_table_ref_symbol(value: Any) -> str:
                 symbol = symbol or _object_by_uid(uid)
                 if _is_byte_table_symbol(symbol) or _is_byte_table_uid(uid):
                     return symbol or _object_by_uid(uid)
+        found, cellblock = _dict_lookup(value, "CellBlock", "Cellblock", "cellblock")
+        if found:
+            symbol = _explicit_byte_table_ref_symbol(cellblock)
+            if symbol:
+                return symbol
         for item in value.values():
             symbol = _explicit_byte_table_ref_symbol(item)
             if symbol:
@@ -1799,31 +1898,40 @@ def _datastore_access_authorized(state: State, *, write: bool) -> bool:
     return _has_authority(state, "Admins") or _datastore_master_authorizes(state) or _user_acl_allows_datastore(state, write=write)
 
 
+def _byte_table_cellblock_access_authorized(state: State, symbol: str, *, write: bool) -> bool:
+    if symbol.startswith("DataStore"):
+        return _datastore_access_authorized(state, write=write)
+    if symbol == "MBR":
+        return not write or _has_authority(state, "Admins")
+    return True
+
+
 def _crypto_datastore_cellblock_access_error(state: State, event: Event) -> ExpectedResponse | None:
-    input_names = ("DataInput", "dataInput", "Input", "input", "BufferIn", "bufferIn", "Buffer", "buffer")
+    input_names = ("DataInput", "dataInput", "Input", "input", "BufferIn", "bufferIn", "Buffer", "buffer", "ProofBuffer", "proofBuffer", "Proof", "proof", "Data", "data")
     output_names = ("BufferOut", "bufferOut", "Output", "output")
     for names, write in ((input_names, False), (output_names, True)):
-        found, value = _named_method_arg_value(event, *names)
-        if not found:
-            continue
-        symbol = _explicit_byte_table_ref_symbol(value)
-        if not symbol.startswith("DataStore"):
-            continue
-        if write and not state.session.write:
-            return ExpectedResponse(
-                {NOT_AUTHORIZED, INVALID_PARAMETER, FAIL},
-                forbidden_statuses={SUCCESS},
-                reason="Crypto BufferOut references DataStore and therefore requires write access to that byte-table cellblock",
-                confidence="high",
-            )
-        if not _datastore_access_authorized(state, write=write):
-            access = "Set" if write else "Get"
-            return ExpectedResponse(
-                {NOT_AUTHORIZED, INVALID_PARAMETER, FAIL},
-                forbidden_statuses={SUCCESS},
-                reason=f"Crypto cellblock parameter references DataStore but {access} access control on that cellblock is not fulfilled",
-                confidence="high",
-            )
+        for name in names:
+            found, value = _named_method_arg_value(event, name)
+            if not found:
+                continue
+            symbol = _explicit_byte_table_ref_symbol(value)
+            if not (symbol.startswith("DataStore") or symbol == "MBR"):
+                continue
+            if write and not state.session.write:
+                return ExpectedResponse(
+                    {NOT_AUTHORIZED, INVALID_PARAMETER, FAIL},
+                    forbidden_statuses={SUCCESS},
+                    reason=f"Crypto BufferOut references {symbol} and therefore requires write access to that byte-table cellblock",
+                    confidence="high",
+                )
+            if not _byte_table_cellblock_access_authorized(state, symbol, write=write):
+                access = "Set" if write else "Get"
+                return ExpectedResponse(
+                    {NOT_AUTHORIZED, INVALID_PARAMETER, FAIL},
+                    forbidden_statuses={SUCCESS},
+                    reason=f"Crypto cellblock parameter references {symbol} but {access} access control on that cellblock is not fulfilled",
+                    confidence="high",
+                )
     return None
 
 
@@ -1868,6 +1976,13 @@ def _expected_xor(state: State, event: Event) -> ExpectedResponse:
     found_buffer_out, buffer_out = _named_method_arg_value(event, "BufferOut", "bufferOut", "Output", "output")
     if (delete_pattern or found_buffer_out) and not state.session.write:
         return ExpectedResponse({NOT_AUTHORIZED, INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="XOR DeletePattern or BufferOut requires write access to the referenced byte table", confidence="medium")
+    if delete_pattern and not _byte_table_cellblock_access_authorized(state, pattern_symbol, write=True):
+        return ExpectedResponse(
+            {NOT_AUTHORIZED, INVALID_PARAMETER, FAIL},
+            forbidden_statuses={SUCCESS},
+            reason="XOR DeletePattern requires Set access to the PatternInput byte table",
+            confidence="high",
+        )
 
     if found_buffer_out:
         buffer_len = _byte_payload_length(buffer_out)
@@ -1894,6 +2009,20 @@ def _expected_verify(state: State, event: Event) -> ExpectedResponse:
         return ExpectedResponse({NOT_AUTHORIZED, INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="Verify requires an open SP session", confidence="medium")
     if not (event.invoking_symbol or event.invoking_uid or event.invoking_name):
         return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="Verify requires an invoking hash object or public key credential", confidence="medium")
+    invoking_symbol = event.invoking_name if event.invoking_name.startswith(("H_SHA_", "C_RSA_", "C_EC_")) else event.invoking_symbol or event.invoking_name
+    if invoking_symbol and not invoking_symbol.startswith(("H_SHA_", "C_RSA_", "C_EC_", "Unknown")):
+        return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="Verify is defined only on H_SHA hash objects or RSA/EC public key credentials", confidence="high")
+    if invoking_symbol.startswith(("C_RSA_", "C_EC_")):
+        found_input, _ = _named_method_arg_value(event, "DataInput", "dataInput", "Input", "input", "Buffer", "buffer")
+        found_proof, _ = _named_method_arg_value(event, "Proof", "proof", "ProofBuffer", "proofBuffer")
+        if not found_proof:
+            found_data, data_value = _named_method_arg_value(event, "Data", "data")
+            found_proof = found_data and isinstance(data_value, dict) and any(_dict_lookup(data_value, key)[0] for key in ("Proof", "proof", "ProofBuffer", "proofBuffer"))
+        if not found_input or not found_proof:
+            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="Verify on a public key credential requires both input data and proof data", confidence="high")
+    cellblock_error = _crypto_datastore_cellblock_access_error(state, event)
+    if cellblock_error is not None:
+        return cellblock_error
     return ExpectedResponse(
         {SUCCESS},
         require_return_bool=True,
@@ -1919,6 +2048,16 @@ def _expected_authenticate(state: State, event: Event) -> ExpectedResponse:
         return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="Authenticate requires an individual authority", confidence="high")
     if not _authority_allowed_in_sp(state.session.sp, authority):
         return ExpectedResponse({NOT_AUTHORIZED, INVALID_PARAMETER}, reason=f"{authority} is not an authority in {state.session.sp}", confidence="high")
+    proof = _mapping_value(event.optional, "Proof", "proof") or _mapping_value(event.required, "Proof", "proof")
+    operation = STARTUP_AUTHORITY_OPERATIONS.get(authority)
+    if proof is not None and authority != "Anybody" and operation is not None and operation != "Password":
+        return ExpectedResponse(
+            {INVALID_PARAMETER},
+            forbidden_statuses={SUCCESS},
+            expected_return_length=0,
+            reason="Authenticate in Awaiting Challenge state rejects Proof supplied to a non-Password/non-Anybody authority",
+            confidence="high",
+        )
     if authority == "TPerSign":
         return ExpectedResponse({SUCCESS}, expected_return_bool=False, forbidden_return_bool=True, forbid_return_status_bool_payload=True, reason="TPerSign has Operation TPerSign and is not appropriate for explicit Authenticate", confidence="high")
     if not _authority_is_enabled(state, state.session.sp, authority):
@@ -1944,8 +2083,7 @@ def _expected_authenticate(state: State, event: Event) -> ExpectedResponse:
         )
     challenge = (
         event.challenge
-        or _mapping_value(event.optional, "Proof", "proof")
-        or _mapping_value(event.required, "Proof", "proof")
+        or proof
         or _mapping_value(event.optional, "Challenge")
         or _mapping_value(event.required, "Challenge")
         or _mapping_value(event.required, "HostChallenge")
@@ -3981,6 +4119,21 @@ def _expected_set(state: State, event: Event) -> ExpectedResponse:
         return table_size_expectation
     if _invalid_set_values(state, event):
         return ExpectedResponse({INVALID_PARAMETER}, reason="Set contains values disallowed by Opal table semantics", confidence="medium")
+    optional_reset_support = False
+    if event.invoking_symbol.startswith("Locking_") and 9 in event.values:
+        reset_types = _reset_types(event.values[9])
+        optional_reset_support = 1 in reset_types and 0 in reset_types and reset_types <= {0, 1, 3}
+    if event.invoking_symbol == "MBRControl" and 3 in event.values:
+        reset_types = _reset_types(event.values[3])
+        optional_reset_support = 1 in reset_types and 0 in reset_types and reset_types <= {0, 1, 3}
+    if optional_reset_support:
+        return ExpectedResponse(
+            {SUCCESS, INVALID_PARAMETER},
+            expected_return_length=0,
+            forbid_return_bool_literal=_raw_tcg_method_event(event),
+            reason="Opal requires reset-type lists {0} and {0,3}, while Hardware-containing {0,1} and {0,1,3} are optional TPer support",
+            confidence="high",
+        )
     return ExpectedResponse(
         {SUCCESS} | optional_absence_statuses,
         expected_return_length=0,
@@ -4104,6 +4257,38 @@ def _expected_genkey(state: State, event: Event) -> ExpectedResponse:
             expected_return_length=0,
             forbid_return_bool_literal=_raw_tcg_method_event(event),
             reason="Authorized C_PIN GenKey returns an empty list",
+            confidence="high",
+        )
+
+    if re.fullmatch(r"C_RSA_(1024|2048)", event.invoking_symbol or ""):
+        if found_pin_length:
+            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="PinLength is valid only for C_PIN GenKey", confidence="high")
+        if found_exponent:
+            _, exponent_value = _named_method_arg_value(event, "PublicExponent", "publicExponent")
+            if _uinteger_arg_invalid(exponent_value):
+                return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="C_RSA GenKey PublicExponent must be a uinteger", confidence="high")
+        if not _has_authority(auth_state, "Admins"):
+            return ExpectedResponse({NOT_AUTHORIZED}, reason="C_RSA GenKey requires Admins authority", confidence="high")
+        return ExpectedResponse(
+            {SUCCESS},
+            expected_return_length=0,
+            forbid_return_bool_literal=_raw_tcg_method_event(event),
+            reason="Authorized C_RSA GenKey returns an empty list and may include PublicExponent",
+            confidence="high",
+        )
+
+    if re.fullmatch(r"C_AES_(128|256)|C_HMAC_(160|256|384|512)|C_EC_(160|163|192|224|233|256|283|384|521)", event.invoking_symbol or ""):
+        if found_pin_length:
+            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="PinLength is valid only for C_PIN GenKey", confidence="high")
+        if found_exponent:
+            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="PublicExponent is valid only for C_RSA GenKey", confidence="high")
+        if not _has_authority(auth_state, "Admins"):
+            return ExpectedResponse({NOT_AUTHORIZED}, reason=f"{event.invoking_symbol} GenKey requires Admins authority", confidence="high")
+        return ExpectedResponse(
+            {SUCCESS},
+            expected_return_length=0,
+            forbid_return_bool_literal=_raw_tcg_method_event(event),
+            reason="Authorized non-C_PIN credential GenKey returns an empty list",
             confidence="high",
         )
 
@@ -4290,8 +4475,18 @@ def _expected_sign(state: State, event: Event) -> ExpectedResponse:
     if cellblock_error is not None:
         return cellblock_error
     if event.invoking_symbol != "TPerSign":
-        found_buffer_out, _ = _named_method_arg_value(event, "BufferOut", "bufferOut", "Output", "output")
+        invoking_symbol = event.invoking_name if event.invoking_name.startswith(("H_SHA_", "C_RSA_", "C_EC_")) else event.invoking_symbol or event.invoking_name
+        if invoking_symbol and not invoking_symbol.startswith(("H_SHA_", "C_RSA_", "C_EC_", "Unknown")):
+            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="Sign is defined only on H_SHA hash objects or RSA/EC public key credentials", confidence="high")
+        if invoking_symbol.startswith(("C_RSA_", "C_EC_")) and not _sign_has_payload(event):
+            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="Sign on a public key credential requires direct input data or an input cellblock", confidence="high")
+        found_buffer_out, buffer_out = _named_method_arg_value(event, "BufferOut", "bufferOut", "Output", "output")
         if found_buffer_out:
+            input_value = _xor_named_arg(event, "DataInput", "dataInput", "Input", "input", "Data", "data", "Buffer", "buffer")
+            input_pattern = _xor_payload_pattern(input_value)
+            capacity = _byte_table_cellblock_capacity(buffer_out)
+            if input_pattern is not None and capacity is not None and capacity < len(input_pattern) // 2:
+                return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="Sign BufferOut cellblock must be large enough to hold the direct input byte size", confidence="high")
             return ExpectedResponse({SUCCESS}, expected_return_length=0, forbid_return_bool_literal=True, reason="Sign with BufferOut specified stores the signed data and returns an empty result", confidence="high")
         return ExpectedResponse(
             {SUCCESS},
@@ -4348,6 +4543,7 @@ def _random_unsupported_arg(event: Event) -> str | None:
     container_keys = {
         "required", "requiredargs", "optional", "optionalargs", "values",
         "settings", "options", "policy", "config", "request", "operation",
+        "command", "cmd", "action",
         "random", "rng", "randomrequest", "rngrequest", "entropyrequest",
         "operationrequest", "rawargs",
     }
@@ -4415,8 +4611,14 @@ def _expected_random(state: State, event: Event) -> ExpectedResponse:
         return ExpectedResponse({INVALID_PARAMETER}, reason="Random requires a Count parameter", confidence="high")
     if count < 0 or count > 32:
         return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="Opal Random Count must be between 0 and 32 bytes", confidence="high")
-    found_buffer_out, _ = _named_method_arg_value(event, "BufferOut", "bufferOut", "Buffer")
+    cellblock_error = _crypto_datastore_cellblock_access_error(state, event)
+    if cellblock_error is not None:
+        return cellblock_error
+    found_buffer_out, buffer_out = _named_method_arg_value(event, "BufferOut", "bufferOut", "Buffer")
     if found_buffer_out:
+        capacity = _byte_table_cellblock_capacity(buffer_out)
+        if capacity is not None and capacity < count:
+            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="Random BufferOut cellblock must be large enough to hold Count bytes", confidence="high")
         return ExpectedResponse({SUCCESS}, expected_return_length=0, forbid_return_bool_literal=True, reason="Random with BufferOut specified returns an empty Result", confidence="high")
     return ExpectedResponse({SUCCESS}, expected_return_length=count, forbid_return_bool_literal=True, require_return_byte_payload=bool(count), reason="Random Count is within the Opal mandatory supported range", confidence="high")
 
@@ -4765,6 +4967,14 @@ def _known_meta_acl_authorization(state: State, event: Event, meta_method: str) 
         if "Anybody" in authorities or _has_any_authority(state, authorities):
             return "created_satisfied"
         return "created_unsatisfied"
+    if invoking in state.created_row_side_effect_ace_by_uid and method_name in {"Get", "Set", "Delete"}:
+        row_uid = state.created_row_side_effect_ace_by_uid.get(invoking)
+        authorities = state.created_table_row_meta_acl_authorities.get(row_uid or "")
+        if not authorities:
+            return "created_satisfied" if _has_authority(state, "Admins") else "created_unsatisfied"
+        if "Anybody" in authorities or _has_any_authority(state, authorities):
+            return "created_satisfied"
+        return "created_unsatisfied"
 
     created_table_uid = invoking if invoking in state.created_tables else state.created_table_descriptor_uids.get(invoking)
     if created_table_uid is not None:
@@ -4798,6 +5008,9 @@ def _known_acl_return_refs(state: State, event: Event) -> set[str] | None:
     raw_invoking_uid = _clean_uid(invoking_value) if found_invoking else ""
     if invoking_uid in state.created_table_row_values_by_uid or raw_invoking_uid in state.created_table_row_values_by_uid:
         return None
+    side_effect_ace_uid = invoking_uid if invoking_uid in state.created_row_side_effect_ace_by_uid else raw_invoking_uid if raw_invoking_uid in state.created_row_side_effect_ace_by_uid else ""
+    if side_effect_ace_uid:
+        return {side_effect_ace_uid}
     invoking_symbol, method_name = combo_key
     invoking = re.sub(r"[^A-Za-z0-9_]", "", _as_text(invoking_symbol))
 
@@ -5226,6 +5439,13 @@ def expected_status(state: State, event: Event) -> ExpectedResponse:
         return _expected_start_session(state, event)
     if event.method in {"StartTrustedSession", "StartTlsSession"}:
         return _expected_start_trusted_session(state, event)
+    if state.session.trusted_startup_pending:
+        return ExpectedResponse(
+            {NOT_AUTHORIZED, INVALID_PARAMETER, FAIL},
+            forbidden_statuses={SUCCESS},
+            reason="Regular Session is not open until the trusted startup half completes",
+            confidence="high",
+        )
     if event.method in CRYPTO_STREAM_METHODS:
         return _expected_crypto_stream_method(state, event)
     if event.method == "XOR":

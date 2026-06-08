@@ -882,6 +882,39 @@ TAG_METADATA: dict[str, dict[str, Any]] = {
         ),
         "repair_hint": "Check concurrent StartSession handling: same-SP read-write startup while any session is open, or same-SP read-only startup while a read-write session is open, must return SP_BUSY rather than SUCCESS.",
     },
+    "startsession-sp-failed-lifecycle-doc": {
+        "concepts": (
+            "session-manager",
+            "start-session",
+            "lifecycle",
+            "sp-failed",
+            "state-observation",
+        ),
+        "repair_paths": (
+            "src/solver_components/expectations.py::_expected_start_session",
+            "src/solver_components/transitions.py::_apply_get_success",
+            "src/solver_components/parsing.py::_sp_lifecycle_failed",
+            "src/solver_components/models.py::State.sp_failed",
+        ),
+        "repair_hint": "Check that successful Admin SP SP.Get LifeCycleState observations drive later StartSession expectations: issued/manufactured failed states forbid successful startup and may return SP_FAILED, while a later non-failed lifecycle observation clears the inferred failed state.",
+    },
+    "startsession-maxsessions-doc": {
+        "concepts": (
+            "session-manager",
+            "start-session",
+            "properties",
+            "maxsessions",
+            "session-capacity",
+            "sync-session",
+        ),
+        "repair_paths": (
+            "src/solver_components/parsing.py::TPER_PROPERTY_ALIASES",
+            "src/solver_components/models.py::State.tper_max_sessions",
+            "src/solver_components/transitions.py::_apply_properties_success",
+            "src/solver_components/expectations.py::_expected_start_session_while_open",
+        ),
+        "repair_hint": "Check that observed TPer Properties MaxSessions constrains concurrent StartSession expectations: MaxSessions=1 means one open session consumes the only slot, so a second StartSession cannot succeed and may return NO_SESSIONS_AVAILABLE.",
+    },
     "adminsp-rw-session-combination-doc": {
         "concepts": (
             "admin-sp",
@@ -2939,6 +2972,31 @@ TAG_METADATA: dict[str, dict[str, Any]] = {
             "src/solver_components/engine.py::_return_cell_type_valid",
         ),
         "repair_hint": "Check credential Hash column hash_protocol validation across C_RSA, C_AES, C_EC, and C_HMAC tables; values 0-4 are defined and 5-15 are reserved.",
+    },
+    "crypto-issued-metadata-readonly-doc": {
+        "concepts": ("credential", "crypto-template", "issued-row", "read-only-column", "name-commonname", "set"),
+        "repair_paths": (
+            "src/solver_components/semantics.py::_is_issued_crypto_metadata_symbol",
+            "src/solver_components/semantics.py::_invalid_set_values",
+            "src/solver_components/expectations.py::_expected_set",
+        ),
+        "repair_hint": "Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.",
+    },
+    "cryptosuite-readonly-doc": {
+        "concepts": ("admin-sp", "tper-metadata", "cryptosuite", "read-only-column", "set"),
+        "repair_paths": (
+            "src/solver_components/semantics.py::_invalid_set_values",
+            "src/solver_components/expectations.py::_expected_set",
+        ),
+        "repair_hint": "Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.",
+    },
+    "certificates-issued-readonly-doc": {
+        "concepts": ("certificate", "issued-row", "read-only-column", "name-commonname", "set"),
+        "repair_paths": (
+            "src/solver_components/semantics.py::_invalid_set_values",
+            "src/solver_components/expectations.py::_expected_set",
+        ),
+        "repair_hint": "Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.",
     },
     "chmac-fixed-bytes-doc": {
         "concepts": ("credential", "c-hmac", "fixed-bytes", "key-material", "set", "get-postcondition"),
@@ -5375,6 +5433,23 @@ def build_cases() -> list[Case]:
         "core/3.3.9.5.txt",
         rule="SP_BUSY is the SyncSession status when a host attempts to open a read-write session to an SP while any other session to that SP is already open, or attempts to open a read-only session to an SP while a read-write session to that SP is already open. StartSession.Write selects read-write versus read-only, and a successfully ended session releases its resources. Therefore same-SP RW/RW, RO/RW, and RW/RO overlapping startup attempts must report SP_BUSY rather than SUCCESS, while the same startup can succeed after EndSession releases the prior session.",
     )
+    startsession_sp_failed_lifecycle_docs = source(
+        "core/4.1.txt",
+        "core/4.2.txt",
+        "core/4.3.txt",
+        "core/4.5.5.txt",
+        "core/5.1.5.4.txt",
+        "opal/5.2.3.txt",
+        rule="Each SP has its own LifeCycleState in the Admin SP SP table. The Failed state is terminal and session startup methods to an SP in Failed SHALL return an error status; SP_FAILED is the startup status for this condition. Opal enumerates 4 as issued-failed and 13 as manufactured-failed. Therefore after a successful SP.Get observes a failed lifecycle value for LockingSP, a later LockingSP StartSession cannot complete successfully and may return SP_FAILED; a later non-failed lifecycle observation clears that inferred failure.",
+    )
+    startsession_maxsessions_docs = source(
+        "core/5.1.5.7.txt",
+        "core/5.2.2.2.txt",
+        "core/5.2.3.1.txt",
+        "core/5.2.3.2.txt",
+        "opal/4.1.1.1.txt",
+        rule="NO_SESSIONS_AVAILABLE is the SyncSession status when the host attempts to open a session on a TPer for which the maximum number of concurrent sessions are already used. Opal TPer Properties include mandatory MaxSessions with minimum value one, and Properties returns current TPer communication-property values. Therefore after a successful Properties response observes MaxSessions=1, one open session consumes the only available concurrent session slot and a second StartSession cannot complete successfully.",
+    )
     adminsp_rw_session_combination_docs = source(
         "core/5.4.4.3.txt",
         "core/5.2.3.1.txt",
@@ -5451,6 +5526,38 @@ def build_cases() -> list[Case]:
         "opal/4.3.1.7.txt",
         rule="Crypto methods that use a cellblock as input require Get access control on the entire input cellblock. Crypto methods that use BufferOut require Set access control on that output cellblock. The Opal Locking SP DataStore byte table has explicit Get and Set AccessControl/ACE rows, so if those ACE BooleanExpr values have been changed to the empty expression, Admin1 no longer fulfills the corresponding byte-table Get or Set access control. Therefore a successful Decrypt, Encrypt, Sign, Hash, HMAC, or XOR invocation that explicitly references DataStore as a cellblock input or BufferOut while the corresponding DataStore ACE is empty is not compliant.",
     )
+    crypto_bufferout_capacity_docs = source(
+        "core/5.6.4.4.txt",
+        "core/5.6.4.4.1.txt",
+        "core/5.6.4.4.2.txt",
+        "core/5.6.4.4.4.txt",
+        "core/5.6.4.7.txt",
+        "core/5.6.4.7.1.txt",
+        "core/5.6.4.7.2.txt",
+        "core/5.6.4.7.4.txt",
+        "core/5.6.5.1.txt",
+        "opal/4.3.8.1.txt",
+        rule="Encrypt and Decrypt process Input data and may write the transformed result to a BufferOut cellblock. Their fails sections require the DataInput byte size to be the same size as or smaller than the BufferOut/Result cell size when BufferOut is specified. Therefore an otherwise authorized Encrypt or Decrypt invocation with an open stream cannot successfully return an empty Result when direct input bytes exceed the addressed byte-table BufferOut range.",
+    )
+    hash_bufferout_capacity_docs = source(
+        "core/5.6.3.2.txt",
+        "core/5.6.4.11.txt",
+        "core/5.6.4.11.1.txt",
+        "core/5.6.4.11.2.1.txt",
+        "core/5.6.4.11.3.txt",
+        "opal/4.3.8.1.txt",
+        rule="H_SHA_256 declares hash-state byte fields as bytes_32, and HashInit fails when BufferOut is specified but is not larger than or equal to the hash calculation result. Therefore an otherwise authorized HashInit with a byte-table BufferOut range shorter than 32 bytes cannot succeed, while an explicit 32-byte range is large enough for the H_SHA_256 result.",
+    )
+    hmac_finalize_bufferout_capacity_docs = source(
+        "core/5.6.3.2.txt",
+        "core/5.6.4.14.txt",
+        "core/5.6.4.14.1.txt",
+        "core/5.6.4.14.2.1.txt",
+        "core/5.6.4.16.txt",
+        "core/5.6.4.16.2.txt",
+        "opal/4.3.8.1.txt",
+        rule="HMACInit may specify a BufferOut cellblock for the HMAC result. HMACFinalize computes the HMAC and fails if the specified BufferOut cellblock is not larger than or equal to the HMAC result. For H_SHA_256, the result width is 32 bytes, so a shorter byte-table row range cannot support a successful HMACFinalize.",
+    )
     hash_stream_state_bufferout_docs = source(
         "core/5.6.4.11.txt",
         "core/5.6.4.11.1.txt",
@@ -5485,6 +5592,32 @@ def build_cases() -> list[Case]:
         "core/5.6.5.6.2.txt",
         rule="The Verify method may be invoked on a hash object or a public key credential. Its result is a Boolean value that is True if verification of the data against the proof is successful and False otherwise. Therefore a successful Verify invocation cannot return a non-Boolean payload.",
     )
+    verify_cellblock_access_docs = source(
+        "core/5.6.4.10.txt",
+        "core/5.6.4.10.1.txt",
+        "core/5.6.4.10.1.2.txt",
+        "core/5.6.4.10.2.txt",
+        "core/5.6.4.10.2.2.txt",
+        "core/5.6.4.10.4.txt",
+        "opal/4.3.1.6.txt",
+        rule="Verify may take direct bytes or cellblocks for both the value being verified and the proof. If DataInput or Proof references a cellblock, the host must fulfill Get access control on the entirety of that cellblock, and Verify fails when that Get access control is not fulfilled. Therefore a successful Verify over an Opal DataStore cellblock is invalid after the DataStore Get ACE BooleanExpr is emptied.",
+    )
+    verify_target_family_docs = source(
+        "core/5.6.4.10.txt",
+        "core/5.6.4.10.4.txt",
+        "core/5.6.5.6.txt",
+        "core/5.6.5.6.1.txt",
+        "core/5.6.5.6.2.txt",
+        rule="Verify is performed by invoking the Verify method on either a public key credential or a hash object. The public key credential path uses RSA/EC-style public credentials, and the hash-object path invokes Verify on H_SHA. Therefore successful Verify is not defined on symmetric keys, AES credentials, or C_PIN credentials.",
+    )
+    verify_public_key_input_proof_docs = source(
+        "core/5.6.4.10.txt",
+        "core/5.6.4.10.1.txt",
+        "core/5.6.4.10.2.txt",
+        "core/5.6.5.6.1.txt",
+        "core/5.6.5.6.2.txt",
+        rule="Public key credential Verify compares supplied input data against supplied proof data using the invoking public key credential. Unlike H_SHA Verify, which may default omitted values to the hash object's Proof and Accumulator columns, the public key credential invocation path provides only direct bytes or cellblocks for both DataInput and Proof. Therefore public key Verify cannot succeed when either the input data or proof data is omitted.",
+    )
     sign_bufferout_result_docs = source(
         "core/5.6.4.9.txt",
         "core/5.6.4.9.1.txt",
@@ -5493,6 +5626,24 @@ def build_cases() -> list[Case]:
         "core/5.6.5.5.1.txt",
         "core/5.6.5.5.2.txt",
         rule="The Sign method may be invoked on a hash object or a public key credential. When BufferOut is omitted, the signed bytes are returned as the Result. When BufferOut is supplied, the signed data is written to the output cellblock and the method Result is empty. Therefore successful Sign with BufferOut cannot return signed bytes in the result payload.",
+    )
+    sign_target_family_docs = source(
+        "core/5.6.4.9.txt",
+        "core/5.6.4.9.1.txt",
+        "core/5.6.4.9.4.txt",
+        "core/5.6.5.5.txt",
+        "core/5.6.5.5.1.txt",
+        "core/5.6.5.5.2.txt",
+        rule="Signing is performed by invoking Sign on either a public key credential with a private key, such as C_RSA or C_EC, or on an H_SHA hash object that references such a credential. Public key credential signing requires input data or an input cellblock. Therefore successful generic Sign is not defined on symmetric keys, AES credentials, or C_PIN credentials, and public-key Sign without input data is invalid.",
+    )
+    sign_bufferout_capacity_docs = source(
+        "core/5.6.4.9.txt",
+        "core/5.6.4.9.1.txt",
+        "core/5.6.4.9.2.txt",
+        "core/5.6.4.9.4.txt",
+        "core/5.6.5.5.1.txt",
+        "opal/4.3.8.1.txt",
+        rule="Sign may write the signed data to a BufferOut cellblock. Core Sign BufferOut requires the Input byte length to be equal in size to or smaller than the result cellblock, and Set access must be fulfilled for that output cellblock. Therefore a public-key Sign with direct input bytes larger than an explicit byte-table BufferOut row range cannot succeed.",
     )
     syncsession_signedhash_return_docs = source(
         "core/5.2.3.2.txt",
@@ -6536,6 +6687,25 @@ def build_cases() -> list[Case]:
         "opal/4.2.9.1.txt",
         "opal/4.3.4.1.txt",
         rule="Random is an SP method whose Count parameter specifies the byte size of the random sequence to be generated. The method signature declares Count as uinteger, and Opal requires support for Count values less than or equal to 32. Therefore numeric Count values in that range remain valid, while explicitly supplied boolean Count values are not uinteger values and cannot produce a successful Random response.",
+    )
+    random_bufferout_cellblock_acl_docs = source(
+        "core/5.6.4.1.txt",
+        "core/5.6.4.1.2.txt",
+        "core/5.6.4.1.3.1.txt",
+        "core/5.6.4.2.2.txt",
+        "core/5.6.5.1.txt",
+        "opal/4.3.5.4.txt",
+        "opal/4.3.8.1.txt",
+        rule="Random is an SP method whose BufferOut parameter is a cell_block identifying cells where generated bytes are stored. Successful Random with BufferOut returns an empty Result, but Crypto Template cellblock rules require the host to satisfy Set access control on the entire output cellblock; the Random fails section also states that Random fails when Set access control is not satisfied for BufferOut. Opal DataStore and MBR are byte tables with explicit access-control requirements, so a successful Random writing to either table's cellblock is not compliant when that Set authority is absent.",
+    )
+    random_bufferout_capacity_docs = source(
+        "core/5.6.4.1.txt",
+        "core/5.6.4.1.1.txt",
+        "core/5.6.4.1.2.txt",
+        "core/5.6.4.1.3.1.txt",
+        "core/5.6.4.2.2.txt",
+        "opal/4.3.8.1.txt",
+        rule="Random Count specifies the number of generated bytes. Random BufferOut identifies the byte-table cells where those generated bytes are stored, and Random fails if BufferOut is not big enough to hold Count bytes. Therefore an otherwise authorized Random invocation cannot successfully return an empty Result when Count exceeds the addressed BufferOut byte-cell range.",
     )
     package_docs = source(
         "core/5.1.3.26.txt",
@@ -7668,6 +7838,41 @@ def build_cases() -> list[Case]:
         "core/5.3.2.27.txt",
         rule="Credential object Hash columns use the hash_protocol enumeration. Core defines hash_protocol values 0-4 as None/SHA-1/SHA-256/SHA-384/SHA-512 and reserves values 5-15. Therefore successful Set or Get values for credential Hash columns cannot use reserved values or boolean coercions.",
     )
+    crypto_issued_metadata_readonly_docs = source(
+        "core/5.3.2.13.2.txt",
+        "core/5.3.2.13.3.txt",
+        "core/5.3.2.14.2.txt",
+        "core/5.3.2.14.3.txt",
+        "core/5.3.2.15.2.txt",
+        "core/5.3.2.15.3.txt",
+        "core/5.3.2.16.2.txt",
+        "core/5.3.2.16.3.txt",
+        "core/5.3.2.17.2.txt",
+        "core/5.3.2.17.3.txt",
+        "core/5.3.2.26.2.txt",
+        "core/5.3.2.26.3.txt",
+        "core/5.6.3.2.2.txt",
+        "core/5.6.3.2.3.txt",
+        rule="Credential and cryptographic support object tables define Name as column 1 and CommonName as column 2. For objects that exist at issuance, those columns SHALL NOT be modifiable by the host. Therefore a successful Set of Name or CommonName on issued C_RSA, C_AES, C_EC, C_HMAC, or H_SHA objects is not protocol-compliant, while the rule should not be generalized to newly-created rows.",
+    )
+    cryptosuite_readonly_docs = source(
+        "core/5.4.2.3.txt",
+        "core/5.4.2.3.1.txt",
+        "core/5.4.2.3.2.txt",
+        "core/5.4.2.3.3.txt",
+        "core/5.4.2.3.4.txt",
+        "core/5.4.2.3.5.txt",
+        "core/5.4.2.3.6.txt",
+        "core/5.4.2.3.7.txt",
+        rule="The Admin SP CryptoSuite table is TPer metadata describing available cryptographic functionality. Its UID, CryptoCall, CryptoLen, CryptoOp, Special, Time, and Variance columns SHALL NOT be modifiable by the host. Therefore a successful Set against a CryptoSuite row or the CryptoSuite object target is not protocol-compliant.",
+    )
+    certificates_issued_readonly_docs = source(
+        "core/5.3.2.11.txt",
+        "core/5.3.2.11.1.txt",
+        "core/5.3.2.11.2.txt",
+        "core/5.3.2.11.3.txt",
+        rule="The Certificates object table defines UID column 0, Name column 1, and CommonName column 2. UID SHALL NOT be modifiable by the host, and for Certificates objects that exist at issuance, Name and CommonName SHALL NOT be modifiable by the host. Therefore a successful Set of those metadata cells on issued Certificates rows is not protocol-compliant, while the rule should not be generalized to newly-created certificate rows.",
+    )
     enum_bool_coercion_docs = source(
         "core/3.2.1.4.txt",
         "core/5.1.3.35.txt",
@@ -7687,7 +7892,7 @@ def build_cases() -> list[Case]:
         "core/5.1.3.72.txt",
         "core/5.3.2.15.txt",
         "core/5.3.2.16.txt",
-        rule="C_AES_128 and C_AES_256 credential objects declare Mode as symmetric_mode and FeedbackSize as feedback_size. symmetric_mode defines values 0-11 and reserves 12-23. feedback_size is a uinteger for AES CFB mode; if Mode is CFB, FeedbackSize must be between 1 and the AES block length. Therefore a successful Set/Get cannot use reserved Mode values or boolean coercions, and a same-call CFB FeedbackSize outside 1..16 is not protocol-compliant.",
+        rule="C_AES_128 and C_AES_256 credential objects declare Mode as symmetric_mode and FeedbackSize as feedback_size. symmetric_mode defines values 0-11 and reserves 12-23. feedback_size is a uinteger for AES CFB mode; if the current Mode is CFB, FeedbackSize must be between 1 and the AES block length. Therefore a successful Set/Get cannot use reserved Mode values or boolean coercions, and FeedbackSize outside 1..16 is not protocol-compliant when Mode is CFB, whether that Mode appears in the same Set or was established by an earlier successful Set.",
     )
     caes_fixed_bytes_docs = source(
         "core/5.1.3.15.txt",
@@ -9051,6 +9256,13 @@ def build_cases() -> list[Case]:
         "core/5.7.2.4.txt",
         "opal/4.3.5.5.txt",
         rule="GenKey fills an existing credential/key object with new key material. The GenKey result is an empty list, and success or failure is determined by the status code rather than returned key bytes or a generated PIN. Therefore any successful C_PIN or K_AES GenKey response that returns a non-empty payload is not protocol-compliant.",
+    )
+    genkey_credential_family_docs = source(
+        "core/5.3.3.16.txt",
+        "core/5.3.3.16.1.txt",
+        "core/5.3.3.16.3.1.txt",
+        "core/5.3.3.16.4.txt",
+        rule="Core GenKey fills an existing object in any C_AES_*, K_AES_*, C_EC_*, C_PIN, C_RSA_*, or C_HMAC_* table with new key material and returns an empty list. PublicExponent is valid only for C_RSA_* and defaults when omitted; PinLength is valid only for C_PIN. H_SHA_* is not in the GenKey credential-family target list.",
     )
     genkey_cpin_docs = source(
         "core/5.3.3.16.2.txt",
@@ -11589,6 +11801,42 @@ def build_cases() -> list[Case]:
             "auth-operation-doc",
         )
     )
+    append_status_pair(
+        cases,
+        name="TPerSign explicit Authenticate with Proof returns INVALID_PARAMETER",
+        context=[h("start_session")(h("ADMIN_SP"))],
+        target_factory=lambda status: h("method_record")(
+            "Authenticate",
+            "0000000000000001",
+            "ThisSP",
+            status=status,
+            required={"Authority": "TPerSign", "Proof": "nonce"},
+            return_values=[False] if status == SUCCESS else [],
+        ),
+        correct_status=INVALID_PARAMETER,
+        evidence=operation_auth_docs,
+        tag="auth-operation-doc",
+    )
+    cases.append(
+        case(
+            "AdminExch explicit Authenticate with Proof must not return SUCCESS False",
+            adminexch_ecmqv_context()
+            + [
+                h("start_session")(h("ADMIN_SP"), h("SID"), "new"),
+                h("method_record")(
+                    "Authenticate",
+                    "0000000000000001",
+                    "ThisSP",
+                    status=SUCCESS,
+                    required={"Authority": "AdminExch", "Proof": "nonce"},
+                    return_values=[False],
+                ),
+            ],
+            "FAIL",
+            operation_auth_docs,
+            "auth-operation-doc",
+        )
+    )
     cases.append(
         case(
             "TPerSign as HostSigningAuthority must not start successfully",
@@ -12248,6 +12496,88 @@ def build_cases() -> list[Case]:
         evidence=startsession_sp_busy_docs,
         tag="startsession-sp-busy-doc",
     )
+
+    def tper_max_sessions_properties(max_sessions: int) -> dict[str, Any]:
+        return h("method_record")(
+            "Properties",
+            "00000000000000FF",
+            "Session Manager UID",
+            status=SUCCESS,
+            return_values={"Properties": {"MaxSessions": max_sessions}},
+        )
+
+    append_status_pair(
+        cases,
+        name="TPer MaxSessions one makes second StartSession return NO_SESSIONS_AVAILABLE",
+        context=h("activated_locking_context")()
+        + [
+            tper_max_sessions_properties(1),
+            h("start_session")(h("ADMIN_SP"), h("SID"), "new", write=0),
+        ],
+        target_factory=lambda status: h("start_session")(h("LOCKING_SP"), h("ADMIN1"), "new", status=status, write=0),
+        correct_status="NO_SESSIONS_AVAILABLE",
+        evidence=startsession_maxsessions_docs,
+        tag="startsession-maxsessions-doc",
+    )
+
+    def locking_failed_lifecycle_context(lifecycle_value: Any) -> list[dict[str, Any]]:
+        return h("activated_locking_context")() + [
+            h("start_session")(h("ADMIN_SP"), h("SID"), "new"),
+            h("method_record")(
+                "Get",
+                h("LOCKING_SP"),
+                "SP",
+                status=SUCCESS,
+                required={"CellBlock": [{"startColumn": 6, "endColumn": 6}]},
+                return_values=[[{"6": lifecycle_value}]],
+            ),
+            h("end_session")(),
+        ]
+
+    for lifecycle_value, lifecycle_name in (
+        (4, "issued-failed enum"),
+        (13, "manufactured-failed enum"),
+        ("Issued-Failed", "issued-failed text"),
+        ("Manufactured-Failed", "manufactured-failed text"),
+    ):
+        append_status_pair(
+            cases,
+            name=f"LockingSP StartSession after observed {lifecycle_name} lifecycle returns SP_FAILED",
+            context=locking_failed_lifecycle_context(lifecycle_value),
+            target_factory=lambda status: h("start_session")(h("LOCKING_SP"), h("ADMIN1"), "new", status=status),
+            correct_status="SP_FAILED",
+            evidence=startsession_sp_failed_lifecycle_docs,
+            tag="startsession-sp-failed-lifecycle-doc",
+        )
+    append_status_success_pair(
+        cases,
+        name="Later non-failed LockingSP lifecycle observation clears failed startup inference",
+        context=h("activated_locking_context")()
+        + [
+            h("start_session")(h("ADMIN_SP"), h("SID"), "new"),
+            h("method_record")(
+                "Get",
+                h("LOCKING_SP"),
+                "SP",
+                status=SUCCESS,
+                required={"CellBlock": [{"startColumn": 6, "endColumn": 6}]},
+                return_values=[[{"6": 13}]],
+            ),
+            h("method_record")(
+                "Get",
+                h("LOCKING_SP"),
+                "SP",
+                status=SUCCESS,
+                required={"CellBlock": [{"startColumn": 6, "endColumn": 6}]},
+                return_values=[[{"6": "Manufactured"}]],
+            ),
+            h("end_session")(),
+        ],
+        target_factory=lambda status: h("start_session")(h("LOCKING_SP"), h("ADMIN1"), "new", status=status),
+        wrong_status="SP_FAILED",
+        evidence=startsession_sp_failed_lifecycle_docs,
+        tag="startsession-sp-failed-lifecycle-doc",
+    )
     append_impossible_success(
         cases,
         name="Open AdminSP read-write session cannot be combined with LockingSP read-write session",
@@ -12527,6 +12857,42 @@ def build_cases() -> list[Case]:
         evidence=crypto_stream_bufferout_result_docs,
         tag="crypto-stream-bufferout-result-tight-doc",
     )
+    append_impossible_success(
+        cases,
+        name="HMACFinalize cannot succeed when HMACInit BufferOut is shorter than H_SHA_256 result",
+        context=crypto_context
+        + [
+            crypto_method(
+                "HMACInit",
+                hmac_hash,
+                "H_SHA_256",
+                optional={"BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 30}}},
+                return_values=[],
+            )
+        ],
+        target_factory=lambda status: crypto_method("HMACFinalize", hmac_hash, "H_SHA_256", status=status, return_values=[]),
+        evidence=hmac_finalize_bufferout_capacity_docs,
+        tag="hmac-finalize-bufferout-capacity-doc",
+    )
+    cases.append(
+        case(
+            "HMACFinalize can succeed when HMACInit BufferOut is exactly 32 bytes",
+            crypto_context
+            + [
+                crypto_method(
+                    "HMACInit",
+                    hmac_hash,
+                    "H_SHA_256",
+                    optional={"BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 31}}},
+                    return_values=[],
+                ),
+                crypto_method("HMACFinalize", hmac_hash, "H_SHA_256", return_values=[]),
+            ],
+            "PASS",
+            hmac_finalize_bufferout_capacity_docs,
+            "hmac-finalize-bufferout-capacity-doc",
+        )
+    )
 
     crypto_datastore_context = h("activated_locking_context")() + [h("start_session")(h("LOCKING_SP"), h("ADMIN1"), "new")]
     datastore_input_cellblock = {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 1}}
@@ -12627,6 +12993,43 @@ def build_cases() -> list[Case]:
         evidence=crypto_cellblock_access_docs,
         tag="crypto-cellblock-accesscontrol-doc",
     )
+    for method_name, init_name in (("Encrypt", "EncryptInit"), ("Decrypt", "DecryptInit")):
+        cases.append(
+            case(
+                f"{method_name} DataStore BufferOut exact byte range may hold input",
+                crypto_datastore_context
+                + [
+                    crypto_method(init_name, aes_key, "K_AES_256"),
+                    crypto_method(
+                        method_name,
+                        aes_key,
+                        "K_AES_256",
+                        required={"Input": {"Data": "AABB"}},
+                        optional={"BufferOut": datastore_output_cellblock},
+                        return_values=[],
+                    ),
+                ],
+                "PASS",
+                crypto_bufferout_capacity_docs,
+                "crypto-bufferout-capacity-doc",
+            )
+        )
+        append_impossible_success(
+            cases,
+            name=f"{method_name} DataStore BufferOut too small for direct input cannot succeed",
+            context=crypto_datastore_context + [crypto_method(init_name, aes_key, "K_AES_256")],
+            target_factory=lambda status, method=method_name: crypto_method(
+                method,
+                aes_key,
+                "K_AES_256",
+                status=status,
+                required={"Input": {"Data": "AABBCCDD"}},
+                optional={"BufferOut": datastore_output_cellblock},
+                return_values=[],
+            ),
+            evidence=crypto_bufferout_capacity_docs,
+            tag="crypto-bufferout-capacity-doc",
+        )
     append_impossible_success(
         cases,
         name="Sign DataStore BufferOut cellblock requires DataStore Set ACE",
@@ -12720,6 +13123,42 @@ def build_cases() -> list[Case]:
         evidence=crypto_cellblock_access_docs,
         tag="crypto-cellblock-accesscontrol-doc",
     )
+    mbr_output_cellblock = {"CellBlock": {"Table": "MBR", "startRow": 0, "endRow": 1}}
+    append_impossible_success(
+        cases,
+        name="HashInit MBR BufferOut cellblock requires MBR Set ACE",
+        context=h("activated_locking_context")() + [h("start_session")(h("LOCKING_SP"), write=0)],
+        target_factory=lambda status: crypto_method(
+            "HashInit",
+            hmac_hash,
+            "H_SHA_256",
+            status=status,
+            optional={"BufferOut": mbr_output_cellblock},
+            return_values=[],
+        ),
+        evidence=crypto_cellblock_access_docs,
+        tag="crypto-cellblock-accesscontrol-doc",
+    )
+    append_impossible_success(
+        cases,
+        name="Encrypt MBR BufferOut cellblock requires MBR Set ACE",
+        context=h("activated_locking_context")()
+        + [
+            h("start_session")(h("LOCKING_SP")),
+            crypto_method("EncryptInit", aes_key, "K_AES_256"),
+        ],
+        target_factory=lambda status: crypto_method(
+            "Encrypt",
+            aes_key,
+            "K_AES_256",
+            status=status,
+            required={"Input": {"Data": "AABB"}},
+            optional={"BufferOut": mbr_output_cellblock},
+            return_values=[],
+        ),
+        evidence=crypto_cellblock_access_docs,
+        tag="crypto-cellblock-accesscontrol-doc",
+    )
     append_impossible_success(
         cases,
         name="Hash cannot run before HashInit opens the stream",
@@ -12796,6 +13235,39 @@ def build_cases() -> list[Case]:
         ),
         evidence=hash_stream_state_bufferout_docs,
         tag="hash-stream-state-bufferout-tight-doc",
+    )
+    append_impossible_success(
+        cases,
+        name="HashInit H_SHA_256 BufferOut shorter than 32-byte result cannot succeed",
+        context=crypto_context,
+        target_factory=lambda status: crypto_method(
+            "HashInit",
+            hmac_hash,
+            "H_SHA_256",
+            status=status,
+            optional={"BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 30}}},
+            return_values=[],
+        ),
+        evidence=hash_bufferout_capacity_docs,
+        tag="hashinit-bufferout-capacity-doc",
+    )
+    cases.append(
+        case(
+            "HashInit H_SHA_256 BufferOut exactly 32 bytes can succeed",
+            crypto_context
+            + [
+                crypto_method(
+                    "HashInit",
+                    hmac_hash,
+                    "H_SHA_256",
+                    optional={"BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 31}}},
+                    return_values=[],
+                )
+            ],
+            "PASS",
+            hash_bufferout_capacity_docs,
+            "hashinit-bufferout-capacity-doc",
+        )
     )
 
     xor_context = h("activated_locking_context")() + [h("start_session")(h("LOCKING_SP"), h("ADMIN1"), "new")]
@@ -12878,6 +13350,35 @@ def build_cases() -> list[Case]:
         evidence=xor_byte_table_bufferout_docs,
         tag="xor-byte-table-bufferout-doc",
     )
+    append_impossible_success(
+        cases,
+        name="XOR DeletePattern requires DataStore Set ACE",
+        context=h("activated_locking_context")() + [h("start_session")(h("LOCKING_SP"))],
+        target_factory=lambda status: xor_method(data="AA", pattern_input={"Table": "DataStore"}, delete_pattern=True, status=status),
+        evidence=xor_byte_table_bufferout_docs,
+        tag="xor-byte-table-bufferout-doc",
+    )
+    append_impossible_success(
+        cases,
+        name="XOR DeletePattern requires MBR Set ACE",
+        context=h("activated_locking_context")() + [h("start_session")(h("LOCKING_SP"))],
+        target_factory=lambda status: xor_method(data="AA", pattern_input={"Table": "MBR"}, delete_pattern=True, status=status),
+        evidence=xor_byte_table_bufferout_docs,
+        tag="xor-byte-table-bufferout-doc",
+    )
+    append_impossible_success(
+        cases,
+        name="XOR MBR BufferOut cellblock requires MBR Set ACE",
+        context=h("activated_locking_context")() + [h("start_session")(h("LOCKING_SP"))],
+        target_factory=lambda status: xor_method(
+            data="AA",
+            pattern_input={"Table": "MBR"},
+            buffer_out={"CellBlock": {"Table": "MBR", "startRow": 0, "endRow": 0}},
+            status=status,
+        ),
+        evidence=xor_byte_table_bufferout_docs,
+        tag="xor-byte-table-bufferout-doc",
+    )
 
     verify_context = h("owned_admin_context")() + [h("start_session")(h("ADMIN_SP"), h("SID"), "new")]
 
@@ -12916,6 +13417,123 @@ def build_cases() -> list[Case]:
         target_factory=lambda status: verify_method("AABB", status=status),
         evidence=verify_result_boolean_docs,
         tag="verify-result-boolean-tight-doc",
+    )
+    verify_datastore_context = h("activated_locking_context")() + [
+        h("start_session")(h("LOCKING_SP"), h("ADMIN1"), "new"),
+        h("method_record")("Set", "000000080003FC00", "ACE_DataStore_Get_All", optional={"Values": [{"3": []}]}),
+    ]
+    verify_datastore_cellblock = {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 1}}
+    append_impossible_success(
+        cases,
+        name="Verify DataInput cellblock requires DataStore Get ACE",
+        context=verify_datastore_context,
+        target_factory=lambda status: h("method_record")(
+            "Verify",
+            "0000080600030001",
+            "H_SHA_256",
+            status=status,
+            required={"Input": verify_datastore_cellblock, "Data": {"Proof": "AABB"}},
+            return_values=True,
+        ),
+        evidence=verify_cellblock_access_docs,
+        tag="verify-cellblock-accesscontrol-doc",
+    )
+    append_impossible_success(
+        cases,
+        name="Verify ProofBuffer cellblock requires DataStore Get ACE",
+        context=verify_datastore_context,
+        target_factory=lambda status: h("method_record")(
+            "Verify",
+            "0000080600030001",
+            "H_SHA_256",
+            status=status,
+            required={"Input": {"Data": "AABB"}, "Data": {"ProofBuffer": verify_datastore_cellblock}},
+            return_values=True,
+        ),
+        evidence=verify_cellblock_access_docs,
+        tag="verify-cellblock-accesscontrol-doc",
+    )
+    for invalid_name in ("K_AES_256", "C_AES_256", "C_PIN_SID"):
+        append_impossible_success(
+            cases,
+            name=f"Verify is not defined on {invalid_name}",
+            context=verify_context,
+            target_factory=lambda status, name=invalid_name: h("method_record")(
+                "Verify",
+                "",
+                name,
+                status=status,
+                required={"Input": {"Data": "AABB"}, "Data": {"Proof": "CCDD"}},
+                return_values=True,
+            ),
+            evidence=verify_target_family_docs,
+            tag="verify-target-family-doc",
+        )
+    for valid_name in ("H_SHA_256", "C_RSA_2048", "C_EC_256"):
+        cases.append(
+            case(
+                f"Verify may be invoked on {valid_name}",
+                verify_context
+                + [
+                    h("method_record")(
+                        "Verify",
+                        "",
+                        valid_name,
+                        required={"Input": {"Data": "AABB"}, "Data": {"Proof": "CCDD"}},
+                        return_values=True,
+                    )
+                ],
+                "PASS",
+                verify_target_family_docs,
+                "verify-target-family-doc",
+            )
+        )
+    for missing_name, required_args in (
+        ("Public key Verify without input or proof cannot succeed", {}),
+        ("Public key Verify without proof cannot succeed", {"Input": {"Data": "AABB"}}),
+        ("Public key Verify without input cannot succeed", {"Data": {"Proof": "CCDD"}}),
+    ):
+        append_impossible_success(
+            cases,
+            name=missing_name,
+            context=verify_context,
+            target_factory=lambda status, required=required_args: h("method_record")(
+                "Verify",
+                "",
+                "C_RSA_2048",
+                status=status,
+                required=required,
+                return_values=True,
+            ),
+            evidence=verify_public_key_input_proof_docs,
+            tag="verify-publickey-input-proof-doc",
+        )
+    cases.append(
+        case(
+            "Public key Verify with input and proof may succeed",
+            verify_context
+            + [
+                h("method_record")(
+                    "Verify",
+                    "",
+                    "C_RSA_2048",
+                    required={"Input": {"Data": "AABB"}, "Data": {"Proof": "CCDD"}},
+                    return_values=True,
+                )
+            ],
+            "PASS",
+            verify_public_key_input_proof_docs,
+            "verify-publickey-input-proof-doc",
+        )
+    )
+    cases.append(
+        case(
+            "Hash object Verify may omit input and proof",
+            verify_context + [h("method_record")("Verify", "", "H_SHA_256", return_values=True)],
+            "PASS",
+            verify_public_key_input_proof_docs,
+            "verify-publickey-input-proof-doc",
+        )
     )
 
     sign_context = h("owned_admin_context")() + [h("start_session")(h("ADMIN_SP"), h("SID"), "new")]
@@ -12964,6 +13582,100 @@ def build_cases() -> list[Case]:
             "PASS",
             sign_bufferout_result_docs,
             "sign-bufferout-result-tight-doc",
+        )
+    )
+    cases.append(
+        case(
+            "Sign DataStore BufferOut exact byte range may hold input",
+            sign_context
+            + [
+                h("method_record")(
+                    "Sign",
+                    "",
+                    "C_RSA_2048",
+                    required={"Input": {"Data": "AABB"}},
+                    optional={"BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 1}}},
+                    return_values=[],
+                )
+            ],
+            "PASS",
+            sign_bufferout_capacity_docs,
+            "sign-bufferout-capacity-doc",
+        )
+    )
+    append_impossible_success(
+        cases,
+        name="Sign DataStore BufferOut too small for direct input cannot succeed",
+        context=sign_context,
+        target_factory=lambda status: h("method_record")(
+            "Sign",
+            "",
+            "C_RSA_2048",
+            status=status,
+            required={"Input": {"Data": "AABBCCDD"}},
+            optional={"BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 1}}},
+            return_values=[],
+        ),
+        evidence=sign_bufferout_capacity_docs,
+        tag="sign-bufferout-capacity-doc",
+    )
+    for invalid_name in ("K_AES_256", "C_AES_256", "C_PIN_SID"):
+        append_impossible_success(
+            cases,
+            name=f"Sign is not defined on {invalid_name}",
+            context=sign_context,
+            target_factory=lambda status, name=invalid_name: h("method_record")(
+                "Sign",
+                "",
+                name,
+                status=status,
+                required={"Input": {"Data": "AABB"}},
+                return_values="CCDD",
+            ),
+            evidence=sign_target_family_docs,
+            tag="sign-target-family-doc",
+        )
+    for valid_name in ("H_SHA_256", "C_RSA_2048", "C_EC_256"):
+        cases.append(
+            case(
+                f"Sign may be invoked on {valid_name} with input data",
+                sign_context
+                + [
+                    h("method_record")(
+                        "Sign",
+                        "",
+                        valid_name,
+                        required={"Input": {"Data": "AABB"}},
+                        return_values="CCDD",
+                    )
+                ],
+                "PASS",
+                sign_target_family_docs,
+                "sign-target-family-doc",
+            )
+        )
+    for public_key_name in ("C_RSA_2048", "C_EC_256"):
+        append_impossible_success(
+            cases,
+            name=f"Public key Sign on {public_key_name} without input data cannot succeed",
+            context=sign_context,
+            target_factory=lambda status, name=public_key_name: h("method_record")(
+                "Sign",
+                "",
+                name,
+                status=status,
+                return_values="CCDD",
+            ),
+            evidence=sign_target_family_docs,
+            tag="sign-target-family-doc",
+        )
+    cases.append(
+        case(
+            "Hash object Sign may omit input and sign the accumulator",
+            sign_context + [h("method_record")("Sign", "", "H_SHA_256", return_values="CCDD")],
+            "PASS",
+            sign_target_family_docs,
+            "sign-target-family-doc",
         )
     )
 
@@ -13199,6 +13911,106 @@ def build_cases() -> list[Case]:
         target_factory=lambda status: start_session_with_optional({"HostSigningAuthority": h("SID")}, status=status),
         evidence=session_startup_security_long_docs,
         tag="session-startup-security-long-doc",
+    )
+    cases.append(
+        case(
+            "MakerPuK HostSigningAuthority starts challenge-response without HostChallenge",
+            [
+                start_session_with_return(
+                    optional={"HostSigningAuthority": "MakerPuK"},
+                    return_values=syncsession_return(optional={"SPChallenge": "nonce"}),
+                )
+            ],
+            "PASS",
+            session_startup_security_long_docs,
+            "session-startup-security-long-doc",
+        )
+    )
+    cases.append(
+        case(
+            "MakerSymK HostSigningAuthority starts challenge-response without HostChallenge",
+            [
+                start_session_with_return(
+                    optional={"HostSigningAuthority": "MakerSymK"},
+                    return_values=syncsession_return(optional={"SPChallenge": "nonce"}),
+                )
+            ],
+            "PASS",
+            session_startup_security_long_docs,
+            "session-startup-security-long-doc",
+        )
+    )
+    cases.append(
+        case(
+            "MakerPuK HostSigningAuthority cannot omit required SPChallenge",
+            [
+                start_session_with_return(
+                    optional={"HostSigningAuthority": "MakerPuK"},
+                    return_values=syncsession_return(),
+                )
+            ],
+            "FAIL",
+            session_startup_security_long_docs,
+            "session-startup-security-long-doc",
+        )
+    )
+    cases.append(
+        case(
+            "StartTrustedSession after SPChallenge requires HostResponse",
+            [
+                start_session_with_return(
+                    optional={"HostSigningAuthority": "MakerPuK"},
+                    return_values=syncsession_return(optional={"SPChallenge": "nonce"}),
+                ),
+                h("method_record")(
+                    "StartTrustedSession",
+                    "00000000000000FF",
+                    "Session Manager UID",
+                    status=SUCCESS,
+                    required={"HostSessionID": "00000001", "SPSessionID": "00000001"},
+                ),
+            ],
+            "FAIL",
+            session_startup_security_long_docs,
+            "session-startup-security-long-doc",
+        )
+    )
+    cases.append(
+        case(
+            "Regular method before StartTrustedSession is not yet in an open challenge-response session",
+            [
+                start_session_with_return(
+                    optional={"HostSigningAuthority": "MakerPuK"},
+                    return_values=syncsession_return(optional={"SPChallenge": "nonce"}),
+                ),
+                h("method_record")("Get", "0000000100000000", "Table", status=SUCCESS, return_values=[[{"Rows": 1}]]),
+            ],
+            "FAIL",
+            session_startup_security_long_docs,
+            "session-startup-security-long-doc",
+        )
+    )
+    cases.append(
+        case(
+            "StartTrustedSession HostResponse opens the pending challenge-response session",
+            [
+                start_session_with_return(
+                    optional={"HostSigningAuthority": "MakerPuK"},
+                    return_values=syncsession_return(optional={"SPChallenge": "nonce"}),
+                ),
+                h("method_record")(
+                    "StartTrustedSession",
+                    "00000000000000FF",
+                    "Session Manager UID",
+                    status=SUCCESS,
+                    required={"HostSessionID": "00000001", "SPSessionID": "00000001", "HostResponse": "signed-nonce"},
+                ),
+                h("method_record")("Get", "0000000100000000", "Table", status=SUCCESS, return_values=[[{"Rows": 1}]]),
+            ],
+            "PASS",
+            session_startup_security_long_docs,
+            "session-startup-security-long-doc",
+        )
     )
     append_status_success_pair(
         cases,
@@ -16105,6 +16917,14 @@ def build_cases() -> list[Case]:
             evidence=log_entry_readonly_expanded_docs,
             tag="log-entry-readonly-expanded-doc",
         )
+    append_impossible_success(
+        cases,
+        name="LogEntry alias Data column cannot be host-modified",
+        context=[h("start_session")(h("ADMIN_SP"), h("SID"), "new")],
+        target_factory=lambda status: h("set_values")("", "LogEntry_1", {13: "AA"}, status=status),
+        evidence=log_entry_readonly_expanded_docs,
+        tag="log-entry-readonly-expanded-doc",
+    )
     cases.append(
         case(
             "ClearLog on Log table succeeds with empty result",
@@ -16400,6 +17220,25 @@ def build_cases() -> list[Case]:
             "loglist-readonly-doc",
         )
     )
+    cases.append(
+        case(
+            "Host cannot directly Set the LogList table target",
+            [
+                h("start_session")(h("ADMIN_SP"), h("SID"), "new"),
+                h("method_record")(
+                    "Set",
+                    "",
+                    "LogList",
+                    status=SUCCESS,
+                    optional={"Values": [{"5": True}]},
+                    return_values=[],
+                ),
+            ],
+            "FAIL",
+            loglist_readonly_docs,
+            "loglist-readonly-doc",
+        )
+    )
     append_impossible_success(
         cases,
         name="LogList HighSecurity numeric column cannot be boolean value two",
@@ -16538,6 +17377,75 @@ def build_cases() -> list[Case]:
             "PASS",
             random_docs,
             "random-doc",
+        )
+    )
+    cases.append(
+        case(
+            "Random DataStore BufferOut requires DataStore Set ACL",
+            h("activated_locking_context")()
+            + [
+                h("start_session")(h("LOCKING_SP"), h("ADMIN1"), "new"),
+                h("method_record")("Set", "000000080003FC01", "ACE_DataStore_Set_All", optional={"Values": [{"3": []}]}),
+                random_record(
+                    required={"Count": 2},
+                    optional={"BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 1}}},
+                    return_values=[],
+                ),
+            ],
+            "FAIL",
+            random_bufferout_cellblock_acl_docs,
+            "random-bufferout-cellblock-acl-doc",
+        )
+    )
+    cases.append(
+        case(
+            "Random MBR BufferOut requires MBR Set authority",
+            h("activated_locking_context")()
+            + [
+                h("start_session")(h("LOCKING_SP")),
+                random_record(
+                    required={"Count": 2},
+                    optional={"BufferOut": {"Table": "MBR", "CellBlock": [{"startRow": 0}, {"endRow": 1}]}},
+                    return_values=[],
+                ),
+            ],
+            "FAIL",
+            random_bufferout_cellblock_acl_docs,
+            "random-bufferout-cellblock-acl-doc",
+        )
+    )
+    cases.append(
+        case(
+            "Random BufferOut exact byte range may hold Count bytes",
+            h("activated_locking_context")()
+            + [
+                h("start_session")(h("LOCKING_SP"), h("ADMIN1"), "new"),
+                random_record(
+                    required={"Count": 2},
+                    optional={"BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 1}}},
+                    return_values=[],
+                ),
+            ],
+            "PASS",
+            random_bufferout_capacity_docs,
+            "random-bufferout-capacity-doc",
+        )
+    )
+    cases.append(
+        case(
+            "Random BufferOut too small for Count cannot succeed",
+            h("activated_locking_context")()
+            + [
+                h("start_session")(h("LOCKING_SP"), h("ADMIN1"), "new"),
+                random_record(
+                    required={"Count": 4},
+                    optional={"BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 1}}},
+                    return_values=[],
+                ),
+            ],
+            "FAIL",
+            random_bufferout_capacity_docs,
+            "random-bufferout-capacity-doc",
         )
     )
     cases.append(
@@ -25226,6 +26134,41 @@ def build_cases() -> list[Case]:
             evidence=locking_reset_list_restrictions_docs,
             tag="locking-reset-list-restrictions-no-mutation-doc",
         )
+    for reset_value, label in (([0, 1], "PowerCycle-plus-Hardware"), ([0, 1, 3], "PowerCycle-plus-Hardware-plus-Programmatic")):
+        cases.append(
+            case(
+                f"{label} LockOnReset Set may be rejected when optional Hardware reset support is absent",
+                reset_list_locking_base
+                + [
+                    h("set_values")(
+                        h("LOCKING_RANGE1"),
+                        "Locking",
+                        {9: reset_value},
+                        status=INVALID_PARAMETER,
+                    )
+                ],
+                "PASS",
+                locking_reset_list_restrictions_docs,
+                "locking-reset-list-restrictions-no-mutation-doc",
+            )
+        )
+        cases.append(
+            case(
+                f"{label} LockOnReset Set may succeed when optional Hardware reset support is present",
+                reset_list_locking_base
+                + [
+                    h("set_values")(
+                        h("LOCKING_RANGE1"),
+                        "Locking",
+                        {9: reset_value},
+                        status=SUCCESS,
+                    )
+                ],
+                "PASS",
+                locking_reset_list_restrictions_docs,
+                "locking-reset-list-restrictions-no-mutation-doc",
+            )
+        )
 
     append_return_value_pair(
         cases,
@@ -25272,6 +26215,41 @@ def build_cases() -> list[Case]:
             correct_status=INVALID_PARAMETER,
             evidence=locking_reset_list_restrictions_docs,
             tag="locking-reset-list-restrictions-no-mutation-doc",
+        )
+    for reset_value, label in (([0, 1], "PowerCycle-plus-Hardware"), ([0, 1, 3], "PowerCycle-plus-Hardware-plus-Programmatic")):
+        cases.append(
+            case(
+                f"{label} MBRDoneOnReset Set may be rejected when optional Hardware reset support is absent",
+                reset_list_mbr_base
+                + [
+                    h("set_values")(
+                        h("MBR_CONTROL"),
+                        "MBRControl",
+                        {3: reset_value},
+                        status=INVALID_PARAMETER,
+                    )
+                ],
+                "PASS",
+                locking_reset_list_restrictions_docs,
+                "locking-reset-list-restrictions-no-mutation-doc",
+            )
+        )
+        cases.append(
+            case(
+                f"{label} MBRDoneOnReset Set may succeed when optional Hardware reset support is present",
+                reset_list_mbr_base
+                + [
+                    h("set_values")(
+                        h("MBR_CONTROL"),
+                        "MBRControl",
+                        {3: reset_value},
+                        status=SUCCESS,
+                    )
+                ],
+                "PASS",
+                locking_reset_list_restrictions_docs,
+                "locking-reset-list-restrictions-no-mutation-doc",
+            )
         )
 
     append_return_value_pair(
@@ -26880,6 +27858,85 @@ def build_cases() -> list[Case]:
     crsa_admin_context = h("owned_admin_context")() + [
         h("start_session")(h("ADMIN_SP"), h("SID"), "new"),
     ]
+    for symbol in (
+        "H_SHA_256",
+        "C_RSA_1024",
+        "C_RSA_2048",
+        "C_AES_128",
+        "C_AES_256",
+        "C_EC_160",
+        "C_HMAC_160",
+    ):
+        for column, column_name in ((1, "Name"), (2, "CommonName")):
+            append_status_pair(
+                cases,
+                name=f"Issued {symbol} {column_name} Set cannot succeed",
+                context=crsa_admin_context,
+                target_factory=lambda status, symbol=symbol, column=column: h("set_values")(
+                    "",
+                    symbol,
+                    {column: "Renamed"},
+                    status=status,
+                ),
+                correct_status=INVALID_PARAMETER,
+                evidence=crypto_issued_metadata_readonly_docs,
+                tag="crypto-issued-metadata-readonly-doc",
+            )
+    append_status_success_pair(
+        cases,
+        name="Created C_AES row Name/CommonName remains settable",
+        context=crsa_admin_context,
+        target_factory=lambda status: h("set_values")("", "C_AES_256_Test", {1: "CreatedName", 2: "CreatedCommon"}, status=status),
+        wrong_status=INVALID_PARAMETER,
+        evidence=crypto_issued_metadata_readonly_docs,
+        tag="crypto-issued-metadata-readonly-doc",
+    )
+    for symbol in ("CryptoSuite", "CryptoSuite_AES_256_Encrypt"):
+        for column, column_name in ((0, "UID"), (1, "CryptoCall"), (3, "CryptoOp"), (4, "Special"), (5, "Time")):
+            append_status_pair(
+                cases,
+                name=f"{symbol} {column_name} Set cannot succeed",
+                context=crsa_admin_context,
+                target_factory=lambda status, symbol=symbol, column=column: h("set_values")(
+                    "",
+                    symbol,
+                    {column: "X"},
+                    status=status,
+                ),
+                correct_status=INVALID_PARAMETER,
+                evidence=cryptosuite_readonly_docs,
+                tag="cryptosuite-readonly-doc",
+            )
+    for symbol in ("Certificates", "Certificate"):
+        for column, column_name in ((0, "UID"), (1, "Name"), (2, "CommonName")):
+            append_status_pair(
+                cases,
+                name=f"Issued {symbol} {column_name} Set cannot succeed",
+                context=crsa_admin_context,
+                target_factory=lambda status, symbol=symbol, column=column: h("set_values")(
+                    "",
+                    symbol,
+                    {column: "RenamedCertificate"},
+                    status=status,
+                ),
+                correct_status=INVALID_PARAMETER,
+                evidence=certificates_issued_readonly_docs,
+                tag="certificates-issued-readonly-doc",
+            )
+    append_status_success_pair(
+        cases,
+        name="Created Certificates row Name/CommonName remains settable",
+        context=crsa_admin_context,
+        target_factory=lambda status: h("set_values")(
+            "",
+            "Certificates_Test",
+            {1: "CreatedCert", 2: "CreatedCertCommon"},
+            status=status,
+        ),
+        wrong_status=INVALID_PARAMETER,
+        evidence=certificates_issued_readonly_docs,
+        tag="certificates-issued-readonly-doc",
+    )
     append_status_success_pair(
         cases,
         name="C_RSA Format accepts RSAES-OAEP padding_type",
@@ -26963,6 +28020,20 @@ def build_cases() -> list[Case]:
         evidence=credential_hash_protocol_enum_docs,
         tag="credential-hash-protocol-enum-doc",
     )
+    for symbol, values, label in (
+        ("C_RSA_2048_Test", {"Hash": 9}, "C_RSA named Hash"),
+        ("C_AES_256_Test", {"Hash": 9}, "C_AES named Hash"),
+        ("C_HMAC_512_Test", {"Hash": 9}, "C_HMAC named Hash"),
+    ):
+        append_status_pair(
+            cases,
+            name=f"{label} rejects reserved hash_protocol",
+            context=crsa_admin_context,
+            target_factory=lambda status, symbol=symbol, values=values: h("set_values")("", symbol, values, status=status),
+            correct_status=INVALID_PARAMETER,
+            evidence=credential_hash_protocol_enum_docs,
+            tag="credential-hash-protocol-enum-doc",
+        )
     append_return_value_pair(
         cases,
         name="C_HMAC Hash Get accepts defined hash and rejects reserved value",
@@ -27129,6 +28200,50 @@ def build_cases() -> list[Case]:
         evidence=caes_mode_feedback_docs,
         tag="caes-mode-feedback-doc",
     )
+    append_status_pair(
+        cases,
+        name="C_AES prior CFB Mode rejects later FeedbackSize above AES block length",
+        context=crsa_admin_context + [h("set_values")("", "C_AES_256_Test", {4: 2})],
+        target_factory=lambda status: h("set_values")("", "C_AES_256_Test", {5: 17}, status=status),
+        correct_status=INVALID_PARAMETER,
+        evidence=caes_mode_feedback_docs,
+        tag="caes-mode-feedback-doc",
+    )
+    append_status_success_pair(
+        cases,
+        name="C_AES non-CFB Mode does not apply CFB FeedbackSize upper bound",
+        context=crsa_admin_context + [h("set_values")("", "C_AES_256_Test", {4: 1})],
+        target_factory=lambda status: h("set_values")("", "C_AES_256_Test", {5: 17}, status=status),
+        wrong_status=INVALID_PARAMETER,
+        evidence=caes_mode_feedback_docs,
+        tag="caes-mode-feedback-doc",
+    )
+    append_status_success_pair(
+        cases,
+        name="C_AES later non-CFB Mode clears prior CFB FeedbackSize upper bound",
+        context=crsa_admin_context
+        + [
+            h("set_values")("", "C_AES_256_Test", {4: 2}),
+            h("set_values")("", "C_AES_256_Test", {4: 1}),
+        ],
+        target_factory=lambda status: h("set_values")("", "C_AES_256_Test", {5: 17}, status=status),
+        wrong_status=INVALID_PARAMETER,
+        evidence=caes_mode_feedback_docs,
+        tag="caes-mode-feedback-doc",
+    )
+    for values, label in (
+        ({"Mode": 12}, "named Mode rejects reserved symmetric_mode"),
+        ({"Mode": 2, "FeedbackSize": 17}, "named CFB FeedbackSize rejects above AES block length"),
+    ):
+        append_status_pair(
+            cases,
+            name=f"C_AES {label}",
+            context=crsa_admin_context,
+            target_factory=lambda status, values=values: h("set_values")("", "C_AES_256_Test", values, status=status),
+            correct_status=INVALID_PARAMETER,
+            evidence=caes_mode_feedback_docs,
+            tag="caes-mode-feedback-doc",
+        )
     append_return_value_pair(
         cases,
         name="C_AES Mode Get accepts defined mode and rejects reserved mode",
@@ -27211,6 +28326,19 @@ def build_cases() -> list[Case]:
         evidence=caes_fixed_bytes_docs,
         tag="caes-fixed-bytes-doc",
     )
+    for symbol, values, label in (
+        ("C_AES_256_Test", {"Key": "AA" * 16}, "named Key rejects bytes_16 in bytes_32 column"),
+        ("C_AES_128_Test", {"ResidualData": "AA" * 15}, "named ResidualData rejects short bytes_16"),
+    ):
+        append_status_pair(
+            cases,
+            name=f"C_AES {label}",
+            context=crsa_admin_context,
+            target_factory=lambda status, symbol=symbol, values=values: h("set_values")("", symbol, values, status=status),
+            correct_status=INVALID_PARAMETER,
+            evidence=caes_fixed_bytes_docs,
+            tag="caes-fixed-bytes-doc",
+        )
     append_status_pair(
         cases,
         name="C_AES ResidualData rejects boolean bytes_16 coercion",
@@ -27286,6 +28414,15 @@ def build_cases() -> list[Case]:
             name=f"{label} Key rejects short fixed bytes_{length}",
             context=crsa_admin_context,
             target_factory=lambda status, symbol=symbol, short_length=short_length: h("set_values")("", symbol, {3: "AA" * short_length}, status=status),
+            correct_status=INVALID_PARAMETER,
+            evidence=chmac_fixed_bytes_docs,
+            tag="chmac-fixed-bytes-doc",
+        )
+        append_status_pair(
+            cases,
+            name=f"{label} named Key rejects short fixed bytes_{length}",
+            context=crsa_admin_context,
+            target_factory=lambda status, symbol=symbol, short_length=short_length: h("set_values")("", symbol, {"Key": "AA" * short_length}, status=status),
             correct_status=INVALID_PARAMETER,
             evidence=chmac_fixed_bytes_docs,
             tag="chmac-fixed-bytes-doc",
@@ -29661,6 +30798,64 @@ def build_cases() -> list[Case]:
             "create-row-unique-columns-doc",
         )
     )
+    named_non_unique_columns = [["Entry", "uid"], ["Tag", "name"]]
+    cases.append(
+        case(
+            "CreateRow named Columns schema supplies ordered columns",
+            admin_table_session()
+            + [
+                create_audit_table(
+                    name="NamedColumns",
+                    common_name="NamedColumnsBase",
+                    uid="000001000000015A",
+                    columns=named_non_unique_columns,
+                    return_values={"UID": "000001000000015A", "Rows": 0},
+                ),
+                create_custom_row("000001000000015A", {1: "A", 2: "tag"}, row_uid="000001010000015A"),
+            ],
+            "PASS",
+            create_row_unique_columns_docs,
+            "create-row-unique-columns-doc",
+        )
+    )
+    cases.append(
+        case(
+            "CreateRow named Columns schema still requires every ordered column",
+            admin_table_session()
+            + [
+                create_audit_table(
+                    name="NamedColumnsMissing",
+                    common_name="NamedColumnsMissingBase",
+                    uid="000001000000015B",
+                    columns=named_non_unique_columns,
+                    return_values={"UID": "000001000000015B", "Rows": 0},
+                ),
+                create_custom_row("000001000000015B", {1: "A"}, row_uid="000001010000015B"),
+            ],
+            "FAIL",
+            create_row_unique_columns_docs,
+            "create-row-unique-columns-doc",
+        )
+    )
+    cases.append(
+        case(
+            "CreateRow named Columns schema rejects undeclared numbered column",
+            admin_table_session()
+            + [
+                create_audit_table(
+                    name="NamedColumnsExtra",
+                    common_name="NamedColumnsExtraBase",
+                    uid="000001000000015C",
+                    columns=named_non_unique_columns,
+                    return_values={"UID": "000001000000015C", "Rows": 0},
+                ),
+                create_custom_row("000001000000015C", {99: "A"}, row_uid="000001010000015C"),
+            ],
+            "FAIL",
+            create_row_unique_columns_docs,
+            "create-row-unique-columns-doc",
+        )
+    )
     cases.append(
         case(
             "CreateRow success cannot return an empty UID list for one row",
@@ -30399,6 +31594,43 @@ def build_cases() -> list[Case]:
         evidence=type_column_metadata_table_docs,
         tag="type-column-metadata-table-doc",
     )
+    for column, value, label in (
+        (0, "0000000500009999", "UID"),
+        (1, "RenamedType", "Name"),
+        (2, "RenamedCommonType", "CommonName"),
+        (3, "bytes", "Format"),
+    ):
+        append_status_pair(
+            cases,
+            name=f"Type {label} Set cannot accept host modification success",
+            context=system_table_admin_context,
+            target_factory=lambda status, column=column, value=value: h("set_values")(
+                "0000000500001001", "Type_HostDefined", {column: value}, status=status
+            ),
+            correct_status=INVALID_PARAMETER,
+            evidence=type_column_metadata_table_docs,
+            tag="type-column-metadata-table-doc",
+        )
+    for column, value, label in (
+        (0, "0000000400009999", "UID"),
+        (3, "0000000500000001", "Type"),
+        (4, True, "IsUnique"),
+        (5, 9, "ColumnNumber"),
+        (6, False, "Transactional"),
+        (7, "0000000400001002", "Next"),
+        (8, [1], "AttributeFlags"),
+    ):
+        append_status_pair(
+            cases,
+            name=f"Column {label} Set cannot accept host modification success",
+            context=system_table_admin_context,
+            target_factory=lambda status, column=column, value=value: h("set_values")(
+                "0000000400001001", "Column_HostDefined", {column: value}, status=status
+            ),
+            correct_status=INVALID_PARAMETER,
+            evidence=type_column_metadata_table_docs,
+            tag="type-column-metadata-table-doc",
+        )
     append_status_pair(
         cases,
         name="Type CreateRow cannot specify TPer-calculated Size",
@@ -31334,6 +32566,36 @@ def build_cases() -> list[Case]:
                 created_table_getacl(table_uid="0000017700000001", return_values=[created_row_new_ace]),
             ],
             "PASS",
+            created_row_accesscontrol_docs,
+            "created-row-accesscontrol-doc",
+        )
+    )
+    cases.append(
+        case(
+            "Created row side-effect ACE GetACL returns its own ACE uidref",
+            admin_table_session()
+            + [
+                created_row_acl_create,
+                created_row_acl_row1,
+                created_table_getacl(table_uid="0000017700000001", return_values=[created_row_new_ace]),
+                created_table_getacl(table_uid=created_row_new_ace, return_values=[created_row_new_ace]),
+            ],
+            "PASS",
+            created_row_accesscontrol_docs,
+            "created-row-accesscontrol-doc",
+        )
+    )
+    cases.append(
+        case(
+            "Created row side-effect ACE GetACL cannot return empty ACL",
+            admin_table_session()
+            + [
+                created_row_acl_create,
+                created_row_acl_row1,
+                created_table_getacl(table_uid="0000017700000001", return_values=[created_row_new_ace]),
+                created_table_getacl(table_uid=created_row_new_ace, return_values=[]),
+            ],
+            "FAIL",
             created_row_accesscontrol_docs,
             "created-row-accesscontrol-doc",
         )
@@ -33910,6 +35172,8 @@ def build_cases() -> list[Case]:
         ("DataStore", "Random", ["ACE_Anybody"]),
         ("MBR", "Authenticate", ["ACE_Anybody"]),
         ("MBR", "Random", ["ACE_Anybody"]),
+        ("ThisSP", "Get", ["ACE_Anybody"]),
+        ("ThisSP", "Set", ["ACE_Anybody"]),
     ]:
         append_status_pair(
             cases,
@@ -34128,6 +35392,31 @@ def build_cases() -> list[Case]:
             target_factory=lambda status: acl_method(
                 "GetACL",
                 required={"InvokingID": "AccessControl", "MethodID": "GetACL"},
+                status=status,
+                return_values=[],
+            ),
+            evidence=accesscontrol_meta_self_association_docs,
+            tag="accesscontrol-meta-self-association-doc",
+        )
+        cases.append(
+            case(
+                f"{context_name} AccessControl SetACL self-association can return NOT_AUTHORIZED",
+                context_factory()
+                + [
+                    acl_method("GetACL", required={"InvokingID": "AccessControl", "MethodID": "SetACL"}, status=NOT_AUTHORIZED),
+                ],
+                "PASS",
+                accesscontrol_meta_self_association_docs,
+                "accesscontrol-meta-self-association-doc",
+            )
+        )
+        append_impossible_success(
+            cases,
+            name=f"{context_name} AccessControl SetACL self-association does not exist",
+            context=context_factory(),
+            target_factory=lambda status: acl_method(
+                "GetACL",
+                required={"InvokingID": "AccessControl", "MethodID": "SetACL"},
                 status=status,
                 return_values=[],
             ),
@@ -38261,6 +39550,38 @@ def build_cases() -> list[Case]:
             {},
             ["new-key-material"],
         ),
+        (
+            "C RSA 2048 GenKey with PublicExponent returns empty list",
+            h("owned_admin_context")() + [h("start_session")(h("ADMIN_SP"), h("SID"), "new")],
+            "",
+            "C_RSA_2048",
+            {"PublicExponent": 65537},
+            ["generated-rsa-key"],
+        ),
+        (
+            "C AES 128 GenKey returns empty list",
+            h("owned_admin_context")() + [h("start_session")(h("ADMIN_SP"), h("SID"), "new")],
+            "",
+            "C_AES_128",
+            {},
+            ["generated-aes-key"],
+        ),
+        (
+            "C HMAC 160 GenKey returns empty list",
+            h("owned_admin_context")() + [h("start_session")(h("ADMIN_SP"), h("SID"), "new")],
+            "",
+            "C_HMAC_160",
+            {},
+            ["generated-hmac-key"],
+        ),
+        (
+            "C EC 256 GenKey returns empty list",
+            h("owned_admin_context")() + [h("start_session")(h("ADMIN_SP"), h("SID"), "new")],
+            "",
+            "C_EC_256",
+            {},
+            ["generated-ec-key"],
+        ),
     ]:
         append_return_value_pair(
             cases,
@@ -38285,6 +39606,43 @@ def build_cases() -> list[Case]:
             evidence=genkey_result_shape_docs,
             tag="genkey-result-shape-doc",
         )
+
+    append_status_pair(
+        cases,
+        name="C RSA 2048 GenKey rejects boolean PublicExponent",
+        context=h("owned_admin_context")() + [h("start_session")(h("ADMIN_SP"), h("SID"), "new")],
+        target_factory=lambda status: h("method_record")("GenKey", "", "C_RSA_2048", status=status, optional={"PublicExponent": True}),
+        correct_status=INVALID_PARAMETER,
+        evidence=genkey_credential_family_docs,
+        tag="genkey-credential-family-doc",
+    )
+    append_status_pair(
+        cases,
+        name="C AES 128 GenKey rejects PublicExponent",
+        context=h("owned_admin_context")() + [h("start_session")(h("ADMIN_SP"), h("SID"), "new")],
+        target_factory=lambda status: h("method_record")("GenKey", "", "C_AES_128", status=status, optional={"PublicExponent": 65537}),
+        correct_status=INVALID_PARAMETER,
+        evidence=genkey_credential_family_docs,
+        tag="genkey-credential-family-doc",
+    )
+    append_status_pair(
+        cases,
+        name="C HMAC 160 GenKey rejects PinLength",
+        context=h("owned_admin_context")() + [h("start_session")(h("ADMIN_SP"), h("SID"), "new")],
+        target_factory=lambda status: h("method_record")("GenKey", "", "C_HMAC_160", status=status, optional={"PinLength": 16}),
+        correct_status=INVALID_PARAMETER,
+        evidence=genkey_credential_family_docs,
+        tag="genkey-credential-family-doc",
+    )
+    append_status_pair(
+        cases,
+        name="H SHA 256 is not a GenKey credential target",
+        context=h("owned_admin_context")() + [h("start_session")(h("ADMIN_SP"), h("SID"), "new")],
+        target_factory=lambda status: h("method_record")("GenKey", "", "H_SHA_256", status=status),
+        correct_status=INVALID_PARAMETER,
+        evidence=genkey_credential_family_docs,
+        tag="genkey-credential-family-doc",
+    )
 
     return cases
 

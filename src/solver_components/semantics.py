@@ -112,6 +112,27 @@ def _is_issued_ace_symbol(symbol: str) -> bool:
     return any(start <= value <= end for start, end in issued_ranges)
 
 
+def _is_issued_crypto_metadata_symbol(symbol: str) -> bool:
+    return (
+        re.fullmatch(r"H_SHA_(1|256|384|512)", symbol) is not None
+        or re.fullmatch(r"C_RSA_(1024|2048)", symbol) is not None
+        or re.fullmatch(r"C_AES_(128|256)", symbol) is not None
+        or re.fullmatch(r"C_HMAC_(160|256|384|512)", symbol) is not None
+        or re.fullmatch(r"C_EC_(160|163|192|224|233|256|283|384|521)", symbol) is not None
+    )
+
+
+def _is_genkey_credential_symbol(symbol: str) -> bool:
+    return bool(
+        _pin_owner_by_object(symbol)
+        or _range_id_from_key(symbol) is not None
+        or re.fullmatch(r"C_RSA_(1024|2048)", symbol or "") is not None
+        or re.fullmatch(r"C_AES_(128|256)", symbol or "") is not None
+        or re.fullmatch(r"C_HMAC_(160|256|384|512)", symbol or "") is not None
+        or re.fullmatch(r"C_EC_(160|163|192|224|233|256|283|384|521)", symbol or "") is not None
+    )
+
+
 def _has_authority(state: State, authority: str) -> bool:
     if authority == "Anybody":
         return state.session.open
@@ -1190,7 +1211,7 @@ def _hash_protocol_column_for_symbol(symbol: str) -> int | None:
     return None
 
 
-def _caes_set_values_invalid(symbol: str, values: dict[int, Any]) -> bool:
+def _caes_set_values_invalid(symbol: str, values: dict[int, Any], prior_mode: int | None = None) -> bool:
     mode = values.get(0x04)
     feedback_size = values.get(0x05)
     fixed_byte_lengths = {0x03: 32 if symbol.startswith("C_AES_256") else 16, 0x06: 16}
@@ -1206,13 +1227,14 @@ def _caes_set_values_invalid(symbol: str, values: dict[int, Any]) -> bool:
         parsed_mode = _parse_int(mode)
         if parsed_mode not in set(range(0, 12)):
             return True
+    effective_mode = parsed_mode if parsed_mode is not None else prior_mode
     if 0x05 in values:
         if isinstance(feedback_size, bool):
             return True
         parsed_feedback = _parse_int(feedback_size)
         if parsed_feedback is None or parsed_feedback < 0 or parsed_feedback > 0xFFFF:
             return True
-        if parsed_mode == 2 and not 1 <= parsed_feedback <= 16:
+        if effective_mode == 2 and not 1 <= parsed_feedback <= 16:
             return True
     return False
 
@@ -1242,9 +1264,22 @@ def _invalid_set_values(state: State, event: Event) -> bool:
         )
     if _is_table_symbol(symbol):
         return True
-    if symbol.startswith("Type_") and 4 in event.values:
+    if (
+        symbol.startswith("Column_")
+        or (event.invoking_uid.startswith("00000004") and event.invoking_uid != "0000000400000000")
+    ) and set(event.values) & {0, 3, 4, 5, 6, 7, 8}:
+        return True
+    if symbol.startswith("Type_") or (
+        event.invoking_uid.startswith("00000005") and event.invoking_uid != "0000000500000000"
+    ):
         return True
     if symbol.startswith(("SPTemplates_", "Template_", "MethodID_", "AccessControl_", "SecretProtect_")):
+        return True
+    if symbol == "CryptoSuite" or symbol.startswith("CryptoSuite_"):
+        return True
+    if symbol in {"Certificates", "Certificate"} and {0, 1, 2} & set(event.values):
+        return True
+    if symbol in {"LogList", "LogListTable"}:
         return True
     if _is_loglist_row_symbol(symbol, event.invoking_uid):
         columns = set(event.values)
@@ -1253,9 +1288,11 @@ def _invalid_set_values(state: State, event: Event) -> bool:
         if columns & {3, 4}:
             return True
         return 5 in event.values and not _is_bool_literal(event.values[5])
-    if symbol in {"Log", "LogTable"} or symbol.startswith("Log_"):
+    if symbol in {"Log", "LogTable", "LogEntry"} or symbol.startswith(("Log_", "LogEntry_")):
         return True
     if symbol.startswith("K_AES_"):
+        return True
+    if _is_issued_crypto_metadata_symbol(symbol) and {1, 2} & set(event.values):
         return True
     if symbol.startswith("C_RSA_") and 3 in event.values:
         if isinstance(event.values[3], bool):
@@ -1263,7 +1300,7 @@ def _invalid_set_values(state: State, event: Event) -> bool:
         padding = _parse_int(event.values[3])
         if padding not in {0, 1, 2, 3, 4}:
             return True
-    if symbol.startswith("C_AES_") and _caes_set_values_invalid(symbol, event.values):
+    if symbol.startswith("C_AES_") and _caes_set_values_invalid(symbol, event.values, state.caes_modes.get(symbol)):
         return True
     hmac_key_length = _chmac_key_length(symbol)
     if hmac_key_length is not None and 3 in event.values:
@@ -1523,15 +1560,30 @@ def _create_table_column_schema(value: Any) -> tuple[set[int], tuple[int, ...]]:
         return parsed if parsed is not None else None
 
     def is_column_definition(item: Any) -> bool:
-        return column_from_definition(item) is not None
+        if column_from_definition(item) is not None:
+            return True
+        if isinstance(item, dict):
+            for key in ("Column", "column", "ColumnID", "columnId", "Name", "name", "Type", "type", "TypeUID", "typeUid"):
+                found, _ = _dict_lookup(item, key)
+                if found:
+                    return True
+            return False
+        return bool(isinstance(item, (list, tuple)) and len(item) >= 2 and not isinstance(item[0], (dict, list, tuple, set)))
 
-    def collect(node: Any) -> set[int]:
-        out: set[int] = set()
+    def collect_ordered(node: Any, start: int = 1) -> tuple[list[int], int]:
+        columns: list[int] = []
+        next_column = start
 
         def walk(item: Any) -> None:
-            column = column_from_definition(item)
-            if column is not None:
-                out.add(column)
+            nonlocal next_column
+            parsed = column_from_definition(item)
+            if parsed is not None:
+                columns.append(parsed)
+                next_column = max(next_column, parsed + 1)
+                return
+            if is_column_definition(item):
+                columns.append(next_column)
+                next_column += 1
                 return
             if isinstance(item, dict):
                 for nested in item.values():
@@ -1541,7 +1593,10 @@ def _create_table_column_schema(value: Any) -> tuple[set[int], tuple[int, ...]]:
                     walk(nested)
 
         walk(node)
-        return out
+        return columns, next_column
+
+    def collect(node: Any) -> set[int]:
+        return set(collect_ordered(node)[0])
 
     if isinstance(value, dict):
         found_unique, unique_node = _dict_lookup(value, "Unique", "unique", "UniqueColumns", "uniqueColumns")
@@ -1555,15 +1610,16 @@ def _create_table_column_schema(value: Any) -> tuple[set[int], tuple[int, ...]]:
             "columns",
         )
         if found_unique or found_non_unique:
-            unique = collect(unique_node) if found_unique else set()
-            non_unique = collect(non_unique_node) if found_non_unique else set()
-            return unique | non_unique, tuple(sorted(unique))
+            unique_list, next_column = collect_ordered(unique_node) if found_unique else ([], 1)
+            non_unique_list, _ = collect_ordered(non_unique_node, start=next_column) if found_non_unique else ([], next_column)
+            unique = set(unique_list)
+            return unique | set(non_unique_list), tuple(unique_list)
 
     if isinstance(value, (list, tuple)) and len(value) == 2 and not is_column_definition(value[0]) and not is_column_definition(value[1]):
-        unique = collect(value[0])
-        non_unique = collect(value[1])
-        if unique or non_unique:
-            return unique | non_unique, tuple(sorted(unique))
+        unique_list, next_column = collect_ordered(value[0])
+        non_unique_list, _ = collect_ordered(value[1], start=next_column)
+        if unique_list or non_unique_list:
+            return set(unique_list) | set(non_unique_list), tuple(unique_list)
 
     columns = collect(value)
     return columns, ()
@@ -1622,7 +1678,10 @@ def _is_credential_symbol(symbol: str) -> bool:
     return bool(
         _pin_owner_by_object(symbol)
         or _range_id_from_key(symbol) is not None
-        or re.match(r"C_EC_(160|163|192|224|233|283|384|521)", symbol or "") is not None
+        or re.fullmatch(r"C_RSA_(1024|2048)", symbol or "") is not None
+        or re.fullmatch(r"C_AES_(128|256)", symbol or "") is not None
+        or re.fullmatch(r"C_HMAC_(160|256|384|512)", symbol or "") is not None
+        or re.fullmatch(r"C_EC_(160|163|192|224|233|256|283|384|521)", symbol or "") is not None
         or symbol in {"TPerSign", "TperAttestation"}
         or symbol.startswith("TLS_PSK_Key")
     )
@@ -2023,7 +2082,7 @@ def _access_control_target_sp(symbol: str, uid: str, state: State) -> str | None
     return _expected_object_sp(target, state)
 
 
-META_ACL_METHOD_NAMES = {"AddACE", "RemoveACE", "GetACL", "DeleteMethod"}
+META_ACL_METHOD_NAMES = {"AddACE", "RemoveACE", "GetACL", "SetACL", "DeleteMethod"}
 
 SYSTEM_METADATA_TABLE_ASSOCIATION_LIMITS = {
     "Table",
@@ -2100,6 +2159,8 @@ def _combo_exists_for_get_acl(state: State, event: Event) -> bool | None:
         return method_name == "Get"
     if invoking_uid in state.created_table_row_values_by_uid:
         return method_name in {"Get", "Set", "Delete"}
+    if invoking_uid in state.created_row_side_effect_ace_by_uid:
+        return method_name in {"Get", "Set", "Delete"}
     if method_name == "SPTemplatesObj":
         return state.session.sp == "LockingSP" and (symbol.startswith("SPTemplates_") or invoking_uid.startswith("00000003"))
     if method_name == "MethodIDObj":
@@ -2124,10 +2185,14 @@ def _combo_exists_for_get_acl(state: State, event: Event) -> bool | None:
     if method_name == "Get":
         if symbol in TABLE_LEVEL_GET_ASSOCIATION_DENY:
             return False
+        if symbol == "ThisSP":
+            return False
         if state.session.sp == "LockingSP" and (symbol.startswith("SPTemplates_") or symbol.startswith("MethodID_")):
             return False
         return not symbol.startswith("UnknownSP_")
     if method_name == "Set":
+        if symbol == "ThisSP":
+            return False
         if symbol.startswith("K_AES_") or symbol in {"LockingInfo", "MethodIDTable", "Table_MethodID"}:
             return False
         if symbol in SYSTEM_METADATA_TABLE_ASSOCIATION_LIMITS:
@@ -2151,7 +2216,9 @@ def _combo_exists_for_get_acl(state: State, event: Event) -> bool | None:
         return symbol in {"AccessControlTable", "Table_AccessControl", "AccessControl"}
     if method_name == "GenKey":
         range_id = _range_id_from_key(symbol)
-        return range_id is not None and _range_id_support_state(state, range_id) is not False
+        if range_id is not None:
+            return _range_id_support_state(state, range_id) is not False
+        return _is_genkey_credential_symbol(symbol)
     if method_name in {"GetPackage", "SetPackage"}:
         return _is_credential_symbol(symbol)
     if method_name == "Erase":

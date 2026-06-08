@@ -189,7 +189,7 @@ def collect_docs(doc_root: Path, evidence_by_source: dict[str, list[str]], triag
     manual = triage.get("manual", {})
     for file_path in sorted(doc_root.rglob("*.txt"), key=lambda p: doc_sort_key(normalize_doc_path(str(p.relative_to(doc_root))))):
         relative = normalize_doc_path(str(file_path.relative_to(doc_root)))
-        if ".ipynb_checkpoints/" in relative or any(part.startswith("_") for part in relative.split("/")):
+        if ".ipynb_checkpoints/" in relative:
             continue
         text = file_path.read_text(encoding="utf-8", errors="replace")
         title = first_title(text, relative)

@@ -118,7 +118,7 @@ def collect_sections(doc_root: Path) -> list[dict[str, Any]]:
     )
     for file_path in files:
         relative = normalize_doc_path(str(file_path.relative_to(doc_root)))
-        if ".ipynb_checkpoints/" in relative or any(part.startswith("_") for part in relative.split("/")):
+        if ".ipynb_checkpoints/" in relative:
             continue
         text = file_path.read_text(encoding="utf-8", errors="replace")
         family, _, _ = relative.partition("/")

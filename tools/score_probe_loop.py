@@ -134,6 +134,62 @@ def properties_wrapper_probes() -> Iterable[Probe]:
             "host-properties-envelope-doc",
             f"{wrapper} must not drop submitted HostProperties and accept stale default negotiation state.",
         )
+    for wrapper, set_payload, get_payload in (
+        (
+            "operation",
+            {"operation": {"target": {"ComID": 1}, "command": {"HostProperties": {"MaxComPacketSize": 4096}}}},
+            {"operation": {"target": {"ComID": 2}, "command": {}}},
+        ),
+        (
+            "operationRequest",
+            {"operationRequest": {"target": {"ComID": 1}, "command": {"HostProperties": {"MaxComPacketSize": 4096}}}},
+            {"operationRequest": {"target": {"ComID": 2}, "command": {}}},
+        ),
+        (
+            "command",
+            {"command": {"ComID": 1, "HostProperties": {"MaxComPacketSize": 4096}}},
+            {"command": {"ComID": 2}},
+        ),
+        (
+            "action",
+            {"action": {"ComID": 1, "HostProperties": {"MaxComPacketSize": 4096}}},
+            {"action": {"ComID": 2}},
+        ),
+    ):
+        yield Probe(
+            f"setHostProperties preserves {wrapper} operation state",
+            [{"input": {"function": "setHostProperties", "kwargs": set_payload}, "output": {"return": {"HostProperties": high_host_props}}}],
+            "PASS",
+            "host-properties-operation-envelope-doc",
+            f"{wrapper} must preserve submitted HostProperties and ComID before lowering to Session Manager Properties.",
+        )
+        yield Probe(
+            f"setHostProperties rejects stale {wrapper} operation state",
+            [{"input": {"function": "setHostProperties", "kwargs": set_payload}, "output": {"return": {"HostProperties": HOST_PROPS_INITIAL}}}],
+            "FAIL",
+            "host-properties-operation-envelope-doc",
+            f"{wrapper} must not drop submitted HostProperties and accept stale defaults.",
+        )
+        yield Probe(
+            f"getHostProperties preserves {wrapper} operation ComID isolation",
+            [
+                {"input": {"function": "setHostProperties", "kwargs": set_payload}, "output": {"return": {"HostProperties": high_host_props}}},
+                {"input": {"function": "getHostProperties", "kwargs": get_payload}, "output": {"return": {"HostProperties": HOST_PROPS_INITIAL}}},
+            ],
+            "PASS",
+            "host-properties-operation-envelope-doc",
+            f"{wrapper} getter selectors must validate the target ComID state without leaking another ComID.",
+        )
+        yield Probe(
+            f"getHostProperties rejects {wrapper} operation cross-ComID leak",
+            [
+                {"input": {"function": "setHostProperties", "kwargs": set_payload}, "output": {"return": {"HostProperties": high_host_props}}},
+                {"input": {"function": "getHostProperties", "kwargs": get_payload}, "output": {"return": {"HostProperties": high_host_props}}},
+            ],
+            "FAIL",
+            "host-properties-operation-envelope-doc",
+            f"{wrapper} getter selectors must not accept ComID 1 values for ComID 2.",
+        )
     yield Probe(
         "getHostProperties wrapper preserves per-ComID state",
         [
@@ -307,6 +363,9 @@ def setrange_probes() -> Iterable[Probe]:
         ("policy request values", {"policy": {"request": {"values": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}}),
         ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}),
         ("lockingRangeRequest values", {"lockingRangeRequest": {"values": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}),
+        ("operation command", {"operation": {"command": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"rangeId": 1}, "command": {"RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"rangeId": 1}, "command": {"RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}),
     ):
         context = activated_locking_context() + [function_record("setRange", [], kwargs, True)]
         yield Probe(
@@ -330,6 +389,9 @@ def setrange_probes() -> Iterable[Probe]:
         ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
         ("rangeRequest values", {"rangeRequest": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
         ("lockingRangeRequest target", {"lockingRangeRequest": {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}}),
+        ("operation command", {"operation": {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}}),
     ):
         yield Probe(
             f"getRange {label} nested selector accepts current state",
@@ -439,6 +501,9 @@ def setrange_probes() -> Iterable[Probe]:
         ("lock lockingRequest values", "lockRange", {"lockingRequest": {"values": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
         ("lock rangeRequest values", "lockRange", {"rangeRequest": {"values": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
         ("lock lockingRangeRequest locks", "lockRange", {"lockingRangeRequest": {"locks": {"read": True, "write": True}, "rangeId": 1, "authAs": ("Admin1", "new")}}, True),
+        ("lock operation command", "lockRange", {"operation": {"command": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
+        ("lock operation target command", "lockRange", {"operation": {"target": {"rangeId": 1}, "command": {"read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
+        ("lock operationRequest target command", "lockRange", {"operationRequest": {"target": {"rangeId": 1}, "command": {"read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
         ("unlock request values", "unlockRange", {"request": {"values": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}, False),
     ):
         prefix = activated_locking_context()
@@ -465,25 +530,32 @@ def setrange_probes() -> Iterable[Probe]:
     for getter, good_value, stale_value in (
         ("getReadLocked", True, False),
         ("getWriteLockEnabled", True, False),
+        ("getWriteLocked", True, False),
         ("getRangeLocks", {"ReadLocked": True, "WriteLocked": True}, {"ReadLocked": False, "WriteLocked": False}),
     ):
         for label, kwargs in (
             ("request values", {"request": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
             ("policy query target", {"policy": {"query": {"target": {"rangeId": 1}}, "authAs": ("Admin1", "new")}}),
             ("config target", {"config": {"target": {"range": 1}, "authAs": ("Admin1", "new")}}),
+            ("operation command", {"operation": {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+            ("operation target command", {"operation": {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}}),
+            ("operationRequest command", {"operationRequest": {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+            ("command", {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
+            ("action", {"action": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
         ):
+            tag = "locking-column-operation-envelope-doc" if any(token in label for token in ("operation", "command", "action")) else "locking-column-nested-getter-doc"
             yield Probe(
                 f"{getter} {label} nested selector accepts current lock cell",
                 range_field_getter_context + [function_record(getter, [], kwargs, good_value)],
                 "PASS",
-                "locking-column-nested-getter-doc",
+                tag,
                 "Nested Locking column getter selectors should select the tracked range row.",
             )
             yield Probe(
                 f"{getter} {label} nested selector rejects stale lock cell",
                 range_field_getter_context + [function_record(getter, [], kwargs, stale_value)],
                 "FAIL",
-                "locking-column-nested-getter-doc",
+                tag,
                 "Losing a nested Locking column getter selector permits stale lock-state observations.",
             )
     symbolic_payloads = [
@@ -1452,6 +1524,7 @@ def genkey_probes() -> Iterable[Probe]:
             ("policy", {"range": 1, "authAs": ("Admin1", "new")}),
             ("config", {"target": "K_AES_256_Range1_Key", "authAs": ("Admin1", "new")}),
             ("request", {"target": {"range": 1}, "credential": {"auth": "Admin1", "proof": "new"}}),
+            ("operation", {"target": {"range": 1}, "command": {"authAs": ("Admin1", "new")}}),
             ("lockingRequest", {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
             ("rangeRequest", {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
             ("keyRequest", {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}),
@@ -1577,19 +1650,22 @@ def getmek_values_probes() -> Iterable[Probe]:
             ("rangeRequest", {"values": {"rangeId": 2, "authAs": ("Admin1", "new")}}),
             ("keyRequest", {"target": {"rangeId": 2}, "authAs": ("Admin1", "new")}),
             ("lockingRangeRequest", {"key": {"rangeId": 2}, "authAs": ("Admin1", "new")}),
+            ("operation", {"target": {"rangeId": 2}, "command": {"authAs": ("Admin1", "new")}}),
+            ("operationRequest", {"target": {"rangeId": 2}, "command": {"authAs": ("Admin1", "new")}}),
         ):
+            tag = "getmek-operation-envelope-doc" if "operation" in envelope_name else "getmek-policy-envelope-doc"
             yield Probe(
                 f"{function_name} {envelope_name} envelope accepts Range2 ActiveKey",
                 range2_context + [{"input": {"function": function_name, "kwargs": {envelope_name: payload}}, "output": {"return": range2_good}}],
                 "PASS",
-                "getmek-policy-envelope-doc",
+                tag,
                 "Nested media-key read wrappers should keep the selected range and Admin credential.",
             )
             yield Probe(
                 f"{function_name} {envelope_name} envelope rejects stale Range1 ActiveKey",
                 range2_context + [{"input": {"function": function_name, "kwargs": {envelope_name: payload}}, "output": {"return": range2_stale}}],
                 "FAIL",
-                "getmek-policy-envelope-doc",
+                tag,
                 "Stale Range1 ActiveKey output means the Range2 selector was dropped from the wrapper envelope.",
             )
 
@@ -1622,6 +1698,7 @@ def erase_probes() -> Iterable[Probe]:
             ("policy", {"range": 1, "authAs": "EraseMaster"}),
             ("config", {"target": "Locking_Range1", "authAs": "EraseMaster"}),
             ("request", {"target": {"range": 1}, "credential": {"auth": "EraseMaster"}}),
+            ("operation", {"target": {"range": 1}, "command": {"authAs": "EraseMaster"}}),
             ("eraseRequest", {"target": {"rangeId": 1}, "authAs": "EraseMaster"}),
             ("lockingRangeRequest", {"erase": {"rangeId": 1}, "authAs": "EraseMaster"}),
         ):
@@ -1895,6 +1972,23 @@ def datastore_probes() -> Iterable[Probe]:
         "datastore-wrapper",
         "A start_offset read window must not fall back to row zero or full-payload comparison.",
     )
+    offset_bytes_context = base + [
+        operation_payload("writeDataStore", {"authAs": ("Admin1", "new"), "offsetBytes": 5, "buffer": "AABBCC"}, key="kwargs", output={"return": True})
+    ]
+    yield Probe(
+        "writeDataStore offsetBytes feeds readDataStore sizeBytes slice",
+        offset_bytes_context + [operation_payload("readDataStore", {"authAs": ("Admin1", "new"), "offsetBytes": 6, "sizeBytes": 2}, key="kwargs", output={"return": "BBCC"})],
+        "PASS",
+        "datastore-wrapper",
+        "offsetBytes and sizeBytes are SDK byte-window aliases over the official DataStore byte-table offset/length.",
+    )
+    yield Probe(
+        "writeDataStore offsetBytes rejects stale readDataStore sizeBytes slice",
+        offset_bytes_context + [operation_payload("readDataStore", {"authAs": ("Admin1", "new"), "offsetBytes": 6, "sizeBytes": 2}, key="kwargs", output={"return": "0000"})],
+        "FAIL",
+        "datastore-wrapper",
+        "Ignoring offsetBytes/sizeBytes leaves stale DataStore byte windows over-accepted or valid windows under-accepted.",
+    )
     byte_string_context = base + [
         operation_payload("writeData", {"authAs": ("Admin1", "new"), "byteString": "AABBCCDD", "offset": 30}, key="kwargs", output={"return": True})
     ]
@@ -1986,6 +2080,9 @@ def datastore_probes() -> Iterable[Probe]:
         ("policy range", {"authAs": ("Admin1", "new"), "policy": {"range": {"start": 4, "count": 3}, "data": "AABBCC"}}, {"request": {"values": {"window": {"offset": 4, "length": 3}}}}),
         ("config slice", {"authAs": ("Admin1", "new"), "config": {"slice": {"startOffset": 4, "byteCount": 3}, "payload": "AABBCC"}}, {"range": {"start": 4, "count": 3}}),
         ("request values window", {"authAs": ("Admin1", "new"), "request": {"values": {"window": {"offset": 4, "length": 3}, "bytes": "AABBCC"}}}, {"window": {"offset": 4, "length": 3}}),
+        ("operation command", {"operation": {"command": {"offset": 4, "length": 3, "bytes": "AABBCC", "authAs": ("Admin1", "new")}}}, {"operation": {"command": {"offset": 4, "length": 3, "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"offset": 4, "length": 3}, "command": {"bytes": "AABBCC", "authAs": ("Admin1", "new")}}}, {"operation": {"target": {"offset": 4, "length": 3}, "command": {"authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"offset": 4, "length": 3}, "command": {"bytes": "AABBCC", "authAs": ("Admin1", "new")}}}, {"operationRequest": {"target": {"offset": 4, "length": 3}, "command": {"authAs": ("Admin1", "new")}}}),
     ):
         context = base + [function_record("writeDataStore", [], write_payload, True)]
         tag = "datastore-nested-window-envelope-doc" if "top-level" not in label else "datastore-wrapper"
@@ -2100,21 +2197,46 @@ def datastore_probes() -> Iterable[Probe]:
         ("access identity object", {"access": {"identity": "User1", "object": "DataStore"}, "authAs": ("Admin1", "new")}),
         ("permission subject resource", {"permission": {"subject": "User1", "resource": "DataStore"}, "authAs": ("Admin1", "new")}),
         ("request access user table", {"request": {"access": {"user": "User1", "table": "DataStore"}}, "authAs": ("Admin1", "new")}),
+        ("operation target command", {"operation": {"target": {"user": "User1", "table": "DataStore"}, "command": {"authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"user": "User1", "table": "DataStore"}, "command": {"authAs": ("Admin1", "new")}}}),
     ):
         granted = access_context + [{"input": {"function": "grantDataRead", "kwargs": kwargs}, "output": {"return": True}}]
+        tag = "datastore-access-operation-envelope-doc" if "operation" in label else "datastore-wrapper"
         yield Probe(
             f"grantDataRead {label} envelope authorizes User1 readData",
             granted + [function_record("readData", ["User1", 0, 2], {"authAs": ("User1", "userpin")}, return_value="AABB")],
             "PASS",
-            "datastore-wrapper",
+            tag,
             "DataStore read-access wrappers may carry user/table selectors inside structured policy/access/permission envelopes.",
         )
         yield Probe(
             f"grantDataRead {label} envelope rejects stale unauthorized empty read",
             granted + [function_record("readData", ["User1", 0, 2], {"authAs": ("User1", "userpin")}, return_value=[])],
             "FAIL",
-            "datastore-wrapper",
+            tag,
             "A missed read-access envelope leaves User1 unauthorized and can falsely accept an empty result.",
+        )
+    for label, kwargs in (
+        ("operation target command", {"operation": {"target": {"user": "User1", "table": "DataStore"}, "command": {"authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"user": "User1", "table": "DataStore"}, "command": {"authAs": ("Admin1", "new")}}}),
+    ):
+        granted = access_context + [
+            {"input": {"function": "grantDataWrite", "kwargs": kwargs}, "output": {"return": True}},
+            function_record("writeData", ["User1", "CCDD"], {"authAs": ("User1", "userpin")}, True),
+        ]
+        yield Probe(
+            f"grantDataWrite {label} envelope authorizes User1 writeData",
+            granted + [function_record("readData", ["Admin1", 0, 2], {"authAs": ("Admin1", "new")}, return_value="CCDD")],
+            "PASS",
+            "datastore-access-operation-envelope-doc",
+            "DataStore write-access operation wrappers must update the Set ACE before a User write can mutate bytes.",
+        )
+        yield Probe(
+            f"grantDataWrite {label} envelope rejects stale bytes",
+            granted + [function_record("readData", ["Admin1", 0, 2], {"authAs": ("Admin1", "new")}, return_value="AABB")],
+            "FAIL",
+            "datastore-access-operation-envelope-doc",
+            "A missed write-access operation envelope leaves User writes unauthorized and can falsely preserve stale bytes.",
         )
     for function, mode, target in (
         ("grantDataAccess", "read", function_record("readData", ["User1", 0, 2], {"authAs": ("User1", "userpin")}, return_value="AABB")),
@@ -2621,6 +2743,9 @@ def reset_lockonreset_probes() -> Iterable[Probe]:
         ("config target reset", {"config": {"target": {"rangeId": 1}, "reset": {"types": [0, 3]}, "authAs": ("Admin1", "new")}}),
         ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "lockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
         ("lockingRangeRequest values", {"lockingRangeRequest": {"values": {"rangeId": 1, "lockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
+        ("operation command", {"operation": {"command": {"rangeId": 1, "LockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"rangeId": 1}, "command": {"LockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"rangeId": 1}, "command": {"LockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
     ):
         context = activated_locking_context() + [
             function_record(
@@ -2676,6 +2801,7 @@ def reset_lockonreset_probes() -> Iterable[Probe]:
         ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
         ("rangeRequest values", {"rangeRequest": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
         ("lockingRangeRequest target", {"lockingRangeRequest": {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}}),
+        ("operation target command", {"operation": {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}}),
     ):
         yield Probe(
             f"getLockOnReset {label} nested selector reports reset list",
@@ -3009,6 +3135,8 @@ def lifecycle_probes() -> Iterable[Probe]:
         ("policy", {"target": "LockingSP", "credential": "new", "KeepGlobalRangeKey": True}),
         ("config", {"sp": "LockingSP", "cred": "new", "keepGlobalRangeKey": True}),
         ("request", {"sp": {"name": "LockingSP"}, "credential": {"proof": "new"}, "options": {"KeepGlobalRangeKey": True}}),
+        ("operation", {"target": "LockingSP", "command": {"credential": "new", "KeepGlobalRangeKey": True}}),
+        ("operationRequest", {"target": {"name": "LockingSP"}, "command": {"credential": {"proof": "new"}, "KeepGlobalRangeKey": True}}),
     ):
         yield Probe(
             f"revertSP {label} envelope preserves GlobalRange",
@@ -3025,6 +3153,8 @@ def lifecycle_probes() -> Iterable[Probe]:
         ("revertSpRequest", {"values": {"target": "AdminSP", "psid": "psid"}}),
         ("spRequest", {"values": {"target": "AdminSP", "psid": "psid"}}),
         ("lifecycleRequest", {"values": {"target": "AdminSP", "psid": "psid"}}),
+        ("operation", {"target": "AdminSP", "command": {"psid": "psid"}}),
+        ("operationRequest", {"target": {"name": "AdminSP"}, "command": {"credential": "psid"}}),
     ):
         yield Probe(
             f"AdminSP revertSP {label} envelope resets LockingSP activation",
@@ -3054,6 +3184,8 @@ def lifecycle_probes() -> Iterable[Probe]:
                 ("policy", {"authAs": ("SID", proof)}),
                 ("config", {"authority": "SID", "proof": proof}),
                 ("request", {"credential": {"auth": "SID", "proof": proof}}),
+                ("operation", {"credential": {"auth": "SID", "proof": proof}}),
+                ("operation", {"command": {"auth": "SID", "proof": proof}}),
             ):
                 yield Probe(
                     f"{function_name} {label} envelope {'enables' if expected == 'PASS' else 'does not enable'} LockingSP with {proof} proof",
@@ -3071,6 +3203,7 @@ def lifecycle_probes() -> Iterable[Probe]:
         ("activateLockingSP", "spRequest", "authAs"),
         ("takeOwnership", "ownershipRequest", "credential"),
         ("takeOwnership", "credentialRequest", "credential"),
+        ("takeOwnership", "operationRequest", "credential"),
     ):
         for proof, expected in (("new", "PASS"), ("wrong", "FAIL")):
             value = ("SID", proof) if payload_key == "authAs" else proof
@@ -3101,6 +3234,8 @@ def lifecycle_probes() -> Iterable[Probe]:
             ("policy", {"pin": proof}),
             ("config", {"credential": proof}),
             ("request", {"credential": {"pin": proof}}),
+            ("operation", {"credential": {"proof": proof}}),
+            ("operation", {"command": {"credential": proof}}),
         ):
             yield Probe(
                 f"takeOwnership {label} envelope {'enables' if expected == 'PASS' else 'does not enable'} LockingSP with {proof} proof",
@@ -3286,24 +3421,30 @@ def random_probes() -> Iterable[Probe]:
         ("config", {"length": 8}),
         ("request", {"random": {"bytes": 8}}),
         ("operation", {"count": 8}),
+        ("operation", {"command": {"count": 8}}),
+        ("operationRequest", {"command": {"count": 8}}),
+        ("command", {"count": 8}),
+        ("action", {"count": 8}),
         ("randomRequest", {"values": {"count": 8}}),
         ("rngRequest", {"values": {"bytes": 8}}),
     ):
+        family = "random-operation-envelope-doc" if wrapper_key in {"command", "action"} or "command" in wrapper_payload else "random-wrapper"
         yield Probe(
             f"getRandomBytes {wrapper_key} count envelope accepts requested output",
             [operation_payload("getRandomBytes", {wrapper_key: wrapper_payload}, key="kwargs", output={"return": "AABBCCDDEEFF0011"})],
             "PASS",
-            "random-wrapper",
+            family,
             f"getRandomBytes should recover Count from structured {wrapper_key} envelopes.",
         )
         yield Probe(
             f"getRandomBytes {wrapper_key} count envelope rejects wrong output length",
             [operation_payload("getRandomBytes", {wrapper_key: wrapper_payload}, key="kwargs", output={"return": "AABB"})],
             "FAIL",
-            "random-wrapper",
+            family,
             f"getRandomBytes must enforce Count recovered from {wrapper_key}.",
         )
     random_envelope_buffer_out = {"CellBlock": {"Table": "DataStore", "startRow": 4, "endRow": 11}}
+    random_buffer_context = owned_admin_context() + [start_session(ADMIN_SP, SID, "old")]
     for wrapper_key, wrapper_payload in (
         ("policy", {"count": 8, "BufferOut": random_envelope_buffer_out}),
         ("config", {"length": 8, "output": random_envelope_buffer_out}),
@@ -3314,14 +3455,14 @@ def random_probes() -> Iterable[Probe]:
     ):
         yield Probe(
             f"getRandomBytes {wrapper_key} BufferOut envelope returns empty result",
-            [operation_payload("getRandomBytes", {wrapper_key: wrapper_payload}, key="kwargs", output={"return": []})],
+            random_buffer_context + [operation_payload("getRandomBytes", {wrapper_key: wrapper_payload}, key="kwargs", output={"return": []})],
             "PASS",
             "random-wrapper",
             f"Random with BufferOut in {wrapper_key} stores generated bytes and returns an empty result.",
         )
         yield Probe(
             f"getRandomBytes {wrapper_key} BufferOut envelope rejects returned bytes",
-            [operation_payload("getRandomBytes", {wrapper_key: wrapper_payload}, key="kwargs", output={"return": "AABBCCDDEEFF0011"})],
+            random_buffer_context + [operation_payload("getRandomBytes", {wrapper_key: wrapper_payload}, key="kwargs", output={"return": "AABBCCDDEEFF0011"})],
             "FAIL",
             "random-wrapper",
             f"Random must not return generated bytes when BufferOut is supplied through {wrapper_key}.",
@@ -3358,21 +3499,21 @@ def random_probes() -> Iterable[Probe]:
         buffer_kwargs = wrap_random_payload({"count": 8, "output": random_envelope_buffer_out}, chain)
         yield Probe(
             f"getRandomBytes deep {chain_name} BufferOut envelope returns empty result",
-            [operation_payload("getRandomBytes", buffer_kwargs, key="kwargs", output={"return": []})],
+            random_buffer_context + [operation_payload("getRandomBytes", buffer_kwargs, key="kwargs", output={"return": []})],
             "PASS",
             "random-deep-envelope-doc",
             "Deep Random BufferOut envelopes should return an empty result.",
         )
         yield Probe(
             f"getRandomBytes deep {chain_name} BufferOut envelope rejects returned bytes",
-            [operation_payload("getRandomBytes", buffer_kwargs, key="kwargs", output={"return": "AABBCCDDEEFF0011"})],
+            random_buffer_context + [operation_payload("getRandomBytes", buffer_kwargs, key="kwargs", output={"return": "AABBCCDDEEFF0011"})],
             "FAIL",
             "random-deep-envelope-doc",
             "Deep Random BufferOut envelopes must not also return generated bytes.",
         )
     yield Probe(
         "randomBytes BufferOut accepts empty result",
-        [
+        random_buffer_context + [
             operation_payload(
                 "randomBytes",
                 {"length": 16, "BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 15}}},
@@ -3386,7 +3527,7 @@ def random_probes() -> Iterable[Probe]:
     )
     yield Probe(
         "randomBytes BufferOut rejects returned byte payload",
-        [
+        random_buffer_context + [
             operation_payload(
                 "randomBytes",
                 {"length": 16, "BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 15}}},
@@ -3400,7 +3541,7 @@ def random_probes() -> Iterable[Probe]:
     )
     yield Probe(
         "randomBytes BufferOut rejects scalar non-empty result",
-        [
+        random_buffer_context + [
             operation_payload(
                 "randomBytes",
                 {"length": 16, "BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 15}}},
@@ -3414,7 +3555,7 @@ def random_probes() -> Iterable[Probe]:
     )
     yield Probe(
         "getRandomBytes output alias accepts empty result",
-        [
+        random_buffer_context + [
             operation_payload(
                 "getRandomBytes",
                 {"count": 8, "output": {"CellBlock": {"Table": "DataStore", "startRow": 4, "endRow": 11}}},
@@ -3596,6 +3737,26 @@ def tpersign_probes() -> Iterable[Probe]:
         "sign-wrapper",
         "Generic Sign without BufferOut returns signature bytes in-band rather than an empty BufferOut-style result.",
     )
+    for wrapper_key, wrapper_payload in (
+        ("operation", {"command": {"payload": "AABB", "authAs": "Anybody"}}),
+        ("operationRequest", {"command": {"payload": "AABB", "authAs": "Anybody"}}),
+        ("command", {"payload": "AABB", "authAs": "Anybody"}),
+        ("action", {"payload": "AABB", "authAs": "Anybody"}),
+    ):
+        yield Probe(
+            f"sign {wrapper_key} envelope accepts signature bytes",
+            [operation_payload("sign", {wrapper_key: wrapper_payload}, key="kwargs", output={"return": "signature"})],
+            "PASS",
+            "sign-operation-envelope-doc",
+            "High-level Sign wrappers must preserve payload bytes from operation-style command envelopes.",
+        )
+        yield Probe(
+            f"sign {wrapper_key} envelope rejects boolean signature",
+            [operation_payload("sign", {wrapper_key: wrapper_payload}, key="kwargs", output={"return": True})],
+            "FAIL",
+            "sign-operation-envelope-doc",
+            "Sign without BufferOut returns signature bytes, not a Boolean success marker.",
+        )
 
 
 def firmware_attestation_probes() -> Iterable[Probe]:
@@ -3722,22 +3883,27 @@ def firmware_attestation_probes() -> Iterable[Probe]:
         ("config", {"challenge": "AABB"}),
         ("request", {"attestation": {"nonce": "AABB"}}),
         ("operation", {"input": {"nonce": "AABB"}}),
+        ("operation", {"command": {"nonce": "AABB"}}),
+        ("operationRequest", {"command": {"nonce": "AABB"}}),
+        ("command", {"nonce": "AABB"}),
+        ("action", {"nonce": "AABB"}),
         ("attestationRequest", {"values": {"nonce": "AABB"}}),
         ("firmwareRequest", {"quote": {"challenge": "AABB"}}),
         ("quoteRequest", {"input": {"nonce": "AABB"}}),
     ):
+        family = "firmware-attestation-operation-envelope-doc" if wrapper_key in {"command", "action"} or "command" in wrapper_payload else "firmware-attestation-wrapper"
         yield Probe(
             f"firmwareAttestation {wrapper_key} envelope accepts assessor nonce",
             [operation_payload("firmwareAttestation", {wrapper_key: wrapper_payload}, key="kwargs", output={"return": b"attestation"})],
             "PASS",
-            "firmware-attestation-wrapper",
+            family,
             f"FirmwareAttestation should recover assessor nonce from structured {wrapper_key} envelopes.",
         )
         yield Probe(
             f"firmwareAttestation {wrapper_key} envelope rejects boolean attestation result",
             [operation_payload("firmwareAttestation", {wrapper_key: wrapper_payload}, key="kwargs", output={"return": True})],
             "FAIL",
-            "firmware-attestation-wrapper",
+            family,
             f"FirmwareAttestation with nonce from {wrapper_key} still returns attestation bytes, not Boolean success.",
         )
 
@@ -3904,6 +4070,10 @@ def psk_probes() -> Iterable[Probe]:
         ("setPskEntry policy", {"policy": {"psk": 1, "Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301", "authAs": ("SID", "new")}}),
         ("setPskEntry config", {"config": {"psk_id": 1, "enabled": True, "secret": b"secret", "cipher_suite": "0x1301", "authAs": ("SID", "new")}}),
         ("setPskEntry request", {"request": {"target": {"psk": 1}, "state": {"Enabled": True}, "payload": {"PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
+        ("setPskEntry request target command", {"request": {"target": {"psk": 1}, "command": {"Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
+        ("setPskEntry operation target psk", {"operation": {"target": {"psk": 1}, "psk": {"Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
+        ("setPskEntry operation target preSharedKey", {"operation": {"target": {"psk": 1}, "preSharedKey": {"Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
+        ("setPskEntry config target action", {"config": {"target": {"psk": 1}, "action": {"Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
         ("setPskEntry pskRequest", {"pskRequest": {"values": {"psk": 1, "Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301", "authAs": ("SID", "new")}}}),
         ("setPskEntry tlsPskRequest", {"tlsPskRequest": {"target": {"psk": 1}, "state": {"Enabled": True}, "payload": {"PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
         ("setPskEntry preSharedKeyRequest", {"preSharedKeyRequest": {"target": {"psk": 1}, "state": {"Enabled": True}, "payload": {"PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
@@ -3927,22 +4097,27 @@ def psk_probes() -> Iterable[Probe]:
         ("getPskEntry policy", {"policy": {"psk": 1, "authAs": ("SID", "new")}}),
         ("getPskEntry config", {"config": {"psk_id": 1, "authAs": ("SID", "new")}}),
         ("getPskEntry request", {"request": {"target": {"psk": 1}, "authAs": ("SID", "new")}}),
+        ("getPskEntry operation", {"operation": {"target": {"psk": 1}, "command": {"authAs": ("SID", "new")}}}),
+        ("getPskEntry operationRequest", {"operationRequest": {"target": {"psk": 1}, "command": {"authAs": ("SID", "new")}}}),
+        ("getPskEntry command", {"command": {"psk": 1, "authAs": ("SID", "new")}}),
+        ("getPskEntry action", {"action": {"psk": 1, "authAs": ("SID", "new")}}),
         ("getPskEntry pskRequest", {"pskRequest": {"target": {"psk": 1}, "authAs": ("SID", "new")}}),
         ("getPskEntry tlsPskRequest", {"tlsPskRequest": {"target": {"psk": 1}, "authAs": ("SID", "new")}}),
         ("getPskEntry preSharedKeyRequest", {"preSharedKeyRequest": {"target": {"psk": 1}, "authAs": ("SID", "new")}}),
     ):
+        tag = "psk-getter-operation-envelope-doc" if any(token in label for token in ("operation", "command", "action")) else "psk-wrapper"
         yield Probe(
             f"{label} envelope reports current metadata",
             psk_state_context + [{"input": {"function": "getPskEntry", "kwargs": kwargs}, "output": {"return": {"Enabled": True, "CipherSuite": "0x1301"}}}],
             "PASS",
-            "psk-wrapper",
+            tag,
             "getPskEntry policy/config/request envelopes must recover the selected TLS_PSK_Key row.",
         )
         yield Probe(
             f"{label} envelope rejects stale metadata",
             psk_state_context + [{"input": {"function": "getPskEntry", "kwargs": kwargs}, "output": {"return": {"Enabled": False, "CipherSuite": "0x1301"}}}],
             "FAIL",
-            "psk-wrapper",
+            tag,
             "A getter envelope that ignores the PSK selector leaves stale metadata accepted.",
         )
     yield Probe(
@@ -4273,6 +4448,30 @@ def mbr_probes() -> Iterable[Probe]:
         "mbr-wrapper",
         "A successful MBR byte-table read must return byte data, not only a wrapper success flag.",
     )
+    for label, kwargs in (
+        ("operation command", {"operation": {"command": {"offset": 10, "bytes": "AABB", "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"table": "MBR"}, "command": {"offset": 10, "bytes": "AABB", "authAs": ("Admin1", "new")}}}),
+        ("operationRequest command", {"operationRequest": {"command": {"offset": 10, "bytes": "AABB", "authAs": ("Admin1", "new")}}}),
+        ("command", {"command": {"offset": 10, "bytes": "AABB", "authAs": ("Admin1", "new")}}),
+        ("action", {"action": {"offset": 10, "bytes": "AABB", "authAs": ("Admin1", "new")}}),
+    ):
+        setmbr_context = context + [
+            {"input": {"function": "setMBR", "kwargs": kwargs}, "output": {"return": True}},
+        ]
+        yield Probe(
+            f"setMBR {label} writes current bytes",
+            setmbr_context + [{"input": {"function": "readMBR", "kwargs": {"offset": 10, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "AABB"}}],
+            "PASS",
+            "mbr-operation-envelope-doc",
+            "setMBR operation-style byte envelopes must mutate the MBR byte table.",
+        )
+        yield Probe(
+            f"setMBR {label} rejects stale bytes",
+            setmbr_context + [{"input": {"function": "readMBR", "kwargs": {"offset": 10, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "0000"}}],
+            "FAIL",
+            "mbr-operation-envelope-doc",
+            "Ignoring setMBR operation-style byte envelopes leaves stale MBR bytes accepted.",
+        )
     byte_repr_context = context + [
         {"input": {"function": "writeMBR", "kwargs": {"offset": 4, "bytes": "AABBCC", "authAs": ("Admin1", "new")}}, "output": {"return": True}}
     ]
@@ -4312,6 +4511,9 @@ def mbr_probes() -> Iterable[Probe]:
         ("request values window", {"request": {"values": {"window": {"offset": 4, "length": 3}, "bytes": "AABBCC"}}}, {"window": {"offset": 4, "length": 3}}),
         ("mbrRequest values window", {"mbrRequest": {"values": {"offset": 4, "length": 3, "bytes": "AABBCC"}}}, {"mbrRequest": {"window": {"offset": 4, "length": 3}}}),
         ("mbrShadowRequest byteTableRequest window", {"mbrShadowRequest": {"values": {"offset": 4, "length": 3, "bytes": "AABBCC"}}}, {"byteTableRequest": {"window": {"offset": 4, "length": 3}}}),
+        ("operation command", {"operation": {"command": {"offset": 4, "length": 3, "bytes": "AABBCC"}}}, {"operation": {"command": {"offset": 4, "length": 3}}}),
+        ("operation target command", {"operation": {"target": {"offset": 4, "length": 3}, "command": {"bytes": "AABBCC"}}}, {"operation": {"target": {"offset": 4, "length": 3}, "command": {}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"offset": 4, "length": 3}, "command": {"bytes": "AABBCC"}}}, {"operationRequest": {"target": {"offset": 4, "length": 3}, "command": {}}}),
     ):
         envelope_context = context + [
             {"input": {"function": "writeMBR", "kwargs": {"authAs": ("Admin1", "new"), **write_payload}}, "output": {"return": True}}
@@ -4511,6 +4713,9 @@ def mbr_probes() -> Iterable[Probe]:
         ("request values", {"request": {"values": {"Enabled": True, "Done": False, "DoneOnReset": [0], "authAs": ("Admin1", "new")}}}),
         ("policy request values", {"policy": {"request": {"values": {"MBREnable": True, "MBRDone": False, "DoneOnReset": [0], "authAs": ("Admin1", "new")}}}}),
         ("config mbrcontrol", {"config": {"mbrControl": {"enabled": True, "done": False, "doneOnReset": [0]}, "authAs": ("Admin1", "new")}}),
+        ("request target command", {"request": {"target": {"table": "MBRControl"}, "command": {"Enabled": True, "Done": False, "DoneOnReset": [0]}, "authAs": ("Admin1", "new")}}),
+        ("operation target control", {"operation": {"target": {"table": "MBRControl"}, "mbrControl": {"Enabled": True, "Done": False, "DoneOnReset": [0]}, "authAs": ("Admin1", "new")}}),
+        ("config target action", {"config": {"target": {"table": "MBRControl"}, "action": {"Enabled": True, "Done": False, "DoneOnReset": [0]}, "authAs": ("Admin1", "new")}}),
     ):
         nested_control_context = activated_locking_context() + [
             {"input": {"function": "setMBRControl", "kwargs": kwargs}, "output": {"return": True}},
@@ -5286,6 +5491,39 @@ def authenticate_probes() -> Iterable[Probe]:
             "authenticate-domain-request-envelope-doc",
             "Authenticate request envelopes must not hide a true result for a wrong proof.",
         )
+    for label, kwargs in (
+        ("operation command", {"operation": {"command": {"auth": "Admin1", "proof": "new"}}}),
+        ("operation target command", {"operation": {"target": {"auth": "Admin1"}, "command": {"proof": "new"}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"auth": "Admin1"}, "command": {"proof": "new"}}}),
+    ):
+        wrong_kwargs = {
+            key: {
+                **value,
+                "command": {**value.get("command", {}), "proof": "wrong"},
+            }
+            for key, value in kwargs.items()
+        }
+        yield Probe(
+            f"Authenticate {label} accepts correct proof",
+            base + [{"input": {"function": "authenticate", "kwargs": kwargs}, "output": {"return": True}}],
+            "PASS",
+            "authenticate-operation-envelope-doc",
+            "Authenticate operation command envelopes must preserve authority/proof semantics.",
+        )
+        yield Probe(
+            f"Authenticate {label} accepts wrong false",
+            base + [{"input": {"function": "authenticate", "kwargs": wrong_kwargs}, "output": {"return": False}}],
+            "PASS",
+            "authenticate-operation-envelope-doc",
+            "Wrong credentials are represented as method SUCCESS with a false Boolean result through operation envelopes.",
+        )
+        yield Probe(
+            f"Authenticate {label} rejects wrong true",
+            base + [{"input": {"function": "authenticate", "kwargs": wrong_kwargs}, "output": {"return": True}}],
+            "FAIL",
+            "authenticate-operation-envelope-doc",
+            "Authenticate operation envelopes must not hide a true result for a wrong proof.",
+        )
     check_context = activated_locking_context() + [
         set_values("", "User1", {5: 1}),
         set_values("", "C_PIN_User1", {3: "userpin"}),
@@ -5320,6 +5558,39 @@ def authenticate_probes() -> Iterable[Probe]:
             "FAIL",
             "authenticate-wrapper",
             "Correct checkPIN values-envelope credentials should not be reported as false before lockout.",
+        )
+    for label, kwargs in (
+        ("operation command", {"operation": {"command": {"auth": "User1", "pin": "userpin"}}}),
+        ("operation target command", {"operation": {"target": {"auth": "User1"}, "command": {"pin": "userpin"}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"auth": "User1"}, "command": {"pin": "userpin"}}}),
+    ):
+        wrong_kwargs = {
+            key: {
+                **value,
+                "command": {**value.get("command", {}), "pin": "wrong"},
+            }
+            for key, value in kwargs.items()
+        }
+        yield Probe(
+            f"checkPIN {label} accepts correct PIN",
+            check_context + [{"input": {"function": "checkPIN", "kwargs": kwargs}, "output": {"return": True}}],
+            "PASS",
+            "checkpin-operation-envelope-doc",
+            "checkPIN operation command envelopes must preserve authority/PIN semantics.",
+        )
+        yield Probe(
+            f"checkPIN {label} accepts wrong false",
+            check_context + [{"input": {"function": "checkPIN", "kwargs": wrong_kwargs}, "output": {"return": False}}],
+            "PASS",
+            "checkpin-operation-envelope-doc",
+            "Wrong checkPIN credentials are represented as method SUCCESS with a false Boolean result through operation envelopes.",
+        )
+        yield Probe(
+            f"checkPIN {label} rejects wrong true",
+            check_context + [{"input": {"function": "checkPIN", "kwargs": wrong_kwargs}, "output": {"return": True}}],
+            "FAIL",
+            "checkpin-operation-envelope-doc",
+            "checkPIN operation envelopes must not hide a true result for a wrong PIN.",
         )
     for alias in (
         "verifyPIN",
@@ -5537,6 +5808,30 @@ def authenticate_probes() -> Iterable[Probe]:
             "authenticate-wrapper",
             f"`{selector_key}` cannot authenticate with a stale/wrong credential value.",
         )
+    for label, kwargs in (
+        ("operation command", {"operation": {"command": {"auth": "User1", "newPin": "newpin", "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"auth": "User1"}, "command": {"newPin": "newpin", "authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"auth": "User1"}, "command": {"newPin": "newpin", "authAs": ("Admin1", "new")}}}),
+    ):
+        operation_change_context = locking_admin_open() + [
+            set_values("", "User1", {5: 1, 15: 0, 16: 0}),
+            set_values("", "C_PIN_User1", {3: "oldpin", 5: 10, 7: 0}),
+            {"input": {"function": "changePIN", "kwargs": kwargs}, "output": {"return": True}},
+        ]
+        yield Probe(
+            f"changePIN {label} accepts new PIN",
+            operation_change_context + [{"input": {"function": "checkPIN", "kwargs": {"user": "User1", "pin": "newpin"}}, "output": {"return": True}}],
+            "PASS",
+            "credential-pin-operation-envelope-doc",
+            "changePIN operation command envelopes must update the tracked C_PIN.PIN cell.",
+        )
+        yield Probe(
+            f"changePIN {label} rejects stale old PIN",
+            operation_change_context + [{"input": {"function": "checkPIN", "kwargs": {"user": "User1", "pin": "oldpin"}}, "output": {"return": True}}],
+            "FAIL",
+            "credential-pin-operation-envelope-doc",
+            "Dropping operation target/command fields leaves the old C_PIN credential active.",
+        )
 
 
 def credential_probes() -> Iterable[Probe]:
@@ -5719,6 +6014,35 @@ def credential_probes() -> Iterable[Probe]:
             "FAIL",
             "credential-policy-envelope-doc",
             "setMinPINLength domain request envelopes must update later minimum-length observations.",
+        )
+    for label, kwargs in (
+        ("operation command", {"operation": {"command": {"auth": "User1", "length": 6, "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"auth": "User1"}, "command": {"length": 6, "authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"auth": "User1"}, "command": {"length": 6, "authAs": ("Admin1", "new")}}}),
+    ):
+        minpin_operation_context = minpin_domain_base + [
+            {"input": {"function": "setMinPINLength", "kwargs": kwargs}, "output": {"return": True}},
+        ]
+        yield Probe(
+            f"setMinPINLength {label} rejects short User PIN",
+            minpin_operation_context + [{"input": {"function": "changePIN", "args": ["User1", "abc"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}}],
+            "FAIL",
+            "credential-minpin-operation-envelope-doc",
+            "setMinPINLength operation envelopes must mutate the selected C_PIN minimum length policy.",
+        )
+        yield Probe(
+            f"setMinPINLength {label} accepts current minimum getter",
+            minpin_operation_context + [{"input": {"function": "getMinPINLength", "args": ["User1"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"minimumPINLength": 6}}}],
+            "PASS",
+            "credential-minpin-operation-envelope-doc",
+            "setMinPINLength operation envelopes should expose the updated C_PIN minimum length through getters.",
+        )
+        yield Probe(
+            f"setMinPINLength {label} rejects stale minimum getter",
+            minpin_operation_context + [{"input": {"function": "getMinPINLength", "args": ["User1"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"minimumPINLength": 5}}}],
+            "FAIL",
+            "credential-minpin-operation-envelope-doc",
+            "Dropping operation target/command fields leaves C_PIN._MinPINLength stale.",
         )
     yield Probe(
         "setMinPINLength target without authAs accepts authorized-false failure",
@@ -5994,7 +6318,7 @@ def credential_probes() -> Iterable[Probe]:
         )
     cpin_counter_getter_context = activated_locking_context() + [
         start_session(LOCKING_SP, ADMIN1, "new"),
-        method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"5": 3}, {"6": 1}, {"7": 2}]}),
+        method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"5": 3}, {"6": 1}, {"7": False}]}),
     ]
     for alias, return_key, current, stale in (
         ("getRetryLimit", "TryLimit", 3, 1),
@@ -6032,19 +6356,22 @@ def credential_probes() -> Iterable[Probe]:
             ("policy", {"identity": "User1", "authAs": ("Admin1", "new")}),
             ("config", {"authorityId": "User1", "authAs": ("Admin1", "new")}),
             ("request", {"target": {"user": "User1"}, "authAs": ("Admin1", "new")}),
+            ("operation", {"target": {"identity": "User1"}, "command": {"authAs": ("Admin1", "new")}}),
+            ("operationRequest", {"target": {"identity": "User1"}, "command": {"authAs": ("Admin1", "new")}}),
         ):
+            tag = "authority-counter-operation-envelope-doc" if wrapper_key in {"operation", "operationRequest"} else "authority-wrapper"
             yield Probe(
                 f"{alias} {wrapper_key} envelope reports current {return_key}",
                 authority_counter_getter_context + [{"input": {"function": alias, "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": {return_key: current}}}],
                 "PASS",
-                "authority-wrapper",
+                tag,
                 f"{alias} should recover the selected Authority row from a structured {wrapper_key} envelope.",
             )
             yield Probe(
                 f"{alias} {wrapper_key} envelope rejects stale {return_key}",
                 authority_counter_getter_context + [{"input": {"function": alias, "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": {return_key: stale}}}],
                 "FAIL",
-                "authority-wrapper",
+                tag,
                 f"{alias} must not ignore the Authority selector in {wrapper_key}.",
             )
     for label, fn, kwargs, getter, current, stale, family in (
@@ -6081,6 +6408,9 @@ def credential_probes() -> Iterable[Probe]:
         ("policy", {"port": "Port2", "locked": True, "authAs": ("SID", "new")}),
         ("config", {"portId": "Port2", "PortLocked": True, "authAs": ("SID", "new")}),
         ("request", {"target": {"port": "Port2"}, "state": {"locked": True}, "authAs": ("SID", "new")}),
+        ("request", {"target": {"port": "Port2"}, "command": {"locked": True}, "authAs": ("SID", "new")}),
+        ("operation", {"target": {"port": "Port2"}, "portControl": {"locked": True}, "authAs": ("SID", "new")}),
+        ("config", {"target": {"port": "Port2"}, "action": {"PortLocked": True}, "authAs": ("SID", "new")}),
         ("portRequest", {"values": {"port": "Port2", "PortLocked": True, "authAs": ("SID", "new")}}),
         ("portRequest", {"target": {"port": "Port2"}, "state": {"locked": True}, "authAs": ("SID", "new")}),
         ("adminRequest", {"port": {"portId": "Port2", "locked": True}, "authAs": ("SID", "new")}),
@@ -6112,21 +6442,26 @@ def credential_probes() -> Iterable[Probe]:
             ("policy", {"port": "Port2", "authAs": ("SID", "new")}),
             ("config", {"portId": "Port2", "authAs": ("SID", "new")}),
             ("request", {"target": {"port": "Port2"}, "authAs": ("SID", "new")}),
+            ("operation", {"target": {"port": "Port2"}, "command": {"authAs": ("SID", "new")}}),
+            ("operationRequest", {"target": {"port": "Port2"}, "command": {"authAs": ("SID", "new")}}),
+            ("command", {"port": "Port2", "authAs": ("SID", "new")}),
+            ("action", {"port": "Port2", "authAs": ("SID", "new")}),
             ("portRequest", {"target": {"port": "Port2"}, "authAs": ("SID", "new")}),
             ("adminRequest", {"port": {"portId": "Port2"}, "authAs": ("SID", "new")}),
         ):
+            family = "port-operation-envelope-doc" if wrapper_key in {"operation", "operationRequest", "command", "action"} else "port-wrapper"
             yield Probe(
                 f"{alias} {wrapper_key} envelope reports current PortLocked",
                 port_getter_context + [{"input": {"function": alias, "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": current}}],
                 "PASS",
-                "port-wrapper",
+                family,
                 f"{alias} should recover the selected Port row from a structured {wrapper_key} envelope.",
             )
             yield Probe(
                 f"{alias} {wrapper_key} envelope rejects stale PortLocked",
                 port_getter_context + [{"input": {"function": alias, "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": stale}}],
                 "FAIL",
-                "port-wrapper",
+                family,
                 f"{alias} must not ignore the Port selector in {wrapper_key}.",
             )
     cec_defaults = dict(C_EC_DEFAULT_CURVE_COLUMNS["C_EC_160"])
@@ -6525,6 +6860,31 @@ def authority_probes() -> Iterable[Probe]:
                 "authority-getter-deep-envelope-doc",
                 "Deep Authority getter request envelopes must not fall back to the wrong authority.",
             )
+    authority_operation_disabled_context = activated_locking_context() + [
+        start_session(LOCKING_SP, ADMIN1, "new"),
+        function_record("enableAuthority", ["User1", False], {"authAs": ("Admin1", "new")}, True),
+    ]
+    for function_name in ("getAuthority", "isUserEnabled", "getUserEnabled", "getAuthorityEnabled"):
+        for label, kwargs in (
+            ("operation", {"operation": {"target": {"identity": "User1"}, "command": {"authAs": ("Admin1", "new")}}}),
+            ("operationRequest", {"operationRequest": {"target": {"identity": "User1"}, "command": {"authAs": ("Admin1", "new")}}}),
+            ("command", {"command": {"identity": "User1", "authAs": ("Admin1", "new")}}),
+            ("action", {"action": {"identity": "User1", "authAs": ("Admin1", "new")}}),
+        ):
+            yield Probe(
+                f"{function_name} {label} envelope returns disabled authority state",
+                authority_operation_disabled_context + [function_record(function_name, [], kwargs, False)],
+                "PASS",
+                "authority-enabled-operation-envelope-doc",
+                "Authority.Enabled getter operation envelopes must preserve the selected Authority row.",
+            )
+            yield Probe(
+                f"{function_name} {label} envelope rejects stale enabled authority state",
+                authority_operation_disabled_context + [function_record(function_name, [], kwargs, True)],
+                "FAIL",
+                "authority-enabled-operation-envelope-doc",
+                "Authority.Enabled getter operation envelopes must not fall back to an untracked/default authority.",
+            )
     disabled_context = activated_locking_context() + [
         start_session(LOCKING_SP, ADMIN1, "new"),
         function_record("disableAuthority", [], {"auth": "User1", "authAs": ("Admin1", "new")}, True),
@@ -6786,6 +7146,33 @@ def session_probes() -> Iterable[Probe]:
             "FAIL",
             "protocol-reset-domain-request-envelope-doc",
             f"{wrapper} must preserve ProtocolStackReset ComID so same-ComID sessions are aborted.",
+        )
+    for label, payload in (
+        ("operation command", {"operation": {"command": {"type": "ProtocolStackReset", "ComID": 1}}}),
+        ("operation target command", {"operation": {"target": {"ComID": 1}, "command": {"type": "ProtocolStackReset"}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"ComID": 1}, "command": {"type": "ProtocolStackReset"}}}),
+    ):
+        other_comid = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new", extra_optional={"ComID": 2}),
+            {"input": {"function": "protocolReset", "kwargs": payload}, "output": {"return": True}},
+        ]
+        yield Probe(
+            f"protocolReset {label} other ComID preserves open session",
+            other_comid + [set_values("0000000B00000001", "C_PIN", {3: "preserved"}, status=SUCCESS)],
+            "PASS",
+            "protocol-reset-domain-request-envelope-doc",
+            f"{label} must preserve ProtocolStackReset ComID so unrelated ComID sessions remain open.",
+        )
+        same_comid = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new", extra_optional={"ComID": 1}),
+            {"input": {"function": "protocolReset", "kwargs": payload}, "output": {"return": True}},
+        ]
+        yield Probe(
+            f"protocolReset {label} same ComID aborts open session",
+            same_comid + [set_values("0000000B00000001", "C_PIN", {3: "aborted"}, status=SUCCESS)],
+            "FAIL",
+            "protocol-reset-domain-request-envelope-doc",
+            f"{label} must preserve ProtocolStackReset ComID so same-ComID sessions are aborted.",
         )
     for alias in ("startAdminSP", "openAdminSP", "beginAdminSession", "createAdminSession"):
         context = owned_admin_context() + [{"input": {"function": alias, "kwargs": {"authAs": ("SID", "new"), "write": True}}, "output": {"return": True}}]
@@ -8061,6 +8448,39 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
         "credential-wrapper",
         "C_PIN.Tries is a uinteger cell, not a literal Boolean success flag.",
     )
+    for setter, getter, value_key, column, expected, stale in (
+        ("setPINTries", "getTries", "tries", "Tries", 0, 1),
+        ("setPINTryLimit", "getTryLimit", "tryLimit", "TryLimit", 2, 3),
+    ):
+        operation_context = locking_admin_open() + [
+            {
+                "input": {
+                    "function": setter,
+                    "kwargs": {
+                        "operation": {
+                            "target": {"user": "User1"},
+                            "command": {value_key: expected, "authAs": ("Admin1", "new")},
+                        }
+                    },
+                },
+                "output": {"return": True},
+            },
+        ]
+        operation_get = {"operation": {"target": {"user": "User1"}, "command": {"authAs": ("Admin1", "new")}}}
+        yield Probe(
+            f"{setter}/{getter} operation target command reports current counter",
+            operation_context + [{"input": {"function": getter, "kwargs": operation_get}, "output": {"return": {column: expected}}}],
+            "PASS",
+            "credential-counter-operation-envelope-doc",
+            "C_PIN counter getters must preserve operation target selectors and command auth.",
+        )
+        yield Probe(
+            f"{setter}/{getter} operation target command rejects stale counter",
+            operation_context + [{"input": {"function": getter, "kwargs": operation_get}, "output": {"return": {column: stale}}}],
+            "FAIL",
+            "credential-counter-operation-envelope-doc",
+            "Dropping operation target selectors lets stale C_PIN counter observations pass.",
+        )
     for setter in (
         "setPINTryLimit",
         "setPINRetryLimit",
@@ -8840,8 +9260,11 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
         ("request values", "request", {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
         ("query", "query", {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}),
         ("policy query target", "policy", {"query": {"target": {"rangeId": 1}}, "authAs": ("Admin1", "new")}),
+        ("operation command", "operation", {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
+        ("operation target command", "operation", {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}),
+        ("operationRequest target command", "operationRequest", {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}),
     ):
-        tag = "reencrypt-nested-envelope-doc" if " " in label else "locking-wrapper"
+        tag = "reencrypt-operation-envelope-doc" if "operation" in label else "reencrypt-nested-envelope-doc" if " " in label else "locking-wrapper"
         yield Probe(
             f"getReEncryptStatus {label} envelope reads pending state",
             reencrypt_alias_context + [{"input": {"function": "getReEncryptStatus", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": {"ReEncryptState": "PENDING"}}}],
@@ -8898,6 +9321,9 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
         ("request values", {"request": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}),
         ("policy request values", {"policy": {"request": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}}),
         ("config target request", {"config": {"target": {"range": 1}, "request": {"value": "START_req"}, "authAs": ("Admin1", "new")}}),
+        ("request target command", {"request": {"target": {"rangeId": 1}, "command": {"ReEncryptRequest": "START_req"}, "authAs": ("Admin1", "new")}}),
+        ("operation target reencrypt", {"operation": {"target": {"rangeId": 1}, "reencrypt": {"request": "START_req"}, "authAs": ("Admin1", "new")}}),
+        ("config target action", {"config": {"target": {"range": 1}, "action": "START_req", "authAs": ("Admin1", "new")}}),
         ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}),
         ("rangeRequest values", {"rangeRequest": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}),
         ("reencryptRequest values", {"reencryptRequest": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}),
@@ -9142,19 +9568,23 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
             ("config", {"range": 1, "authAs": ("Admin1", "new")}),
             ("request", {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}),
             ("query", {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}),
+            ("operation", {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
+            ("operation", {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}),
+            ("operationRequest", {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}),
         ):
+            tag = "locking-column-operation-envelope-doc" if wrapper_key in {"operation", "operationRequest"} else "locking-wrapper"
             yield Probe(
                 f"{alias} {wrapper_key} envelope reads tracked {column_name}",
                 locking_column_getter_context + [function_record(alias, [], {wrapper_key: wrapper_payload}, {column_name: good})],
                 "PASS",
-                "locking-wrapper",
+                tag,
                 f"{alias} should read the range selector from a structured {wrapper_key} envelope.",
             )
             yield Probe(
                 f"{alias} {wrapper_key} envelope rejects stale {column_name}",
                 locking_column_getter_context + [function_record(alias, [], {wrapper_key: wrapper_payload}, {column_name: stale})],
                 "FAIL",
-                "locking-wrapper",
+                tag,
                 f"{alias} must not ignore a structured {wrapper_key} range selector.",
             )
     for alias, return_key, good, stale, column_name in (
@@ -9317,7 +9747,7 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
             "locking-wrapper",
             "Ignoring the ADVKEY_req wrapper would leave stale ReEncryptState accepted.",
         )
-    for alias in ("retIdle", "returnIdle", "returnToIdle", "stopReEncrypt", "cancelReEncrypt"):
+    for alias in ("retIdle", "returnIdle", "returnToIdle", "returnReEncryptIdle", "returnReEncryptionIdle", "stopReEncrypt", "cancelReEncrypt"):
         context = locking_admin_open() + [
             method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "PAUSED"}]]),
             {"input": {"function": alias, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
@@ -9335,6 +9765,31 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
             "FAIL",
             "locking-wrapper",
             "Ignoring the RETIDLE_req wrapper would leave stale ReEncryptState accepted.",
+        )
+    for label, kwargs in (
+        ("operation command", {"operation": {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}}),
+        ("operationRequest command", {"operationRequest": {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+        ("command", {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
+        ("action", {"action": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
+    ):
+        context = locking_admin_open() + [
+            method_record("Get", "0000080200030001", "Locking", return_values=[[{"12": "PAUSED"}]]),
+            {"input": {"function": "returnReEncryptIdle", "kwargs": kwargs}, "output": {"return": True}},
+        ]
+        yield Probe(
+            f"returnReEncryptIdle {label} returns paused state to idle",
+            context + [{"input": {"function": "getReEncryptStatus", "kwargs": kwargs}, "output": {"return": {"ReEncryptState": "IDLE"}}}],
+            "PASS",
+            "reencrypt-operation-envelope-doc",
+            "returnReEncryptIdle operation envelopes must lower to RETIDLE_req on the selected range.",
+        )
+        yield Probe(
+            f"returnReEncryptIdle {label} rejects stale paused state",
+            context + [{"input": {"function": "getReEncryptStatus", "kwargs": kwargs}, "output": {"return": {"ReEncryptState": "PAUSED"}}}],
+            "FAIL",
+            "reencrypt-operation-envelope-doc",
+            "Ignoring the returnReEncryptIdle operation envelope leaves stale ReEncryptState accepted.",
         )
     for label, kwargs in (
         ("policy", {"policy": {"rangeId": 1, "request": "START_req"}, "authAs": ("Admin1", "new")}),
@@ -9445,26 +9900,32 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
         ("config", {"config": {"enabled": True, "done": True, "doneOnReset": [1]}, "authAs": ("Admin1", "new")}),
         ("state", {"state": {"MBREnable": True, "MBRDone": True, "MBRDoneOnReset": [1]}, "authAs": ("Admin1", "new")}),
         ("control", {"control": {"Enabled": True, "Done": True, "DoneOnReset": [1]}, "authAs": ("Admin1", "new")}),
+        ("setMBR operation command", {"operation": {"command": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}}),
+        ("setMBR operation target command", {"operation": {"target": {"table": "MBRControl"}, "command": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}}),
+        ("setMBR operationRequest command", {"operationRequest": {"command": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}}),
+        ("setMBR command", {"command": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}),
+        ("setMBR action", {"action": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}),
         ("request policy", {"request": {"policy": {"enabled": True, "done": True, "resetTypes": [1]}}, "authAs": ("Admin1", "new")}),
         ("mbrControlRequest", {"mbrControlRequest": {"values": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}}),
         ("mbrRequest", {"mbrRequest": {"control": {"enabled": True, "done": True, "doneOnReset": [1]}, "authAs": ("Admin1", "new")}}),
         ("bootRequest", {"bootRequest": {"state": {"MBREnable": True, "MBRDone": True, "MBRDoneOnReset": [1]}, "authAs": ("Admin1", "new")}}),
     ):
         context = locking_admin_open() + [
-            {"input": {"function": "setMBRControl", "kwargs": kwargs}, "output": {"return": True}},
+            {"input": {"function": "setMBR" if label.startswith("setMBR ") else "setMBRControl", "kwargs": kwargs}, "output": {"return": True}},
         ]
+        tag = "mbr-operation-envelope-doc" if label.startswith("setMBR ") else "mbr-wrapper"
         yield Probe(
             f"setMBRControl {label} envelope updates cells",
             context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Enabled": True, "Done": True, "DoneOnReset": [1]}}}],
             "PASS",
-            "mbr-wrapper",
+            tag,
             "MBRControl wrappers may carry official cells inside bounded policy/config/state/control envelopes.",
         )
         yield Probe(
             f"setMBRControl {label} envelope rejects stale cells",
             context + [{"input": {"function": "getMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Enabled": False, "Done": False, "DoneOnReset": [0]}}}],
             "FAIL",
-            "mbr-wrapper",
+            tag,
             "Ignoring the MBRControl envelope leaves stale Enabled/Done/DoneOnReset state accepted.",
         )
     for label, kwargs in (
@@ -9685,6 +10146,10 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
         ("request values", {"request": {"values": {"ActiveDataRemovalMechanism": 2, "authAs": ("SID", "new")}}}),
         ("policy request values", {"policy": {"request": {"values": {"mechanism": 2, "authAs": ("SID", "new")}}}}),
         ("request activeDataRemoval", {"request": {"activeDataRemoval": {"mechanism": 2}}, "authAs": ("SID", "new")}),
+        ("request target command", {"request": {"target": {"table": "DataRemovalMechanism"}, "command": {"ActiveDataRemovalMechanism": 2}, "authAs": ("SID", "new")}}),
+        ("operation target removal", {"operation": {"target": {"table": "DataRemovalMechanism"}, "dataRemoval": {"mechanism": 2}, "authAs": ("SID", "new")}}),
+        ("config target action", {"config": {"target": {"table": "DataRemovalMechanism"}, "action": 2, "authAs": ("SID", "new")}}),
+        ("policy operation active", {"policy": {"operation": {"activeDataRemoval": {"mechanism": 2}}, "authAs": ("SID", "new")}}),
         ("dataRemovalRequest values", {"dataRemovalRequest": {"values": {"mechanism": 2, "authAs": ("SID", "new")}}}),
         ("removalRequest values", {"removalRequest": {"values": {"mechanism": 2, "authAs": ("SID", "new")}}}),
         ("adminRequest values", {"adminRequest": {"values": {"mechanism": 2, "authAs": ("SID", "new")}}}),
@@ -9706,6 +10171,30 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
             "FAIL",
             "data-removal-nested-envelope-doc" if " " in label else "data-removal-wrapper",
             "Ignoring a DataRemovalMechanism envelope permits stale active mechanism observations.",
+        )
+    data_removal_operation_set = {"operation": {"target": {"table": "DataRemovalMechanism"}, "command": {"ActiveDataRemovalMechanism": 2, "authAs": ("SID", "new")}}}
+    for label, get_kwargs in (
+        ("operation", {"operation": {"target": {"table": "DataRemovalMechanism"}, "command": {"authAs": ("SID", "new")}}}),
+        ("operationRequest", {"operationRequest": {"target": {"table": "DataRemovalMechanism"}, "command": {"authAs": ("SID", "new")}}}),
+        ("command", {"command": {"authAs": ("SID", "new")}}),
+        ("action", {"action": {"authAs": ("SID", "new")}}),
+    ):
+        context = owned_admin_context() + [
+            {"input": {"function": "setDataRemovalMechanism", "kwargs": data_removal_operation_set}, "output": {"return": True}},
+        ]
+        yield Probe(
+            f"getDataRemovalMechanism {label} envelope reports current mechanism",
+            context + [{"input": {"function": "getDataRemovalMechanism", "kwargs": get_kwargs}, "output": {"return": {"ActiveDataRemovalMechanism": 2}}}],
+            "PASS",
+            "data-removal-operation-envelope-doc",
+            "DataRemovalMechanism operation-style getters must preserve wrapper auth and must not treat target.table as a CellBlock Table component.",
+        )
+        yield Probe(
+            f"getDataRemovalMechanism {label} envelope rejects stale mechanism",
+            context + [{"input": {"function": "getDataRemovalMechanism", "kwargs": get_kwargs}, "output": {"return": {"ActiveDataRemovalMechanism": 1}}}],
+            "FAIL",
+            "data-removal-operation-envelope-doc",
+            "Operation-style DataRemovalMechanism getters must compare against tracked ActiveDataRemovalMechanism state.",
         )
     official_data_removal_context = owned_admin_context() + [
         start_session(ADMIN_SP, SID, "new"),
@@ -10346,6 +10835,47 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
         "accesscontrol-nested-mutation-doc",
         "After nested RemoveACE succeeds, later GetACL cannot retain the removed ACE.",
     )
+    for label, payload in (
+        ("operation command", {"operation": {"command": {"object": "Locking_Range1", "method": "Get", "ace": "0000000000039000", "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"object": "Locking_Range1", "method": "Get"}, "command": {"ace": "0000000000039000", "authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"object": "Locking_Range1", "method": "Get"}, "command": {"ace": "0000000000039000", "authAs": ("Admin1", "new")}}}),
+    ):
+        remove_operation_context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            function_record(
+                "addACE",
+                [],
+                {"object": "Locking_Range1", "method": "Get", "ace": "0000000000039000", "authAs": ("Admin1", "new")},
+                True,
+            ),
+            function_record("removeACE", [], payload, True),
+        ]
+        yield Probe(
+            f"removeACE {label} removes ACE from later getACL",
+            remove_operation_context
+            + [
+                {
+                    "input": {"function": "getACL", "kwargs": {"required": {"object": "Locking_Range1", "method": "Get"}, "authAs": ("Admin1", "new")}},
+                    "output": {"return": {"ACL": ["0000000000000003", "000000000003D001"]}},
+                }
+            ],
+            "PASS",
+            "accesscontrol-nested-mutation-doc",
+            "RemoveACE operation envelopes must preserve object, method, and ACE arguments.",
+        )
+        yield Probe(
+            f"removeACE {label} rejects retained removed ACE",
+            remove_operation_context
+            + [
+                {
+                    "input": {"function": "getACL", "kwargs": {"required": {"object": "Locking_Range1", "method": "Get"}, "authAs": ("Admin1", "new")}},
+                    "output": {"return": {"ACL": ["0000000000000003", "000000000003D001", "0000000000039000"]}},
+                }
+            ],
+            "FAIL",
+            "accesscontrol-nested-mutation-doc",
+            "After operation-envelope RemoveACE succeeds, later GetACL cannot retain the removed ACE.",
+        )
     for payload_key in ("accessControlRequest", "ACLRequest"):
         add_request_context = activated_locking_context() + [
             start_session(LOCKING_SP, ADMIN1, "new"),
@@ -10889,6 +11419,41 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
         ),
     ):
         yield Probe(name, trajectory, expected, "log-domain-request-envelope-doc", why)
+    for label, add_kwargs, create_kwargs, clear_kwargs in (
+        (
+            "operation",
+            {"operation": {"target": {"log": "Log1"}, "command": {"name": "Entry1", "data": "AABB", "authAs": ("Admin1", "new")}}},
+            {"operation": {"command": {"name": "MyLog", "highSecurity": False, "minSize": 8, "authAs": ("Admin1", "new")}}},
+            {"operation": {"target": {"log": "Log1"}, "command": {"authAs": ("Admin1", "new")}}},
+        ),
+        (
+            "operationRequest",
+            {"operationRequest": {"target": {"log": "Log1"}, "command": {"name": "Entry1", "data": "AABB", "authAs": ("Admin1", "new")}}},
+            {"operationRequest": {"command": {"name": "MyLog", "highSecurity": False, "minSize": 8, "authAs": ("Admin1", "new")}}},
+            {"operationRequest": {"target": {"log": "Log1"}, "command": {"authAs": ("Admin1", "new")}}},
+        ),
+        (
+            "command",
+            {"command": {"log": "Log1", "name": "Entry1", "data": "AABB", "authAs": ("Admin1", "new")}},
+            {"command": {"name": "MyLog", "highSecurity": False, "minSize": 8, "authAs": ("Admin1", "new")}},
+            {"command": {"log": "Log1", "authAs": ("Admin1", "new")}},
+        ),
+        (
+            "action",
+            {"action": {"log": "Log1", "name": "Entry1", "data": "AABB", "authAs": ("Admin1", "new")}},
+            {"action": {"name": "MyLog", "highSecurity": False, "minSize": 8, "authAs": ("Admin1", "new")}},
+            {"action": {"log": "Log1", "authAs": ("Admin1", "new")}},
+        ),
+    ):
+        for name, trajectory, expected, why in (
+            (f"AddLog {label} envelope preserves required payload", log_wrapper_context + [{"input": {"function": "addLog", "kwargs": add_kwargs}, "output": {"return": True}}], "PASS", "AddLog operation wrappers must preserve LogEntryName and Data before lowering."),
+            (f"AddLog {label} envelope rejects non-empty success", log_wrapper_context + [{"input": {"function": "addLog", "kwargs": add_kwargs}, "output": {"return": ["unexpected"]}}], "FAIL", "AddLog operation wrappers may expose Boolean success but not arbitrary non-empty result values."),
+            (f"CreateLog {label} envelope preserves three-field result shape", log_wrapper_context + [{"input": {"function": "createLog", "kwargs": create_kwargs}, "output": {"return": ["LogListUID", "LogTableUID", 8]}}], "PASS", "CreateLog operation wrappers must preserve MinSize and the three-field success result."),
+            (f"CreateLog {label} envelope rejects Boolean success", log_wrapper_context + [{"input": {"function": "createLog", "kwargs": create_kwargs}, "output": {"return": True}}], "FAIL", "CreateLog operation wrappers must keep the official three-field success shape."),
+            (f"ClearLog {label} envelope accepts Boolean wrapper success", log_wrapper_context + [{"input": {"function": "clearLog", "kwargs": clear_kwargs}, "output": {"return": True}}], "PASS", "ClearLog operation wrappers lower to an empty-result method while accepting SDK Boolean success."),
+            (f"ClearLog {label} envelope rejects non-empty success", log_wrapper_context + [{"input": {"function": "clearLog", "kwargs": clear_kwargs}, "output": {"return": ["unexpected"]}}], "FAIL", "ClearLog operation wrappers must not accept arbitrary non-empty success payloads."),
+        ):
+            yield Probe(name, trajectory, expected, "log-operation-envelope-doc", why)
     for alias in ("newLog", "makeLog", "createLogTable", "newLogTable", "allocateLog"):
         yield Probe(
             f"{alias} wrapper accepts three field result",
@@ -11043,6 +11608,29 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
             "FAIL",
             "crypto-wrapper",
             f"Hash must not return byte payload after BufferOut was supplied through {wrapper_key} at HashInit.",
+        )
+    hash_operation_context = crypto_wrapper_context + [
+        {"input": {"function": "hashInit", "kwargs": {"algorithm": "sha256", "authAs": "Anybody"}}, "output": {"return": []}},
+    ]
+    for wrapper_key, wrapper_payload in (
+        ("operation", {"command": {"data": "AABB", "authAs": "Anybody"}}),
+        ("operationRequest", {"command": {"data": "AABB", "authAs": "Anybody"}}),
+        ("command", {"data": "AABB", "authAs": "Anybody"}),
+        ("action", {"data": "AABB", "authAs": "Anybody"}),
+    ):
+        yield Probe(
+            f"hash {wrapper_key} command envelope accepts initialized hash",
+            hash_operation_context + [{"input": {"function": "hash", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": "AABB"}}],
+            "PASS",
+            "crypto-operation-envelope-doc",
+            "Hash operation-style command envelopes must preserve digest input bytes.",
+        )
+        yield Probe(
+            f"hash {wrapper_key} command envelope rejects boolean digest",
+            hash_operation_context + [{"input": {"function": "hash", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": True}}],
+            "FAIL",
+            "crypto-operation-envelope-doc",
+            "Hash operation-style command envelopes must still return digest bytes, not Boolean success.",
         )
     for init_alias in ("initHash", "hashBegin", "hashStart", "beginDigest", "digestInit", "digestStart", "sha256Init", "startDigest"):
         alias_stream_context = crypto_wrapper_context + [
@@ -11233,13 +11821,13 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
     sign_buffer_context = owned_admin_context() + [start_session(ADMIN_SP, SID, "old")]
     sign_buffer_out = {"table": "DataStore", "row": 0, "offset": 0, "length": 2}
     for wrapper_key, wrapper_payload in (
-        ("policy", {"target": "C_AES_256", "data": "AABB", "BufferOut": sign_buffer_out, "authAs": ("SID", "old")}),
-        ("config", {"target": "C_AES_256", "input": "AABB", "output": sign_buffer_out, "authAs": ("SID", "old")}),
-        ("request", {"sign": {"target": "C_AES_256", "payload": "AABB", "bufferOut": sign_buffer_out}, "authAs": ("SID", "old")}),
-        ("operation", {"target": "C_AES_256", "input": {"bytes": "AABB"}, "destination": sign_buffer_out, "authAs": ("SID", "old")}),
-        ("signRequest", {"values": {"target": "C_AES_256", "data": "AABB", "BufferOut": sign_buffer_out, "authAs": ("SID", "old")}}),
-        ("signatureRequest", {"values": {"target": "C_AES_256", "payload": "AABB", "bufferOut": sign_buffer_out, "authAs": ("SID", "old")}}),
-        ("operationRequest", {"sign": {"target": "C_AES_256", "payload": "AABB", "bufferOut": sign_buffer_out}, "authAs": ("SID", "old")}),
+        ("policy", {"target": "C_RSA_2048", "data": "AABB", "BufferOut": sign_buffer_out, "authAs": ("SID", "old")}),
+        ("config", {"target": "C_RSA_2048", "input": "AABB", "output": sign_buffer_out, "authAs": ("SID", "old")}),
+        ("request", {"sign": {"target": "C_RSA_2048", "payload": "AABB", "bufferOut": sign_buffer_out}, "authAs": ("SID", "old")}),
+        ("operation", {"target": "C_RSA_2048", "input": {"bytes": "AABB"}, "destination": sign_buffer_out, "authAs": ("SID", "old")}),
+        ("signRequest", {"values": {"target": "C_RSA_2048", "data": "AABB", "BufferOut": sign_buffer_out, "authAs": ("SID", "old")}}),
+        ("signatureRequest", {"values": {"target": "C_RSA_2048", "payload": "AABB", "bufferOut": sign_buffer_out, "authAs": ("SID", "old")}}),
+        ("operationRequest", {"sign": {"target": "C_RSA_2048", "payload": "AABB", "bufferOut": sign_buffer_out}, "authAs": ("SID", "old")}),
     ):
         yield Probe(
             f"signPayload {wrapper_key} BufferOut envelope returns empty result",
@@ -11353,6 +11941,8 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
         ("getPackage policy", {"policy": {"auth": "SID", "purpose": "backup", "authAs": ("SID", "new")}}),
         ("getPackage config", {"config": {"credential": "SID", "Purpose": "backup", "authAs": ("SID", "new")}}),
         ("getPackage request target", {"request": {"target": {"auth": "SID"}, "purpose": "backup", "authAs": ("SID", "new")}}),
+        ("getPackage request target command", {"request": {"target": {"auth": "SID"}, "command": {"Purpose": "backup"}, "authAs": ("SID", "new")}}),
+        ("getPackage operation target package", {"operation": {"target": {"auth": "SID"}, "package": {"Purpose": "backup"}, "authAs": ("SID", "new")}}),
         ("getPackage packageRequest", {"packageRequest": {"values": {"auth": "SID", "purpose": "backup", "authAs": ("SID", "new")}}}),
         ("getPackage credentialPackageRequest", {"credentialPackageRequest": {"package": {"auth": "SID", "purpose": "backup"}, "authAs": ("SID", "new")}}),
         ("getPackage keyPackageRequest", {"keyPackageRequest": {"target": {"auth": "SID"}, "purpose": "backup", "authAs": ("SID", "new")}}),
@@ -11374,6 +11964,8 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
     for label, kwargs in (
         ("setPackage policy", {"policy": {"auth": "SID", "value": "pkg", "authAs": ("SID", "new")}}),
         ("setPackage request", {"request": {"credential": "SID", "package": "pkg", "authAs": ("SID", "new")}}),
+        ("setPackage request target command", {"request": {"target": {"auth": "SID"}, "command": {"Value": "pkg"}, "authAs": ("SID", "new")}}),
+        ("setPackage operation target package", {"operation": {"target": {"auth": "SID"}, "package": {"Value": "pkg"}, "authAs": ("SID", "new")}}),
         ("setPackage packageRequest", {"packageRequest": {"values": {"auth": "SID", "value": "pkg", "authAs": ("SID", "new")}}}),
         ("setPackage credentialPackageRequest", {"credentialPackageRequest": {"credential": "SID", "package": "pkg", "authAs": ("SID", "new")}}),
     ):
@@ -11586,6 +12178,23 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
             "table-lifecycle-domain-request-envelope-doc",
             "CreateTable domain request envelopes must preserve nested table parameters, including a zero MinSize.",
         )
+    for label, payload in (
+        ("operation command", {"operation": {"command": table_lifecycle_values}}),
+        ("operationRequest command", {"operationRequest": {"command": table_lifecycle_values}}),
+    ):
+        yield Probe(
+            f"createTable {label} preserves zero MinSize",
+            table_wrapper_context
+            + [
+                {
+                    "input": {"function": "createTable", "kwargs": payload},
+                    "output": {"return": {"UID": "000001AA00000000", "Rows": 0}},
+                }
+            ],
+            "PASS",
+            "table-lifecycle-domain-request-envelope-doc",
+            "CreateTable operation envelopes must preserve nested table parameters, including a zero MinSize.",
+        )
     missing_table_lifecycle_min = dict(table_lifecycle_values)
     missing_table_lifecycle_min.pop("MinSize")
     yield Probe(
@@ -11640,6 +12249,23 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
             "table-lifecycle-domain-request-envelope-doc",
             "CreateRow domain request envelopes must preserve the target table and Values payload.",
         )
+    for label, payload in (
+        ("operation target command", {"operation": {"target": {"table": "000001AA00000000"}, "command": {"Values": [{"1": "row"}], "authAs": ("SID", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"table": "000001AA00000000"}, "command": {"Values": [{"1": "row"}], "authAs": ("SID", "new")}}}),
+    ):
+        yield Probe(
+            f"createRow {label} preserves dynamic table values",
+            dynamic_table_context
+            + [
+                {
+                    "input": {"function": "createRow", "kwargs": payload},
+                    "output": {"return": ["000001AA00000001"]},
+                }
+            ],
+            "PASS",
+            "table-lifecycle-domain-request-envelope-doc",
+            "CreateRow operation envelopes must preserve the target table and Values payload.",
+        )
     yield Probe(
         "createRow request envelope rejects boolean success",
         dynamic_table_context
@@ -11679,6 +12305,23 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
             "table-lifecycle-delete-query-envelope-doc",
             "DeleteRow domain request envelopes must preserve target table and row UID arguments.",
         )
+    for label, payload in (
+        ("operation target command", {"operation": {"target": {"table": "0000010000000001"}, "command": {"Rows": ["0000010100000001"], "authAs": ("SID", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"table": "0000010000000001"}, "command": {"Rows": ["0000010100000001"], "authAs": ("SID", "new")}}}),
+    ):
+        yield Probe(
+            f"deleteRow {label} preserves table and row UID",
+            delete_query_context
+            + [
+                {
+                    "input": {"function": "deleteRow", "kwargs": payload},
+                    "output": {"return": []},
+                }
+            ],
+            "PASS",
+            "table-lifecycle-delete-query-envelope-doc",
+            "DeleteRow operation envelopes must preserve target table and row UID arguments.",
+        )
     yield Probe(
         "deleteRow request envelope rejects missing row UID",
         delete_query_context
@@ -11715,6 +12358,27 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
             "PASS",
             "table-lifecycle-delete-query-envelope-doc",
             "DeleteTable domain request envelopes must preserve the created table UID target.",
+        )
+    for label, kwargs in (
+        ("operation", {"operation": {"target": {"table": "0000016300000000"}, "command": {"authAs": ("SID", "new")}}}),
+        ("operationRequest", {"operationRequest": {"target": {"table": "0000016300000000"}, "command": {"authAs": ("SID", "new")}}}),
+        ("command", {"command": {"table": "0000016300000000", "authAs": ("SID", "new")}}),
+        ("action", {"action": {"table": "0000016300000000", "authAs": ("SID", "new")}}),
+    ):
+        delete_context = delete_table_context + [{"input": {"function": "deleteTable", "kwargs": kwargs}, "output": {"return": []}}]
+        yield Probe(
+            f"deleteTable {label} envelope preserves table UID",
+            delete_context,
+            "PASS",
+            "table-delete-operation-envelope-doc",
+            "DeleteTable operation envelopes must preserve the created table UID target and authenticator.",
+        )
+        yield Probe(
+            f"deleteTable {label} envelope removes created table state",
+            delete_context + [method_record("Get", "0000016300000000", "Audit", "SUCCESS", return_values={"A": 1})],
+            "FAIL",
+            "table-delete-operation-envelope-doc",
+            "After a created table is deleted, later Get on that table must not remain successful.",
         )
     for envelope in ("tableQueryRequest", "freeRowsRequest", "tableRequest"):
         yield Probe(
@@ -12062,6 +12726,26 @@ def wrapper_alias_probe_batch() -> Iterable[Probe]:
             "xor-domain-request-envelope-doc",
             "XOR domain request envelopes must preserve byte-result comparison.",
         )
+    for wrapper_key, wrapper_payload in (
+        ("operation", {"command": xor_domain_values}),
+        ("operationRequest", {"command": xor_domain_values}),
+        ("command", xor_domain_values),
+        ("action", xor_domain_values),
+    ):
+        yield Probe(
+            f"xor {wrapper_key} command envelope returns direct XOR result",
+            xor_wrapper_context + [{"input": {"function": "xor", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"status": "SUCCESS", "return_values": "FF00"}}],
+            "PASS",
+            "xor-operation-envelope-doc",
+            "XOR operation-style command envelopes must preserve PatternInput and Input bytes.",
+        )
+        yield Probe(
+            f"xor {wrapper_key} command envelope rejects stale XOR result",
+            xor_wrapper_context + [{"input": {"function": "xor", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"status": "SUCCESS", "return_values": "0F0F"}}],
+            "FAIL",
+            "xor-operation-envelope-doc",
+            "XOR operation-style command envelopes must preserve byte-result comparison.",
+        )
     xor_domain_bufferout_values = {
         "PatternInput": "DataStore",
         "Input": {"Data": "F00F"},
@@ -12352,7 +13036,7 @@ def sign_payload_shape_probes() -> Iterable[Probe]:
     for bad_payload in ({"ok": True}, {"return": True}, [True], {"Data": True}, 1):
         yield Probe(
             f"Sign rejects nested Boolean payload {bad_payload!r}",
-            context + [method_record("Sign", "0000080600030001", "K_AES_256", required={"Input": {"Data": "AA"}}, return_values=bad_payload)],
+            context + [method_record("Sign", "", "C_RSA_2048", required={"Input": {"Data": "AA"}}, return_values=bad_payload)],
             "FAIL",
             "sign-payload-shape",
             "Sign without BufferOut returns signature bytes, not a Boolean flag or scalar integer payload.",
@@ -12360,7 +13044,7 @@ def sign_payload_shape_probes() -> Iterable[Probe]:
     for good_payload in ("AABB", {"Data": "AABB"}, ["AABB"]):
         yield Probe(
             f"Sign accepts byte payload {good_payload!r}",
-            context + [method_record("Sign", "0000080600030001", "K_AES_256", required={"Input": {"Data": "AA"}}, return_values=good_payload)],
+            context + [method_record("Sign", "", "C_RSA_2048", required={"Input": {"Data": "AA"}}, return_values=good_payload)],
             "PASS",
             "sign-payload-shape",
             "Sign without BufferOut may return signature bytes directly or under a byte-data payload wrapper.",

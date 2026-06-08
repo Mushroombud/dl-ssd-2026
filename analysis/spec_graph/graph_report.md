@@ -6,11 +6,11 @@ Important: candidate test links are not accepted coverage. They are review queue
 
 ## Summary
 
-- sections indexed: 1380
-- entities: 4055
+- sections indexed: 1376
+- entities: 3754
 - deterministic rules: 27
-- edges: 44007
-- sourced tests linked: 3997
+- edges: 38251
+- sourced tests linked: 3696
 - rules with at least one candidate test link: 27
 - rules with no candidate test link yet: 0
 

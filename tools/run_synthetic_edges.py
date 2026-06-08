@@ -402,6 +402,70 @@ def build_cases() -> list[Case]:
                 "host-properties-envelope-doc",
             )
         )
+    for wrapper, set_payload, get_payload in (
+        (
+            "operation",
+            {"operation": {"target": {"ComID": 1}, "command": {"HostProperties": {"MaxComPacketSize": 4096}}}},
+            {"operation": {"target": {"ComID": 2}, "command": {}}},
+        ),
+        (
+            "operationRequest",
+            {"operationRequest": {"target": {"ComID": 1}, "command": {"HostProperties": {"MaxComPacketSize": 4096}}}},
+            {"operationRequest": {"target": {"ComID": 2}, "command": {}}},
+        ),
+        (
+            "command",
+            {"command": {"ComID": 1, "HostProperties": {"MaxComPacketSize": 4096}}},
+            {"command": {"ComID": 2}},
+        ),
+        (
+            "action",
+            {"action": {"ComID": 1, "HostProperties": {"MaxComPacketSize": 4096}}},
+            {"action": {"ComID": 2}},
+        ),
+    ):
+        cases.append(
+            Case(
+                f"Wrapper setHostProperties preserves {wrapper} operation state",
+                [{"input": {"function": "setHostProperties", "kwargs": set_payload}, "output": {"return": {"HostProperties": high_host_props}}}],
+                "PASS",
+                f"{wrapper} must preserve submitted HostProperties and ComID before lowering to Session Manager Properties.",
+                "host-properties-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"Wrapper setHostProperties rejects stale {wrapper} operation state",
+                [{"input": {"function": "setHostProperties", "kwargs": set_payload}, "output": {"return": {"HostProperties": HOST_PROPS_INITIAL}}}],
+                "FAIL",
+                f"{wrapper} must not drop submitted HostProperties and accept stale defaults.",
+                "host-properties-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"Wrapper getHostProperties preserves {wrapper} operation ComID isolation",
+                [
+                    {"input": {"function": "setHostProperties", "kwargs": set_payload}, "output": {"return": {"HostProperties": high_host_props}}},
+                    {"input": {"function": "getHostProperties", "kwargs": get_payload}, "output": {"return": {"HostProperties": HOST_PROPS_INITIAL}}},
+                ],
+                "PASS",
+                f"{wrapper} getter selectors must validate the target ComID state without leaking another ComID.",
+                "host-properties-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"Wrapper getHostProperties rejects {wrapper} operation cross-ComID leak",
+                [
+                    {"input": {"function": "setHostProperties", "kwargs": set_payload}, "output": {"return": {"HostProperties": high_host_props}}},
+                    {"input": {"function": "getHostProperties", "kwargs": get_payload}, "output": {"return": {"HostProperties": high_host_props}}},
+                ],
+                "FAIL",
+                f"{wrapper} getter selectors must not accept ComID 1 values for ComID 2.",
+                "host-properties-operation-envelope-doc",
+            )
+        )
     cases.append(
         Case(
             "Wrapper getHostProperties preserves per-ComID state",
@@ -868,6 +932,35 @@ def build_cases() -> list[Case]:
             f"{wrapper} must preserve ProtocolStackReset ComID so same-ComID sessions are aborted.",
             "protocol-reset-domain-request-envelope-doc",
         )
+    for label, payload in (
+        ("operation command", {"operation": {"command": {"type": "ProtocolStackReset", "ComID": 1}}}),
+        ("operation target command", {"operation": {"target": {"ComID": 1}, "command": {"type": "ProtocolStackReset"}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"ComID": 1}, "command": {"type": "ProtocolStackReset"}}}),
+    ):
+        domain_protocol_other_comid_context = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new", extra_optional={"ComID": 2}),
+            {"input": {"function": "protocolReset", "kwargs": payload}, "output": {"return": True}},
+        ]
+        append_status_expect_success(
+            cases,
+            f"Wrapper protocolReset {label} other ComID preserves session",
+            domain_protocol_other_comid_context,
+            lambda status: set_values(C_PIN_SID, "C_PIN", {3: "preserved"}, status=status),
+            f"{label} must preserve ProtocolStackReset ComID so unrelated ComID sessions remain open.",
+            "protocol-reset-domain-request-envelope-doc",
+        )
+        domain_protocol_same_comid_context = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new", extra_optional={"ComID": 1}),
+            {"input": {"function": "protocolReset", "kwargs": payload}, "output": {"return": True}},
+        ]
+        append_status_expect_error(
+            cases,
+            f"Wrapper protocolReset {label} same ComID aborts session",
+            domain_protocol_same_comid_context,
+            lambda status: set_values(C_PIN_SID, "C_PIN", {3: "aborted"}, status=status),
+            f"{label} must preserve ProtocolStackReset ComID so same-ComID sessions are aborted.",
+            "protocol-reset-domain-request-envelope-doc",
+        )
     wrapper_startsession_context = owned_admin_context() + [
         {"input": {"function": "startSession", "args": [ADMIN_SP, "SID", "new"], "kwargs": {"write": True}}, "output": {"return": True}},
     ]
@@ -1141,6 +1234,8 @@ def build_cases() -> list[Case]:
         ("policy", {"target": "LockingSP", "credential": "new", "KeepGlobalRangeKey": True}),
         ("config", {"sp": "LockingSP", "cred": "new", "keepGlobalRangeKey": True}),
         ("request", {"sp": {"name": "LockingSP"}, "credential": {"proof": "new"}, "options": {"KeepGlobalRangeKey": True}}),
+        ("operation", {"target": "LockingSP", "command": {"credential": "new", "KeepGlobalRangeKey": True}}),
+        ("operationRequest", {"target": {"name": "LockingSP"}, "command": {"credential": {"proof": "new"}, "KeepGlobalRangeKey": True}}),
     ):
         cases.append(
             Case(
@@ -1163,6 +1258,8 @@ def build_cases() -> list[Case]:
         ("revertSpRequest", {"values": {"target": "AdminSP", "psid": "psid"}}),
         ("spRequest", {"values": {"target": "AdminSP", "psid": "psid"}}),
         ("lifecycleRequest", {"values": {"target": "AdminSP", "psid": "psid"}}),
+        ("operation", {"target": "AdminSP", "command": {"psid": "psid"}}),
+        ("operationRequest", {"target": {"name": "AdminSP"}, "command": {"credential": "psid"}}),
     ):
         cases.append(
             Case(
@@ -2336,6 +2433,10 @@ def build_cases() -> list[Case]:
         ("setPskEntry policy", {"policy": {"psk": 1, "Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301", "authAs": ("SID", "new")}}),
         ("setPskEntry config", {"config": {"psk_id": 1, "enabled": True, "secret": b"secret", "cipher_suite": "0x1301", "authAs": ("SID", "new")}}),
         ("setPskEntry request", {"request": {"target": {"psk": 1}, "state": {"Enabled": True}, "payload": {"PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
+        ("setPskEntry request target command", {"request": {"target": {"psk": 1}, "command": {"Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
+        ("setPskEntry operation target psk", {"operation": {"target": {"psk": 1}, "psk": {"Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
+        ("setPskEntry operation target preSharedKey", {"operation": {"target": {"psk": 1}, "preSharedKey": {"Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
+        ("setPskEntry config target action", {"config": {"target": {"psk": 1}, "action": {"Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
         ("setPskEntry pskRequest", {"pskRequest": {"values": {"psk": 1, "Enabled": True, "PSK": b"secret", "CipherSuite": "0x1301", "authAs": ("SID", "new")}}}),
         ("setPskEntry tlsPskRequest", {"tlsPskRequest": {"target": {"psk": 1}, "state": {"Enabled": True}, "payload": {"PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
         ("setPskEntry preSharedKeyRequest", {"preSharedKeyRequest": {"target": {"psk": 1}, "state": {"Enabled": True}, "payload": {"PSK": b"secret", "CipherSuite": "0x1301"}, "authAs": ("SID", "new")}}),
@@ -2363,17 +2464,22 @@ def build_cases() -> list[Case]:
         ("getPskEntry policy", {"policy": {"psk": 1, "authAs": ("SID", "new")}}),
         ("getPskEntry config", {"config": {"psk_id": 1, "authAs": ("SID", "new")}}),
         ("getPskEntry request", {"request": {"target": {"psk": 1}, "authAs": ("SID", "new")}}),
+        ("getPskEntry operation", {"operation": {"target": {"psk": 1}, "command": {"authAs": ("SID", "new")}}}),
+        ("getPskEntry operationRequest", {"operationRequest": {"target": {"psk": 1}, "command": {"authAs": ("SID", "new")}}}),
+        ("getPskEntry command", {"command": {"psk": 1, "authAs": ("SID", "new")}}),
+        ("getPskEntry action", {"action": {"psk": 1, "authAs": ("SID", "new")}}),
         ("getPskEntry pskRequest", {"pskRequest": {"target": {"psk": 1}, "authAs": ("SID", "new")}}),
         ("getPskEntry tlsPskRequest", {"tlsPskRequest": {"target": {"psk": 1}, "authAs": ("SID", "new")}}),
         ("getPskEntry preSharedKeyRequest", {"preSharedKeyRequest": {"target": {"psk": 1}, "authAs": ("SID", "new")}}),
     ):
+        tag = "psk-getter-operation-envelope-doc" if any(token in label for token in ("operation", "command", "action")) else "psk-policy-envelope-doc"
         cases.append(
             Case(
                 f"TCGstorageAPI {label} envelope reports current metadata",
                 psk_state_context + [{"input": {"function": "getPskEntry", "kwargs": kwargs}, "output": {"return": {"Enabled": True, "CipherSuite": "0x1301"}}}],
                 "PASS",
                 "getPskEntry policy/config/request envelopes must recover the selected TLS_PSK_Key row.",
-                "psk-policy-envelope-doc",
+                tag,
             )
         )
         cases.append(
@@ -2382,7 +2488,7 @@ def build_cases() -> list[Case]:
                 psk_state_context + [{"input": {"function": "getPskEntry", "kwargs": kwargs}, "output": {"return": {"Enabled": False, "CipherSuite": "0x1301"}}}],
                 "FAIL",
                 "A getter envelope that ignores the PSK selector leaves stale metadata accepted.",
-                "psk-policy-envelope-doc",
+                tag,
             )
         )
     cases.append(
@@ -2835,17 +2941,22 @@ def build_cases() -> list[Case]:
         ("config", {"challenge": "AABB"}),
         ("request", {"attestation": {"nonce": "AABB"}}),
         ("operation", {"input": {"nonce": "AABB"}}),
+        ("operation", {"command": {"nonce": "AABB"}}),
+        ("operationRequest", {"command": {"nonce": "AABB"}}),
+        ("command", {"nonce": "AABB"}),
+        ("action", {"nonce": "AABB"}),
         ("attestationRequest", {"values": {"nonce": "AABB"}}),
         ("firmwareRequest", {"quote": {"challenge": "AABB"}}),
         ("quoteRequest", {"input": {"nonce": "AABB"}}),
     ):
+        tag = "firmware-attestation-operation-envelope-doc" if wrapper_key in {"command", "action"} or "command" in wrapper_payload else "firmware-attestation-envelope-doc"
         cases.append(
             Case(
                 f"TCGstorageAPI firmwareAttestation {wrapper_key} envelope accepts assessor nonce",
                 [{"input": {"function": "firmwareAttestation", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": b"attestation"}}],
                 "PASS",
                 f"`FirmwareAttestation` should recover assessor nonce from structured `{wrapper_key}` envelopes.",
-                "firmware-attestation-envelope-doc",
+                tag,
             )
         )
         cases.append(
@@ -2854,7 +2965,7 @@ def build_cases() -> list[Case]:
                 [{"input": {"function": "firmwareAttestation", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": True}}],
                 "FAIL",
                 f"`FirmwareAttestation` with nonce from `{wrapper_key}` still returns attestation bytes, not Boolean success.",
-                "firmware-attestation-envelope-doc",
+                tag,
             )
         )
     for alias in (
@@ -3308,6 +3419,9 @@ def build_cases() -> list[Case]:
         ("policy request values", {"policy": {"request": {"values": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}}),
         ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}),
         ("lockingRangeRequest values", {"lockingRangeRequest": {"values": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}),
+        ("operation command", {"operation": {"command": {"rangeId": 1, "RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"rangeId": 1}, "command": {"RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"rangeId": 1}, "command": {"RangeStart": 222, "RangeLength": 7, "authAs": ("Admin1", "new")}}}),
     ):
         nested_setrange_context = activated_locking_context() + [
             function_record("setRange", [], kwargs, True),
@@ -3337,6 +3451,9 @@ def build_cases() -> list[Case]:
         ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
         ("rangeRequest values", {"rangeRequest": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
         ("lockingRangeRequest target", {"lockingRangeRequest": {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}}),
+        ("operation command", {"operation": {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}}),
     ):
         cases.append(
             Case(
@@ -3458,6 +3575,9 @@ def build_cases() -> list[Case]:
         ("lock lockingRequest values", "lockRange", {"lockingRequest": {"values": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
         ("lock rangeRequest values", "lockRange", {"rangeRequest": {"values": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
         ("lock lockingRangeRequest locks", "lockRange", {"lockingRangeRequest": {"locks": {"read": True, "write": True}, "rangeId": 1, "authAs": ("Admin1", "new")}}, True),
+        ("lock operation command", "lockRange", {"operation": {"command": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
+        ("lock operation target command", "lockRange", {"operation": {"target": {"rangeId": 1}, "command": {"read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
+        ("lock operationRequest target command", "lockRange", {"operationRequest": {"target": {"rangeId": 1}, "command": {"read": True, "write": True, "authAs": ("Admin1", "new")}}}, True),
         ("unlock request values", "unlockRange", {"request": {"values": {"rangeId": 1, "read": True, "write": True, "authAs": ("Admin1", "new")}}}, False),
     ):
         prefix = activated_locking_context()
@@ -3488,20 +3608,27 @@ def build_cases() -> list[Case]:
     for getter, good_value, stale_value in (
         ("getReadLocked", True, False),
         ("getWriteLockEnabled", True, False),
+        ("getWriteLocked", True, False),
         ("getRangeLocks", {"ReadLocked": True, "WriteLocked": True}, {"ReadLocked": False, "WriteLocked": False}),
     ):
         for label, kwargs in (
             ("request values", {"request": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
             ("policy query target", {"policy": {"query": {"target": {"rangeId": 1}}, "authAs": ("Admin1", "new")}}),
             ("config target", {"config": {"target": {"range": 1}, "authAs": ("Admin1", "new")}}),
+            ("operation command", {"operation": {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+            ("operation target command", {"operation": {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}}),
+            ("operationRequest command", {"operationRequest": {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+            ("command", {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
+            ("action", {"action": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
         ):
+            tag = "locking-column-operation-envelope-doc" if any(token in label for token in ("operation", "command", "action")) else "locking-column-nested-getter-doc"
             cases.append(
                 Case(
                     f"TCGstorageAPI {getter} {label} accepts current lock cell",
                     nested_column_getter_context + [function_record(getter, [], kwargs, good_value)],
                     "PASS",
                     "Nested Locking column getter selectors should select the tracked range row.",
-                    "locking-column-nested-getter-doc",
+                    tag,
                 )
             )
             cases.append(
@@ -3510,7 +3637,7 @@ def build_cases() -> list[Case]:
                     nested_column_getter_context + [function_record(getter, [], kwargs, stale_value)],
                     "FAIL",
                     "Losing nested Locking column getter selectors permits stale lock-state observations.",
-                    "locking-column-nested-getter-doc",
+                    tag,
                 )
             )
     symbolic_readlock_context = activated_locking_context() + [
@@ -3758,6 +3885,8 @@ def build_cases() -> list[Case]:
                 ("policy", {"authAs": ("SID", proof)}),
                 ("config", {"authority": "SID", "proof": proof}),
                 ("request", {"credential": {"auth": "SID", "proof": proof}}),
+                ("operation", {"credential": {"auth": "SID", "proof": proof}}),
+                ("operation", {"command": {"auth": "SID", "proof": proof}}),
             ):
                 cases.append(
                     Case(
@@ -3777,6 +3906,7 @@ def build_cases() -> list[Case]:
         ("activateLockingSP", "spRequest", "authAs"),
         ("takeOwnership", "ownershipRequest", "credential"),
         ("takeOwnership", "credentialRequest", "credential"),
+        ("takeOwnership", "operationRequest", "credential"),
     ):
         for proof, expected in (("new", "PASS"), ("wrong", "FAIL")):
             value = ("SID", proof) if payload_key == "authAs" else proof
@@ -3811,6 +3941,8 @@ def build_cases() -> list[Case]:
             ("policy", {"pin": proof}),
             ("config", {"credential": proof}),
             ("request", {"credential": {"pin": proof}}),
+            ("operation", {"credential": {"proof": proof}}),
+            ("operation", {"command": {"credential": proof}}),
         ):
             cases.append(
                 Case(
@@ -4980,19 +5112,22 @@ def build_cases() -> list[Case]:
         ("access identity object", {"access": {"identity": "User1", "object": "DataStore"}, "authAs": ("Admin1", "new")}),
         ("permission subject resource", {"permission": {"subject": "User1", "resource": "DataStore"}, "authAs": ("Admin1", "new")}),
         ("request access user table", {"request": {"access": {"user": "User1", "table": "DataStore"}}, "authAs": ("Admin1", "new")}),
+        ("operation target command", {"operation": {"target": {"user": "User1", "table": "DataStore"}, "command": {"authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"user": "User1", "table": "DataStore"}, "command": {"authAs": ("Admin1", "new")}}}),
     ):
         context = wrapper_values_access_context + [
             {"input": {"function": "grantDataRead", "kwargs": kwargs}, "output": {"return": True}},
             end_session(),
             start_session(LOCKING_SP, "User1", "userpin"),
         ]
+        tag = "datastore-access-operation-envelope-doc" if "operation" in label else "datastore-access-policy-envelope-doc"
         cases.append(
             Case(
                 f"TCGstorageAPI grantDataRead {label} envelope authorizes User readData",
                 context + [function_record("readData", ["User1"], {"authAs": ("User1", "userpin")}, return_value="AABB")],
                 "PASS",
                 "DataStore read-access wrappers may carry user/table selectors inside structured policy/access/permission envelopes.",
-                "datastore-access-policy-envelope-doc",
+                tag,
             )
         )
         cases.append(
@@ -5001,7 +5136,35 @@ def build_cases() -> list[Case]:
                 context + [function_record("readData", ["User1"], {"authAs": ("User1", "userpin")}, return_value=[])],
                 "FAIL",
                 "Ignoring a read-access envelope leaves User1 unauthorized and can falsely accept an empty result.",
-                "datastore-access-policy-envelope-doc",
+                tag,
+            )
+        )
+    for label, kwargs in (
+        ("operation target command", {"operation": {"target": {"user": "User1", "table": "DataStore"}, "command": {"authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"user": "User1", "table": "DataStore"}, "command": {"authAs": ("Admin1", "new")}}}),
+    ):
+        context = wrapper_values_access_context + [
+            {"input": {"function": "grantDataWrite", "kwargs": kwargs}, "output": {"return": True}},
+            end_session(),
+            start_session(LOCKING_SP, "User1", "userpin"),
+            function_record("writeData", ["User1", "CCDD"], {"authAs": ("User1", "userpin")}, return_value=True),
+        ]
+        cases.append(
+            Case(
+                f"TCGstorageAPI grantDataWrite {label} envelope authorizes User writeData",
+                context + [function_record("readData", ["Admin1"], {"authAs": ("Admin1", "new")}, return_value="CCDD")],
+                "PASS",
+                "DataStore write-access operation wrappers must update the Set ACE before a User write can mutate bytes.",
+                "datastore-access-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI grantDataWrite {label} envelope rejects stale bytes",
+                context + [function_record("readData", ["Admin1"], {"authAs": ("Admin1", "new")}, return_value="AABB")],
+                "FAIL",
+                "A missed write-access operation envelope leaves User writes unauthorized and can falsely preserve stale bytes.",
+                "datastore-access-operation-envelope-doc",
             )
         )
     for alias in ("grantDataRead", "grantUserDataRead", "grantPayloadRead", "grantUserPayloadRead", "allowDataRead", "allowPayloadRead", "allowReadAccess", "setReadAccess", "setPayloadReadAccess"):
@@ -5765,6 +5928,72 @@ def build_cases() -> list[Case]:
                 "tcgstorageapi-wrapper",
             )
         )
+    for label, kwargs in (
+        ("operation command", {"operation": {"command": {"auth": "User1", "newPin": "newpin", "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"auth": "User1"}, "command": {"newPin": "newpin", "authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"auth": "User1"}, "command": {"newPin": "newpin", "authAs": ("Admin1", "new")}}}),
+    ):
+        operation_change_context = locking_admin_open() + [
+            set_values("", "User1", {5: 1, 15: 0, 16: 0}),
+            set_values("", "C_PIN_User1", {3: "oldpin", 5: 10, 7: 0}),
+            {"input": {"function": "changePIN", "kwargs": kwargs}, "output": {"return": True}},
+        ]
+        cases.append(
+            Case(
+                f"TCGstorageAPI changePIN {label} accepts new PIN",
+                operation_change_context + [{"input": {"function": "checkPIN", "kwargs": {"user": "User1", "pin": "newpin"}}, "output": {"return": True}}],
+                "PASS",
+                "changePIN operation command envelopes must update the tracked C_PIN.PIN cell.",
+                "credential-pin-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI changePIN {label} rejects stale old PIN",
+                operation_change_context + [{"input": {"function": "checkPIN", "kwargs": {"user": "User1", "pin": "oldpin"}}, "output": {"return": True}}],
+                "FAIL",
+                "Dropping operation target/command fields leaves the old C_PIN credential active.",
+                "credential-pin-operation-envelope-doc",
+            )
+        )
+    minpin_operation_base = locking_admin_open() + [
+        set_values("", "User1", {5: 1, 15: 0, 16: 0}),
+    ]
+    for label, kwargs in (
+        ("operation command", {"operation": {"command": {"auth": "User1", "length": 6, "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"auth": "User1"}, "command": {"length": 6, "authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"auth": "User1"}, "command": {"length": 6, "authAs": ("Admin1", "new")}}}),
+    ):
+        minpin_operation_context = minpin_operation_base + [
+            {"input": {"function": "setMinPINLength", "kwargs": kwargs}, "output": {"return": True}},
+        ]
+        cases.append(
+            Case(
+                f"TCGstorageAPI setMinPINLength {label} rejects short User PIN",
+                minpin_operation_context + [{"input": {"function": "changePIN", "args": ["User1", "abc"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": True}}],
+                "FAIL",
+                "setMinPINLength operation envelopes must mutate the selected C_PIN minimum length policy.",
+                "credential-minpin-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI setMinPINLength {label} accepts current minimum getter",
+                minpin_operation_context + [{"input": {"function": "getMinPINLength", "args": ["User1"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"minimumPINLength": 6}}}],
+                "PASS",
+                "setMinPINLength operation envelopes should expose the updated C_PIN minimum length through getters.",
+                "credential-minpin-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI setMinPINLength {label} rejects stale minimum getter",
+                minpin_operation_context + [{"input": {"function": "getMinPINLength", "args": ["User1"], "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"minimumPINLength": 5}}}],
+                "FAIL",
+                "Dropping operation target/command fields leaves C_PIN._MinPINLength stale.",
+                "credential-minpin-operation-envelope-doc",
+            )
+        )
     wrapper_settrylimit_context = locking_admin_open() + [
         set_values("", "User1", {5: 1}),
         set_values("", "C_PIN_User1", {3: "userpin", 7: 1}),
@@ -6010,6 +6239,43 @@ def build_cases() -> list[Case]:
                 "tcgstorageapi-wrapper",
             )
         )
+    for setter, getter, value_key, column, expected, stale in (
+        ("setPINTries", "getTries", "tries", "Tries", 0, 1),
+        ("setPINTryLimit", "getTryLimit", "tryLimit", "TryLimit", 2, 3),
+    ):
+        operation_counter_context = locking_admin_open() + [
+            {
+                "input": {
+                    "function": setter,
+                    "kwargs": {
+                        "operation": {
+                            "target": {"user": "User1"},
+                            "command": {value_key: expected, "authAs": ("Admin1", "new")},
+                        }
+                    },
+                },
+                "output": {"return": True},
+            },
+        ]
+        operation_counter_get = {"operation": {"target": {"user": "User1"}, "command": {"authAs": ("Admin1", "new")}}}
+        cases.append(
+            Case(
+                f"TCGstorageAPI {setter}/{getter} operation target command reports current counter",
+                operation_counter_context + [{"input": {"function": getter, "kwargs": operation_counter_get}, "output": {"return": {column: expected}}}],
+                "PASS",
+                "C_PIN counter getters must preserve operation target selectors and command auth.",
+                "credential-counter-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI {setter}/{getter} operation target command rejects stale counter",
+                operation_counter_context + [{"input": {"function": getter, "kwargs": operation_counter_get}, "output": {"return": {column: stale}}}],
+                "FAIL",
+                "Dropping operation target selectors lets stale C_PIN counter observations pass.",
+                "credential-counter-operation-envelope-doc",
+            )
+        )
     for return_key in ("retryLimit", "attemptLimit", "maxAttempts", "pinAttemptLimit"):
         cases.append(
             Case(
@@ -6094,7 +6360,7 @@ def build_cases() -> list[Case]:
             )
         )
     cpin_counter_getter_context = locking_admin_open() + [
-        method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"5": 3}, {"6": 1}, {"7": 2}]}),
+        method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"5": 3}, {"6": 1}, {"7": False}]}),
     ]
     for alias, return_key, current, stale in (
         ("getRetryLimit", "TryLimit", 3, 1),
@@ -6192,6 +6458,9 @@ def build_cases() -> list[Case]:
         ("policy", {"port": "Port2", "locked": True, "authAs": ("SID", "new")}),
         ("config", {"portId": "Port2", "PortLocked": True, "authAs": ("SID", "new")}),
         ("request", {"target": {"port": "Port2"}, "state": {"locked": True}, "authAs": ("SID", "new")}),
+        ("request", {"target": {"port": "Port2"}, "command": {"locked": True}, "authAs": ("SID", "new")}),
+        ("operation", {"target": {"port": "Port2"}, "portControl": {"locked": True}, "authAs": ("SID", "new")}),
+        ("config", {"target": {"port": "Port2"}, "action": {"PortLocked": True}, "authAs": ("SID", "new")}),
         ("portRequest", {"values": {"port": "Port2", "PortLocked": True, "authAs": ("SID", "new")}}),
         ("portRequest", {"target": {"port": "Port2"}, "state": {"locked": True}, "authAs": ("SID", "new")}),
         ("adminRequest", {"port": {"portId": "Port2", "locked": True}, "authAs": ("SID", "new")}),
@@ -6227,16 +6496,21 @@ def build_cases() -> list[Case]:
             ("policy", {"port": "Port2", "authAs": ("SID", "new")}),
             ("config", {"portId": "Port2", "authAs": ("SID", "new")}),
             ("request", {"target": {"port": "Port2"}, "authAs": ("SID", "new")}),
+            ("operation", {"target": {"port": "Port2"}, "command": {"authAs": ("SID", "new")}}),
+            ("operationRequest", {"target": {"port": "Port2"}, "command": {"authAs": ("SID", "new")}}),
+            ("command", {"port": "Port2", "authAs": ("SID", "new")}),
+            ("action", {"port": "Port2", "authAs": ("SID", "new")}),
             ("portRequest", {"target": {"port": "Port2"}, "authAs": ("SID", "new")}),
             ("adminRequest", {"port": {"portId": "Port2"}, "authAs": ("SID", "new")}),
         ):
+            tag = "port-operation-envelope-doc" if wrapper_key in {"operation", "operationRequest", "command", "action"} else "port-policy-envelope-doc"
             cases.append(
                 Case(
                     f"TCGstorageAPI {alias} {wrapper_key} envelope reports current PortLocked",
                     port_getter_context + [{"input": {"function": alias, "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": current}}],
                     "PASS",
                     f"`{alias}` should recover the selected Port row from a structured `{wrapper_key}` envelope.",
-                    "port-policy-envelope-doc",
+                    tag,
                 )
             )
             cases.append(
@@ -6245,7 +6519,7 @@ def build_cases() -> list[Case]:
                     port_getter_context + [{"input": {"function": alias, "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": stale}}],
                     "FAIL",
                     f"`{alias}` must not ignore the Port selector in `{wrapper_key}`.",
-                    "port-policy-envelope-doc",
+                    tag,
                 )
             )
     wrapper_checkpin_before_limit_context = locking_admin_open() + [
@@ -10515,7 +10789,10 @@ def build_cases() -> list[Case]:
             ("rangeRequest", {"values": {"rangeId": 2, "authAs": ("Admin1", "new")}}),
             ("keyRequest", {"target": {"rangeId": 2}, "authAs": ("Admin1", "new")}),
             ("lockingRangeRequest", {"key": {"rangeId": 2}, "authAs": ("Admin1", "new")}),
+            ("operation", {"target": {"rangeId": 2}, "command": {"authAs": ("Admin1", "new")}}),
+            ("operationRequest", {"target": {"rangeId": 2}, "command": {"authAs": ("Admin1", "new")}}),
         ):
+            tag = "getmek-operation-envelope-doc" if "operation" in envelope_name else "getmek-policy-envelope-doc"
             cases.append(
                 Case(
                     f"TCGstorageAPI {function_name} {envelope_name} envelope preserves Range2 ActiveKey",
@@ -10528,7 +10805,7 @@ def build_cases() -> list[Case]:
                     ],
                     "PASS",
                     "Policy/config/request wrappers for media-key reads must preserve the selected Locking range.",
-                    "getmek-policy-envelope-doc",
+                    tag,
                 )
             )
             cases.append(
@@ -10543,7 +10820,7 @@ def build_cases() -> list[Case]:
                     ],
                     "FAIL",
                     "A Range2 media-key query cannot be satisfied by stale Range1 ActiveKey state, even through nested wrapper envelopes.",
-                    "getmek-policy-envelope-doc",
+                    tag,
                 )
             )
     wrapper_enabled_authority_context = activated_locking_context() + [
@@ -10843,6 +11120,35 @@ def build_cases() -> list[Case]:
                     "FAIL",
                     "Deep Authority getter request envelopes must not fall back to the wrong authority.",
                     "authority-getter-deep-envelope-doc",
+                )
+            )
+    authority_operation_disabled_context = activated_locking_context() + [
+        start_session(LOCKING_SP, ADMIN1, "new"),
+        function_record("enableAuthority", ["User1", False], {"authAs": ("Admin1", "new")}, return_value=True),
+    ]
+    for function_name in ("getAuthority", "isUserEnabled", "getUserEnabled", "getAuthorityEnabled"):
+        for label, kwargs in (
+            ("operation", {"operation": {"target": {"identity": "User1"}, "command": {"authAs": ("Admin1", "new")}}}),
+            ("operationRequest", {"operationRequest": {"target": {"identity": "User1"}, "command": {"authAs": ("Admin1", "new")}}}),
+            ("command", {"command": {"identity": "User1", "authAs": ("Admin1", "new")}}),
+            ("action", {"action": {"identity": "User1", "authAs": ("Admin1", "new")}}),
+        ):
+            cases.append(
+                Case(
+                    f"TCGstorageAPI {function_name} {label} envelope returns disabled authority state",
+                    authority_operation_disabled_context + [function_record(function_name, [], kwargs, return_value=False)],
+                    "PASS",
+                    "Authority.Enabled getter operation envelopes must preserve the selected Authority row.",
+                    "authority-enabled-operation-envelope-doc",
+                )
+            )
+            cases.append(
+                Case(
+                    f"TCGstorageAPI {function_name} {label} envelope rejects stale enabled authority state",
+                    authority_operation_disabled_context + [function_record(function_name, [], kwargs, return_value=True)],
+                    "FAIL",
+                    "Authority.Enabled getter operation envelopes must not fall back to an untracked/default authority.",
+                    "authority-enabled-operation-envelope-doc",
                 )
             )
     for alias in ("activateAuthority", "activateUser"):
@@ -11284,16 +11590,21 @@ def build_cases() -> list[Case]:
         ("config", {"length": 8}),
         ("request", {"random": {"bytes": 8}}),
         ("operation", {"count": 8}),
+        ("operation", {"command": {"count": 8}}),
+        ("operationRequest", {"command": {"count": 8}}),
+        ("command", {"count": 8}),
+        ("action", {"count": 8}),
         ("randomRequest", {"values": {"count": 8}}),
         ("rngRequest", {"values": {"bytes": 8}}),
     ):
+        tag = "random-operation-envelope-doc" if wrapper_key in {"command", "action"} or "command" in wrapper_payload else "random-envelope-doc"
         cases.append(
             Case(
                 f"TCGstorageAPI getRandomBytes {wrapper_key} count envelope accepts requested output",
                 [{"input": {"function": "getRandomBytes", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": "AABBCCDDEEFF0011"}}],
                 "PASS",
                 f"`getRandomBytes` should recover Count from structured `{wrapper_key}` envelopes.",
-                "random-envelope-doc",
+                tag,
             )
         )
         cases.append(
@@ -11302,7 +11613,7 @@ def build_cases() -> list[Case]:
                 [{"input": {"function": "getRandomBytes", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": "AABB"}}],
                 "FAIL",
                 f"`getRandomBytes` must enforce Count recovered from `{wrapper_key}`.",
-                "random-envelope-doc",
+                tag,
             )
         )
     random_envelope_buffer_out = {"CellBlock": {"Table": "DataStore", "startRow": 4, "endRow": 11}}
@@ -11317,7 +11628,7 @@ def build_cases() -> list[Case]:
         cases.append(
             Case(
                 f"TCGstorageAPI getRandomBytes {wrapper_key} BufferOut envelope returns empty result",
-                [{"input": {"function": "getRandomBytes", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": []}}],
+                locking_admin_open() + [{"input": {"function": "getRandomBytes", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": []}}],
                 "PASS",
                 f"`Random` with BufferOut in `{wrapper_key}` stores generated bytes and returns an empty result.",
                 "random-envelope-doc",
@@ -11326,7 +11637,7 @@ def build_cases() -> list[Case]:
         cases.append(
             Case(
                 f"TCGstorageAPI getRandomBytes {wrapper_key} BufferOut envelope rejects returned bytes",
-                [{"input": {"function": "getRandomBytes", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": "AABBCCDDEEFF0011"}}],
+                locking_admin_open() + [{"input": {"function": "getRandomBytes", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": "AABBCCDDEEFF0011"}}],
                 "FAIL",
                 f"`Random` must not return generated bytes when BufferOut is supplied through `{wrapper_key}`.",
                 "random-envelope-doc",
@@ -11369,7 +11680,7 @@ def build_cases() -> list[Case]:
         cases.append(
             Case(
                 f"TCGstorageAPI getRandomBytes deep {chain_name} BufferOut envelope returns empty result",
-                [{"input": {"function": "getRandomBytes", "kwargs": buffer_kwargs}, "output": {"return": []}}],
+                locking_admin_open() + [{"input": {"function": "getRandomBytes", "kwargs": buffer_kwargs}, "output": {"return": []}}],
                 "PASS",
                 "Deep `Random` BufferOut envelopes should return an empty result.",
                 "random-deep-envelope-doc",
@@ -11378,7 +11689,7 @@ def build_cases() -> list[Case]:
         cases.append(
             Case(
                 f"TCGstorageAPI getRandomBytes deep {chain_name} BufferOut envelope rejects returned bytes",
-                [{"input": {"function": "getRandomBytes", "kwargs": buffer_kwargs}, "output": {"return": "AABBCCDDEEFF0011"}}],
+                locking_admin_open() + [{"input": {"function": "getRandomBytes", "kwargs": buffer_kwargs}, "output": {"return": "AABBCCDDEEFF0011"}}],
                 "FAIL",
                 "Deep `Random` BufferOut envelopes must not also return generated bytes.",
                 "random-deep-envelope-doc",
@@ -11414,7 +11725,8 @@ def build_cases() -> list[Case]:
     cases.append(
         Case(
             "TCGstorageAPI randomBytes BufferOut accepts empty result",
-            [
+            locking_admin_open()
+            + [
                 {
                     "input": {"function": "randomBytes", "kwargs": {"length": 16, "BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 15}}}},
                     "output": {"return": []},
@@ -11428,7 +11740,8 @@ def build_cases() -> list[Case]:
     cases.append(
         Case(
             "TCGstorageAPI randomBytes BufferOut rejects scalar non-empty result",
-            [
+            locking_admin_open()
+            + [
                 {
                     "input": {"function": "randomBytes", "kwargs": {"length": 16, "BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 15}}}},
                     "output": {"return": 1},
@@ -11442,7 +11755,8 @@ def build_cases() -> list[Case]:
     cases.append(
         Case(
             "TCGstorageAPI randomBytes BufferOut rejects returned bytes",
-            [
+            locking_admin_open()
+            + [
                 {
                     "input": {"function": "randomBytes", "kwargs": {"length": 16, "BufferOut": {"CellBlock": {"Table": "DataStore", "startRow": 0, "endRow": 15}}}},
                     "output": {"return": bytes(range(16))},
@@ -11465,7 +11779,8 @@ def build_cases() -> list[Case]:
     cases.append(
         Case(
             "TCGstorageAPI getRandomBytes output alias accepts empty result",
-            [
+            locking_admin_open()
+            + [
                 {
                     "input": {"function": "getRandomBytes", "kwargs": {"count": 8, "output": {"CellBlock": {"Table": "DataStore", "startRow": 4, "endRow": 11}}}},
                     "output": {"return": []},
@@ -11906,6 +12221,7 @@ def build_cases() -> list[Case]:
             ("policy", {"range": 1, "authAs": ("Admin1", "new")}),
             ("config", {"target": "K_AES_256_Range1_Key", "authAs": ("Admin1", "new")}),
             ("request", {"target": {"range": 1}, "credential": {"auth": "Admin1", "proof": "new"}}),
+            ("operation", {"target": {"range": 1}, "command": {"authAs": ("Admin1", "new")}}),
             ("lockingRequest", {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
             ("rangeRequest", {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
             ("keyRequest", {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}),
@@ -12149,6 +12465,7 @@ def build_cases() -> list[Case]:
             ("policy", {"range": 1, "authAs": "EraseMaster"}),
             ("config", {"target": "Locking_Range1", "authAs": "EraseMaster"}),
             ("request", {"target": {"range": 1}, "credential": {"auth": "EraseMaster"}}),
+            ("operation", {"target": {"range": 1}, "command": {"authAs": "EraseMaster"}}),
             ("eraseRequest", {"target": {"rangeId": 1}, "authAs": "EraseMaster"}),
             ("lockingRangeRequest", {"erase": {"rangeId": 1}, "authAs": "EraseMaster"}),
         ):
@@ -12261,6 +12578,35 @@ def build_cases() -> list[Case]:
             "tcgstorageapi-wrapper",
         )
     )
+    for label, kwargs in (
+        ("operation command", {"operation": {"command": {"offset": 10, "bytes": "AABB", "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"table": "MBR"}, "command": {"offset": 10, "bytes": "AABB", "authAs": ("Admin1", "new")}}}),
+        ("operationRequest command", {"operationRequest": {"command": {"offset": 10, "bytes": "AABB", "authAs": ("Admin1", "new")}}}),
+        ("command", {"command": {"offset": 10, "bytes": "AABB", "authAs": ("Admin1", "new")}}),
+        ("action", {"action": {"offset": 10, "bytes": "AABB", "authAs": ("Admin1", "new")}}),
+    ):
+        mbr_set_context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            {"input": {"function": "setMBR", "kwargs": kwargs}, "output": {"return": True}},
+        ]
+        cases.append(
+            Case(
+                f"TCGstorageAPI setMBR {label} writes current bytes",
+                mbr_set_context + [{"input": {"function": "readMBR", "kwargs": {"offset": 10, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "AABB"}}],
+                "PASS",
+                "setMBR operation-style byte envelopes must mutate the MBR byte table.",
+                "mbr-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI setMBR {label} rejects stale bytes",
+                mbr_set_context + [{"input": {"function": "readMBR", "kwargs": {"offset": 10, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": "0000"}}],
+                "FAIL",
+                "Ignoring setMBR operation-style byte envelopes leaves stale MBR bytes accepted.",
+                "mbr-operation-envelope-doc",
+            )
+        )
     mbr_byte_repr_context = activated_locking_context() + [
         start_session(LOCKING_SP, ADMIN1, "new"),
         {
@@ -12310,6 +12656,9 @@ def build_cases() -> list[Case]:
         ("request values window", {"request": {"values": {"window": {"offset": 4, "length": 3}, "bytes": "AABBCC"}}}, {"window": {"offset": 4, "length": 3}}),
         ("mbrRequest values window", {"mbrRequest": {"values": {"offset": 4, "length": 3, "bytes": "AABBCC"}}}, {"mbrRequest": {"window": {"offset": 4, "length": 3}}}),
         ("mbrShadowRequest byteTableRequest window", {"mbrShadowRequest": {"values": {"offset": 4, "length": 3, "bytes": "AABBCC"}}}, {"byteTableRequest": {"window": {"offset": 4, "length": 3}}}),
+        ("operation command", {"operation": {"command": {"offset": 4, "length": 3, "bytes": "AABBCC"}}}, {"operation": {"command": {"offset": 4, "length": 3}}}),
+        ("operation target command", {"operation": {"target": {"offset": 4, "length": 3}, "command": {"bytes": "AABBCC"}}}, {"operation": {"target": {"offset": 4, "length": 3}, "command": {}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"offset": 4, "length": 3}, "command": {"bytes": "AABBCC"}}}, {"operationRequest": {"target": {"offset": 4, "length": 3}, "command": {}}}),
     ):
         tag = "mbr-nested-window-envelope-doc" if " " in label else "mbr-window-envelope-doc"
         mbr_envelope_context = activated_locking_context() + [
@@ -12666,6 +13015,11 @@ def build_cases() -> list[Case]:
         ("config", {"config": {"enabled": True, "done": True, "doneOnReset": [1]}, "authAs": ("Admin1", "new")}),
         ("state", {"state": {"MBREnable": True, "MBRDone": True, "MBRDoneOnReset": [1]}, "authAs": ("Admin1", "new")}),
         ("control", {"control": {"Enabled": True, "Done": True, "DoneOnReset": [1]}, "authAs": ("Admin1", "new")}),
+        ("setMBR operation command", {"operation": {"command": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}}),
+        ("setMBR operation target command", {"operation": {"target": {"table": "MBRControl"}, "command": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}}),
+        ("setMBR operationRequest command", {"operationRequest": {"command": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}}),
+        ("setMBR command", {"command": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}),
+        ("setMBR action", {"action": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}),
         ("request policy", {"request": {"policy": {"enabled": True, "done": True, "resetTypes": [1]}}, "authAs": ("Admin1", "new")}),
         ("mbrControlRequest", {"mbrControlRequest": {"values": {"Enabled": True, "Done": True, "DoneOnReset": [1], "authAs": ("Admin1", "new")}}}),
         ("mbrRequest", {"mbrRequest": {"control": {"enabled": True, "done": True, "doneOnReset": [1]}, "authAs": ("Admin1", "new")}}),
@@ -12673,15 +13027,16 @@ def build_cases() -> list[Case]:
     ):
         envelope_context = activated_locking_context() + [
             start_session(LOCKING_SP, ADMIN1, "new"),
-            {"input": {"function": "setMBRControl", "kwargs": kwargs}, "output": {"return": True}},
+            {"input": {"function": "setMBR" if label.startswith("setMBR ") else "setMBRControl", "kwargs": kwargs}, "output": {"return": True}},
         ]
+        tag = "mbr-operation-envelope-doc" if label.startswith("setMBR ") else "mbrcontrol-policy-envelope-doc"
         cases.append(
             Case(
                 f"TCGstorageAPI setMBRControl {label} envelope updates cells",
                 envelope_context + [{"input": {"function": "readMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Enabled": True, "Done": True, "DoneOnReset": [1]}}}],
                 "PASS",
                 "MBRControl wrappers may carry official cells inside bounded policy/config/state/control envelopes.",
-                "mbrcontrol-policy-envelope-doc",
+                tag,
             )
         )
         cases.append(
@@ -12690,7 +13045,7 @@ def build_cases() -> list[Case]:
                 envelope_context + [{"input": {"function": "readMBRControl", "kwargs": {"authAs": ("Admin1", "new")}}, "output": {"return": {"Enabled": False, "Done": False, "DoneOnReset": [0]}}}],
                 "FAIL",
                 "Ignoring the MBRControl envelope leaves stale Enabled/Done/DoneOnReset state accepted.",
-                "mbrcontrol-policy-envelope-doc",
+                tag,
             )
         )
     for label, kwargs in (
@@ -15480,6 +15835,88 @@ def build_cases() -> list[Case]:
                 "authenticate-domain-request-envelope-doc",
             )
         )
+    for label, kwargs in (
+        ("operation command", {"operation": {"command": {"auth": "Admin1", "proof": "new"}}}),
+        ("operation target command", {"operation": {"target": {"auth": "Admin1"}, "command": {"proof": "new"}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"auth": "Admin1"}, "command": {"proof": "new"}}}),
+    ):
+        wrong_kwargs = {
+            key: {
+                **value,
+                "command": {**value.get("command", {}), "proof": "wrong"},
+            }
+            for key, value in kwargs.items()
+        }
+        cases.append(
+            Case(
+                f"TCGstorageAPI authenticate {label} accepts correct proof",
+                high_level_auth_context + [{"input": {"function": "authenticate", "kwargs": kwargs}, "output": {"return": True}}],
+                "PASS",
+                "Authenticate operation command envelopes must preserve authority/proof semantics.",
+                "authenticate-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI authenticate {label} accepts wrong false",
+                high_level_auth_context + [{"input": {"function": "authenticate", "kwargs": wrong_kwargs}, "output": {"return": False}}],
+                "PASS",
+                "Wrong credentials are represented as method SUCCESS with a false Boolean result through operation envelopes.",
+                "authenticate-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI authenticate {label} rejects wrong true",
+                high_level_auth_context + [{"input": {"function": "authenticate", "kwargs": wrong_kwargs}, "output": {"return": True}}],
+                "FAIL",
+                "Authenticate operation envelopes must not hide a true result for a wrong proof.",
+                "authenticate-operation-envelope-doc",
+            )
+        )
+    check_operation_context = activated_locking_context() + [
+        method_record("Set", "0000000900030001", "Authority", optional={"Values": [{"5": 1}]}),
+        method_record("Set", "0000000B00030001", "C_PIN", optional={"Values": [{"3": "userpin"}]}),
+    ]
+    for label, kwargs in (
+        ("operation command", {"operation": {"command": {"auth": "User1", "pin": "userpin"}}}),
+        ("operation target command", {"operation": {"target": {"auth": "User1"}, "command": {"pin": "userpin"}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"auth": "User1"}, "command": {"pin": "userpin"}}}),
+    ):
+        wrong_kwargs = {
+            key: {
+                **value,
+                "command": {**value.get("command", {}), "pin": "wrong"},
+            }
+            for key, value in kwargs.items()
+        }
+        cases.append(
+            Case(
+                f"TCGstorageAPI checkPIN {label} accepts correct PIN",
+                check_operation_context + [{"input": {"function": "checkPIN", "kwargs": kwargs}, "output": {"return": True}}],
+                "PASS",
+                "checkPIN operation command envelopes must preserve authority/PIN semantics.",
+                "checkpin-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI checkPIN {label} accepts wrong false",
+                check_operation_context + [{"input": {"function": "checkPIN", "kwargs": wrong_kwargs}, "output": {"return": False}}],
+                "PASS",
+                "Wrong checkPIN credentials are represented as method SUCCESS with a false Boolean result through operation envelopes.",
+                "checkpin-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI checkPIN {label} rejects wrong true",
+                check_operation_context + [{"input": {"function": "checkPIN", "kwargs": wrong_kwargs}, "output": {"return": True}}],
+                "FAIL",
+                "checkPIN operation envelopes must not hide a true result for a wrong PIN.",
+                "checkpin-operation-envelope-doc",
+            )
+        )
     call_getrange_context = locking_admin_open() + [
         {"input": {"function": "setRange", "args": [1, 120, 8], "kwargs": {"authAs": "Admin1"}}, "output": {"return": True}},
     ]
@@ -15980,6 +16417,9 @@ def build_cases() -> list[Case]:
         ("policy range", {"policy": {"range": {"start": 4, "count": 3}, "data": "AABBCC"}}, {"request": {"values": {"window": {"offset": 4, "length": 3}}}}),
         ("config slice", {"config": {"slice": {"startOffset": 4, "byteCount": 3}, "payload": "AABBCC"}}, {"range": {"start": 4, "count": 3}}),
         ("request values window", {"request": {"values": {"window": {"offset": 4, "length": 3}, "bytes": "AABBCC"}}}, {"window": {"offset": 4, "length": 3}}),
+        ("operation command", {"operation": {"command": {"offset": 4, "length": 3, "bytes": "AABBCC", "authAs": ("Admin1", "new")}}}, {"operation": {"command": {"offset": 4, "length": 3, "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"offset": 4, "length": 3}, "command": {"bytes": "AABBCC", "authAs": ("Admin1", "new")}}}, {"operation": {"target": {"offset": 4, "length": 3}, "command": {"authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"offset": 4, "length": 3}, "command": {"bytes": "AABBCC", "authAs": ("Admin1", "new")}}}, {"operationRequest": {"target": {"offset": 4, "length": 3}, "command": {"authAs": ("Admin1", "new")}}}),
     ):
         tag = "datastore-nested-window-envelope-doc" if " " in label else "datastore-window-envelope-doc"
         datastore_envelope_context = locking_admin_open() + [
@@ -16819,6 +17259,34 @@ def build_cases() -> list[Case]:
                 "parser-representation",
             )
         )
+    authority_counter_operation_context = locking_admin_open() + [
+        set_values("", "Authority_User1", {15: 2}),
+        set_values("", "Authority_User1", {16: 3}),
+    ]
+    for getter, return_key, current, stale in (
+        ("getAuthorityLimit", "Limit", 2, 0),
+        ("getAuthorityUses", "Uses", 3, 0),
+    ):
+        for wrapper_key in ("operation", "operationRequest"):
+            kwargs = {wrapper_key: {"target": {"identity": "User1"}, "command": {"authAs": ("Admin1", "new")}}}
+            cases.append(
+                Case(
+                    f"TCGstorageAPI {getter} {wrapper_key} envelope reports current {return_key}",
+                    authority_counter_operation_context + [{"input": {"function": getter, "kwargs": kwargs}, "output": {"return": {return_key: current}}}],
+                    "PASS",
+                    f"`{getter}` may encode the Authority selector under {wrapper_key}.target and auth under {wrapper_key}.command.",
+                    "authority-counter-operation-envelope-doc",
+                )
+            )
+            cases.append(
+                Case(
+                    f"TCGstorageAPI {getter} {wrapper_key} envelope rejects stale {return_key}",
+                    authority_counter_operation_context + [{"input": {"function": getter, "kwargs": kwargs}, "output": {"return": {return_key: stale}}}],
+                    "FAIL",
+                    f"`{getter}` must not ignore the Authority selector in {wrapper_key}.target.",
+                    "authority-counter-operation-envelope-doc",
+                )
+            )
     authority_uses_getter_context = locking_admin_open() + [
         {"input": {"function": "setUserUses", "kwargs": {"identity": "User1", "uses": 2, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
     ]
@@ -17328,6 +17796,9 @@ def build_cases() -> list[Case]:
         ("request values", {"request": {"values": {"Enabled": True, "Done": False, "DoneOnReset": [0], "authAs": ("Admin1", "new")}}}),
         ("policy request values", {"policy": {"request": {"values": {"MBREnable": True, "MBRDone": False, "DoneOnReset": [0], "authAs": ("Admin1", "new")}}}}),
         ("config mbrcontrol", {"config": {"mbrControl": {"enabled": True, "done": False, "doneOnReset": [0]}, "authAs": ("Admin1", "new")}}),
+        ("request target command", {"request": {"target": {"table": "MBRControl"}, "command": {"Enabled": True, "Done": False, "DoneOnReset": [0]}, "authAs": ("Admin1", "new")}}),
+        ("operation target control", {"operation": {"target": {"table": "MBRControl"}, "mbrControl": {"Enabled": True, "Done": False, "DoneOnReset": [0]}, "authAs": ("Admin1", "new")}}),
+        ("config target action", {"config": {"target": {"table": "MBRControl"}, "action": {"Enabled": True, "Done": False, "DoneOnReset": [0]}, "authAs": ("Admin1", "new")}}),
     ):
         context = locking_admin_open() + [
             {"input": {"function": "setMBRControl", "kwargs": kwargs}, "output": {"return": True}},
@@ -17575,8 +18046,11 @@ def build_cases() -> list[Case]:
         ("request values", "request", {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
         ("query", "query", {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}),
         ("policy query target", "policy", {"query": {"target": {"rangeId": 1}}, "authAs": ("Admin1", "new")}),
+        ("operation command", "operation", {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
+        ("operation target command", "operation", {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}),
+        ("operationRequest target command", "operationRequest", {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}),
     ):
-        tag = "reencrypt-nested-envelope-doc" if " " in label else "reencrypt-getter-envelope-doc"
+        tag = "reencrypt-operation-envelope-doc" if "operation" in label else "reencrypt-nested-envelope-doc" if " " in label else "reencrypt-getter-envelope-doc"
         cases.append(
             Case(
                 f"TCGstorageAPI getReEncryptStatus {label} envelope reads pending state",
@@ -17812,14 +18286,18 @@ def build_cases() -> list[Case]:
             ("config", {"range": 1, "authAs": ("Admin1", "new")}),
             ("request", {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}),
             ("query", {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}),
+            ("operation", {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
+            ("operation", {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}),
+            ("operationRequest", {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}),
         ):
+            tag = "locking-column-operation-envelope-doc" if wrapper_key in {"operation", "operationRequest"} else "locking-column-getter-envelope-doc"
             cases.append(
                 Case(
                     f"TCGstorageAPI {alias} {wrapper_key} envelope reads tracked {column_name}",
                     locking_column_getter_context + [function_record(alias, [], {wrapper_key: wrapper_payload}, {column_name: good})],
                     "PASS",
                     f"`{alias}` should read the range selector from a structured `{wrapper_key}` envelope.",
-                    "locking-column-getter-envelope-doc",
+                    tag,
                 )
             )
             cases.append(
@@ -17828,7 +18306,7 @@ def build_cases() -> list[Case]:
                     locking_column_getter_context + [function_record(alias, [], {wrapper_key: wrapper_payload}, {column_name: stale})],
                     "FAIL",
                     f"`{alias}` must not ignore a structured `{wrapper_key}` range selector.",
-                    "locking-column-getter-envelope-doc",
+                    tag,
                 )
             )
     for alias, return_key, good, stale, column_name in (
@@ -18012,7 +18490,7 @@ def build_cases() -> list[Case]:
                 "parser-representation",
             )
         )
-    for alias in ("retIdle", "returnIdle", "returnToIdle", "stopReEncrypt", "cancelReEncrypt"):
+    for alias in ("retIdle", "returnIdle", "returnToIdle", "returnReEncryptIdle", "returnReEncryptionIdle", "stopReEncrypt", "cancelReEncrypt"):
         alias_retidle_context = locking_admin_open() + [
             method_record("Get", LOCKING_RANGE1, "Locking", return_values=[[{"12": "PAUSED"}]]),
             {"input": {"function": alias, "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": True}},
@@ -18036,12 +18514,44 @@ def build_cases() -> list[Case]:
             )
         )
     for label, kwargs in (
+        ("operation command", {"operation": {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}}),
+        ("operationRequest command", {"operationRequest": {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
+        ("command", {"command": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
+        ("action", {"action": {"rangeId": 1, "authAs": ("Admin1", "new")}}),
+    ):
+        alias_retidle_context = locking_admin_open() + [
+            method_record("Get", LOCKING_RANGE1, "Locking", return_values=[[{"12": "PAUSED"}]]),
+            {"input": {"function": "returnReEncryptIdle", "kwargs": kwargs}, "output": {"return": True}},
+        ]
+        cases.append(
+            Case(
+                f"TCGstorageAPI returnReEncryptIdle {label} returns paused reencrypt to idle",
+                alias_retidle_context + [{"input": {"function": "getReEncryptStatus", "kwargs": kwargs}, "output": {"return": {"ReEncryptState": "IDLE"}}}],
+                "PASS",
+                "`returnReEncryptIdle` operation envelopes must lower to RETIDLE_req on the selected range.",
+                "reencrypt-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI returnReEncryptIdle {label} rejects stale paused state",
+                alias_retidle_context + [{"input": {"function": "getReEncryptStatus", "kwargs": kwargs}, "output": {"return": {"ReEncryptState": "PAUSED"}}}],
+                "FAIL",
+                "Ignoring the returnReEncryptIdle operation envelope leaves stale ReEncryptState accepted.",
+                "reencrypt-operation-envelope-doc",
+            )
+        )
+    for label, kwargs in (
         ("policy", {"policy": {"rangeId": 1, "request": "START_req"}, "authAs": ("Admin1", "new")}),
         ("config", {"config": {"band": 1, "reencryptRequest": "START_req"}, "authAs": ("Admin1", "new")}),
         ("request", {"request": {"reencrypt": {"range": 1, "request": "START_req"}}, "authAs": ("Admin1", "new")}),
         ("request values", {"request": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}),
         ("policy request values", {"policy": {"request": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}}),
         ("config target request", {"config": {"target": {"range": 1}, "request": {"value": "START_req"}, "authAs": ("Admin1", "new")}}),
+        ("request target command", {"request": {"target": {"rangeId": 1}, "command": {"ReEncryptRequest": "START_req"}, "authAs": ("Admin1", "new")}}),
+        ("operation target reencrypt", {"operation": {"target": {"rangeId": 1}, "reencrypt": {"request": "START_req"}, "authAs": ("Admin1", "new")}}),
+        ("config target action", {"config": {"target": {"range": 1}, "action": "START_req", "authAs": ("Admin1", "new")}}),
         ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}),
         ("rangeRequest values", {"rangeRequest": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}),
         ("reencryptRequest values", {"reencryptRequest": {"values": {"rangeId": 1, "ReEncryptRequest": "START_req", "authAs": ("Admin1", "new")}}}),
@@ -18360,6 +18870,10 @@ def build_cases() -> list[Case]:
         ("request values", {"request": {"values": {"ActiveDataRemovalMechanism": 2, "authAs": ("SID", "new")}}}),
         ("policy request values", {"policy": {"request": {"values": {"mechanism": 2, "authAs": ("SID", "new")}}}}),
         ("request activeDataRemoval", {"request": {"activeDataRemoval": {"mechanism": 2}}, "authAs": ("SID", "new")}),
+        ("request target command", {"request": {"target": {"table": "DataRemovalMechanism"}, "command": {"ActiveDataRemovalMechanism": 2}, "authAs": ("SID", "new")}}),
+        ("operation target removal", {"operation": {"target": {"table": "DataRemovalMechanism"}, "dataRemoval": {"mechanism": 2}, "authAs": ("SID", "new")}}),
+        ("config target action", {"config": {"target": {"table": "DataRemovalMechanism"}, "action": 2, "authAs": ("SID", "new")}}),
+        ("policy operation active", {"policy": {"operation": {"activeDataRemoval": {"mechanism": 2}}, "authAs": ("SID", "new")}}),
         ("dataRemovalRequest values", {"dataRemovalRequest": {"values": {"mechanism": 2, "authAs": ("SID", "new")}}}),
         ("removalRequest values", {"removalRequest": {"values": {"mechanism": 2, "authAs": ("SID", "new")}}}),
         ("adminRequest values", {"adminRequest": {"values": {"mechanism": 2, "authAs": ("SID", "new")}}}),
@@ -18384,6 +18898,34 @@ def build_cases() -> list[Case]:
                 "FAIL",
                 "Ignoring a DataRemovalMechanism envelope permits stale active mechanism observations.",
                 "data-removal-nested-envelope-doc" if " " in label else "data-removal-policy-envelope-doc",
+            )
+        )
+    data_removal_operation_set = {"operation": {"target": {"table": "DataRemovalMechanism"}, "command": {"ActiveDataRemovalMechanism": 2, "authAs": ("SID", "new")}}}
+    for label, get_kwargs in (
+        ("operation", {"operation": {"target": {"table": "DataRemovalMechanism"}, "command": {"authAs": ("SID", "new")}}}),
+        ("operationRequest", {"operationRequest": {"target": {"table": "DataRemovalMechanism"}, "command": {"authAs": ("SID", "new")}}}),
+        ("command", {"command": {"authAs": ("SID", "new")}}),
+        ("action", {"action": {"authAs": ("SID", "new")}}),
+    ):
+        context = owned_admin_context() + [
+            {"input": {"function": "setDataRemovalMechanism", "kwargs": data_removal_operation_set}, "output": {"return": True}},
+        ]
+        cases.append(
+            Case(
+                f"TCGstorageAPI getDataRemovalMechanism {label} envelope reports current mechanism",
+                context + [{"input": {"function": "getDataRemovalMechanism", "kwargs": get_kwargs}, "output": {"return": {"ActiveDataRemovalMechanism": 2}}}],
+                "PASS",
+                "DataRemovalMechanism operation-style getters must preserve wrapper auth and must not treat target.table as a CellBlock Table component.",
+                "data-removal-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI getDataRemovalMechanism {label} envelope rejects stale mechanism",
+                context + [{"input": {"function": "getDataRemovalMechanism", "kwargs": get_kwargs}, "output": {"return": {"ActiveDataRemovalMechanism": 1}}}],
+                "FAIL",
+                "Operation-style DataRemovalMechanism getters must compare against tracked ActiveDataRemovalMechanism state.",
+                "data-removal-operation-envelope-doc",
             )
         )
     official_data_removal_context = owned_admin_context() + [
@@ -19083,6 +19625,51 @@ def build_cases() -> list[Case]:
             "accesscontrol-nested-mutation-doc",
         )
     )
+    for label, payload in (
+        ("operation command", {"operation": {"command": {"object": "Locking_Range1", "method": "Get", "ace": "0000000000039000", "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"object": "Locking_Range1", "method": "Get"}, "command": {"ace": "0000000000039000", "authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"object": "Locking_Range1", "method": "Get"}, "command": {"ace": "0000000000039000", "authAs": ("Admin1", "new")}}}),
+    ):
+        remove_operation_context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            function_record(
+                "addACE",
+                [],
+                {"object": "Locking_Range1", "method": "Get", "ace": "0000000000039000", "authAs": ("Admin1", "new")},
+                True,
+            ),
+            function_record("removeACE", [], payload, True),
+        ]
+        cases.append(
+            Case(
+                f"TCGstorageAPI removeACE {label} removes ACE from later getACL",
+                remove_operation_context
+                + [
+                    {
+                        "input": {"function": "getACL", "kwargs": {"required": {"object": "Locking_Range1", "method": "Get"}, "authAs": ("Admin1", "new")}},
+                        "output": {"return": {"ACL": ["0000000000000003", "000000000003D001"]}},
+                    }
+                ],
+                "PASS",
+                "RemoveACE operation envelopes must preserve object, method, and ACE arguments.",
+                "accesscontrol-nested-mutation-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI removeACE {label} rejects retained removed ACE",
+                remove_operation_context
+                + [
+                    {
+                        "input": {"function": "getACL", "kwargs": {"required": {"object": "Locking_Range1", "method": "Get"}, "authAs": ("Admin1", "new")}},
+                        "output": {"return": {"ACL": ["0000000000000003", "000000000003D001", "0000000000039000"]}},
+                    }
+                ],
+                "FAIL",
+                "After operation-envelope RemoveACE succeeds, later GetACL cannot retain the removed ACE.",
+                "accesscontrol-nested-mutation-doc",
+            )
+        )
     for payload_key in ("accessControlRequest", "ACLRequest"):
         add_request_context = activated_locking_context() + [
             start_session(LOCKING_SP, ADMIN1, "new"),
@@ -19688,6 +20275,41 @@ def build_cases() -> list[Case]:
         ),
     ):
         cases.append(Case(name, trajectory, expected, why, "log-domain-request-envelope-doc"))
+    for label, add_kwargs, create_kwargs, clear_kwargs in (
+        (
+            "operation",
+            {"operation": {"target": {"log": "Log1"}, "command": {"name": "Entry1", "data": "AABB", "authAs": ("Admin1", "new")}}},
+            {"operation": {"command": {"name": "MyLog", "highSecurity": False, "minSize": 8, "authAs": ("Admin1", "new")}}},
+            {"operation": {"target": {"log": "Log1"}, "command": {"authAs": ("Admin1", "new")}}},
+        ),
+        (
+            "operationRequest",
+            {"operationRequest": {"target": {"log": "Log1"}, "command": {"name": "Entry1", "data": "AABB", "authAs": ("Admin1", "new")}}},
+            {"operationRequest": {"command": {"name": "MyLog", "highSecurity": False, "minSize": 8, "authAs": ("Admin1", "new")}}},
+            {"operationRequest": {"target": {"log": "Log1"}, "command": {"authAs": ("Admin1", "new")}}},
+        ),
+        (
+            "command",
+            {"command": {"log": "Log1", "name": "Entry1", "data": "AABB", "authAs": ("Admin1", "new")}},
+            {"command": {"name": "MyLog", "highSecurity": False, "minSize": 8, "authAs": ("Admin1", "new")}},
+            {"command": {"log": "Log1", "authAs": ("Admin1", "new")}},
+        ),
+        (
+            "action",
+            {"action": {"log": "Log1", "name": "Entry1", "data": "AABB", "authAs": ("Admin1", "new")}},
+            {"action": {"name": "MyLog", "highSecurity": False, "minSize": 8, "authAs": ("Admin1", "new")}},
+            {"action": {"log": "Log1", "authAs": ("Admin1", "new")}},
+        ),
+    ):
+        for name, trajectory, expected, why in (
+            (f"AddLog {label} envelope preserves required payload", log_wrapper_context + [{"input": {"function": "addLog", "kwargs": add_kwargs}, "output": {"return": True}}], "PASS", "AddLog operation wrappers must preserve LogEntryName and Data before lowering."),
+            (f"AddLog {label} envelope rejects non-empty success", log_wrapper_context + [{"input": {"function": "addLog", "kwargs": add_kwargs}, "output": {"return": ["unexpected"]}}], "FAIL", "AddLog operation wrappers may expose Boolean success but not arbitrary non-empty result values."),
+            (f"CreateLog {label} envelope preserves three-field result shape", log_wrapper_context + [{"input": {"function": "createLog", "kwargs": create_kwargs}, "output": {"return": ["LogListUID", "LogTableUID", 8]}}], "PASS", "CreateLog operation wrappers must preserve MinSize and the three-field success result."),
+            (f"CreateLog {label} envelope rejects Boolean success", log_wrapper_context + [{"input": {"function": "createLog", "kwargs": create_kwargs}, "output": {"return": True}}], "FAIL", "CreateLog operation wrappers must keep the official three-field success shape."),
+            (f"ClearLog {label} envelope accepts Boolean wrapper success", log_wrapper_context + [{"input": {"function": "clearLog", "kwargs": clear_kwargs}, "output": {"return": True}}], "PASS", "ClearLog operation wrappers lower to an empty-result method while accepting SDK Boolean success."),
+            (f"ClearLog {label} envelope rejects non-empty success", log_wrapper_context + [{"input": {"function": "clearLog", "kwargs": clear_kwargs}, "output": {"return": ["unexpected"]}}], "FAIL", "ClearLog operation wrappers must not accept arbitrary non-empty success payloads."),
+        ):
+            cases.append(Case(name, trajectory, expected, why, "log-operation-envelope-doc"))
     for alias in ("newLog", "makeLog", "createLogTable", "newLogTable", "allocateLog"):
         cases.append(
             Case(
@@ -19887,6 +20509,33 @@ def build_cases() -> list[Case]:
                 "PASS",
                 f"`{init_alias}` lowers to HashInit and opens the same H_SHA_* stream.",
                 "parser-representation",
+            )
+        )
+    hash_operation_context = crypto_wrapper_context + [
+        {"input": {"function": "hashInit", "kwargs": {"algorithm": "sha256", "authAs": "Anybody"}}, "output": {"return": []}},
+    ]
+    for wrapper_key, wrapper_payload in (
+        ("operation", {"command": {"data": "AABB", "authAs": "Anybody"}}),
+        ("operationRequest", {"command": {"data": "AABB", "authAs": "Anybody"}}),
+        ("command", {"data": "AABB", "authAs": "Anybody"}),
+        ("action", {"data": "AABB", "authAs": "Anybody"}),
+    ):
+        cases.append(
+            Case(
+                f"TCGstorageAPI hash {wrapper_key} command envelope accepts initialized hash",
+                hash_operation_context + [{"input": {"function": "hash", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": "AABB"}}],
+                "PASS",
+                "Hash operation-style command envelopes must preserve digest input bytes.",
+                "crypto-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI hash {wrapper_key} command envelope rejects boolean digest",
+                hash_operation_context + [{"input": {"function": "hash", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": True}}],
+                "FAIL",
+                "Hash operation-style command envelopes must still return digest bytes, not Boolean success.",
+                "crypto-operation-envelope-doc",
             )
         )
     for update_alias in ("updateHash", "computeHash", "digest", "hashBytes", "updateDigest", "digestUpdate", "sha256Update", "hashBuffer", "processHash", "processDigest"):
@@ -20105,13 +20754,13 @@ def build_cases() -> list[Case]:
     sign_buffer_context = owned_admin_context() + [start_session(ADMIN_SP, SID, "old")]
     sign_buffer_out = {"table": "DataStore", "row": 0, "offset": 0, "length": 2}
     for wrapper_key, wrapper_payload in (
-        ("policy", {"target": "C_AES_256", "data": "AABB", "BufferOut": sign_buffer_out, "authAs": ("SID", "old")}),
-        ("config", {"target": "C_AES_256", "input": "AABB", "output": sign_buffer_out, "authAs": ("SID", "old")}),
-        ("request", {"sign": {"target": "C_AES_256", "payload": "AABB", "bufferOut": sign_buffer_out}, "authAs": ("SID", "old")}),
-        ("operation", {"target": "C_AES_256", "input": {"bytes": "AABB"}, "destination": sign_buffer_out, "authAs": ("SID", "old")}),
-        ("signRequest", {"values": {"target": "C_AES_256", "data": "AABB", "BufferOut": sign_buffer_out, "authAs": ("SID", "old")}}),
-        ("signatureRequest", {"values": {"target": "C_AES_256", "payload": "AABB", "bufferOut": sign_buffer_out, "authAs": ("SID", "old")}}),
-        ("operationRequest", {"sign": {"target": "C_AES_256", "payload": "AABB", "bufferOut": sign_buffer_out}, "authAs": ("SID", "old")}),
+        ("policy", {"target": "C_RSA_2048", "data": "AABB", "BufferOut": sign_buffer_out, "authAs": ("SID", "old")}),
+        ("config", {"target": "C_RSA_2048", "input": "AABB", "output": sign_buffer_out, "authAs": ("SID", "old")}),
+        ("request", {"sign": {"target": "C_RSA_2048", "payload": "AABB", "bufferOut": sign_buffer_out}, "authAs": ("SID", "old")}),
+        ("operation", {"target": "C_RSA_2048", "input": {"bytes": "AABB"}, "destination": sign_buffer_out, "authAs": ("SID", "old")}),
+        ("signRequest", {"values": {"target": "C_RSA_2048", "data": "AABB", "BufferOut": sign_buffer_out, "authAs": ("SID", "old")}}),
+        ("signatureRequest", {"values": {"target": "C_RSA_2048", "payload": "AABB", "bufferOut": sign_buffer_out, "authAs": ("SID", "old")}}),
+        ("operationRequest", {"sign": {"target": "C_RSA_2048", "payload": "AABB", "bufferOut": sign_buffer_out}, "authAs": ("SID", "old")}),
     ):
         cases.append(
             Case(
@@ -20254,6 +20903,8 @@ def build_cases() -> list[Case]:
         ("getPackage policy", {"policy": {"auth": "SID", "purpose": "backup", "authAs": ("SID", "new")}}),
         ("getPackage config", {"config": {"credential": "SID", "Purpose": "backup", "authAs": ("SID", "new")}}),
         ("getPackage request target", {"request": {"target": {"auth": "SID"}, "purpose": "backup", "authAs": ("SID", "new")}}),
+        ("getPackage request target command", {"request": {"target": {"auth": "SID"}, "command": {"Purpose": "backup"}, "authAs": ("SID", "new")}}),
+        ("getPackage operation target package", {"operation": {"target": {"auth": "SID"}, "package": {"Purpose": "backup"}, "authAs": ("SID", "new")}}),
         ("getPackage packageRequest", {"packageRequest": {"values": {"auth": "SID", "purpose": "backup", "authAs": ("SID", "new")}}}),
         ("getPackage credentialPackageRequest", {"credentialPackageRequest": {"package": {"auth": "SID", "purpose": "backup"}, "authAs": ("SID", "new")}}),
         ("getPackage keyPackageRequest", {"keyPackageRequest": {"target": {"auth": "SID"}, "purpose": "backup", "authAs": ("SID", "new")}}),
@@ -20279,6 +20930,8 @@ def build_cases() -> list[Case]:
     for label, kwargs in (
         ("setPackage policy", {"policy": {"auth": "SID", "value": "pkg", "authAs": ("SID", "new")}}),
         ("setPackage request", {"request": {"credential": "SID", "package": "pkg", "authAs": ("SID", "new")}}),
+        ("setPackage request target command", {"request": {"target": {"auth": "SID"}, "command": {"Value": "pkg"}, "authAs": ("SID", "new")}}),
+        ("setPackage operation target package", {"operation": {"target": {"auth": "SID"}, "package": {"Value": "pkg"}, "authAs": ("SID", "new")}}),
         ("setPackage packageRequest", {"packageRequest": {"values": {"auth": "SID", "value": "pkg", "authAs": ("SID", "new")}}}),
         ("setPackage credentialPackageRequest", {"credentialPackageRequest": {"credential": "SID", "package": "pkg", "authAs": ("SID", "new")}}),
     ):
@@ -20549,6 +21202,25 @@ def build_cases() -> list[Case]:
                 "table-lifecycle-domain-request-envelope-doc",
             )
         )
+    for label, payload in (
+        ("operation command", {"operation": {"command": table_lifecycle_values}}),
+        ("operationRequest command", {"operationRequest": {"command": table_lifecycle_values}}),
+    ):
+        cases.append(
+            Case(
+                f"TCGstorageAPI createTable {label} preserves zero MinSize",
+                table_wrapper_context
+                + [
+                    {
+                        "input": {"function": "createTable", "kwargs": payload},
+                        "output": {"return": {"UID": "000001AA00000000", "Rows": 0}},
+                    }
+                ],
+                "PASS",
+                "CreateTable operation envelopes must preserve nested table parameters, including a zero MinSize.",
+                "table-lifecycle-domain-request-envelope-doc",
+            )
+        )
     missing_table_lifecycle_min = dict(table_lifecycle_values)
     missing_table_lifecycle_min.pop("MinSize")
     cases.append(
@@ -20609,6 +21281,25 @@ def build_cases() -> list[Case]:
                 "table-lifecycle-domain-request-envelope-doc",
             )
         )
+    for label, payload in (
+        ("operation target command", {"operation": {"target": {"table": "000001AA00000000"}, "command": {"Values": [{"1": "row"}], "authAs": ("SID", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"table": "000001AA00000000"}, "command": {"Values": [{"1": "row"}], "authAs": ("SID", "new")}}}),
+    ):
+        cases.append(
+            Case(
+                f"TCGstorageAPI createRow {label} preserves dynamic table values",
+                dynamic_table_context
+                + [
+                    {
+                        "input": {"function": "createRow", "kwargs": payload},
+                        "output": {"return": ["000001AA00000001"]},
+                    }
+                ],
+                "PASS",
+                "CreateRow operation envelopes must preserve the target table and Values payload.",
+                "table-lifecycle-domain-request-envelope-doc",
+            )
+        )
     cases.append(
         Case(
             "TCGstorageAPI createRow request envelope rejects boolean success",
@@ -20652,6 +21343,25 @@ def build_cases() -> list[Case]:
                 "table-lifecycle-delete-query-envelope-doc",
             )
         )
+    for label, payload in (
+        ("operation target command", {"operation": {"target": {"table": "0000010000000001"}, "command": {"Rows": ["0000010100000001"], "authAs": ("SID", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"table": "0000010000000001"}, "command": {"Rows": ["0000010100000001"], "authAs": ("SID", "new")}}}),
+    ):
+        cases.append(
+            Case(
+                f"TCGstorageAPI deleteRow {label} preserves table and row UID",
+                delete_query_context
+                + [
+                    {
+                        "input": {"function": "deleteRow", "kwargs": payload},
+                        "output": {"return": []},
+                    }
+                ],
+                "PASS",
+                "DeleteRow operation envelopes must preserve target table and row UID arguments.",
+                "table-lifecycle-delete-query-envelope-doc",
+            )
+        )
     cases.append(
         Case(
             "TCGstorageAPI deleteRow request envelope rejects missing row UID",
@@ -20691,6 +21401,31 @@ def build_cases() -> list[Case]:
                 "PASS",
                 "DeleteTable domain request envelopes must preserve the created table UID target.",
                 "table-lifecycle-delete-query-envelope-doc",
+            )
+        )
+    for label, kwargs in (
+        ("operation", {"operation": {"target": {"table": "0000016300000000"}, "command": {"authAs": ("SID", "new")}}}),
+        ("operationRequest", {"operationRequest": {"target": {"table": "0000016300000000"}, "command": {"authAs": ("SID", "new")}}}),
+        ("command", {"command": {"table": "0000016300000000", "authAs": ("SID", "new")}}),
+        ("action", {"action": {"table": "0000016300000000", "authAs": ("SID", "new")}}),
+    ):
+        deleted_context = delete_table_context + [{"input": {"function": "deleteTable", "kwargs": kwargs}, "output": {"return": []}}]
+        cases.append(
+            Case(
+                f"TCGstorageAPI deleteTable {label} envelope preserves table UID",
+                deleted_context,
+                "PASS",
+                "DeleteTable operation envelopes must preserve the created table UID target and authenticator.",
+                "table-delete-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI deleteTable {label} envelope removes created table state",
+                deleted_context + [method_record("Get", "0000016300000000", "Audit", "SUCCESS", return_values={"A": 1})],
+                "FAIL",
+                "After a created table is deleted, later Get on that table must not remain successful.",
+                "table-delete-operation-envelope-doc",
             )
         )
     for envelope in ("tableQueryRequest", "freeRowsRequest", "tableRequest"):
@@ -21122,6 +21857,30 @@ def build_cases() -> list[Case]:
                 "xor-domain-request-envelope-doc",
             )
         )
+    for wrapper_key, wrapper_payload in (
+        ("operation", {"command": xor_domain_values}),
+        ("operationRequest", {"command": xor_domain_values}),
+        ("command", xor_domain_values),
+        ("action", xor_domain_values),
+    ):
+        cases.append(
+            Case(
+                f"TCGstorageAPI xor {wrapper_key} command envelope returns direct XOR result",
+                xor_wrapper_context + [{"input": {"function": "xor", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"status": "SUCCESS", "return_values": "FF00"}}],
+                "PASS",
+                "XOR operation-style command envelopes must preserve PatternInput and Input bytes.",
+                "xor-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI xor {wrapper_key} command envelope rejects stale XOR result",
+                xor_wrapper_context + [{"input": {"function": "xor", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"status": "SUCCESS", "return_values": "0F0F"}}],
+                "FAIL",
+                "XOR operation-style command envelopes must preserve byte-result comparison.",
+                "xor-operation-envelope-doc",
+            )
+        )
     xor_domain_bufferout_values = {
         "PatternInput": "DataStore",
         "Input": {"Data": "F00F"},
@@ -21458,11 +22217,35 @@ def build_cases() -> list[Case]:
         )
 
     sign_payload_context = owned_admin_context() + [start_session(ADMIN_SP, SID, "new")]
+    for wrapper_key, wrapper_payload in (
+        ("operation", {"command": {"payload": "AABB", "authAs": "Anybody"}}),
+        ("operationRequest", {"command": {"payload": "AABB", "authAs": "Anybody"}}),
+        ("command", {"payload": "AABB", "authAs": "Anybody"}),
+        ("action", {"payload": "AABB", "authAs": "Anybody"}),
+    ):
+        cases.append(
+            Case(
+                f"TCGstorageAPI sign {wrapper_key} envelope accepts signature bytes",
+                sign_payload_context + [{"input": {"function": "sign", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": "signature"}}],
+                "PASS",
+                "High-level Sign wrappers must preserve payload bytes from operation-style command envelopes.",
+                "sign-operation-envelope-doc",
+            )
+        )
+        cases.append(
+            Case(
+                f"TCGstorageAPI sign {wrapper_key} envelope rejects boolean signature",
+                sign_payload_context + [{"input": {"function": "sign", "kwargs": {wrapper_key: wrapper_payload}}, "output": {"return": True}}],
+                "FAIL",
+                "Sign without BufferOut returns signature bytes, not a Boolean success marker.",
+                "sign-operation-envelope-doc",
+            )
+        )
     for bad_payload in ({"ok": True}, {"return": True}, [True], {"Data": True}, 1):
         cases.append(
             Case(
                 f"Sign rejects non-byte payload {bad_payload!r}",
-                sign_payload_context + [method_record("Sign", K_AES_256_RANGE1, "K_AES_256", required={"Input": {"Data": "AA"}}, return_values=bad_payload)],
+                sign_payload_context + [method_record("Sign", "", "C_RSA_2048", required={"Input": {"Data": "AA"}}, return_values=bad_payload)],
                 "FAIL",
                 "Sign without BufferOut returns signature bytes, not a Boolean flag or scalar integer payload.",
                 "sign-bool-payload-shape-doc",
@@ -21472,7 +22255,7 @@ def build_cases() -> list[Case]:
         cases.append(
             Case(
                 f"Sign accepts byte payload {good_payload!r}",
-                sign_payload_context + [method_record("Sign", K_AES_256_RANGE1, "K_AES_256", required={"Input": {"Data": "AA"}}, return_values=good_payload)],
+                sign_payload_context + [method_record("Sign", "", "C_RSA_2048", required={"Input": {"Data": "AA"}}, return_values=good_payload)],
                 "PASS",
                 "Sign without BufferOut may return signature bytes directly or under a byte-data payload wrapper.",
                 "sign-bool-payload-shape-doc",
@@ -21570,6 +22353,9 @@ def build_cases() -> list[Case]:
         ("config target reset", {"config": {"target": {"rangeId": 1}, "reset": {"types": [0, 3]}, "authAs": ("Admin1", "new")}}),
         ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "lockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
         ("lockingRangeRequest values", {"lockingRangeRequest": {"values": {"rangeId": 1, "lockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
+        ("operation command", {"operation": {"command": {"rangeId": 1, "LockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
+        ("operation target command", {"operation": {"target": {"rangeId": 1}, "command": {"LockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
+        ("operationRequest target command", {"operationRequest": {"target": {"rangeId": 1}, "command": {"LockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
     ):
         context = activated_locking_context() + [
             function_record(
@@ -21633,6 +22419,7 @@ def build_cases() -> list[Case]:
         ("lockingRequest values", {"lockingRequest": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
         ("rangeRequest values", {"rangeRequest": {"values": {"rangeId": 1, "authAs": ("Admin1", "new")}}}),
         ("lockingRangeRequest target", {"lockingRangeRequest": {"target": {"rangeId": 1}, "authAs": ("Admin1", "new")}}),
+        ("operation target command", {"operation": {"target": {"rangeId": 1}, "command": {"authAs": ("Admin1", "new")}}}),
     ):
         cases.append(
             Case(

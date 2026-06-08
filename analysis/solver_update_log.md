@@ -19342,3 +19342,3304 @@
   - Medium. This targets private-format risk: official StartSession semantics wrapped in deeper SDK/request objects.
 - Residual risk:
   - This is still a representation repair, not a new official state rule. Score impact depends on whether private traces contain these nested API shapes.
+
+
+## 2026-06-04 KST - ReEncrypt split command/action envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local ReEncrypt split-envelope fuzz
+  - concepts: Locking `ReEncryptRequest`, observable `ReEncryptState`, high-level `setReEncryptRequest` wrapper lowering
+  - evidence: API-shaped traces may split the selected range and request value across sibling containers such as `request.target` + `request.command`, `operation.target` + `operation.reencrypt`, or `config.target` + `config.action`.
+  - mismatch summary: these split payloads lowered to `ReEncryptRequest=None` or `BandNone`, so valid `START_req` transitions were false-rejected and stale `IDLE` observations were false-accepted.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` ReEncrypt setter payload aliases and request-value extraction; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: treat `operation` / `operationRequest` as ReEncrypt wrapper envelopes, and treat `command` / `cmd` / `action` as bounded containers for the official `ReEncryptRequest` value. Raw TCG method semantics are unchanged.
+- Verification:
+  - direct fuzz check: `request.target + command`, `operation.target + reencrypt`, and `config.target + action` now lower to `Locking_Range1` with `ReEncryptRequest=START_req`; later `PENDING` passes and stale `IDLE` fails.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_reencrypt_policy_config_envelopes_preserve_request_state -q`: 1 test passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag reencrypt-nested-envelope-doc`: 22 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1230 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6877 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium/high. ReEncrypt/Locking state is a score-relevant area, and this closes an observed false PASS/FAIL class rather than only adding safe coverage.
+- Residual risk:
+  - The repair intentionally recognizes only bounded request-value spellings (`command`, `cmd`, `action`) inside ReEncrypt wrappers. It does not broaden arbitrary Locking column mutation semantics.
+
+
+## 2026-06-04 KST - DataRemoval split command/action envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local DataRemoval split-envelope fuzz
+  - concepts: Admin SP `DataRemovalMechanism`, `ActiveDataRemovalMechanism` state, high-level DataRemoval wrapper lowering
+  - evidence: API-shaped traces may split the table/target wrapper and active mechanism value across sibling containers such as `request.target` + `request.command`, `operation.target` + `operation.dataRemoval`, `config.target` + `config.action`, or `policy.operation.activeDataRemoval`.
+  - mismatch summary: these split payloads lowered to `ActiveDataRemovalMechanism=None`, so later stale mechanism observations were false-accepted.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` DataRemoval setter payload aliases and mechanism extraction; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: treat `command` / `cmd` / `action` and `operation` / `operationRequest` as bounded DataRemoval wrapper containers, preserving the existing official `DataRemovalMechanism.Set` state model.
+- Verification:
+  - direct fuzz check: split payloads now lower to `DataRemovalMechanism` with `ActiveDataRemovalMechanism=2`; current observations pass and stale observations fail.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_data_removal_policy_config_envelopes_preserve_mechanism -q`: 1 test passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag data-removal-nested-envelope-doc`: 20 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1230 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6885 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. DataRemoval is less historically score-dominant than Locking, but this closes a real state-observation false PASS class in an official Admin SP table.
+- Residual risk:
+  - This does not model progress/timer side effects for DataRemoval operations. It only preserves the active mechanism value through bounded wrapper representations.
+
+
+## 2026-06-04 KST - MBRControl split command/action envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local MBRControl split-envelope fuzz
+  - concepts: Locking SP `MBRControl`, `Enabled` / `Done` / `DoneOnReset` state, high-level MBRControl wrapper lowering
+  - evidence: API-shaped traces may split the selected MBRControl row and command values across sibling containers such as `request.target` + `request.command`, `operation.target` + `operation.mbrControl`, or `config.target` + `config.action`.
+  - mismatch summary: these split payloads lowered to `MBRControl {}`, so valid later observations of the current MBRControl state were false-rejected.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` MBRControl setter payload aliases and bounded merge depth; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: treat `command` / `cmd` / `action` and `operation` / `operationRequest` as bounded MBRControl wrapper containers, preserving the existing official `MBRControl.Set` state model without broadening arbitrary table mutation semantics.
+- Verification:
+  - direct fuzz check: `request.target + command`, `operation.target + mbrControl`, and `config.target + action` now lower to `MBRControl` with `Enabled=True`, `Done=False`, and `DoneOnReset=[1]`; current observations pass and stale observations fail.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_mbrcontrol_policy_config_envelopes_preserve_state -q`: 1 test passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag mbrcontrol-nested-envelope-doc`: 12 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1230 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6891 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. MBR/Locking state has repeatedly appeared score-relevant, and this closes a real valid-state false reject in a public API wrapper shape.
+- Residual risk:
+  - This repair preserves explicit MBRControl values through wrapper representations. It does not add new MBR shadow/reset semantics or infer missing MBRControl fields.
+
+
+## 2026-06-04 KST - Port and TLS_PSK split operation envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local Port/TLS_PSK split-envelope fuzz
+  - concepts: Admin SP `Port` rows, `TLS_PSK_Key` rows, high-level wrapper lowering for table-row setters
+  - evidence: API-shaped traces may split row selector and row values across `operation.target` plus a domain-specific payload container such as `operation.portControl`, `operation.psk`, or `operation.preSharedKey`. The same family also appears as `request.target + request.command` and `config.target + config.action`.
+  - mismatch summary: `operation.target + operation.portControl` lowered to an empty Port mutation, so stale `PortLocked` observations were false-accepted. `operation.target + operation.psk` treated the nested PSK value bundle as a selector-like field, so `Enabled` and `CipherSuite` were not tracked and stale PSK metadata was false-accepted.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` Port setter aliases; `src/solver_components/parsing.py` TLS_PSK setter aliases and dict-valued PSK value-container merge; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: recognize bounded `operation` / `operationRequest` / `command` / `cmd` / `action` wrappers for the existing official row `Set` semantics. For PSK, treat lowercase `psk` as a row-value container only when it is a dictionary; scalar `psk=1` remains a selector.
+- Verification:
+  - direct fuzz check: Port `request.target + command`, `operation.target + portControl`, and `config.target + action` now update `Port2.PortLocked=True`; current observations pass and stale observations fail.
+  - direct fuzz check: TLS_PSK `request.target + command`, `operation.target + psk`, `operation.target + preSharedKey`, and `config.target + action` now update `TLS_PSK_Key1` with `PSK`, `Enabled`, and `CipherSuite`; current observations pass and stale observations fail.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_port_policy_config_envelopes_update_and_select_port_state sm.tests.test_solver_rules.SolverRuleTests.test_psk_policy_config_request_envelopes_update_and_select_metadata -q`: 2 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag port-policy-envelope-doc`: 48 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag psk-policy-envelope-doc`: 32 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1230 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6905 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. Port and TLS_PSK rows are less dominant than Locking range state, but this closes real stale-state false PASS classes in official Admin SP row setters.
+- Residual risk:
+  - This does not infer missing `CipherSuite` or `PSK` payloads. It only preserves explicitly supplied row values through bounded operation/request/config wrapper shapes.
+
+
+## 2026-06-04 KST - Package, Erase, and GenKey split operation envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local Package/Erase/GenKey split-envelope fuzz
+  - concepts: Admin SP `GetPackage` / `SetPackage`, Locking SP `Erase`, range-key `GenKey`, high-level operation wrapper lowering
+  - evidence: API-shaped traces may split target, command values, and credentials across `request.target + request.command` or `operation.target + operation.package/command`.
+  - mismatch summary: `GetPackage` / `SetPackage` split wrappers lost required `Purpose` or `Value`, so valid package operations were false-rejected. `Erase` and `GenKey` split wrappers lost the selected Locking range/media key, so successful operations did not invalidate old host data and stale plaintext reads were false-accepted.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` package payload aliases, Erase payload aliases, GenKey payload aliases, and SetPackage nested value unwrapping; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: extend the existing bounded envelope flattening to explicit `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers for official method arguments, while leaving authorization and required-argument checks unchanged.
+- Verification:
+  - direct fuzz check: split `GetPackage` wrappers now preserve `C_PIN_SID`, `Purpose=backup`, and reject Boolean package payloads.
+  - direct fuzz check: split `SetPackage` wrappers now preserve `C_PIN_SID` and non-empty `Value=pkg`.
+  - direct fuzz check: split `Erase` / `GenKey` wrappers now preserve `Locking_Range1` / `K_AES_256_Range1_Key`, so old host plaintext reads fail after the successful operation.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_package_policy_config_request_envelopes_preserve_required_payload sm.tests.test_solver_rules.SolverRuleTests.test_erase_policy_config_request_envelopes_select_range_and_invalidate_old_media sm.tests.test_solver_rules.SolverRuleTests.test_genkey_policy_config_request_envelopes_select_range_key_and_invalidate_old_media -q`: 3 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag package-policy-envelope-doc`: 26 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag erase-policy-envelope-doc`: 12 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag genkey-policy-envelope-doc`: 40 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1230 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6918 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium/high. GenKey and Erase affect host-data observability, which has been a score-relevant private-test pattern. Package wrappers are less central but close valid-operation false rejects.
+- Residual risk:
+  - This does not add new media cryptographic modeling. It only ensures official successful Erase/GenKey side effects are reached when the high-level wrapper splits target and command fields.
+
+
+## 2026-06-04 KST - Activate operation credential envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local Activate operation-envelope fuzz
+  - concepts: Admin SP `Activate(LockingSP)`, SID proof validation, Locking SP lifecycle transition
+  - evidence: API-shaped activation traces may place the SID proof under `operation.credential` or `operation.command` instead of `request.credential`.
+  - mismatch summary: `activateLockingSP(operation.credential.proof="wrong")` lowered with `authAs=None`, so the wrapper success was allowed to activate LockingSP and a later Locking SP session was false-accepted.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` Activate payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: extend the same bounded lifecycle-envelope flattening already used for policy/config/request activation to `command` / `cmd` / `action` / `operation` / `operationRequest`, preserving existing credential checks before lifecycle mutation.
+- Verification:
+  - direct fuzz check: `operation.credential` and `operation.command` with proof `new` activate LockingSP, while proof `wrong` no longer activates LockingSP.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_activate_policy_config_request_envelopes_validate_credentials_before_transition -q`: 1 test passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag activate-policy-envelope-doc`: 30 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1230 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6930 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. This is a lifecycle false PASS: a wrong SID proof could incorrectly enable all later Locking SP behavior in operation-wrapper traces.
+- Residual risk:
+  - This repair covers activation credential representation. It does not alter the official Activate ACL or Locking SP lifecycle rules.
+
+
+## 2026-06-04 KST - TakeOwnership and setup lifecycle operation credential repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local TakeOwnership/setup lifecycle operation-envelope fuzz
+  - concepts: `takeOwnership`, `setupLockingSP` / activation aliases, SID proof validation, Locking SP lifecycle transition
+  - evidence: API-shaped lifecycle traces may place the SID proof under `operation.credential`, `operation.command`, or `operationRequest.values` rather than under policy/config/request.
+  - mismatch summary: `takeOwnership(operation.credential.proof="wrong")` and `setupLockingSP(operation.credential.proof="wrong")` lowered without the supplied SID proof, so wrapper success incorrectly activated LockingSP and later Locking SP sessions were false-accepted.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` TakeOwnership payload aliases and Activate nested credential auth extraction; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: apply the same bounded operation-envelope recognition used for activation to TakeOwnership and setup aliases, and recover nested `auth` before proof validation.
+- Verification:
+  - direct fuzz check: `takeOwnership` and `setupLockingSP` operation credential/command wrappers now activate with proof `new` and fail to activate with proof `wrong`.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_takeownership_policy_config_request_envelopes_validate_credentials_before_transition sm.tests.test_solver_rules.SolverRuleTests.test_lifecycle_domain_request_envelopes_validate_credentials_before_transition sm.tests.test_solver_rules.SolverRuleTests.test_activate_policy_config_request_envelopes_validate_credentials_before_transition -q`: 3 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag takeownership-policy-envelope-doc`: 10 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag lifecycle-domain-request-envelope-doc`: 10 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1230 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6936 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. This closes another lifecycle false PASS where a wrong SID proof could incorrectly enable later Locking SP behavior in operation-wrapper traces.
+- Residual risk:
+  - This repair covers wrapper credential representation only. It does not broaden which authorities may activate LockingSP.
+
+
+## 2026-06-04 KST - ProtocolReset operation ComID envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local ProtocolReset operation/operationRequest envelope fuzz
+  - concepts: Protocol stack reset, ComID-scoped session invalidation, high-level operation wrapper lowering
+  - evidence: API-shaped traces may place the reset command and ComID under `operation.command`, `operation.target + operation.command`, or `operationRequest.target + operationRequest.command`.
+  - mismatch summary: split operation wrappers hid the supplied ComID from `_comid_from_mapping`, so `protocolReset(operation.command.ComID=2)` could abort an active ComID 1 session. That produced a false FAIL for a valid later ComID 1 session operation after an unrelated ComID reset.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` `_comid_from_mapping`; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: recurse through bounded request containers `command` / `cmd` / `action` / `operation` / `operationRequest` / `target` when extracting the reset ComID, while keeping the existing rule that only sessions on the reset ComID are invalidated.
+- Verification:
+  - direct fuzz check: same-ComID `operation.command`, `operation.target + command`, and `operationRequest.target + command` resets abort the session; other-ComID variants preserve the session.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_protocol_reset_domain_request_envelopes_scope_by_comid sm.tests.test_solver_rules.SolverRuleTests.test_protocol_reset_wrapper_aliases_scope_by_comid -q`: 2 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag protocol-reset-domain-request-envelope-doc`: 28 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1230 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6948 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. ProtocolReset is a stateful lifecycle/session invalidation rule; private traces that encode ComID under command/target wrappers can otherwise become false FAIL or false PASS depending on which session should survive.
+- Residual risk:
+  - This repair only broadens ComID extraction from structured reset envelopes. It does not change reset authorization, reset method recognition, or cross-ComID state semantics.
+
+
+## 2026-06-04 KST - RevertSP operation command envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local RevertSP operation/operationRequest split-envelope fuzz
+  - concepts: AdminSP PSID RevertSP, LockingSP RevertSP, `KeepGlobalRangeKey`, lifecycle reset side effects, high-level operation wrapper lowering
+  - evidence: API-shaped traces may split the target SP from the command payload, e.g. `operation.target="AdminSP" + operation.command.psid="psid"` or `operation.target="LockingSP" + operation.command.KeepGlobalRangeKey=true`.
+  - mismatch summary: RevertSP lowering merged `policy` / `config` / `request` envelopes but not `operationRequest` or `command` / `action` containers. As a result, AdminSP operation-command revert lost the PSID and failed to reset LockingSP activation, while LockingSP operation-command revert lost `KeepGlobalRangeKey` and wiped GlobalRange data.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` RevertSP wrapper payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: treat `command` / `cmd` / `action` / `operationRequest` as bounded RevertSP payload envelopes, preserving existing official PSID, Admin1 credential, and `KeepGlobalRangeKey` authorization/state rules.
+- Verification:
+  - direct fuzz check: AdminSP `operation.command` and `operationRequest.target + command` variants now reset LockingSP activation; LockingSP `operation.command` and `operationRequest.target + command` variants now preserve GlobalRange only when `KeepGlobalRangeKey` is supplied.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_revertsp_policy_config_request_envelopes_preserve_target_and_credentials -q`: 1 test passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag revertsp-policy-envelope-doc`: 14 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1230 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6952 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. This closes both a lifecycle false PASS and a storage-state false FAIL in RevertSP wrappers, a private-test-relevant area because RevertSP changes later session availability and media observability.
+- Residual risk:
+  - This repair broadens only wrapper payload recognition. It does not change which authorities can invoke RevertSP or the official `KeepGlobalRangeKey` locked-GlobalRange failure rule.
+
+
+## 2026-06-04 KST - Table lifecycle operation command envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local CreateTable/CreateRow/DeleteRow operation split-envelope fuzz
+  - concepts: Core table lifecycle methods, created table descriptors, created object rows, row deletion, high-level operation wrapper lowering
+  - evidence: API-shaped traces may split table lifecycle calls as `operation.command` or `operation.target + operation.command`, where the target carries the table UID and command carries row values or row UIDs.
+  - mismatch summary: `createTable(operation.command=...)`, `createRow(operation.target.table + operation.command.Values)`, and `deleteRow(operation.target.table + operation.command.Rows)` were all false-rejected because required parameters, target table selectors, or row UID lists were hidden under operation/command wrappers.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` CreateTable/CreateRow/DeleteRow payload aliases and table selector unwrapping; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: extend bounded table lifecycle payload merging to `command` / `cmd` / `action` / `operation` / `operationRequest`. For CreateRow/DeleteRow, additionally unwrap dict-valued `target` containers to recover the table selector; CreateTable avoids target-as-name synthesis and still requires explicit table creation parameters.
+- Verification:
+  - direct fuzz check: split operation CreateTable/CreateRow/DeleteRow valid trajectories now pass; missing required fields still fail through existing required-argument checks.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_table_lifecycle_domain_request_envelopes_preserve_payloads sm.tests.test_solver_rules.SolverRuleTests.test_table_delete_query_domain_request_envelopes_preserve_payloads -q`: 2 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag table-lifecycle-domain-request-envelope-doc`: 13 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag table-lifecycle-delete-query-envelope-doc`: 18 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1230 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6958 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium/high. Dynamic table and row lifecycle behavior is stateful; private traces that encode SDK operations with target/command splits could otherwise become valid-operation false rejects and hide later ACL/table state checks.
+- Residual risk:
+  - This repair does not loosen table creation constraints, unique-row checks, delete authorization, or created-table SP scope. It only preserves official arguments across structured wrappers.
+
+
+## 2026-06-04 KST - AccessControl RemoveACE operation command envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local AccessControl RemoveACE operation/operationRequest split-envelope fuzz
+  - concepts: AccessControl `RemoveACE`, dynamic ACL mutation state, later `GetACL` consistency, high-level operation wrapper lowering
+  - evidence: API-shaped traces may split ACL association and ACE arguments as `operation.command` or `operation.target + operation.command`, where target carries `InvokingID` / `MethodID` and command carries `ACE`.
+  - mismatch summary: `RemoveACE` operation wrappers were parsed without the nested ACE/association arguments, so a successful high-level RemoveACE did not remove the ACE from tracked ACL state. A later stale `GetACL` retaining the removed ACE could be false-accepted.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` AccessControl payload aliases for GetACL/AddACE/RemoveACE/SetACL lowering; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: extend bounded AccessControl payload merging to `command` / `cmd` / `action` / `operation` / `operationRequest`, preserving existing authorization, association existence, and ACL mutation semantics.
+- Verification:
+  - direct fuzz check: LockingSP `RemoveACE` operation-command variants now remove `0000000000039000` from `Locking_Range1/Get`; later `GetACL` without the ACE passes and stale retained-ACE output fails.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_tcgstorageapi_removeace_operation_envelopes_update_later_getacl -q`: 1 test passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag accesscontrol-nested-mutation-doc`: 10 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1231 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6964 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. AccessControl/GetACL has already been score-sensitive; this closes a stateful ACL mutation false PASS in the same family without changing exact ACL expectations.
+- Residual risk:
+  - Created-row RemoveACE remains governed by its existing meta-ACL and association rules. This repair only ensures structured operation envelopes deliver the official `InvokingID`, `MethodID`, and `ACE` arguments to the existing model.
+
+
+## 2026-06-05 KST - Locking range operation command envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local Locking `setRange` / `getRange` operation split-envelope fuzz
+  - concepts: Locking range geometry/state tracking, `RangeStart`, `RangeLength`, lock flags, high-level operation wrapper lowering
+  - evidence: API-shaped traces may encode range updates and reads as `operation.command` or `operation.target + operation.command`, where `target` carries `rangeId` and `command` carries geometry/lock values.
+  - mismatch summary: `setRange(operation.command=...)` and `setRange(operation.target.rangeId + operation.command.RangeStart/RangeLength)` lost the selected range or update values, so stale later `getRange` outputs could be false-accepted. `getRange(operation.target + command)` also needed explicit selector recovery.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` setRange/getRange payload aliases and dict-valued target selector unwrapping; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: extend bounded Locking range payload merging to `command` / `cmd` / `action` / `operation`, and unwrap nested `target` dictionaries to recover the scalar range selector while preserving existing geometry, authorization, and output comparison rules.
+- Verification:
+  - direct fuzz check: operation-command and target-command `setRange` variants now update Range1; later current `getRange` passes and stale `RangeStart` fails. operation-command `getRange` variants select Range1 correctly.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_locking_range_policy_envelopes_preserve_state -q`: 1 test passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag locking-range-nested-geometry-doc`: 14 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag locking-range-domain-request-doc`: 12 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1231 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6976 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. Locking table state tracking was one of the observed score-jump families; this closes stale geometry false PASSes for private traces that split range target and command values.
+- Residual risk:
+  - This repair only broadens structured wrapper recognition. It does not alter range geometry validation, range crossing behavior, authorization, or lock-on-reset semantics.
+
+
+## 2026-06-05 KST - Locking range lock operation command envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local Locking `lockRange` / `unlockRange` operation split-envelope fuzz
+  - concepts: Locking range `ReadLocked` / `WriteLocked`, host I/O authorization, high-level operation wrapper lowering
+  - evidence: API-shaped traces may encode lock commands as `operation.command` or `operation.target + operation.command`, with `target.rangeId` selecting the row and `command.read/write` selecting lock directions.
+  - mismatch summary: `lockRange(operation.command=...)` and `lockRange(operation.target.rangeId + operation.command.write=true)` lost the selected range or lock flags, so a successful lock did not update `WriteLocked`. Later host writes to the locked range could be false-accepted as `SUCCESS`.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` lockRange/unlockRange payload aliases and dict-valued target selector unwrapping; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: extend bounded lock payload merging to `command` / `cmd` / `action` / `operation` / `operationRequest`, and unwrap nested target dictionaries to recover the scalar range selector while preserving existing lock direction and authorization semantics.
+- Verification:
+  - direct fuzz check: operation-command lockRange variants now set `WriteLocked`; later host write denial passes and stale host write success fails.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_locking_range_policy_envelopes_preserve_state -q`: 1 test passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag locking-range-nested-lock-doc`: 20 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1231 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6982 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. Locking state machine and host I/O observability are core score-relevant areas; this closes a false PASS where a successful high-level lock failed to affect later writes.
+- Residual risk:
+  - This repair does not change the meaning of read/write lock flags or host I/O policy. It only preserves the official lock arguments across structured operation wrappers.
+
+
+## 2026-06-05 KST - DataStore operation command byte-window repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local DataStore write/read operation split-envelope fuzz
+  - concepts: DataStore byte table `Set` / `Get`, byte-window offset/length, payload persistence, high-level operation wrapper lowering
+  - evidence: API-shaped traces may encode byte-table operations as `operation.command` or `operation.target + operation.command`, with `target` carrying offset/length and `command` carrying bytes/auth.
+  - mismatch summary: `writeDataStore(operation.command=...)` lowered to `DataStore.Set` at row 0 with `Bytes=None`, and `readDataStore(operation.command=...)` lost the CellBlock. This caused valid byte reads to false-reject and could over-accept stale or empty byte-window observations.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` DataStore write/read payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: extend bounded DataStore payload merging to `command` / `cmd` / `action` / `operation`, preserving existing offset/length, auth, and byte payload comparison semantics.
+- Verification:
+  - direct fuzz check: operation-command and target-command write/read variants now preserve offset 4, length 3, and bytes `AABBCC`; current reads pass and stale reads fail.
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules.SolverRuleTests.test_datastore_write_range_slice_envelopes_update_read_windows -q`: 1 test passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag datastore-nested-window-envelope-doc`: 14 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1231 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 6988 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl .venv/bin/python evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. DataStore byte payload persistence has been a likely private-score family; this closes operation-wrapper false rejects and stale byte-window false accepts.
+- Residual risk:
+  - This repair does not change DataStore access-control or sparse fill semantics. It only preserves official byte-window arguments through structured wrappers.
+
+
+## 2026-06-05 KST - MBR operation byte-window envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local MBR `writeMBR` / `readMBR` operation split-envelope fuzz
+  - concepts: MBR byte table `Set` / `Get`, byte-window offset/length, payload persistence, high-level operation wrapper lowering
+  - evidence: API-shaped traces may encode MBR byte operations as `operation.command`, `operation.target + operation.command`, or `operationRequest.target + operationRequest.command`.
+  - mismatch summary: `writeMBR(operation.target.offset/length + operation.command.bytes)` lowered to `MBR.Set` at row 0 with `Bytes=None`; stale later `readMBR` byte observations could be false-accepted.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` MBR write/read payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: extend bounded MBR payload merging to `command` / `cmd` / `action` / `operation` / `operationRequest`, preserving existing byte-table comparison, shadowing, and MBRControl semantics.
+- Verification:
+  - direct fuzz check: operation target-command write/read variants now preserve offset 4, length 3, and bytes `AABBCC`; current reads pass and stale reads fail.
+  - targeted unit: `test_tcgstorageapi_mbr_window_range_slice_envelopes_share_byte_state` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag mbr-nested-window-envelope-doc`: 18 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1231 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7008 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. MBR was not the first suspected score-drop source, but MBR byte table and reset behavior are private-test plausible and share the DataStore byte-window failure pattern.
+- Residual risk:
+  - This repair only preserves byte operation arguments across structured wrappers. It does not alter MBR shadow boundary, MBRControl, or authorization rules.
+
+
+## 2026-06-05 KST - LockOnReset operation command envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local Locking `setLockOnReset` / `getLockOnReset` operation split-envelope fuzz
+  - concepts: Locking range `LockOnReset`, reset-time lock state machine, high-level operation wrapper lowering
+  - evidence: API-shaped traces may encode reset lists as `operation.command.LockOnReset` and selectors as `operation.target.rangeId`.
+  - mismatch summary: `setLockOnReset(operation.target.rangeId + operation.command.LockOnReset)` lowered to `BandNone` with `LockOnReset=None`; stale `[0]` reset-list observations could be false-accepted instead of rejecting after a successful `[0,3]` update.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` LockOnReset setter/getter payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: extend bounded LockOnReset payload merging to `command` / `cmd` / `action` / `operation` while keeping existing range selector unwrapping, reset-list validation, and reset-time lock application semantics.
+- Verification:
+  - direct fuzz check: operation target-command setters now select Range1 and store `[0,3]`; current getters pass and stale `[0]` getters fail.
+  - targeted unit: `test_tcgstorageapi_lockonreset_setter_aliases_feed_reset_state_machine` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag lockonreset-nested-envelope-doc`: 46 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1231 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7008 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. LockOnReset and Locking state-machine behavior were among the strongest score-relevant families; this closes a stale reset-list false PASS and makes reset-time lock enforcement visible through operation wrappers.
+- Residual risk:
+  - This repair does not change which reset types are legal or how reset side effects apply. It only preserves the selector and reset-list arguments through structured wrappers.
+
+
+## 2026-06-05 KST - C_PIN counter operation getter envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local C_PIN `setPINTries` / `getTries` and `setPINTryLimit` / `getTryLimit` operation split-envelope fuzz
+  - concepts: C_PIN `Tries` / `TryLimit`, credential selector preservation, admin-authenticated counter reads, high-level operation wrapper lowering
+  - evidence: API-shaped traces may encode the credential selector as `operation.target.user` and getter authorization as `operation.command.authAs`.
+  - mismatch summary: counter setters already preserved `operation.target + operation.command`, but counter getters did not. A later `getTries(operation.target.user + operation.command.authAs)` could lose selector/auth context and false-accept stale counter values.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` C_PIN counter getter payload aliases and recursive `authAs` recovery; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: align C_PIN counter getter wrapper recognition with the setter side by accepting `command` / `cmd` / `action` / `operation` and recursively preserving `authAs` from nested command payloads.
+- Verification:
+  - direct fuzz check: `getTries` now lowers to `C_PIN_User1.Get` with `authAs=("Admin1","new")`; current `Tries=0` passes and stale `Tries=1` fails.
+  - targeted unit: `test_counter_operation_getters_preserve_target_and_auth` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag credential-counter-operation-envelope-doc`: 4 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1232 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7012 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. Authenticate/C_PIN TryLimit/Tries trajectories were one of the score-jump candidate families; this closes stale counter false PASSes under operation-style wrappers.
+- Residual risk:
+  - This repair does not alter counter arithmetic, PIN authentication side effects, or authority enablement. It only preserves selector and auth metadata for getter wrappers.
+
+
+## 2026-06-05 KST - Authenticate operation command envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local `Authenticate` operation split-envelope fuzz
+  - concepts: Authenticate Boolean result, authority/proof matching, C_PIN credential verification, high-level operation wrapper lowering
+  - evidence: API-shaped traces may encode credentials as `operation.command.auth/proof`, or split the authority into `operation.target.auth` and proof into `operation.command.proof`.
+  - mismatch summary: `authenticate(operation.command.auth/proof)` did not recover `Auth` or `Proof`, so correct-proof `True` and wrong-proof `False` were both rejected as malformed/missing-authority cases.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` Authenticate payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: extend bounded Authenticate payload merging to `command` / `cmd` / `action` / `operation`, preserving the existing proof truth, TryLimit/Tries, and Boolean result semantics.
+- Verification:
+  - direct fuzz check: operation-command correct proof passes with `True`; wrong proof passes with `False` and rejects `True`.
+  - targeted unit: `test_authenticate_operation_command_envelopes_preserve_authority_and_proof` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag authenticate-operation-envelope-doc`: 9 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1233 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7021 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. Authenticate/C_PIN proof and Boolean-result tracking were repeatedly identified as score-relevant; this closes false rejects and potential wrong-proof ambiguity in operation-style API traces.
+- Residual risk:
+  - This repair does not change authentication truth, lockout, or counter side effects. It only preserves authority/proof fields through structured operation wrappers.
+
+
+## 2026-06-05 KST - checkPIN operation command envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local `checkPIN` operation split-envelope fuzz
+  - concepts: checkPIN as Authenticate wrapper, C_PIN proof matching, Boolean result truth, high-level operation wrapper lowering
+  - evidence: API-shaped traces may encode one-shot credential checks as `operation.command.auth/pin`, or split authority into `operation.target.auth` and PIN into `operation.command.pin`.
+  - mismatch summary: `checkPIN(operation.command.auth/pin)` did not recover authority or PIN, so correct `True` and wrong `False` results were both rejected.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` checkPIN payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: align checkPIN wrapper lowering with Authenticate by accepting `command` / `cmd` / `action` / `operation` while preserving existing C_PIN proof truth, TryLimit/Tries, and Boolean-result semantics.
+- Verification:
+  - direct fuzz check: operation-command correct PIN passes with `True`; wrong PIN passes with `False` and rejects `True`.
+  - targeted unit: `test_checkpin_operation_command_envelopes_preserve_authority_and_pin` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag checkpin-operation-envelope-doc`: 9 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1234 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7030 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. checkPIN is a common high-level API spelling for Authenticate/C_PIN verification, one of the score-relevant candidate areas.
+- Residual risk:
+  - This repair only preserves wrapper arguments. It does not change credential update, lockout, or counter side-effect behavior.
+
+
+## 2026-06-05 KST - changePIN operation command credential mutation repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local `changePIN` operation split-envelope fuzz
+  - concepts: C_PIN `PIN` mutation, credential persistence, admin-authenticated Set, high-level operation wrapper lowering
+  - evidence: API-shaped traces may encode credential mutation as `operation.command.auth/newPin/authAs`, or split the selected C_PIN row into `operation.target.auth` and the new credential/authenticator into `operation.command`.
+  - mismatch summary: `changePIN(operation.target + operation.command)` lowered to an empty/unknown C_PIN target with `PIN=None` and `authAs=None`. The intended new PIN was not tracked, so later current-PIN checks were false-rejected and stale old-PIN checks were false-accepted.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` changePIN/setPIN payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: align C_PIN credential mutation wrappers with the other high-level operation paths by accepting bounded `command` / `cmd` / `action` / `operation` / `target` / `operationRequest` containers before extracting the selected C_PIN row, new PIN value, and `authAs`.
+- Verification:
+  - direct fuzz check: `changePIN(operation.command...)`, `changePIN(operation.target + operation.command...)`, and `changePIN(operationRequest.target + operationRequest.command...)` now lower to `Set C_PIN_User1` with `PIN="newpin"` and `authAs=("Admin1","new")`.
+  - targeted unit: `test_changepin_operation_command_envelopes_update_tracked_pin` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag credential-pin-operation-envelope-doc`: 6 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1235 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7036 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. Credential mutation and Authenticate/C_PIN trajectories were repeatedly score-relevant; this closes a stale credential-state false PASS class in operation-style API traces.
+- Residual risk:
+  - This repair does not change PIN length validation, overlong/boolean credential rejection, or TryLimit side effects. It only preserves target/new-PIN/auth metadata through structured operation wrappers.
+
+
+## 2026-06-05 KST - setMinPINLength operation command policy repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local `setMinPINLength` operation split-envelope fuzz
+  - concepts: C_PIN `_MinPINLength`, credential policy mutation, later `changePIN` minimum-length enforcement, high-level operation wrapper lowering
+  - evidence: API-shaped traces may encode minimum PIN policy updates as `operation.command.auth/length/authAs`, or split the selected C_PIN row into `operation.target.auth` and policy values into `operation.command`.
+  - mismatch summary: `setMinPINLength(operation.target + operation.command)` lowered to `Set` with empty target, `_MinPINLength=None`, and `authAs=None`. A later too-short `changePIN` was false-accepted, and stale `getMinPINLength=5` was false-accepted after the intended update to 6.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` setMinPINLength payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: treat minimum PIN length mutation as the same bounded C_PIN policy operation family as TryLimit/Tries and PIN mutation wrappers, preserving target, length, and authenticator before existing policy validation runs.
+- Verification:
+  - direct fuzz check: operation target/command wrapper now lowers to `Set C_PIN_User1` with `_MinPINLength=6` and `authAs=("Admin1","new")`; too-short `changePIN` and stale getter cases fail, current getter passes.
+  - targeted unit: `test_setminpinlength_operation_command_envelopes_update_policy` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag credential-minpin-operation-envelope-doc`: 9 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1236 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7045 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. C_PIN policy/credential trajectories are score-relevant, and hidden tests may use operation-style wrappers for policy setters rather than flat args.
+- Residual risk:
+  - This repair only preserves wrapper arguments. It does not alter minimum-length numeric validity, PIN byte-length limits, or TryLimit/Tries behavior.
+
+
+## 2026-06-05 KST - ReEncrypt operation command status repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local ReEncrypt operation split-envelope fuzz
+  - concepts: Locking `ReEncryptRequest`, `ReEncryptState` postcondition, range selector preservation, high-level operation wrapper lowering
+  - evidence: API-shaped traces may encode ReEncrypt range selection as `operation.target.rangeId` and authorization as `operation.command.authAs`; status getters may use the same target/command envelope.
+  - mismatch summary: `getReEncryptStatus(operation.target + operation.command)` lowered to `BandNone` with no `authAs`, so after a successful START request the stale `IDLE` status could still pass instead of being rejected.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` ReEncrypt setter/getter payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: keep ReEncrypt setter and getter wrappers symmetric by accepting bounded `command` / `cmd` / `action` / `operation` / `operationRequest` containers before extracting the range selector and authenticator.
+- Verification:
+  - direct fuzz check: `startReEncrypt(operation.target + operation.command)` and `getReEncryptStatus(operation.target + operation.command)` now lower to `Locking_Range1` with `authAs=("Admin1","new")`; `PENDING` passes and stale `IDLE` fails.
+  - targeted unit: `test_reencrypt_operation_command_envelopes_preserve_range_status` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag reencrypt-operation-envelope-doc`: 6 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1237 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7051 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. ReEncrypt/Locking range state is less likely than LockOnReset/DataStore/AccessControl to dominate hidden score, but it is a documented state machine adjacent to the Locking table families that already moved score.
+- Residual risk:
+  - This repair does not change ReEncrypt enum validity or reset/advance-key semantics. It only preserves range/auth metadata through operation-style wrappers.
+
+
+## 2026-06-05 KST - Locking column getter operation command repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local Locking column getter operation split-envelope fuzz
+  - concepts: Locking row state getters, `NextKey`, `AdvKeyMode`, `VerifyMode`, `ContOnReset`, `LastReEncryptLBA`, `LastReEncStat`, `GeneralStatus`, range selector preservation
+  - evidence: API-shaped traces may encode column getter range selection as `operation.target.rangeId` and authorization as `operation.command.authAs`.
+  - mismatch summary: getters such as `getAdvKeyMode(operation.target + operation.command)`, `getLastReEncryptLBA(...)`, and `getLastReEncryptStatus(...)` lowered to `BandNone`; stale values like `AdvKeyMode=2` or `LastReEncStat=0` could pass after tracked state had been set to different values.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` Locking column getter payload aliases and nested payload merge; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: align all bounded Locking column getters with the already supported policy/config/request/query wrappers, and merge both `target` and `command` payloads so range selector and `authAs` survive together.
+- Verification:
+  - direct fuzz check: operation target/command getters now lower to `Locking_Range1` with `authAs=("Admin1","new")`; current tracked values pass and stale values fail.
+  - targeted unit: `test_locking_column_getter_policy_config_envelopes_select_range` passed with operation cases included
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag locking-column-operation-envelope-doc`: 30 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1237 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7081 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. This is Locking table state tracking, adjacent to the known 85 -> 87.5 score jump family; it closes hidden-test-like stale getter false PASSes under realistic operation wrappers.
+- Residual risk:
+  - This repair does not change column value semantics, enum admissibility, or ReEncrypt lifecycle transitions. It only preserves getter wrapper metadata and compares against existing tracked state.
+
+
+## 2026-06-05 KST - DataStore access operation command repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local DataStore access operation split-envelope fuzz
+  - concepts: DataStore Get/Set ACE personalization, `readAccess` / `writeAccess` wrapper lowering, User authority credential checks, byte-table payload visibility
+  - evidence: API-shaped traces may encode access-grant target selectors as `operation.target.user/table` and authorization as `operation.command.authAs`.
+  - mismatch summary: `readAccess(operation.target + operation.command)` lowered to `ACE_DataStoreNone_Get_All` with invalid `user=None`; after a successful wrapper call, User1 `readData` with the correct PIN was false-rejected and unauthorized empty reads were false-accepted.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` DataStore access payload aliases and nested payload merge; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: access-grant wrappers are state mutations over documented DataStore Get/Set ACEs, so `target` and `command` envelopes must be merged before extracting user, table/resource, mode, and authenticator.
+- Verification:
+  - direct fuzz check: `readAccess(operation.target.user/table + operation.command.authAs)` now lowers to canonical DataStore Get ACE with `BooleanExpr=[User1]` and `authAs=("Admin1","new")`; User1 payload read passes and stale unauthorized empty read fails.
+  - targeted unit: `test_datastore_access_aliases_grant_user_permissions` passed with operation cases included
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag datastore-access-operation-envelope-doc`: 8 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1237 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7089 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. DataStore payload and access-personalization trajectories were identified as likely remaining score candidates; this closes a realistic wrapper false FAIL/PASS pair around User-specific access grants.
+- Residual risk:
+  - This repair does not change AccessControl BooleanExpr semantics, DataStore byte comparison, or failed-access nonmutation rules. It only preserves access-grant wrapper metadata before existing ACE state logic runs.
+
+
+## 2026-06-05 KST - getMEK operation command range-selector repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local getMEK / getActiveKey operation split-envelope fuzz
+  - concepts: Locking `ActiveKey`, K_AES media-key UID refs, Range1/Range2 selector preservation, high-level operation wrapper lowering
+  - evidence: API-shaped traces may encode media-key read selectors as `operation.target.rangeId` and authorization as `operation.command.authAs`.
+  - mismatch summary: `getMEK(operation.target.rangeId=2 + operation.command.authAs)` lowered to `BandNone` with no authenticator. After Range2 ActiveKey was set to `K_AES_256_Range2_Key`, stale Range1 ActiveKey output was falsely accepted.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` getMEK/media-key read payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: media-key read wrappers are bounded Locking row Get operations over the documented ActiveKey column, so `operation` / `operationRequest` envelopes must be merged before extracting range selector and `authAs`.
+- Verification:
+  - direct fuzz check: operation target/command getMEK now lowers to `Locking_Range2` with `authAs=("Admin1","new")`; Range2 ActiveKey passes and stale Range1 ActiveKey fails.
+  - targeted unit: `test_getmek_policy_config_request_envelopes_preserve_range2_selector` passed with operation cases included
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag getmek-operation-envelope-doc`: 12 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1237 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7101 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. Media-key state is adjacent to Locking/GenKey hidden-test families and closes a concrete stale key UID false PASS under realistic operation wrappers.
+- Residual risk:
+  - This repair does not change ActiveKey semantics, K_AES key generation side effects, or authority checks. It only preserves media-key read wrapper metadata.
+
+
+## 2026-06-05 KST - Authority counter operation command getter repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local Authority.Limit/Authority.Uses operation split-envelope fuzz
+  - concepts: Authority table `Limit` and `Uses` cells, high-level getter lowering, `operation.target` selector preservation, `operation.command.authAs`
+  - evidence: API-shaped traces may encode Authority getter selectors as `operation.target.identity` and authorization as `operation.command.authAs`.
+  - mismatch summary: `getAuthorityLimit(operation.target.identity=User1 + operation.command.authAs)` and `getAuthorityUses(...)` accepted both current tracked values and stale zero values. The getter lost the selected Authority row inside the operation envelope and therefore failed to compare the returned counter against tracked Authority state.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` Authority counter payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: Authority `Limit` and `Uses` are official Authority table cells. Getter wrappers must preserve the target Authority row and authenticator before reusing existing Get/CellBlock state comparison logic.
+- Verification:
+  - direct fuzz check: operation and operationRequest getters now accept current `Limit=2` / `Uses=3` and reject stale `Limit=0` / `Uses=0`.
+  - targeted unit: `test_authority_counter_getter_policy_config_envelopes_select_authority` passed with operation cases included
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag authority-counter-operation-envelope-doc`: 8 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1237 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7109 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. C_PIN/Auth state tracking was a known score-candidate family; this closes a concrete stale Authority counter false PASS under realistic operation wrappers.
+- Residual risk:
+  - This repair does not change Authority counter semantics or authentication budget consumption. It only preserves getter wrapper metadata before existing Authority table comparison logic runs.
+
+
+## 2026-06-05 KST - Authority Enabled operation command getter repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local Authority.Enabled operation split-envelope fuzz
+  - concepts: Authority table `Enabled` cell, high-level `getAuthority` / `isUserEnabled` / `getUserEnabled` wrappers, operation-style target selectors
+  - evidence: API-shaped traces may encode Authority.Enabled getters as `operation.target.identity` plus `operation.command.authAs`, or as `command` / `action` payloads.
+  - mismatch summary: after a successful `enableAuthority(User1, false)`, `getAuthority(operation.target.identity=User1 + operation.command.authAs)` accepted both the correct disabled result and stale enabled `True`. The getter lost the selected Authority row in operation-style envelopes.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` Authority.Enabled getter payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: Authority.Enabled is an official Authority table Boolean cell. All bounded high-level getter wrappers should lower to the same Authority row Get before comparing Boolean-shaped returns.
+- Verification:
+  - direct fuzz check: `operation`, `operationRequest`, `command`, and `action` getter envelopes now accept disabled `False` and reject stale enabled `True` for `getAuthority`, `isUserEnabled`, `getUserEnabled`, and `getAuthorityEnabled`.
+  - targeted unit: `test_authority_enabled_getter_operation_envelopes_select_authority` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag authority-enabled-operation-envelope-doc`: 32 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1238 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7141 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. Authority.Enabled gates later Authenticate/StartSession behavior and sits in the known C_PIN/Auth score-candidate family; this closes a realistic stale Boolean false PASS under operation wrappers.
+- Residual risk:
+  - This repair does not change Authority enable/disable transition semantics. It only preserves getter wrapper selectors and authorization metadata before existing Authority.Enabled comparison logic runs.
+
+
+## 2026-06-05 KST - TLS PSK getter operation command selector repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local TLS_PSK_Key getter operation split-envelope fuzz
+  - concepts: TLS_PSK_Key row metadata, `Enabled`, `CipherSuite`, high-level `getPskEntry` wrappers, operation-style selectors
+  - evidence: API-shaped traces may encode PSK getters as `operation.target.psk` plus `operation.command.authAs`, or as `command` / `action` payloads.
+  - mismatch summary: after a successful `setPskEntry(psk_id=1, Enabled=True, CipherSuite=0x1301)`, `getPskEntry(operation.target.psk=1 + operation.command.authAs)` accepted stale `Enabled=False` metadata. The getter lost the selected TLS_PSK_Key row in operation-style envelopes.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` PSK getter payload aliases and nested payload merge; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: TLS_PSK_Key Get returns metadata cells, not a Boolean status marker. Getter wrappers must preserve the row selector and authenticator before comparing returned metadata against tracked Set state.
+- Verification:
+  - direct fuzz check: `operation`, `operationRequest`, `command`, and `action` getter envelopes now accept current `Enabled=True` / `CipherSuite=0x1301` and reject stale `Enabled=False`.
+  - targeted unit: `test_psk_policy_config_request_envelopes_update_and_select_metadata` passed with operation getter cases included
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag psk-getter-operation-envelope-doc`: 8 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1238 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7149 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. PSK is less central than Locking/DataStore/Auth but hidden traces often use SDK wrapper envelopes; this closes a concrete metadata stale false PASS.
+- Residual risk:
+  - This repair does not change PSK Set semantics, required `CipherSuite` validation, or multi-authority checks. It only preserves getter wrapper metadata before existing TLS_PSK_Key comparison logic runs.
+
+
+## 2026-06-05 KST - Created table Delete operation command cleanup repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local DeleteTable operation split-envelope fuzz
+  - concepts: created table lifecycle, table descriptor Delete, created table state cleanup, high-level `deleteTable` wrappers
+  - evidence: API-shaped traces may encode table delete targets as `operation.target.table` plus `operation.command.authAs`, or as `command` / `action` payloads.
+  - mismatch summary: after a successful `CreateTable`, `deleteTable(operation.target.table=created_uid + operation.command.authAs)` was false-rejected. Because the delete transition did not apply, a later raw `Get` on the supposedly deleted table could still be accepted.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` table/object delete payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: high-level DeleteTable wrappers are bounded table descriptor Delete operations. They must preserve the created table UID and authenticator so the existing created-table cleanup/tombstone logic runs.
+- Verification:
+  - direct fuzz check: `operation`, `operationRequest`, `command`, and `action` deleteTable envelopes now accept empty successful Delete, reject non-empty success returns, and reject later Get on the deleted created table.
+  - targeted unit: `test_table_delete_query_domain_request_envelopes_preserve_payloads` passed with operation delete cases included
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag table-delete-operation-envelope-doc`: 8 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1238 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7157 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. Created table lifecycle and cleanup are a documented stateful area where hidden tests can check post-delete absence/tombstones; this closes both a false reject and a stale-state false accept.
+- Residual risk:
+  - This repair does not change CreateTable validation, table UID allocation, or raw Delete semantics. It only preserves high-level delete wrapper target/auth metadata before existing cleanup logic runs.
+
+
+## 2026-06-05 KST - Log operation command payload repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local Log AddLog/CreateLog/ClearLog operation-envelope fuzz
+  - concepts: Log.AddLog required payload, LogList.CreateLog result shape, ClearLog empty-result semantics, high-level log wrappers
+  - evidence: API-shaped traces may encode log operations as `operation.target.log` plus `operation.command`, or as standalone `command` / `action` payloads.
+  - mismatch summary: `addLog(operation.target.log + operation.command.name/data/authAs)` and `createLog(operation.command.name/minSize/...)` were false-rejected because required fields were not recovered from operation-style envelopes.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` AddLog/ClearLog/CreateLog payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: wrapper logs must preserve official required arguments and result shapes. AddLog/ClearLog may expose SDK Boolean success, while CreateLog must retain the official three-field success payload.
+- Verification:
+  - direct fuzz check: `operation`, `operationRequest`, `command`, and `action` envelopes now accept valid AddLog/CreateLog/ClearLog wrapper results and still reject missing required payload or invalid result shapes.
+  - targeted unit: `test_log_domain_request_envelopes_preserve_required_payload_and_result_shape` passed with operation cases included
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag log-operation-envelope-doc`: 24 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1238 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7181 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. Log wrappers are less central than Locking/Auth, but they are official method/result-shape semantics and private traces may encode them with SDK operation envelopes.
+- Residual risk:
+  - This repair does not change raw Log method semantics, LogList row defaults, or log ACL handling. It only preserves high-level wrapper payload fields before existing validation runs.
+
+
+## 2026-06-05 KST - HostProperties operation command ComID-state repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local HostProperties operation split-envelope fuzz
+  - concepts: Session Manager `Properties`, HostProperties negotiation, per-ComID state isolation, high-level `setHostProperties` / `getHostProperties` wrappers
+  - evidence: API-shaped traces may encode Session Manager property negotiation as `operation.target.ComID` plus `operation.command.HostProperties`, or as standalone `command` / `action` payloads.
+  - mismatch summary: `setHostProperties(operation.target.ComID + operation.command.HostProperties)` accepted stale default HostProperties and rejected the current negotiated values. After preserving the setter, `getHostProperties(operation.target.ComID=2)` still accepted ComID 1 values because selector-only getters were not marked for HostProperties response validation.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` Properties wrapper payload aliases and HostProperties-present detection; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: Session Manager Properties is stateful per ComID. Setter wrappers must preserve both target ComID and submitted host properties, while getter wrappers with only target selectors must still validate returned HostProperties against the selected ComID instead of allowing arbitrary returns.
+- Verification:
+  - direct fuzz check: `operation`, `operationRequest`, `command`, and `action` setters now accept current `MaxComPacketSize=4096` and reject stale defaults; matching getters now accept ComID 2 initial defaults and reject ComID 1 leakage.
+  - targeted unit: `test_host_properties_operation_envelopes_preserve_comid_state` passed
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1239 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7197 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. HostProperties is an early control-session negotiation path, and hidden traces can plausibly use SDK operation envelopes plus per-ComID checks. This repair closes both stale-state false PASS and valid-current false FAIL patterns.
+- Residual risk:
+  - This repair does not change raw Properties rules, TPer property validation, or protocol reset behavior. It only preserves high-level wrapper selector/payload metadata and ensures HostProperties getter wrappers validate selected ComID state.
+
+
+## 2026-06-05 KST - Port getter operation selector repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local Port getter operation selector fuzz
+  - concepts: AdminSP Port table, `PortLocked` state, high-level `getPort` / `getPortLocked` wrappers, operation-style selectors
+  - evidence: API-shaped traces may encode Port getters as `operation.target.port` plus `operation.command.authAs`, or as standalone `command` / `action` payloads.
+  - mismatch summary: after a successful `setPort(Port2, PortLocked=True)`, `getPort(operation.target.port=Port2)` accepted both the current `PortLocked=True` and stale `PortLocked=False`. The setter state was tracked, but the getter lost the selected Port row in operation-style envelopes.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` Port getter payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: Port getters are bounded AdminSP table `Get` operations. Wrapper selectors must preserve the selected Port row so returned `PortLocked` values are compared against tracked Set state.
+- Verification:
+  - direct fuzz check: `operation`, `operationRequest`, `command`, and `action` getters now accept current `PortLocked=True` and reject stale `PortLocked=False` after a successful Set.
+  - targeted unit: `test_port_policy_config_envelopes_update_and_select_port_state` passed with operation getter cases included
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag port-operation-envelope-doc`: 24 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1239 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7221 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. Port state is a smaller AdminSP area than Locking/DataStore, but the failure was a concrete stale false PASS in a stateful getter path and hidden SDK traces may use operation selector envelopes.
+- Residual risk:
+  - This repair does not change Port Set authorization, raw Port table semantics, or PortLocked return-shape aliases. It only preserves getter selectors before existing PortLocked comparison logic runs.
+
+
+## 2026-06-05 KST - DataRemoval getter operation target/CellBlock repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local DataRemovalMechanism operation getter fuzz
+  - concepts: AdminSP `DataRemovalMechanism`, `ActiveDataRemovalMechanism` state, object Get CellBlock restrictions, high-level `getDataRemovalMechanism` wrappers
+  - evidence: API-shaped traces may encode DataRemoval getters as `operation.target.table=DataRemovalMechanism` plus `operation.command.authAs`.
+  - mismatch summary: after a successful `setDataRemovalMechanism(... ActiveDataRemovalMechanism=2)`, `getDataRemovalMechanism(operation.target.table + operation.command.authAs)` rejected the current value. The wrapper target selector was being counted as an official CellBlock `Table` component, which made the object Get look invalid.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` DataRemoval getter payload aliases and `_cellblock_components` selector-context handling; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: `operation.target` is SDK selector metadata, not a CellBlock component. Official object Get restrictions still apply to real `CellBlock`, but wrapper `target.table` must not trigger the "omit Table/startRow/endRow" error.
+- Verification:
+  - direct fuzz check: `operation`, `operationRequest`, `command`, and `action` getters now accept current `ActiveDataRemovalMechanism=2` and reject stale `1`.
+  - targeted unit: `test_data_removal_operation_getters_preserve_auth_and_target_selector` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag data-removal-operation-envelope-doc`: 8 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1240 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7229 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. DataRemoval is smaller than Locking/DataStore, but this closes a real valid-current false FAIL in an official AdminSP state table and avoids a broader SDK-selector/CellBlock confusion.
+- Residual risk:
+  - This repair keeps official CellBlock validation intact for raw method calls. It only prevents non-CellBlock wrapper selector fields under `target` / `selector` / `selection` from being mistaken for CellBlock components.
+
+
+## 2026-06-05 KST - Random / FirmwareAttestation / Sign operation-command payload repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local operation-command stateless-method fuzz
+  - concepts: `Random.Count`, `FirmwareAttestation` assessor nonce, `Sign` input payload, wrapper result-shape validation
+  - evidence: API-shaped traces may encode method inputs as `operation.command`, `operationRequest.command`, `command`, or `action` rather than method-specific containers.
+  - mismatch summary: valid wrapper calls such as `getRandomBytes(operation.command.count=8)`, `firmwareAttestation(operation.command.nonce=...)`, and `sign(operation.command.payload=...)` were false-rejected. Random additionally treated `command` itself as an unsupported Random parameter.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` Random/FirmwareAttestation/Sign payload aliases and nested merge; `src/solver_components/expectations.py` Random unsupported-argument container set; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: `command` / `action` are wrapper envelope containers, not official method arguments. The official required fields still need to be recovered and validated for output length/result shape.
+- Verification:
+  - direct fuzz check: operation/operationRequest/command/action envelopes now accept valid Random byte length, FirmwareAttestation byte payloads, and Sign signature payloads; wrong length or Boolean-only outputs are rejected.
+  - targeted units: `test_random_policy_config_envelopes_preserve_count_and_bufferout`, `test_firmware_attestation_policy_config_envelopes_preserve_nonce`, and `test_sign_operation_command_envelopes_preserve_payload` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag random-operation-envelope-doc`: 8 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag firmware-attestation-operation-envelope-doc`: 8 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag sign-operation-envelope-doc`: 8 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1241 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7253 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. These methods are not as state-heavy as Locking/DataStore, but hidden traces often vary SDK wrapper envelope shape. This closes concrete valid-current false FAILs without relaxing official output validation.
+- Residual risk:
+  - This repair does not broaden accepted Random/FirmwareAttestation/Sign return semantics. Boolean-only, wrong-length, missing-nonce, missing-payload, and BufferOut shape errors remain rejected.
+
+
+## 2026-06-05 KST - XOR / Hash operation-command payload repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local XOR/crypto stream operation-command fuzz
+  - concepts: `ThisSP.XOR` byte payload comparison, `H_SHA_*` stream state, `HashInit` before `Hash`, high-level operation-style payload envelopes
+  - evidence: API-shaped traces may encode method payloads as `operation.command`, `operationRequest.command`, standalone `command`, or `action`, not only method-specific request containers.
+  - mismatch summary: valid-current calls such as `xor(operation.command.PatternInput/Input)` and `hash(operation.command.data)` after a successful `hashInit` were false-rejected because payload bytes were lost during wrapper lowering. The same traces should still reject stale XOR bytes or Boolean-only hash results.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` XOR and crypto payload alias/merge sets; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: operation-style `command` / `action` containers are SDK envelopes, not official method parameters. Payload extraction should preserve official byte inputs before existing XOR comparison and hash stream result-shape rules run.
+- Verification:
+  - direct fuzz check: operation/operationRequest/command/action envelopes now accept current XOR result `FF00` and reject stale `0F0F`; initialized hash accepts digest bytes and rejects Boolean success.
+  - targeted units: `test_xor_domain_request_envelopes_preserve_payload_and_bufferout_shape` and `test_crypto_bufferout_policy_config_envelopes_return_empty_result` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag xor-operation-envelope-doc`: 8 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag crypto-operation-envelope-doc`: 8 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1241 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7269 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. This is another hidden-SDK-envelope robustness repair in crypto/byte-payload space. It is less broad than Locking state-machine work, but it closes concrete false FAILs while keeping stale/shape failures strict.
+- Residual risk:
+  - This repair does not alter crypto algorithm semantics, BufferOut mutation rules, or hash stream lifecycle. It only recovers payload bytes from operation-style containers before the existing official rules are applied.
+
+
+## 2026-06-05 KST - Locking boolean getter operation selector repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local Locking getter operation-selector fuzz
+  - concepts: Locking range `ReadLocked`, `WriteLocked`, `ReadLockEnabled`, composite lock getter state, high-level operation-style selectors
+  - evidence: API-shaped traces may encode Locking boolean getters as `operation.command`, `operation.target + operation.command`, `operationRequest.command`, standalone `command`, or `action` instead of `request` / `policy` / `config`.
+  - mismatch summary: after `setRange(rangeId=1, ReadLocked=True, WriteLocked=True, ...)`, `getReadLocked`, `getWriteLocked`, and `getRangeLocks` accepted stale `False` lock state when the selector was supplied through operation-style envelopes. The parser lost the selected range row before existing tracked-state comparison ran.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` Locking range-field and range-lock getter payload aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: operation-style `command` / `action` containers are SDK selector envelopes. They must preserve range/auth metadata before the official Locking table `Get` comparison enforces tracked `ReadLocked` / `WriteLocked` state.
+- Verification:
+  - direct fuzz check: operation/operationRequest/command/action getters now accept current lock state and reject stale lock state for `getReadLocked`, `getWriteLocked`, and `getRangeLocks`.
+  - targeted unit: `test_locking_range_policy_envelopes_preserve_state` passed with operation selector cases included
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag locking-column-operation-envelope-doc`: 70 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1241 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7315 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. This closes a concrete stale PASS in the Locking state machine, one of the strongest remaining score-sensitive areas. Hidden traces that use operation-style Locking getters should now be judged against tracked state instead of default/ignored selectors.
+- Residual risk:
+  - This repair does not change Locking authorization, raw CellBlock behavior, range geometry, or lock/reset transitions. It only broadens selector recovery for high-level getter envelopes before the existing state rules execute.
+
+
+## 2026-06-05 KST - setMBR operation-command payload repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local `setMBR` operation-command fuzz
+  - concepts: MBRControl state cells, MBR byte table sparse payload, high-level `setMBR` wrapper envelopes
+  - evidence: hidden/API traces may use `setMBR` as a compact wrapper for either MBRControl cells or MBR byte writes, with payloads nested under `operation.command`, `operation.target + operation.command`, `operationRequest.command`, standalone `command`, or `action`.
+  - mismatch summary: `setMBR(operation.command.Enabled/Done/DoneOnReset)` rejected the current MBRControl state, while `setMBR(operation.command.offset/bytes)` accepted stale later MBR bytes because the write payload was ignored.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` `setMBR` payload aliases and nested command/action merge; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: `setMBR` is a high-level wrapper that can lower to either MBRControl `Set` or MBR byte-table `Set`. Operation-style envelopes must be unwrapped before deciding which official target applies.
+- Verification:
+  - direct fuzz check: operation/operationRequest/command/action `setMBR` control payloads now accept current MBRControl cells and reject stale cells; byte payloads now accept current MBR bytes and reject stale bytes.
+  - targeted units: `test_tcgstorageapi_setmbr_control_fields_update_mbrcontrol` and `test_tcgstorageapi_setmbr_byte_payload_updates_mbr_table` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag mbr-operation-envelope-doc`: 20 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1241 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7335 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. MBR has not been the strongest recent score mover, but this closes a concrete stale byte false PASS plus current-state false FAIL in a documented LockingSP/MBR area.
+- Residual risk:
+  - This repair does not change MBR shadow/reset semantics or raw MBRControl table rules. It only broadens high-level `setMBR` envelope extraction before existing MBRControl/MBR byte-table semantics run.
+
+
+## 2026-06-05 KST - ReEncrypt RETIDLE alias / operation-envelope repair
+
+- Change type: solver fix + harness regression coverage
+- Trigger:
+  - case_id: local ReEncrypt alias/operation-envelope fuzz
+  - concepts: Locking `ReEncryptRequest`, `ReEncryptState` PAUSED to IDLE transition, high-level wrapper naming variants
+  - evidence: existing wrappers include `retIdle`, `returnIdle`, `returnToIdle`, `stopReEncrypt`, and `cancelReEncrypt` as `RETIDLE_req` aliases. Hidden/API traces may use the more explicit names `returnReEncryptIdle` or `returnReEncryptionIdle`, including operation-style selector envelopes.
+  - mismatch summary: from observed `ReEncryptState=PAUSED`, `returnReEncryptIdle(operation.command.rangeId/authAs)` rejected the correct later `IDLE` state and accepted stale `PAUSED`, because the wrapper function name did not lower to `RETIDLE_req`.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` ReEncrypt request alias map; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`; `tools/run_synthetic_edges.py`
+  - rationale: `returnReEncryptIdle` / `returnReEncryptionIdle` are bounded naming variants of the documented `RETIDLE_req` transition. They should share the same range/auth envelope extraction and state transition as the existing retIdle/returnToIdle aliases.
+- Verification:
+  - direct fuzz check: `returnReEncryptIdle` and `returnReEncryptionIdle` now move PAUSED to IDLE and reject stale PAUSED; operation/operationRequest/command/action selectors are preserved.
+  - targeted units: `test_tcgstorageapi_reencrypt_advkey_and_retidle_aliases_return_to_idle` and `test_tcgstorageapi_reencrypt_retidle_operation_envelopes_return_to_idle` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag reencrypt-operation-envelope-doc`: 16 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1242 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 3997 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 811 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. This is a concrete ReEncrypt state-machine stale PASS, and ReEncrypt/Locking transitions have been a score-sensitive family. The change is narrow and aligns with existing alias semantics.
+- Residual risk:
+  - This repair does not change raw `RETIDLE_req` semantics or other ReEncrypt transitions. It only maps additional high-level names to the already-modeled transition.
+
+
+## 2026-06-05 KST - C_PIN counter fixture integrity cleanup
+
+- Change type: harness/probe cleanup, no solver semantic change
+- Trigger:
+  - case_id: local C_PIN TryLimit/Tries wrapper re-audit
+  - concepts: C_PIN `TryLimit`, `Tries`, `Persistence`, failed `Authenticate` / `checkPIN` accounting, official column numbering
+  - evidence: Core documents define C_PIN columns as `TryLimit=0x05`, `Tries=0x06`, and `Persistence=0x07`.
+  - finding: a suspected wrapper mismatch was caused by querying column `7` as if it were `Tries`. The solver correctly increments and validates column `6` after a failed wrapper `checkPIN`.
+- Cleanup path:
+  - files/functions: `tests/test_solver_rules.py`, `tools/score_probe_loop.py`, `tools/run_synthetic_edges.py`
+  - change: replaced invalid fixture value `{"7": 2}` with boolean `{"7": False}` while preserving `TryLimit=3` and `Tries=1`.
+  - rationale: C_PIN column 7 is boolean `Persistence`; using integer `2` makes the context invalid and can weaken later getter assertions.
+- Verification:
+  - targeted unit: `test_cpin_counter_getter_policy_config_envelopes_select_credential` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py --tag tcgstorageapi-wrapper`: 1629 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - direct audit: failed wrapper `checkPIN` increments observable C_PIN `Tries` column 6 and preserves `Persistence` column 7 as boolean
+  - AccessControl/GetACL operation-command wrapper audit: no mismatch found; exact Locking_Range1.Get ACL validation already works for operation/action/command envelopes.
+- Dashboard relevance:
+  - Low direct impact. This did not change solver behavior, but it improves the reliability of future TryLimit/Tries edge cases and prevents invalid synthetic context pollution.
+- Residual risk:
+  - This cleanup does not add new official sourced cases. It only corrects local harness fixtures that were already intended to exercise C_PIN counter getters.
+
+
+## 2026-06-05 KST - Issued crypto/hash Name/CommonName read-only repair
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: local uncovered-doc audit for package/crypto issued-row metadata
+  - concepts: issued credential objects, cryptographic support objects, `Name`, `CommonName`, read-only columns, host `Set`
+  - evidence: Core C_RSA/C_AES/C_EC/C_HMAC/H_SHA object-table column docs state that `Name` and `CommonName` for objects that exist at issuance SHALL NOT be modifiable by the host.
+  - mismatch summary: issued objects such as `H_SHA_256`, `C_AES_128`, `C_RSA_2048`, `C_HMAC_160`, and `C_EC_160` accepted successful `Set` of column `1` or `2`, even though created/test rows should remain settable.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_is_issued_crypto_metadata_symbol`, `src/solver_components/semantics.py::_invalid_set_values`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: apply the document rule only to exact issued family object names (`H_SHA_*`, `C_RSA_*`, `C_AES_*`, `C_HMAC_*`, `C_EC_*`) and only to columns `1`/`2`; do not reject `_Test` or created-row symbols that are not known issuance rows.
+- Verification:
+  - direct fuzz: issued family `Name`/`CommonName` Set `SUCCESS` now fails and `INVALID_PARAMETER` passes; `C_AES_256_Test` metadata Set `SUCCESS` still passes.
+  - targeted units: `test_issued_crypto_name_commonname_set_rejects_success` and `test_created_crypto_test_row_metadata_remains_settable` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py --tag crypto-issued-metadata-readonly-doc`: 30 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1244 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4027 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 825 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. This is a concrete false PASS rooted in official package/crypto metadata docs. It may help if private coverage includes issued read-only metadata beyond the earlier Authority/ACE/C_PIN/MethodID/Table/SPInfo clusters.
+- Residual risk:
+  - The rule intentionally does not decide whether arbitrary dynamically-created crypto rows may mutate metadata. It only blocks exact known issuance object family names to avoid score-lowering overreach.
+
+
+## 2026-06-05 KST - CryptoSuite metadata read-only repair
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: local package/crypto metadata read-only audit
+  - concepts: Admin SP metadata, CryptoSuite, TPer crypto capability rows, read-only columns, host `Set`
+  - evidence: Core CryptoSuite docs define UID, CryptoCall, CryptoLen, CryptoOp, Special, Time, and Variance as TPer metadata columns that SHALL NOT be modifiable by the host.
+  - mismatch summary: `CryptoSuite` and `CryptoSuite_*` row targets accepted successful `Set` for these metadata columns.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_invalid_set_values`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: CryptoSuite rows describe TPer-provided crypto functionality and timing metadata. Unlike dynamically-created user tables, these rows are not host-mutable, so successful Set responses should be rejected.
+- Verification:
+  - direct fuzz: `CryptoSuite` and `CryptoSuite_AES_256_Encrypt` Set `SUCCESS` now fails for representative metadata columns, while `INVALID_PARAMETER` passes.
+  - targeted unit: `test_cryptosuite_metadata_set_rejects_success` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py --tag cryptosuite-readonly-doc`: 20 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1245 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4047 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 833 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Low-medium. It is a real official-doc false PASS in Admin SP metadata, but likely less score-dense than Locking state, AccessControl association, DataStore payload, or C_PIN trajectory clusters.
+- Residual risk:
+  - This does not add CryptoSuite Get return-cell validation. It only rejects successful host mutation of CryptoSuite metadata rows.
+
+
+## 2026-06-05 KST - Certificates issued metadata read-only repair
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: local certificate metadata read-only audit
+  - concepts: Certificates object table, issued-row metadata, UID, Name, CommonName, host `Set`
+  - evidence: Core Certificates docs define UID as not host-modifiable and state that Name/CommonName of Certificates objects that exist at issuance SHALL NOT be modifiable by the host.
+  - mismatch summary: exact `Certificates` / `Certificate` targets accepted successful `Set` for columns `0`, `1`, and `2`.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_invalid_set_values`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: block the issued metadata cells while preserving possible created/test certificate rows and avoiding assumptions about CertData/CertSize mutability beyond the explicit docs.
+- Verification:
+  - direct fuzz: `Certificates` and `Certificate` Set `SUCCESS` now fails for UID/Name/CommonName and `INVALID_PARAMETER` passes; `Certificates_Test` metadata Set `SUCCESS` still passes.
+  - targeted units: `test_issued_certificates_metadata_set_rejects_success` and `test_created_certificate_test_row_metadata_remains_settable` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py --tag certificates-issued-readonly-doc`: 14 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1247 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4061 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 837 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Low-medium. This is another official issued-row read-only false PASS. It is unlikely to dominate score alone, but it extends the same read-only pattern that previously helped in Authority/ACE/C_PIN/MethodID/Table metadata.
+- Residual risk:
+  - This intentionally does not reject CertData/CertSize Set success and does not make broad claims about dynamically-created Certificates rows.
+
+
+## 2026-06-05 KST - LogList table-target Set rejection
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: local LogList read-only probe
+  - concepts: Log Template, LogList object table, table-vs-row Set, read-only columns
+  - evidence: Core LogList docs define LogList as an object table containing one row per Log table. UID/Name/CommonName/Log/Serial are not host-modifiable; HighSecurity is a concrete row cell, not a blanket table-target mutation.
+  - mismatch summary: exact `LogList` / `LogListTable` direct Set accepted success for arbitrary columns, while concrete LogList rows already applied the intended row-level restrictions.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_invalid_set_values`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: reject table-target direct Set without changing concrete row behavior. `LogList_Audit.HighSecurity` remains valid, while `LogList.Set` no longer succeeds.
+- Verification:
+  - direct fuzz: `LogList` and `LogListTable` Set `SUCCESS` now fails for representative columns; `LogList_Audit.HighSecurity` Set `SUCCESS` still passes.
+  - targeted unit: `test_loglist_table_direct_set_rejects_success` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py --tag loglist-readonly-doc`: 3 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1248 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4062 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 837 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Low. It is a clean table-vs-row false PASS in Log metadata, but likely less score-dense than Locking state machines, AccessControl associations, or DataStore payload trajectories.
+- Residual risk:
+  - This does not add new LogList Get postcondition checks. It only rejects direct Set against the table target.
+
+
+## 2026-06-05 KST - LogEntry alias read-only repair
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: local Log row alias read-only probe
+  - concepts: Log table, LogEntry aliases, row immutability, direct host `Set`
+  - evidence: Core Log table docs model log records as Log table entries exposed through table/method access. Existing Log rows contain TPer log data and are not host-modifiable object rows.
+  - mismatch summary: `LogEntry` and `LogEntry_1` accepted successful direct `Set` of row cells such as Data, while sibling aliases like `Log_Row1` were already rejected.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_invalid_set_values`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: close a naming-alias hole in the existing Log row read-only rule without changing CreateLog or LogList HighSecurity semantics.
+- Verification:
+  - direct fuzz: `LogEntry`, `LogEntry_1`, `Log_Row1`, and `Log_Audit` Set `SUCCESS` now fail for representative row columns.
+  - targeted unit: `test_log_entry_rows_are_not_host_modifiable` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py --tag log-entry-readonly-expanded-doc`: 13 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1248 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4063 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 837 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Low. This is a narrow Log alias repair. It is safe and official-doc-backed, but less likely to move the dashboard than Locking state, AccessControl association, DataStore payload, or C_PIN long trajectories.
+- Residual risk:
+  - This does not add broader Log method return validation. It only rejects direct host mutation of LogEntry aliases.
+
+
+## 2026-06-05 KST - DataStore offsetBytes / sizeBytes wrapper alias repair
+
+- Change type: parser fix + probe/unit coverage
+- Trigger:
+  - case_id: local DataStore wrapper audit
+  - concepts: DataStore byte table, SDK wrapper aliases, byte offset, byte-window length, sparse payload state
+  - mismatch summary: `writeDataStore(offsetBytes=5, buffer=AABBCC)` followed by `readDataStore(offsetBytes=6, sizeBytes=2)` rejected the correct `BBCC` current payload while stale payloads still failed.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py` byte-table wrapper lowering and shared byte-table range aliases; `tests/test_solver_rules.py`; `tools/score_probe_loop.py`
+  - rationale: `offsetBytes` and `sizeBytes` are wrapper spelling variants for the official DataStore byte-table start row and byte-count window. They should lower into the same Set/Get state machine as `byteOffset` and `byteLength`.
+- Verification:
+  - targeted unit: `test_datastore_offsetbytes_sizebytes_wrapper_aliases_preserve_window` passed
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Low-medium. It is alias-shape dependent, but private tests often include wrapper naming variants around byte-table state.
+
+
+## 2026-06-05 KST - Authenticate Proof on non-password authorities
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: C_PIN/Auth subagent audit
+  - concepts: Authenticate Awaiting Challenge, Proof parameter, Authority.Operation, TPerSign, AdminExch
+  - evidence: Core Authenticate failure rules state that in Awaiting Challenge state, supplying Proof to a non-Password/non-Anybody authority returns `INVALID_PARAMETER` with an empty result. Base Template authorities identify `TPerSign` as Operation `TPerSign` and `AdminExch` as Operation `Exchange`.
+  - mismatch summary: `Authenticate(Authority=TPerSign, Proof=nonce)` and enabled `AdminExch` with Proof were accepted as `SUCCESS False`.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_authenticate`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: the illegal Proof check must run before the generic non-password/inappropriate-authority `SUCCESS False` branch.
+- Verification:
+  - targeted units: `test_tpersign_authenticate_with_proof_requires_invalid_parameter`, `test_adminexch_authenticate_with_proof_cannot_return_success_false` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py --tag auth-operation-doc`: 5 cases, 0 mismatches
+- Dashboard relevance:
+  - Medium-high. This is a precise official failure rule in a historically score-relevant Authenticate/C_PIN area.
+
+
+## 2026-06-05 KST - Optional Hardware reset list rejection
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: Locking subagent audit
+  - concepts: LockOnReset, MBRControl.DoneOnReset, reset_types, Hardware Reset, SHALL vs MAY support
+  - evidence: Opal requires support for `{0}` and `{0,3}` reset lists, but only MAY support `{0,1}` and `{0,1,3}` for both LockOnReset and DoneOnReset.
+  - mismatch summary: the solver rejected `INVALID_PARAMETER` for Hardware-containing optional lists even though absence of optional support is compliant.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_set`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: optional feature absence should not be treated as a model failure. Successful Set remains valid, but `INVALID_PARAMETER` is also valid for the MAY-support Hardware variants.
+- Verification:
+  - targeted units: `test_optional_hardware_lockonreset_rejection_is_valid`, `test_optional_hardware_mbr_doneonreset_rejection_is_valid` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py --tag locking-reset-list-restrictions-no-mutation-doc`: 28 cases, 0 mismatches
+- Dashboard relevance:
+  - Medium. This closes false negatives around Opal optional support, especially reset-state-machine private cases.
+
+
+## 2026-06-05 KST - AccessControl SetACL self-association rejection
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: AccessControl/GetACL subagent audit
+  - concepts: AccessControl association universe, GetACL, meta-methods, SetACL absence
+  - evidence: extracted Core docs define `GetACL`, `AddACE`, `RemoveACE`, and `DeleteMethod` meta-methods, and AccessControl metadata columns include AddACEACL/RemoveACEACL/GetACLACL/DeleteMethodACL. No extracted Core `SetACL` method section or SetACLACL column exists.
+  - mismatch summary: `GetACL(InvokingID=AccessControl, MethodID=SetACL)` accepted successful responses.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::META_ACL_METHOD_NAMES`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: keep the solver's existing SetACL replacement wrapper behavior for concrete associations, but do not invent an AccessControl row for `MethodID=SetACL`.
+- Verification:
+  - targeted unit: `test_getacl_rejects_access_control_setacl_self_association_success` passed
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py --tag accesscontrol-meta-self-association-doc`: 16 cases, 0 mismatches
+- Dashboard relevance:
+  - Medium-high. This is a narrow AccessControl association-universe correction, a cluster that has historically affected submitted score.
+
+
+## 2026-06-05 KST - Combined gate after parallel audit repairs
+
+- Verification:
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1253 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4078 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 837 / 1376 sourced-covered documents, 0 untriaged A/B documents
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Residual risk:
+  - No server submission was performed in this loop. The AccessControl SetACL change is intentionally narrow because broader SetACL wrapper semantics are solver-internal and already covered by existing probes.
+
+
+## 2026-06-05 KST - GenKey credential-family target expansion
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: local GenKey credential-family probe
+  - concepts: GenKey, C_RSA, C_AES, C_EC, C_HMAC, PublicExponent, PinLength, empty result shape
+  - evidence: Core GenKey fills an existing object in C_AES_*, K_AES_*, C_EC_*, C_PIN, C_RSA_*, or C_HMAC_* with new key material and returns an empty list. PublicExponent is valid only for C_RSA, and PinLength only for C_PIN.
+  - mismatch summary: valid `C_RSA_1024/2048`, `C_AES_128`, `C_HMAC_160`, and `C_EC_256` GenKey successes were rejected; invalid `H_SHA_256.GenKey` remains rejected.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_is_genkey_credential_symbol`, `src/solver_components/expectations.py::_expected_genkey`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: model GenKey at the documented credential-family level instead of only C_PIN and K_AES range keys.
+- Verification:
+  - targeted units: 5 GenKey family tests passed
+  - sourced tags: `genkey-credential-family-doc` 8 / 0, `genkey-result-shape-doc` 20 / 0
+- Dashboard relevance:
+  - Medium. This is a direct false-negative repair for official crypto/package method semantics.
+
+
+## 2026-06-05 KST - Challenge-response StartSession pending trusted state
+
+- Change type: state-machine solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: session startup subagent audit
+  - concepts: HostSigningAuthority.Operation, MakerPuK, MakerSymK, SPChallenge, HostResponse, StartTrustedSession
+  - evidence: Core says Sign/SymK/HMAC HostSigningAuthority startup returns SPChallenge in SyncSession, and the host supplies HostResponse in StartTrustedSession. The Regular Session is open only after the trusted half completes.
+  - mismatch summary: MakerPuK/MakerSymK startup without HostChallenge was rejected; missing HostResponse and ordinary methods before StartTrustedSession were accepted.
+- Repair path:
+  - files/functions: `src/solver_components/models.py::Session`, `src/solver_components/expectations.py::_expected_start_session`, `_expected_start_trusted_session`, `expected_response`, `src/solver_components/transitions.py::_apply_start_session_success`, StartTrusted transition
+  - rationale: distinguish a processed StartSession control exchange from a fully open Regular Session when challenge-response/key-exchange is pending.
+- Verification:
+  - targeted units: 6 session startup tests passed
+  - sourced tag: `session-startup-security-long-doc` 38 / 0
+- Dashboard relevance:
+  - High. Session startup is a broad behavioral gate and the repair closes both false FAIL and false PASS trajectories.
+
+
+## 2026-06-05 KST - MBR/DataStore crypto cellblock Set authority
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: crypto/MBR subagent audit
+  - concepts: Crypto Template cellblocks, BufferOut, MBR Set ACL, XOR PatternInput, DeletePattern
+  - evidence: Core requires Get ACL for input cellblocks and Set ACL for output cellblocks; XOR DeletePattern=True zeroes PatternInput and therefore requires Set access. Opal preconfigures MBR Get for Anybody and MBR Set for Admins.
+  - mismatch summary: MBR BufferOut and XOR DeletePattern paths accepted success for sessions without MBR/DataStore Set authority.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_explicit_byte_table_ref_symbol`, `_byte_table_cellblock_access_authorized`, `_crypto_datastore_cellblock_access_error`, `_expected_xor`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: lift the existing DataStore-specific cellblock ACL check to byte-table semantics covering MBR, and apply XOR DeletePattern's Set requirement to the PatternInput table.
+- Verification:
+  - targeted units: 3 crypto/XOR MBR ACL tests passed
+  - sourced tags: `crypto-cellblock-accesscontrol-doc` 12 / 0, `xor-byte-table-bufferout-doc` 9 / 0
+- Combined gate:
+  - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1267 tests passed
+  - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+  - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4105 cases, 0 mismatches
+  - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+  - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 837 / 1376 sourced-covered documents, 0 untriaged A/B documents
+  - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This exercises cross-feature ACL requirements around crypto, byte tables, and MBR, which are more private-test-like than simple result-shape checks.
+
+
+## 2026-06-05 KST - CreateTable named Columns schema enforcement
+
+- Change type: parser/semantics fix + official sourced edge coverage
+- Trigger:
+  - case_id: CreateTable/CreateRow subagent audit
+  - concepts: CreateTable.Columns, named column definitions, column ordering, CreateRow row_data, undeclared columns
+  - evidence: Core says CreateTable.Columns contains host-supplied column names and type uidrefs; ordering determines the created table columns. CreateRow requires values for each column and fails when specified columns are not part of the table definition.
+  - mismatch summary: `Columns=[["Entry","uid"],["Tag","name"]]` collapsed to no declared schema, so partial rows and column-99 rows were accepted.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_create_table_column_schema`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: keep numeric column IDs when explicitly supplied, but assign ordered column IDs to name/type definitions so named official pseudo-code shapes enforce the same row schema as numeric shapes.
+- Verification:
+  - targeted units: 3 named Columns schema tests passed
+  - sourced tag: `create-row-unique-columns-doc` 13 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1270 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4108 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 837 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This closes dynamic table false accepts for human-readable schema shapes, which are likely in private tests because they mirror the official Columns pseudo-code.
+
+
+## 2026-06-05 KST - CreateRow side-effect ACE method associations
+
+- Change type: state-machine solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: CreateRow side-effect ACE subagent audit
+  - concepts: CreateRow, dynamic AccessControl rows, side-effect ACE creation, GetACL association existence
+  - evidence: Core CreateRow creates AccessControl rows for created object methods, creates a new ACE for those rows, and creates additional AccessControl rows for the new ACE's methods referencing that same ACE.
+  - mismatch summary: after a created row's GetACL revealed a new ACE uidref, `GetACL` on that ACE object's `Get` method still returned `NOT_AUTHORIZED`/FAIL instead of accepting the self-referential ACL.
+- Repair path:
+  - files/functions: `src/solver_components/models.py::State.created_row_side_effect_ace_by_uid`, `src/solver_components/transitions.py` GetACL observation and created-row/table cleanup, `src/solver_components/semantics.py::_combo_exists_for_get_acl`, `src/solver_components/expectations.py::_known_meta_acl_authorization` and `_known_acl_return_refs`
+  - rationale: observe the side-effect ACE UID from a successful created-row GetACL response before exposing its own method associations, avoiding speculative ACE creation.
+- Verification:
+  - targeted units: 2 side-effect ACE GetACL tests passed
+  - sourced tag: `created-row-accesscontrol-doc` 14 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1272 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4110 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 837 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High. Dynamic AccessControl association existence and exact ACL behavior are historically score-sensitive, and this repair is grounded in an observed ACE uidref rather than broad inference.
+
+
+## 2026-06-06 KST - Random BufferOut byte-table Set authority
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: random-bufferout-cellblock-acl local audit
+  - concepts: Random, BufferOut cellblock, Crypto Template cellblock access, DataStore Set ACL, MBR Set ACL
+  - evidence: Core Random declares `BufferOut = cell_block`; Random Result is empty when BufferOut is specified; Random fails when Set access control is not satisfied for BufferOut; generic Crypto Template cellblock rules require Set access on output buffers.
+  - mismatch summary: successful Random to DataStore/MBR BufferOut was accepted even when the session did not satisfy the target byte table's Set authority.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_random`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: reuse the shared byte-table cellblock ACL check for Random before applying the empty-result BufferOut rule, keeping Random aligned with Encrypt/Hash/Sign/XOR output-buffer semantics.
+- Verification:
+  - targeted units: 2 Random BufferOut ACL tests passed
+  - sourced tags: `random-doc` 6 / 0, `random-bufferout-cellblock-acl-doc` 2 / 0
+  - direct probes: DataStore Set-ACE-empty and unauthenticated MBR BufferOut success now both fail
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1274 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4112 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 838 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+  - harness note: Random BufferOut wrapper PASS cases in the unsourced synthetic suite now run under an authorized Locking Admin session so they continue to test envelope/result-shape parsing rather than contradicting the newly enforced Set-ACL precondition.
+- Dashboard relevance:
+  - Medium-high. This is a cross-feature official rule boundary around Random, byte-table BufferOut, and AccessControl, not just a result-shape tweak.
+
+
+## 2026-06-06 KST - ThisSP generic Get/Set AccessControl absence
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: accesscontrol-thissp-generic-get-set local audit
+  - concepts: AccessControl association existence, ThisSP SP methods, generic object Get/Set, concrete preconfigured rows
+  - evidence: Opal AccessControl preconfiguration lists concrete `ThisSP` rows for SP methods such as `Authenticate`, `Random`, and Locking `RevertSP`; Core defines other SP methods such as `GetFreeSpace` on `ThisSP`. The preconfiguration does not list generic `ThisSP/Get` or `ThisSP/Set` associations.
+  - mismatch summary: `GetACL(InvokingID=ThisSP, MethodID=Get|Set)` accepted success because broad object `Get`/`Set` existence checks ran before the narrower SP-method handling.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_combo_exists_for_get_acl`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: reject only exact `ThisSP` generic `Get` and `Set` associations while preserving documented `ThisSP` SP-method associations.
+- Verification:
+  - targeted units: `test_getacl_rejects_thissp_generic_get_set_associations` and `test_getacl_accepts_thissp_get_free_space_association` passed
+  - sourced tag: `accesscontrol-sp-method-scope-doc` 20 / 0
+  - direct probes: `ThisSP/Get` and `ThisSP/Set` now fail; `ThisSP/Random`, `ThisSP/Authenticate`, `ThisSP/RevertSP`, and `ThisSP/GetFreeSpace` still pass.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1275 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4116 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 838 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. AccessControl association-existence mistakes have been one of the most score-sensitive clusters, and this repair is deliberately narrow to avoid the prior over-tightening risk.
+
+
+## 2026-06-06 KST - Random BufferOut capacity enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: random-bufferout-capacity local audit
+  - concepts: Random.Count, BufferOut cellblock capacity, empty Result shape
+  - evidence: Core Random Count specifies the number of generated bytes; BufferOut identifies the cells where those bytes are stored; Random fails if BufferOut is not big enough to hold Count bytes.
+  - mismatch summary: authorized `Random(Count=4, BufferOut=DataStore rows 0..1)` with empty successful Result was accepted even though the output cellblock can hold only two bytes.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_byte_table_cellblock_capacity`, `_expected_random`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: keep the existing empty-result rule for valid BufferOut, but reject successful Random when a known byte-table row range is smaller than Count. Capacity is not inferred from abstract column-only cellblocks, because those do not establish byte-cell count in the local trajectory.
+- Verification:
+  - targeted unit: `test_random_bufferout_cellblock_must_fit_count` passed
+  - sourced tags: `random-doc` 6 / 0, `random-bufferout-capacity-doc` 2 / 0
+  - compatibility check: `random-bufferout-cellblock-acl-doc` remains 2 / 0
+  - direct probes: Count 4 over rows 0..1 and Count 3 over rows 4..5 now fail; exact-fit Count 2 over rows 0..1 and Count 1 over row 0 still pass; column-only abstract BufferOut remains accepted.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1276 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4118 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 838 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This is a compact but private-test-shaped Random edge case that combines a mandatory Count bound with concrete byte-table BufferOut sizing.
+
+
+## 2026-06-06 KST - Encrypt/Decrypt BufferOut capacity enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: crypto-bufferout-capacity local audit
+  - concepts: Encrypt, Decrypt, open crypto streams, direct Input bytes, BufferOut cellblock capacity
+  - evidence: Core Encrypt and Decrypt fails sections require DataInput byte size to be the same size as or smaller than the BufferOut/Result cell size when BufferOut is specified.
+  - mismatch summary: authorized `Encrypt` and `Decrypt` with open streams accepted empty-result success when four direct input bytes were written to a DataStore BufferOut range of only two rows.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_crypto_stream_method`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: reuse the explicit byte-table row-window capacity helper for stream update BufferOut checks, but only when direct input bytes and concrete output capacity are both known.
+- Verification:
+  - targeted unit: `test_encrypt_decrypt_bufferout_cellblock_must_fit_input_size` passed
+  - sourced tag: `crypto-bufferout-capacity-doc` 4 / 0
+  - direct probes: four-byte input over rows 0..1 now fails for Encrypt and Decrypt; two-byte exact-fit input over rows 0..1 still passes.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1277 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4122 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 838 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This covers a private-test-shaped Crypto Template BufferOut sizing rule near the DataStore/MBR ACL cluster.
+
+
+## 2026-06-06 KST - HashInit BufferOut capacity enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: hashinit-bufferout-capacity local audit
+  - concepts: H_SHA result width, HashInit, BufferOut cellblock capacity, byte-table row windows
+  - evidence: Core `HashInit` fails when BufferOut is specified and is not larger than or equal to the hash calculation result. H_SHA_256 declares 32-byte hash-state fields, so an H_SHA_256 hash result requires a 32-byte output range.
+  - mismatch summary: authorized `HashInit(H_SHA_256, BufferOut=DataStore rows 0..1)` accepted success with an empty result even though the output cellblock can hold only two bytes.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_crypto_stream_method`, `_hash_result_size_bytes`, `_hash_symbol_for_event`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: reject successful `HashInit` when both the H_SHA result width and explicit byte-table BufferOut row-window capacity are known and the capacity is smaller than the digest. Do not treat abstract `Bytes` output placeholders or column-only cellblocks as concrete capacity evidence.
+- Verification:
+  - targeted unit: `test_hashinit_bufferout_cellblock_must_fit_hash_result_size` passed
+  - sourced tag: `hashinit-bufferout-capacity-doc` 2 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1278 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4124 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 838 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This targets a narrow official hash BufferOut sizing rule that private tests may combine with byte-table ACL and stream-state cases.
+
+
+## 2026-06-06 KST - HMACFinalize remembered BufferOut capacity enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: hmac-finalize-bufferout-capacity local audit
+  - concepts: HMACInit BufferOut, HMACFinalize, H_SHA result width, stateful stream output capacity
+  - evidence: Core `HMACInit` can specify the BufferOut cellblock for the HMAC result. Core `HMACFinalize` computes the HMAC and fails if that specified BufferOut cellblock is smaller than the HMAC result. H_SHA_256 result width is 32 bytes.
+  - mismatch summary: after successful `HMACInit(H_SHA_256, BufferOut=DataStore rows 0..30)`, the solver accepted `HMACFinalize SUCCESS` even though the remembered output cellblock is only 31 bytes.
+- Repair path:
+  - files/functions: `src/solver_components/models.py::State.crypto_stream_bufferout_value`, `src/solver_components/transitions.py::_apply_crypto_stream_success`, `src/solver_components/expectations.py::_expected_crypto_stream_method`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: preserve the concrete BufferOut value across the open HMAC stream and reject `HMACFinalize SUCCESS` when known explicit row-window capacity is less than the H_SHA result width. Keep unknown-capacity abstractions lenient.
+- Verification:
+  - targeted unit: `test_hmac_finalize_checks_init_bufferout_capacity` passed
+  - sourced tag: `hmac-finalize-bufferout-capacity-doc` 2 / 0
+  - direct probe: rows 0..30 now fail; rows 0..31 still pass.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1279 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4126 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 838 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This adds a stateful official HMAC edge case in the same high-value BufferOut sizing family as Random, Encrypt/Decrypt, and HashInit.
+
+
+## 2026-06-06 KST - Verify cellblock Get ACL enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: verify-cellblock-accesscontrol local audit
+  - concepts: Verify, DataInput cellblock, ProofBuffer cellblock, DataStore Get ACE, Boolean result
+  - evidence: Core Verify allows either direct bytes or cellblocks for the value being verified and for the proof. If either DataInput or Proof references a cellblock, the host must fulfill Get access control on that entire cellblock.
+  - mismatch summary: after `ACE_DataStore_Get_All.BooleanExpr` was set to empty, `Verify SUCCESS True` was still accepted when the input data or proof came from a DataStore cellblock.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_verify`, `_crypto_datastore_cellblock_access_error`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: apply the existing byte-table Get/Set ACL checker to Verify and make that checker examine every relevant input argument name. This prevents `Input={Data: ...}` from hiding a separate `Data={ProofBuffer: ...}` byte-table reference.
+- Verification:
+  - targeted unit: `test_verify_cellblock_inputs_require_datastore_get_acl` passed
+  - sourced tag: `verify-cellblock-accesscontrol-doc` 2 / 0
+  - compatibility tag: `crypto-cellblock-accesscontrol-doc` remained 12 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1280 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4128 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 838 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High. This is a direct false PASS in Verify and broadens the high-value Crypto Template cellblock ACL cluster from Sign/Hash/HMAC/Encrypt/Decrypt/XOR into proof verification.
+
+
+## 2026-06-06 KST - Verify target-family enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: verify-target-family local audit
+  - concepts: Verify target object, public key credential, hash object, symmetric credential exclusion
+  - evidence: Core verifying sections define two valid invocation paths: Verify on a public key credential and Verify on a hash object. Public key verification is RSA/EC-style; hash-object verification is H_SHA-based.
+  - mismatch summary: `Verify SUCCESS True` was accepted on `K_AES_256`, `C_AES_256`, and `C_PIN_SID` even though these are not public key credentials or hash objects.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_verify`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: reject successful Verify on concrete target families outside H_SHA, C_RSA, and C_EC. Prefer an explicit valid invoking name before UID-derived aliases to avoid over-rejecting name-rich traces whose sample UID aliases to an unrelated object.
+- Verification:
+  - targeted unit: `test_verify_requires_hash_or_public_key_target` passed
+  - sourced tag: `verify-target-family-doc` 6 / 0
+  - direct probe: K_AES/C_AES/C_PIN now fail; H_SHA/C_RSA/C_EC still pass.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1281 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4134 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 839 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High. This closes a broad false PASS class for cryptographic Verify and is easy for private tests to exercise by swapping the target object family.
+
+
+## 2026-06-06 KST - Sign target-family and public-key input enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: sign-target-family local audit
+  - concepts: Sign target object, public key credential, hash object, symmetric credential exclusion, public-key input requirement
+  - evidence: Core signing sections define Sign on either a public key credential with a private key, such as C_RSA or C_EC, or on an H_SHA hash object that references such a credential. Public-key credential signing signs supplied input data or data referenced by an input cellblock; H_SHA signing may omit input and sign the accumulator.
+  - mismatch summary: `Sign SUCCESS` was accepted on `K_AES_256`, `C_AES_256`, and `C_PIN_SID`. Public-key `Sign SUCCESS` was also accepted on C_RSA/C_EC without any supplied input.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_sign`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`; `tools/run_synthetic_edges.py`; `tools/score_probe_loop.py`
+  - rationale: reject successful generic Sign on concrete target families outside H_SHA, C_RSA, and C_EC; require input for public-key credential Sign; preserve TPerSign special-case handling. Existing result-shape harness cases were retargeted from C_AES to C_RSA so they keep testing BufferOut and byte-result shape without contradicting the official target-family rule.
+- Verification:
+  - targeted units: `test_generic_sign_requires_hash_or_public_key_target`, `test_public_key_sign_requires_input_data`, and existing Sign result-shape tests passed
+  - sourced tag: `sign-target-family-doc` 9 / 0
+  - direct probe: K_AES/C_AES/C_PIN now fail; H_SHA/C_RSA/C_EC with input still pass; C_RSA/C_EC without input fail; H_SHA without input still passes.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1283 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4143 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 840 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High. This closes a broad false PASS class parallel to Verify target-family enforcement and is easy for private tests to exercise by varying the crypto target family.
+
+
+## 2026-06-06 KST - Sign BufferOut capacity enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: sign-bufferout-capacity local audit
+  - concepts: Sign, public key credential, direct input bytes, BufferOut cellblock capacity
+  - evidence: Core Sign BufferOut identifies the cells to which signed data is set and requires the Input byte length to be equal in size to or smaller than the result cellblock. The fails section rejects invalid or unauthorized BufferOut cellblocks.
+  - mismatch summary: `Sign(C_RSA_2048, Input=4 bytes, BufferOut=DataStore rows 0..1)` accepted empty-result success even though the output cellblock can hold only two bytes.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_sign`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: reuse the explicit byte-table row-window capacity helper for Sign BufferOut checks when direct input bytes and concrete output capacity are both known. Keep unknown-capacity abstractions lenient.
+- Verification:
+  - targeted unit: `test_sign_bufferout_cellblock_must_fit_input_size` passed
+  - sourced tag: `sign-bufferout-capacity-doc` 2 / 0
+  - direct probe: four-byte input over rows 0..1 now fails; two-byte exact-fit input over rows 0..1 still passes.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1284 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4145 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 840 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This extends the high-value official BufferOut capacity family to Sign.
+
+
+## 2026-06-06 KST - Public-key Verify input/proof enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: verify-publickey-input-proof local audit
+  - concepts: public key credential Verify, DataInput, Proof, H_SHA default Proof/Accumulator distinction
+  - evidence: public-key credential Verify compares supplied input data against supplied proof data using the invoking public key credential. H_SHA Verify may default omitted values to the hash object's Proof and Accumulator columns, but the public-key credential invocation path supplies DataInput and Proof directly or through cellblocks.
+  - mismatch summary: `Verify(C_RSA_2048) SUCCESS True` was accepted with no input/proof, with input only, and with proof only.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_verify`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: require both input data and proof data for concrete C_RSA/C_EC Verify targets while preserving H_SHA omitted-input/proof defaults.
+- Verification:
+  - targeted unit: `test_public_key_verify_requires_input_and_proof` passed
+  - sourced tag: `verify-publickey-input-proof-doc` 5 / 0
+  - direct probe: C_RSA no input/proof, input-only, and proof-only now fail; C_RSA with both still passes; H_SHA omitted values still pass.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1285 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4150 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 840 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High. This closes a short-trajectory false PASS class in Verify, adjacent to the already score-relevant cryptographic target-family and cellblock ACL rules.
+
+
+## 2026-06-06 KST - UserMMMM count boundary and disabled-side-effect hardening
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: user-mmmm-count-boundary local multi-agent audit
+  - concepts: Opal SSC V2 user-authority count, UserMMMM preconfiguration, C_PIN/Authority object existence, ACE row expansion, disabled authority authentication side effects
+  - evidence: Opal Level 0 reports `NumberOfLockingSPUserAuthorities` with a mandatory minimum of eight; Opal preconfigures User1 through User8 and UserMMMM-pattern Authority/C_PIN/ACE rows only for implemented users. Core Authority.Enabled prevents authentication while disabled, and disabled explicit Authenticate returns false without consuming tries or uses.
+  - mismatch summary: after observing `NumberOfLockingSPUserAuthorities=8`, the solver still accepted `Authority_User9.Set SUCCESS`, `C_PIN_User9.Set SUCCESS`, and `ACE_0003A809.Get SUCCESS` as if User9 rows were issued.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_locking_sp_user_support_for_authority`; `src/solver_components/expectations.py::_locking_sp_user_support_for_ace`; `_expected_start_session`; `_expected_authenticate`; `_expected_get`; `_expected_set`; `tools/run_sourced_edges.py`
+  - rationale: use the existing observed user-count state as a hard upper bound for concrete UserMMMM-derived rows and ACE rows once Level 0 has reported the implemented count, while preserving User8 positive controls and keeping unobserved User9+ cases lenient when the implemented count is unknown.
+- Verification:
+  - targeted sourced tags: `user-mmmm-count-boundary-doc` 9 / 0; `user-mmmm-disabled-sideeffects-doc` 12 / 0
+  - existing D-axis tags: `user-mmmm-accesscontrol-exact-doc` 12 / 0; `user-mmmm-authority-long-doc` 10 / 0; `user-mmmm-auth-tries-uses-long-doc` 20 / 0
+  - full gate:
+    - `.venv/bin/python -m pytest`: 1285 passed
+    - `python3 tools/run_sourced_edges.py`: 4171 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3591 accepted cases, 0 mismatches
+    - server `DATASET_DIR=/dl2026/dataset LABEL_PATH=/dl2026/dataset/label.jsonl python evaluate.py`: score=100.00
+- Dashboard relevance:
+  - Medium-high. This closes an over-generalized UserMMMM false PASS class that private tests can exercise by first reporting the exact implemented user-authority count, then probing User9-derived rows.
+
+
+## 2026-06-08 KST - Package Authority/Credential boundary enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: package-authority-credential-boundary local audit
+  - concepts: GetPackage, SetPackage, CredentialObjectUID, WrappingKey, SigningKey, TPerSign/TperAttestation Authority rows
+  - evidence: Core package methods target `CredentialObjectUID` and package WrappingKey/SigningKey parameters are credential uidrefs. Core Authority descriptions distinguish `TPerSign`/TPerExch-style authority rows from the credential object referenced by their `Credential` column.
+  - mismatch summary: `GetPackage(TPerSign)`, `SetPackage(TperAttestation)`, and `GetPackage(C_PIN_SID, SigningKey=TPerSign)` were accepted as successful package operations.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_is_credential_symbol`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: remove authority-only symbols from generic credential classification while preserving their dedicated authority methods through `_expected_sign`, `_expected_firmware_attestation`, and AccessControl association handling.
+- Verification:
+  - targeted unit: package-focused unit slice passed, 12 tests
+  - sourced tag: `package-doc` 13 / 0
+  - direct probe: `TPerSign/Sign` and `TperAttestation/FirmwareAttestation` still pass; `TPerSign/GetPackage`, `TPerSign/SetPackage`, `TperAttestation/GetPackage`, and `TperAttestation/SetPackage` no longer pass.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1288 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4174 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 840 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium. This closes an official type-boundary false PASS in a compact key-package trajectory and reduces over-acceptance from a broad credential-symbol predicate.
+
+
+## 2026-06-08 KST - Sign/Verify unissued crypto-family enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: sign-verify-unissued-crypto-family local audit
+  - concepts: Sign, Verify, C_RSA family sizes, C_EC family sizes, H_SHA family sizes, issued crypto table groups
+  - evidence: Core defines concrete C_RSA credential table groups for 1024/2048, C_EC table groups for 160/163/192/224/233/256/283/384/521, and H_SHA support groups for 1/256/384/512. Sign/Verify are defined on public-key credentials or H_SHA hash objects, not arbitrary same-prefix family sizes.
+  - mismatch summary: `Sign`/`Verify` success was accepted on unissued families `C_RSA_3072`, `C_RSA_4096`, `C_EC_571`, and `H_SHA_224`.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_invalid_concrete_sign_verify_target`, `_expected_sign`, `_expected_verify`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: enforce concrete family whitelists only when the target name itself claims a known crypto family prefix. Preserve valid issued families, preserve instance names like `H_SHA_512_Test`, and keep `Unknown*` targets lenient.
+- Verification:
+  - targeted unit: Sign/Verify target-family slice passed, 4 tests
+  - sourced tags: `verify-target-family-doc` 10 / 0; `sign-target-family-doc` 13 / 0
+  - direct probe: issued targets `C_RSA_1024`, `C_RSA_2048`, `C_EC_256`, `H_SHA_1`, `H_SHA_256`, `H_SHA_512`, and `H_SHA_512_Test` still pass; unissued targets `C_RSA_3072`, `C_RSA_4096`, `C_EC_571`, and `H_SHA_224` no longer pass.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1290 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4182 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 840 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High. This closes a broad one-step target-substitution false PASS class in score-sensitive Sign/Verify behavior.
+
+
+## 2026-06-08 KST - Hash/HMAC unissued H_SHA-family enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: hash-hmac-unissued-hsha-family local audit
+  - concepts: HashInit, HMACInit, H_SHA family sizes, issued hash support objects
+  - evidence: Core defines H_SHA support object table groups for H_SHA_1, H_SHA_256, H_SHA_384, and H_SHA_512. HashInit/HMACInit open streams on an H_SHA object, but the method signature does not create arbitrary same-prefix H_SHA family sizes.
+  - mismatch summary: `HashInit(H_SHA_224)` and `HMACInit(H_SHA_224)` success were accepted because stream object validation only checked the `H_SHA_` prefix.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_crypto_stream_object_error`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: reuse the concrete crypto family whitelist for Hash/HMAC stream targets while preserving valid issued families and instance names like `H_SHA_512_Test`.
+- Verification:
+  - targeted unit: hash/HMAC family slice passed, 3 tests
+  - sourced tag: `hash-stream-state-bufferout-tight-doc` 9 / 0
+  - direct probe: H_SHA_1/256/384/512 and `H_SHA_512_Test` still pass for HashInit/HMACInit; H_SHA_224 no longer passes.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1291 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4184 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 840 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This extends the crypto-family boundary repair to stream initialization and closes another one-step false PASS class.
+
+
+## 2026-06-08 KST - Encrypt/Decrypt target-object enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: encrypt-decrypt-target-object local audit
+  - concepts: EncryptInit, DecryptInit, encryption-capable credentials, K_AES, C_AES, non-credential objects
+  - evidence: Core Encrypt/Decrypt streams use the invoking credential object's key/mode/residual-data behavior. C_AES and K_AES-style key rows are encryption-capable objects in the covered model; password credentials, HMAC credentials, Authority rows, metadata objects, byte tables, hash objects, and unissued C_AES sizes are not valid encryption/decryption stream targets.
+  - mismatch summary: `EncryptInit`/`DecryptInit` success was accepted on `C_PIN_SID`, `C_HMAC_256`, `TPerSign`, `LockingInfo`, `DataStore`, and `C_AES_512`.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_encrypt_decrypt_target_allowed`, `_crypto_stream_object_error`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: whitelist known encryption-capable targets while preserving existing K_AES range-key and issued C_AES/RSA/EC paths. Reject clear non-target objects before opening stream state.
+- Verification:
+  - targeted unit: crypto stream target slice passed, 3 tests
+  - sourced tag: `crypto-stream-state-tight-doc` 25 / 0
+  - direct probe: K_AES range keys and C_AES_256 still pass; C_PIN, C_HMAC, TPerSign, LockingInfo, DataStore, H_SHA, and C_AES_512 no longer pass.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1292 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4196 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 840 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High. This closes a broad one-step false PASS class in Crypto Template stream target selection.
+
+
+## 2026-06-08 KST - Crypto-family Get/Set existence enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: crypto-family-get-set-existence local audit
+  - concepts: credential/hash table families, Get, Set, issued rows, unissued family sizes
+  - evidence: Core explicitly enumerates concrete credential/hash table groups for C_RSA_1024/2048, C_AES_128/256, C_EC_160/163/192/224/233/256/283/384/521, C_HMAC_160/256/384/512, and H_SHA_1/256/384/512. Same-prefix family names outside those table groups do not denote issued concrete families.
+  - mismatch summary: `Get SUCCESS` was accepted on `C_AES_512`, `C_HMAC_128`, `C_RSA_4096`, `C_EC_571`, and `H_SHA_224`; `Set SUCCESS` was accepted on `C_HMAC_128`, `C_EC_571`, and `H_SHA_224`.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_invalid_concrete_crypto_family_target`, `_invalid_concrete_sign_verify_target`, `_expected_get`, `_expected_set`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: centralize concrete crypto-family size validation so ordinary table/object `Get` and `Set` cannot treat unissued same-prefix names as existing rows. Preserve valid issued families and instance suffixes such as `H_SHA_512_Test`.
+- Verification:
+  - targeted unit: 2 tests passed
+  - sourced tag: `crypto-family-get-doc` 12 / 0
+  - direct probe: issued `Get` targets such as `C_AES_128`, `C_HMAC_160`, `C_RSA_1024`, and `H_SHA_512_Test` still pass; unissued `Get` targets `C_AES_512`, `C_HMAC_128`, `C_RSA_4096`, `C_EC_571`, and `H_SHA_224` fail; unissued `Set` targets now fail.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1294 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4208 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 840 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High. This is a compact official target-family boundary likely to appear as short private trajectories with one invalid family name substitution.
+
+
+## 2026-06-08 KST - H_SHA Proof/Accumulator Set fixed-byte enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: hsha-proof-accumulator-set-fixed-bytes local audit
+  - concepts: H_SHA, Proof, Accumulator, fixed bytes, Set, typed credential columns
+  - evidence: Core H_SHA_1, H_SHA_256, H_SHA_384, and H_SHA_512 table descriptions declare Proof and Accumulator as bytes_20, bytes_32, bytes_48, and bytes_64 respectively.
+  - mismatch summary: short successful Set values such as `H_SHA_256.Accumulator = "AA"` were accepted even though they do not satisfy the fixed-byte column type.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_hsha_fixed_length`, `_invalid_set_values`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: reuse the same fixed-width family mapping used for Get return-cell validation on Set input values, so successful mutation cannot write malformed Proof/Accumulator bytes.
+- Verification:
+  - targeted unit: 2 tests passed
+  - sourced tag: `hsha-fixed-bytes-doc` 32 / 0
+  - direct probe: H_SHA_1/256/384/512 exact-length Set passes and one-byte-short Set fails for Proof/Accumulator.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1295 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4224 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 840 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This is a compact typed-column false PASS in Core crypto support tables and is easy for private tests to vary across H_SHA family sizes and columns.
+
+
+## 2026-06-08 KST - C_EC curve-parameter Set uinteger enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: cec-curve-parameter-set-uinteger local audit
+  - concepts: C_EC, curve parameters, uinteger_N, Set, typed credential columns
+  - evidence: Core C_EC credential table descriptions declare curve-parameter columns before Hash as uinteger_N fields, such as C_EC_256 p/r/b/x/y/alpha/u/v as uinteger_36.
+  - mismatch summary: `Set(C_EC_256.p=True)`, `Set(C_EC_256.p=-1)`, and `Set(C_EC_256.p="not-int")` were accepted.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_cec_uinteger_columns_invalid`, `_invalid_set_values`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: successful C_EC curve-parameter mutation must provide nonnegative numeric uinteger values. Reject bool coercion, negative integers, and arbitrary text without attempting to over-constrain implementation-specific maximum widths.
+- Verification:
+  - targeted unit: 1 test passed
+  - sourced tag: `cec-uinteger-set-type-doc` 5 / 0
+  - direct probe: bool, negative, and nonnumeric C_EC_256.p Set values fail; 0 and 1 pass.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1296 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4229 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 840 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This closes a compact credential-table typed Set false PASS that can be varied across EC curve columns and families.
+
+
+## 2026-06-08 KST - C_EC curve-parameter Get uinteger return enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: cec-curve-parameter-get-uinteger local audit
+  - concepts: C_EC, curve parameters, uinteger_N, Get, returned-cell type validation
+  - evidence: Core C_EC credential table descriptions declare curve-parameter columns before the Hash column as uinteger_N fields, such as C_EC_256 p/r/b/x/y/alpha/u/v as uinteger_36. A successful Get returning those cells must therefore return nonnegative numeric uintegers.
+  - mismatch summary: `Get(C_EC_256.p)` accepted returned cells `True`, `-1`, and `"not-int"`.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_credential_get_column_types`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: mirror the Set-side C_EC curve-parameter typing on returned Get cells. Columns from 0x03 through the family-specific pre-Hash curve parameters are now validated as `uinteger`, while the Hash column keeps the existing Hash Protocol enum validation.
+- Verification:
+  - targeted unit: 2 tests passed
+  - sourced tag: `cec-uinteger-set-type-doc` 10 / 0
+  - direct probe: bool, negative, and nonnumeric C_EC_256.p Get return cells fail; 0 and 1 pass.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1297 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4234 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 840 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This closes the read-side mirror of the C_EC typed-column false PASS and can catch private tests that use only a single successful Get response.
+
+
+## 2026-06-08 KST - C_RSA key-parameter Get uinteger return enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: crsa-key-parameter-get-uinteger local audit
+  - concepts: C_RSA, key parameters, uinteger_N, Get, returned-cell type validation
+  - evidence: Core C_RSA_1024 and C_RSA_2048 credential table descriptions declare Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp as uinteger_N fields. A successful Get returning those cells must therefore return nonnegative numeric uintegers.
+  - mismatch summary: `Get(C_RSA_2048.Pu_Exp)` accepted returned cells `True`, `-1`, and `"not-int"`.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_credential_get_column_types`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: add read-side type validation for C_RSA key-parameter columns 0x04 through 0x0B without touching ChainLimit or Certificate, whose signed/reference semantics need separate handling.
+- Verification:
+  - targeted unit: 1 test passed
+  - sourced tag: `crsa-uinteger-get-type-doc` 5 / 0
+  - direct probe: bool, negative, and nonnumeric C_RSA_2048.Pu_Exp Get return cells fail; 0 and 65537 pass.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1298 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4239 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 840 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This closes a compact public-key credential read-side false PASS that private tests can vary across RSA key-parameter columns.
+
+
+## 2026-06-08 KST - Public-key ChainLimit Get integer return enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: publickey-chainlimit-get-integer local audit
+  - concepts: C_RSA, C_EC, ChainLimit, integer_1, int_1_def_0, Get, returned-cell type validation
+  - evidence: Core C_RSA and C_EC public-key credential table descriptions declare ChainLimit as `integer_1` or `int_1_def_0`. The ChainLimit description assigns integer semantics: `-1` indicates no limit and `0` indicates no chain.
+  - mismatch summary: `Get(C_RSA_2048.ChainLimit)` and `Get(C_EC_256.ChainLimit)` accepted returned cells `True` and `"not-int"`.
+- Repair path:
+  - files/functions: `src/solver_components/engine.py::_integer_value_valid`, `_return_cell_type_valid`; `src/solver_components/expectations.py::_credential_get_column_types`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: validate ChainLimit as a signed integer-like return cell while deliberately preserving `-1`, `0`, and positive integers. This avoids an overfit that would reject the documented no-limit value or plausible positive chain depths.
+- Verification:
+  - targeted unit: 1 test passed
+  - sourced tag: `publickey-chainlimit-get-type-doc` 10 / 0
+  - direct probe: bool and nonnumeric C_RSA/C_EC ChainLimit Get return cells fail; `-1`, `0`, and `1` pass.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1299 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4249 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 843 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium. This closes a small but clear public-key credential typed-return false PASS while preserving the documented signed value semantics.
+
+
+## 2026-06-08 KST - Public-key Certificate Get object-reference return enforcement
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: publickey-certificate-get-object-ref local audit
+  - concepts: C_RSA, C_EC, Certificate, Certificates_object_ref, Get, returned-cell type validation
+  - evidence: Core C_RSA and C_EC public-key credential table descriptions declare Certificate as `Certificates_object_ref`. The Certificate description says this is a reference to a Certificates object, which may identify a chained set of unencoded X.509 certificates.
+  - mismatch summary: `Get(C_RSA_2048.Certificate)` and `Get(C_EC_256.Certificate)` accepted returned cells `True`, `123`, and `"not-a-reference"`.
+- Repair path:
+  - files/functions: `src/solver_components/engine.py::_certificates_object_ref_value_valid`, `_return_cell_type_valid`; `src/solver_components/expectations.py::_credential_get_column_types`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: require Certificate returned cells to look like object references while keeping the rule permissive enough for dynamic certificate rows. UID-like values and Certificate/Certificates-style symbols remain valid; booleans, integers, and unrelated text are rejected.
+- Verification:
+  - targeted unit: 1 test passed
+  - sourced tag: `publickey-certificate-ref-get-type-doc` 10 / 0
+  - direct probe: bool, integer, and unrelated text C_RSA/C_EC Certificate Get return cells fail; UID-like and Certificate-style symbolic references pass.
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1300 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4259 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium. This closes another compact public-key credential metadata false PASS while keeping dynamic certificate object references possible.
+
+
+## 2026-06-08 KST - AccessControl preconfigured object-row Set associations rejected
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: accesscontrol-preconfigured-object-row-set local audit
+  - concepts: AccessControl, GetACL, association existence, SPTemplates, Template, SecretProtect, AdminSP/LockingSP object rows
+  - evidence: Opal preconfigures these rows/objects for Get or special object-reference access; the fixed Admin/Locking SP method universe does not define host generic Set associations for them.
+  - mismatch summary: GetACL success was accepted for `SPTemplates_Base/Set`, `SPTemplates_Admin/Set`, `Template_1/Set`, `AdminSP/Set`, `LockingSP/Set`, `SecretProtect_1/Set`, and `SecretProtect_2/Set`.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_combo_exists_for_get_acl`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: close only the concrete preconfigured object-row Set combinations found by the audit, while preserving their ordinary Get combinations. This keeps the repair narrow because AccessControl/GetACL generalization has previously been score-sensitive.
+- Verification:
+  - targeted unit: AccessControl object-row Set/Get tests passed
+  - sourced tag: `accesscontrol-template-table-method-universe-doc` 35 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1305 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4278 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high but score-risky. This targets a compact false PASS family in AccessControl without widening the association universe rules.
+
+
+## 2026-06-08 KST - Locking RangeStart-only Set rechecks final LengthAlignment
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: locking-rangestart-only-length-alignment local audit
+  - concepts: Locking, RangeStart, RangeLength, AlignmentRequired, StartAlignment, LengthAlignment, partial Set merged geometry
+  - evidence: Opal alignment applies to final non-global Locking range geometry; changing RangeStart can make an existing RangeLength invalid under the LengthAlignment formula even if column 4 is omitted in the current Set.
+  - mismatch summary: RangeStart-only Set accepted success when moving to zero or from zero left the final existing RangeLength misaligned.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_range_values_invalid_for_geometry`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: validate LengthAlignment whenever the final geometry changes through RangeStart or RangeLength, using merged row state rather than only the currently supplied columns.
+- Verification:
+  - targeted unit: RangeStart-only alignment test passed
+  - sourced tag: `range-alignment-doc` 20 / 0
+  - direct probe: Set-to-zero and Set-from-zero false successes now fail
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1305 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4278 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High. This is a short stateful Locking geometry bug that is easy for hidden tests to vary through partial Set trajectories.
+
+
+## 2026-06-08 KST - reset_types scalar hex tokens parsed as singleton enum values
+
+- Change type: parser/solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: reset-types-hex-programmatic-only local audit
+  - concepts: reset_types, LockOnReset, MBRDoneOnReset, scalar hex token, Programmatic reset, supported Opal reset sets
+  - evidence: reset_types is an enum/set domain. A scalar token such as `0x03` denotes one enum value, Programmatic, not the set `{0,3}`. Opal requires support for `{0}` and `{0,3}`, so Programmatic-only `{3}` is unsupported for LockOnReset and MBRDoneOnReset.
+  - mismatch summary: `Locking.LockOnReset="0x03"` and `MBRControl.DoneOnReset="0x03"` were accepted as SUCCESS because digit extraction produced `{0,3}`.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py::_reset_types`; `tests/test_solver_rules.py`; `tools/run_sourced_edges.py`
+  - rationale: parse simple decimal/hex scalar reset tokens before composite digit extraction. This rejects `0x03` and `0x0003` as Programmatic-only while preserving `0x00`, comma strings like `0,3`, and list forms like `[0,3]`.
+- Verification:
+  - targeted unit: LockOnReset and MBRDoneOnReset hex-scalar tests passed
+  - sourced tag: `locking-reset-types-alias-reject-tight-doc` 32 / 0
+  - direct probe: `0x03`, `0x0003`, and `[3]` fail; `0x00`, `0,3`, and `[0,3]` pass for Locking and MBRControl
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1305 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4278 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High. This closes a parser-shaped reset-state false PASS without changing the actual Opal supported reset-set policy.
+
+
+## 2026-06-08 KST - Public-key uinteger_N declared widths enforced
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: public-key-uinteger-declared-width local audit
+  - concepts: C_RSA, C_EC, uinteger_N, declared byte width, public-key credential columns, Set/Get returned-cell typing
+  - evidence: Core C_RSA_1024/2048 and C_EC family tables declare concrete uinteger_N byte widths for public-key parameters.
+  - mismatch summary: over-width key-parameter values and some invalid Set scalar types were accepted as successful for C_RSA/C_EC public-key rows.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_crsa_uinteger_columns_invalid`, `src/solver_components/semantics.py::_cec_uinteger_columns_invalid`, `src/solver_components/expectations.py::_credential_get_column_types`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: use the official declared width for each family/column instead of treating public-key parameters as unbounded generic uintegers.
+- Verification:
+  - targeted unit: public-key declared-width Set/Get tests passed
+  - sourced tags: `cec-uinteger-set-type-doc` 14 / 0; `crsa-uinteger-get-type-doc` 16 / 0
+  - direct probe: over-width/bool/text values fail; exact maximum in-width values pass
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1307 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4291 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This targets concise boundary-value hidden tests in public-key credential tables.
+
+
+## 2026-06-08 KST - LockOnReset matching resets update stored lock cells even when disabled
+
+- Change type: solver fix + official sourced edge coverage correction
+- Trigger:
+  - case_id: lockonreset-disabled-stored-cells local audit
+  - concepts: LockOnReset, ReadLockEnabled, WriteLockEnabled, ReadLocked, WriteLocked, Level0 Locked, host I/O, created Locking rows
+  - evidence: Core LockOnReset reset recovery sets stored ReadLocked/WriteLocked cells on matching reset types; disabled enable bits make those cells ineffective for access control rather than preventing the stored-cell update.
+  - mismatch summary: matching PowerCycle while both lock features were disabled was allowed to leave stored ReadLocked/WriteLocked false; the correct latent stored locks were rejected.
+- Repair path:
+  - files/functions: `src/solver_components/transitions.py::_apply_reset_event`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: separate stored state from effective host-I/O state. Matching resets update stored lock cells; enabled bits decide later effectiveness for host I/O and Level0.
+- Verification:
+  - targeted unit: disabled LockOnReset stored-cell tests passed
+  - sourced tags: `locking-disabled-disregard-long-doc` 25 / 0; `locking-toggle-reenable-long-doc` 32 / 0; `locking-created-row-default-lockonreset-doc` 12 / 0; `locking-created-row-failed-set-reset-doc` 10 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1307 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4291 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High. This targets hidden Locking state-machine trajectories that can be observed through Get, re-enable behavior, created rows, Level0, and host I/O.
+
+
+## 2026-06-08 KST - AccessControl MethodID/Revert/Admin exact associations tightened
+
+- Change type: solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: accesscontrol-methodid-revert-admin-exact local/subagent audit
+  - concepts: AccessControl, GetACL, MethodID object associations, Admin SP Revert, RevertSP, Authority_AdminMMMM Set exact ACL
+  - evidence: Opal AccessControl rows are concrete InvokingID/MethodID associations; MethodID object rows are not ordinary Set associations; Admin SP uses Revert rather than RevertSP; Locking SP AdminMMMM Set associations require Enabled plus CommonName ACEs.
+  - mismatch summary: `MethodID_*/Set` GetACL and Admin `ThisSP/RevertSP` were false PASSes; Admin `LockingSP/Revert` exact ACL was a false FAIL; Admin3+ Set ACL lists were underchecked.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_combo_exists_for_get_acl`, `src/solver_components/expectations.py::_known_acl_return_refs`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: adjust only concrete AccessControl association existence and exact ACL mappings found by official-doc probes, keeping the prior score-sensitive GetACL universe narrow.
+- Verification:
+  - targeted unit: 6 AccessControl tests passed
+  - sourced tags: `getacl-locking-special-object-expanded-doc` 48 / 0; `getacl-admin-locking-remaining-exact-acl-long-doc` 41 / 0
+  - direct probe: missing MethodID Set and Admin RevertSP associations fail; Admin LockingSP/Revert and Admin3 exact ACL pass; incomplete Admin3 ACL fails
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1315 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4316 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High. This targets the same AccessControl/GetACL region that has moved dashboard scores before, but via small exact association repairs.
+
+
+## 2026-06-08 KST - DataStore raw Set endRow window rejected
+
+- Change type: parser/solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: datastore-raw-set-endrow-window local/subagent audit
+  - concepts: DataStore, byte table, Set Where.Row, Values.Bytes, raw method representation, endRow Cellblock component
+  - evidence: byte-table Set writes Bytes beginning at Where.Row; endRow is a Get Cellblock row-window component, not a Set window parameter.
+  - mismatch summary: raw DataStore `Set` with numeric `(2, endRow)` was accepted as SUCCESS.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py::_byte_table_raw_args_invalid`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: reject raw Set endRow windows while preserving accepted wrapper-style `(row-range, payload)` and raw `Values.Bytes` encodings used by existing tests.
+- Verification:
+  - targeted unit: 3 DataStore raw Set tests passed
+  - sourced tag: `datastore-set-where-row-only-doc` 10 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1315 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4316 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium. This is a concise byte-table parser false PASS, kept narrow to avoid breaking DataStore wrapper aliases.
+
+
+## 2026-06-08 KST - Invalid RangeCrossingBehavior context constrains later crossing I/O
+
+- Change type: solver state-propagation fix + official sourced edge coverage
+- Trigger:
+  - case_id: invalid-range-crossing-behavior-context local/subagent audit
+  - concepts: Level 0 Opal SSC V2 descriptor, RangeCrossingBehavior bit, unlocked host I/O spanning multiple Locking ranges
+  - evidence: Opal SSC V2 defines RangeCrossingBehavior as bit 0; unlocked crossing I/O is processed when the bit is 0 and terminated when the bit is 1. An observed value outside that bit domain is not a valid processing mode.
+  - mismatch summary: a descriptor target with `RangeCrossingBehavior=2` failed, but when the same invalid descriptor appeared in context, later crossing write `SUCCESS` was accepted because the invalid value was discarded from state.
+- Repair path:
+  - files/functions: `src/solver_components/transitions.py::_apply_level0_opal_ssc_v2_success`, `src/solver_components/expectations.py::_expected_host_io`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: distinguish unknown/unobserved behavior from observed-invalid behavior. Unknown remains permissive; observed-invalid forbids successful unlocked crossing read/write because it cannot establish either official bit behavior.
+- Verification:
+  - targeted unit: invalid RangeCrossingBehavior context test passed
+  - sourced tag: `level0-range-crossing-locking-doc` 12 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1316 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4317 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This is a compact Locking state-machine false PASS that private tests can express by combining one malformed Level 0 observation with a later crossing I/O command.
+
+
+## 2026-06-08 KST - Raw DataStore Cellblock rejects length aliases
+
+- Change type: parser/solver fix + official sourced edge coverage
+- Trigger:
+  - case_id: datastore-cellblock-length-alias local/subagent audit
+  - concepts: DataStore, byte table Get, raw method Cellblock, startRow/endRow, wrapper alias separation
+  - evidence: Core `cell_block` has only Table, startRow, endRow, startColumn, and endColumn components. Byte-table Get row windows are expressed through startRow/endRow; `length`, `count`, and size-style names are not valid named Cellblock components in a raw official method invocation.
+  - mismatch summary: raw `Get(DataStore)` with `Cellblock=[{startRow: 2}, {length: 4}]` was accepted as a successful byte-window read.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py::_byte_table_get_cellblock_length_alias_invalid`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: reject only explicit raw method `Cellblock` length aliases. Preserve wrapper APIs and raw shorthand aliases such as `args=[("offset", 1), ("length", 2)]` because existing parser-representation coverage treats those as compatibility inputs rather than official Cellblock components.
+- Verification:
+  - targeted unit: DataStore raw Cellblock length success/invalid tests plus wrapper `sizeBytes` control passed
+  - sourced tag: `datastore-byte-table-row-option-doc` 14 / 0
+  - parser-representation synthetic: 2868 / 0 after narrowing the guard
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1318 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4319 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - Medium. This is a concise official-method parser false PASS; the repair is deliberately scoped so compatibility aliases remain intact.
+
+
+## 2026-06-08 KST - DataStore byte-table Get rejects RowValues payloads
+
+- Change type: solver expectation/return-shape fix + official sourced edge coverage
+- Trigger:
+  - case_id: datastore-get-rowvalues-payload local/subagent audit
+  - concepts: DataStore, byte table Get, Bytes vs RowValues, return payload shape
+  - evidence: Core Get returns either `Bytes` for byte-table invocations or `RowValues` for non-byte table cell reads. DataStore is an Opal byte table, so a successful authorized Get must return byte payload data, not object-table RowValues cells.
+  - mismatch summary: a successful one-row DataStore Get accepted `[[{"1": "AA"}]]`, because a single numeric-key RowValues dictionary was treated as byte-like payload.
+- Repair path:
+  - files/functions: `src/solver_components/models.py::ExpectedResponse`, `src/solver_components/engine.py::compare_expected_actual`, `src/solver_components/engine.py::_return_payload_looks_like_row_values`, `src/solver_components/expectations.py::_expected_get`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: add an expectation-level row-values prohibition for byte-table Get rather than changing the global byte-payload parser, preserving compatibility for byte strings, byte arrays, wrapper byte returns, and raw Set payload aliases.
+- Verification:
+  - targeted unit: DataStore RowValues payload rejection passed
+  - sourced tag: `datastore-payload-doc` 10 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1319 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4321 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This closes a concise byte-table/object-table confusion class without broad parser changes.
+
+
+## 2026-06-08 KST - Byte-table Table descriptor LastID and RecommendedAccessGranularity
+
+- Change type: solver returned-cell expectation fix + official sourced edge coverage
+- Trigger:
+  - case_id: datastore-table-descriptor-lastid-rag local/subagent audit
+  - concepts: Table descriptor rows, byte table descriptor shape, DataStore/MBR, LastID, RecommendedAccessGranularity
+  - evidence: Core Table descriptor `LastID` is the most recent row UID for object tables, but SHALL be the null UID for byte tables. Opal byte-table descriptor `RecommendedAccessGranularity` is a uinteger_4 and, when no recommended alignment is specified, SHALL be one rather than zero.
+  - mismatch summary: successful `Get(Table_DataStore)` accepted `LastID=0000000000000001`, and successful `Get(Table_DataStore)` accepted `RecommendedAccessGranularity=0`.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_table_descriptor_expected_cells`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: treat these as descriptor-level invariants rather than one-off DataStore special cases. Byte-table descriptor LastID must be null; byte-table recommended granularity must be at least one. Existing object-table descriptor granularity zero and byte-table mandatory-granularity bounds are preserved.
+- Verification:
+  - targeted unit: DataStore descriptor LastID and RecommendedAccessGranularity tests passed
+  - sourced tags: `byte-table-descriptor-column-doc` 12 / 0, `byte-table-granularity-doc` 28 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1321 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4327 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - Medium. This is a simple hidden-test-friendly descriptor false PASS class: one returned descriptor cell can flip the expected label, and the repair is narrow enough to avoid prior AccessControl-style regression risk.
+
+
+## 2026-06-08 KST - Locking GenKey only stales media for the active key
+
+- Change type: solver state-transition fix + official sourced edge coverage
+- Trigger:
+  - case_id: locking-genkey-activekey-media local/subagent audit
+  - concepts: Locking range ActiveKey, K_AES range keys, GenKey, host media data, cryptographic erase
+  - evidence: The Locking `ActiveKey` cell identifies the current media encryption key object for a range. GenKey fills the targeted K_AES credential object with new key material; it changes readability of existing user data only when the target is the key currently used to encrypt that data.
+  - mismatch summary: with observed `ActiveKey=null`, `GenKey(K_AES_256_Range1_Key)` made prior host data stale. With observed `ActiveKey=K_AES_256_Range1_Key`, `GenKey(K_AES_128_Range1_Key)` also made prior host data stale. Both were over-broad range-id-based invalidations.
+- Repair path:
+  - files/functions: `src/solver_components/transitions.py::_range_genkey_changes_active_media_key`, `src/solver_components/transitions.py::apply_transition`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: preserve conservative behavior when ActiveKey is unknown, but use the observed ActiveKey when it is known. Null ActiveKey means plaintext/no K_AES media key is active; a different K_AES family/range key is not affected by this GenKey target.
+- Verification:
+  - targeted unit: null ActiveKey, non-active key, and active-key GenKey tests passed
+  - sourced tag: `locking-crossing-genkey-media-doc` 13 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1324 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4331 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - High. This targets a deep private-test-shaped Locking trajectory: observed ActiveKey state, media write, GenKey, then host read. The change is contextual rather than case-specific and should reduce both false FAILs and false PASSes.
+
+
+## 2026-06-08 KST - Locking boolean Get cells require boolean values
+
+- Change type: solver return-type expectation fix + state-transition hardening + official sourced edge coverage
+- Trigger:
+  - case_id: locking-boolean-get-type-poisoning local/subagent audit
+  - concepts: Locking table boolean cells, Get returned-cell type, ReadLockEnabled, WriteLockEnabled, ReadLocked, WriteLocked, host I/O state
+  - evidence: Locking range columns 0x05 through 0x08 are boolean cells. A successful object-table Get returning those cells must return boolean-typed values. Invalid observed values should not be trusted as lock state.
+  - mismatch summary: successful `Get(Locking_Range1)` accepted `ReadLockEnabled`, `WriteLockEnabled`, `ReadLocked`, or `WriteLocked` as `"nonsense"`. In context, those strings were coerced through `_as_bool`, allowing malformed observations to overwrite stored lock state.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/transitions.py::_update_range_from_columns`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: use the engine's existing returned-cell type validator for Locking boolean columns, and make state transitions ignore invalid boolean observations rather than coercing arbitrary text to false.
+- Verification:
+  - targeted unit: invalid Locking boolean Get and context-poisoning tests passed
+  - sourced tag: `locking-range-get-doc` 20 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1326 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4339 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - High. This is a private-test-friendly one-cell false PASS and also prevents malformed context from corrupting later host read/write predictions.
+
+
+## 2026-06-08 KST - MBRControl Enable/Done Get cells require boolean values
+
+- Change type: solver return-type expectation fix + state-transition hardening + official sourced edge coverage
+- Trigger:
+  - case_id: mbrcontrol-boolean-get-type-poisoning local/subagent audit
+  - concepts: MBRControl, Enable, Done, MBR shadowing, Get returned-cell type, host write in MBR region
+  - evidence: MBRControl `Enable` and `Done` are boolean cells; `DoneOnReset` is reset_types. Active MBR shadowing depends on Enable true and Done false.
+  - mismatch summary: successful `Get(MBRControl)` accepted `Enable="nonsense"` or `Done="nonsense"`. In context, malformed Enable could be coerced to false and disable MBR shadowing, allowing a later host write in the MBR range to pass.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/transitions.py::_update_mbrcontrol_from_columns`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: apply declared returned-cell type validation to MBRControl booleans, and ignore invalid boolean observations during state updates rather than coercing arbitrary text to false.
+- Verification:
+  - targeted unit: invalid MBRControl boolean Get and shadowing-poisoning tests passed
+  - sourced tag: `mbrcontrol-defaults-doc` 10 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1328 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4341 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This is a compact state-poisoning and one-cell false PASS class on the MBR shadowing surface.
+
+
+## 2026-06-08 KST - SPInfo types, ReEncrypt reset-stop, support-count observations, and DataStore empty-result shape
+
+- Change type: solver return-type validation + state-transition repair + support-count consistency tracking + official sourced edge coverage
+- Trigger:
+  - case_ids: `spinfo-get-types-doc`, `reencrypt-reset-doc`, `lockinginfo-maxranges-consistency-doc`, `user-mmmm-count-boundary-doc`, `datastore-empty-booleanexpr-doc`
+  - concepts: SPInfo typed cells, Locking ReEncrypt ContOnReset, LockingInfo MaxRanges, Opal UserMMMM support count, DataStore byte-table empty results
+  - evidence: SPInfo `SPSessionTimeout` is `uinteger_4` and `Enabled` is boolean; ContOnReset lists reset conditions that allow interrupted re-encryption to continue, otherwise reset-stop pauses ACTIVE/PENDING re-encryption and sets GeneralStatus 34/5; optional RangeNNNN/K_AES and UserMMMM objects cannot contradict later support-count observations; unauthorized byte-table Get returns an empty results list, not boolean `False`.
+  - mismatch summary: successful SPInfo Get accepted malformed return-cell types; ReEncrypt ACTIVE/PENDING with `ContOnReset=[PowerCycle]` incorrectly survived `HardwareReset`; successful `K_AES_128_Range9_Key.Get`, `Authority_User9.Get`, and `C_PIN_User9.Get` did not constrain later `MaxRanges=8` or user-count 8; unauthorized DataStore Get accepted a bare false payload as an empty result.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/expectations.py::_expected_level0_opal_ssc_v2_feature`, `src/solver_components/transitions.py::_apply_get_success`, `src/solver_components/transitions.py::_apply_reset_event`, `src/solver_components/semantics.py::_locking_sp_user_id_support_state`, `src/solver_components/models.py::State`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: use declared cell types for successful Get responses, propagate observed concrete optional objects into support consistency checks, and treat reset/empty-result semantics as typed protocol state rather than permissive payload aliases.
+- Verification:
+  - targeted unit: SPInfo type, nonmatching ContOnReset reset-stop, K_AES/User9 observation consistency, and DataStore false-payload tests passed
+  - sourced tags: `spinfo-get-types-doc`, `reencrypt-reset-doc`, `lockinginfo-maxranges-consistency-doc`, `user-mmmm-count-boundary-doc`, and `datastore-empty-booleanexpr-doc` passed with 0 mismatches
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1335 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4354 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - High for ReEncrypt reset-stop and optional Range/User support consistency, because private tests can express them as short stateful contradictions. Medium-high for SPInfo/DataStore shape checks, because they close single-return-cell or single-payload false PASSes without broad association changes.
+
+
+## 2026-06-08 KST - Initial Locking ActiveKey/NextKey preconfiguration is constrained
+
+- Change type: solver returned-cell expectation fix + official sourced edge coverage
+- Trigger:
+  - case_id: `locking-activekey-preconfig-doc`
+  - concepts: Locking range preconfiguration, ActiveKey, NextKey, K_AES media key refs, getMEK wrapper alias
+  - evidence: Opal preconfigures Locking ranges so `ActiveKey` points to that range's media encryption key and `NextKey` is empty. Core defines `ActiveKey` as the current media encryption key for the LBA range and `NextKey` as the next media encryption key.
+  - mismatch summary: initial `Locking_Range1.Get` accepted `ActiveKey=K_AES_256_Range2_Key` and non-null `NextKey=K_AES_256_Range1_Key`, even before any valid key-transition operation was observed.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_get`, `src/solver_components/engine.py::_return_cell_matches`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: enforce initial documented preconfiguration when a raw Locking range Get returns key columns, but keep `tcgstorageapi.getMEK` permissive until the exact 128/256 family is observed because both preconfigured key families are valid implementation alternatives.
+- Verification:
+  - targeted unit: camelCase getMEK alias, wrong-range ActiveKey rejection, and non-null initial NextKey rejection passed
+  - sourced tag: `locking-activekey-preconfig-doc` 4 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1337 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4358 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - High. This closes short hidden-test-friendly false PASSes around Locking key state and supports deeper ActiveKey/GenKey/host-data trajectories without adding one-off case logic.
+
+
+## 2026-06-08 KST - DataStore authorization follows AccessControl ACL mutations
+
+- Change type: solver authorization-state repair + official sourced edge coverage
+- Trigger:
+  - case_id: `datastore-meta-acl-replacement-doc`
+  - concepts: DataStore byte table, AccessControl ACL column, AddACE, RemoveACE, SetACL wrapper compatibility, Get/Set association authorization, empty result postcondition
+  - evidence: the AccessControl `ACL` column is the access control list for an SP/method, table/method, or object/method association and is modified/accessed through `GetACL`, `RemoveACE`, and `AddACE`; Opal preconfigures separate DataStore Get and Set AccessControl associations.
+  - mismatch summary: after replacing/removing the DataStore Get association ACL, Admin payload reads were still accepted instead of returning an empty byte-table result. After adding or replacing the DataStore Set association ACL with `ACE_Anybody`, unauthenticated writes were still rejected.
+- Repair path:
+  - files/functions: `src/solver_components/semantics.py::_datastore_acl_refs`, `src/solver_components/semantics.py::_datastore_acl_association_changed`, `src/solver_components/semantics.py::_datastore_acl_satisfied`, `src/solver_components/semantics.py::_datastore_ace_configured`, `src/solver_components/semantics.py::_user_acl_allows_datastore`, `src/solver_components/semantics.py::_ace_authorizes_set`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: DataStore access checks must evaluate the current AccessControl association ACL ref set, not only ACE BooleanExpr personalization. The ref set is the default DataStore Get/Set ACE plus any AddACE/RemoveACE deltas, or the explicit SetACL replacement for wrapper-style inputs.
+- Verification:
+  - targeted unit: SetACL empty Get, RemoveACE Get, SetACL empty Set, SetACL Anybody Set, and AddACE Anybody Set cases passed
+  - sourced tag: `datastore-meta-acl-replacement-doc` 8 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1344 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4366 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - High. This is a compact private-test-shaped interaction: mutate DataStore association ACLs through AccessControl meta-methods, then check real byte-table Get/Set behavior and payload nonmutation.
+
+
+## 2026-06-08 KST - Locking AdminMMMM and C_PIN_AdminMMMM GetACL exact ACLs
+
+- Change type: solver exact GetACL return validation + official sourced edge coverage
+- Trigger:
+  - case_id: `user-mmmm-accesscontrol-exact-doc` extension
+  - concepts: Locking SP AccessControl, GetACL, Authority_AdminMMMM, C_PIN_AdminMMMM, exact ACL uidrefs
+  - evidence: GetACL retrieves the ACL column of the exact AccessControl InvokingID/MethodID association as ACE uidrefs. Opal preconfigures Locking SP `Authority_AdminMMMM/Get` with `ACE_Authority_Get_All` plus `ACE_Anybody_Get_CommonName`, and `C_PIN_AdminMMMM/Get` with `ACE_C_PIN_Admins_Get_All_NOPIN`.
+  - mismatch summary: `GetACL(Authority_Admin2, Get)` and `GetACL(C_PIN_Admin2, Get)` accepted arbitrary successful ACL lists such as `ACE_Anybody` because those associations existed but lacked exact-return validation.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_known_acl_return_refs`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: generalize the documented AdminMMMM Get patterns the same way UserMMMM Get/Set rows were already generalized, while preserving dynamic AccessControl mutation state via `_acl_refs_with_dynamic_state`.
+- Verification:
+  - targeted unit: Admin2 Authority Get wrong/exact ACL and Admin2 C_PIN Get wrong/exact ACL tests passed
+  - sourced tag: `user-mmmm-accesscontrol-exact-doc` 18 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1348 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4372 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 846 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This closes short AccessControl private-test shapes where the association exists but the returned ACE uidref list is subtly wrong.
+
+
+## 2026-06-08 KST - Additional DataStore byte-table payload isolation
+
+- Change type: solver state-model repair + official sourced edge coverage
+- Trigger:
+  - case_id: `additional-datastore-isolation-doc`
+  - concepts: Additional DataStore tables, byte-table payload state, Set/Get postconditions, table identity
+  - evidence: Opal references the Additional DataStore Tables feature set, and DataStore tables are byte tables. Core byte tables are independent raw data storage tables; `Set` modifies the invoked byte table beginning at `Where.Row`, and `Get` returns bytes from the invoked byte table.
+  - mismatch summary: a successful write to `DataStore2` overwrote the expected payload for base `DataStore`, so `DataStore.Get` returning `CCDD` passed and returning its actual previous payload `AABB` failed.
+- Repair path:
+  - files/functions: `src/solver_components/models.py::State`, `src/solver_components/semantics.py::_datastore_bytes_for`, `src/solver_components/semantics.py::_datastore_bytes_mutable`, `src/solver_components/semantics.py::_datastore_pattern_for`, `src/solver_components/transitions.py::_apply_set_success`, `src/solver_components/transitions.py::_xor_cellblock_pattern`, `src/solver_components/transitions.py::_store_byte_table_pattern`, `src/solver_components/expectations.py::_datastore_get_expected_pattern`, `src/solver_components/expectations.py::_datastore_get_expected_byte_positions`, `src/solver_components/expectations.py::_datastore_get_expected_min_length`
+  - rationale: preserve the existing base `DataStore` fields for compatibility, while storing additional DataStore payload and contiguous-pattern state in per-symbol maps keyed by the invoked DataStore object.
+- Verification:
+  - targeted unit: base DataStore wrong-payload rejection, base DataStore correct-payload acceptance, and DataStore2 own-payload acceptance passed
+  - sourced tag: `additional-datastore-isolation-doc` 4 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1351 tests passed
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4376 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - High if the private set exercises Additional DataStore tables. This fixes a true state identity bug rather than a single returned-value shape.
+
+
+## 2026-06-08 KST - Additional DataStore identity, ACL, descriptor, and XOR semantics
+
+- Change type: solver identity/authorization/descriptor repair + official sourced edge coverage
+- Trigger:
+  - case_id: `additional-datastore-isolation-doc` extension
+  - concepts: Additional DataStore tables, byte-table identity, AccessControl/GetACL, Table descriptors, observed Rows bounds, XOR PatternInput and BufferOut
+  - evidence: Additional DataStore tables are separate byte tables. Opal supplies separate Table/AccessControl/ACE preconfiguration for additional DataStores; Core byte-table methods operate over row-addressed byte cellblocks; GetACL returns the exact ACL column for the selected association; XOR BufferOut must have enough byte-table capacity for the result.
+  - mismatch summary: additional DataStore payload isolation alone was not enough. `DataStore2` names and `0000100100000001` UIDs were not treated as the same table in all paths; `DataStore2.GetACL` accepted arbitrary ACEs; `SetACL(DataStore2, Get, ACL=[])` did not affect later reads; `Table_DataStore2` did not enforce byte-table descriptor semantics or observed row bounds; and XOR accepted base-DataStore results or too-small BufferOut cellblocks.
+- Repair path:
+  - files/functions: `src/solver_components/parsing.py::_normalize_name`, `src/solver_components/semantics.py::_datastore_payload_key`, `src/solver_components/semantics.py::_datastore_default_acl_ref`, `src/solver_components/semantics.py::_access_control_combo_key`, `src/solver_components/semantics.py::_byte_table_symbol_from_descriptor`, `src/solver_components/expectations.py::_known_acl_return_refs`, `src/solver_components/expectations.py::_expected_xor`, `src/solver_components/expectations.py::_table_descriptor_expected_cells`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: normalize the feature-set display alias (`DataStore2`) and UID-derived internal alias (`DataStore1`) to one additional-table key, while keeping base `DataStore` behavior and legacy wrapper compatibility. Compute DataStore ACE refs by table index instead of hardcoding base refs, and use explicit byte-table cellblock capacity for XOR BufferOut validation.
+- Verification:
+  - targeted probes: additional DataStore XOR wrong-result, empty Get ACL, wrong GetACL ACE, descriptor Kind=Object, observed Rows out-of-bounds, and short XOR BufferOut all rejected; exact `DataStore2.GetACL` accepted
+  - unit: full `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1356 tests passed after compatibility adjustment
+  - sourced tag: `additional-datastore-isolation-doc` 16 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4388 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - High if hidden tests include Additional DataStore feature-set rows. This is a multi-surface identity fix: the same table now stays coherent across payload state, ACL state, descriptor state, row bounds, and XOR.
+
+
+## 2026-06-08 KST - ReEncrypt request/reset/status returned values are state-gated
+
+- Change type: solver ReEncrypt state-machine repair + official sourced edge coverage
+- Trigger:
+  - case_ids: `reencrypt-column-types-doc`, `reencrypt-reset-doc`, `reencrypt-status-enum-doc`
+  - concepts: ReEncryptRequest, ContOnReset, reset-stop, LastReEncStat, GeneralStatus, returned-value shape, state-specific enum validity
+  - evidence: Core says successful `Get` on `ReEncryptRequest` returns no value; empty `ContOnReset` sets reset-stop for the reset condition and changes interrupted re-encryption to PAUSED; `LastReEncStat` is valid only in COMPLETED/PENDING/PAUSED; `GeneralStatus` is valid only in PAUSED or PENDING and uses different value bands.
+  - mismatch summary: `ContOnReset=null` behaved like unobserved instead of an empty set, so a PowerCycle could leave STARTed re-encryption in PENDING. `ReEncryptRequest.Get` accepted scalar/list payloads. Initial/IDLE `LastReEncStat` and `GeneralStatus` accepted non-empty values, and PENDING `GeneralStatus` accepted a PAUSED-band value.
+- Repair path:
+  - files/functions: `src/solver_components/transitions.py::_update_range_from_columns`, `src/solver_components/expectations.py::_expected_get`, `src/solver_components/engine.py::_return_cell_type_valid`, `src/solver_components/engine.py::_gen_status_paused_value_valid`, `src/solver_components/engine.py::_gen_status_pending_value_valid`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: interpret null `ContOnReset` as the empty reset-types set once it is observed, force standalone `ReEncryptRequest.Get` to return an empty result, and validate unobserved ReEncrypt status columns against the tracked state. Already observed status values remain exact expected cells so prior context can still be checked for consistency.
+- Verification:
+  - targeted probes: null ContOnReset PAUSED/PENDING pair, scalar/list ReEncryptRequest.Get, initial LastReEncStat/GeneralStatus, PENDING wrong-band and good-band GeneralStatus all matched expected verdicts
+  - unit: full `PYTHONPATH=sm python3 -m unittest sm.tests.test_solver_rules -q`: 1362 tests passed
+  - sourced tags: `reencrypt-column-types-doc` 4 / 0, `reencrypt-status-enum-doc` 11 / 0, `reencrypt-reset-doc` 10 / 0
+  - full gate:
+    - `PYTHONPATH=sm python3 sm/tools/run_sourced_edges.py`: 4395 cases, 0 mismatches
+    - `PYTHONPATH=sm python3 sm/tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py`: completed with no mismatches
+- Dashboard relevance:
+  - High. These are short private-test-friendly trajectories: one returned status column, one request column, or one reset boundary can expose the bug. The repair follows the documented ReEncrypt state machine rather than matching only the discovered cases.
+
+
+## 2026-06-08 KST - Created-row GetACL requires generated runtime ACE exactness
+
+- Change type: solver AccessControl exact-return/state-transition hardening + official sourced edge coverage
+- Trigger:
+  - case_ids: `created-row-accesscontrol-doc`, `created-row-meta-acl-state-doc`
+  - concepts: CreateRow side effects, generated ACE rows, created object-method AccessControl associations, GetACL exact ACE uidref lists, AddACE dynamic ACL mutation
+  - evidence: Core table methods create object rows and their AccessControl associations. The generated row's object-method ACL contains a generated ACE uidref; `GetACL` returns that ACL. `AddACE` appends to the association ACL rather than replacing the generated ACE.
+  - mismatch summary: Before repair, created-row GetACL only enforced a non-empty list when the generated ACE UID was not yet learned. That allowed first GetACL calls with extra builtin ACEs, builtin-only ACLs, and later AddACE trajectories that omitted the generated runtime ACE or included unrelated extras.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_get_acl`, `src/solver_components/expectations.py::_known_acl_return_refs`, `src/solver_components/expectations.py::_created_row_get_acl_exact_length`, `src/solver_components/expectations.py::_created_row_unknown_runtime_forbidden_refs`, `src/solver_components/transitions.py::_return_created_runtime_ace_candidates`, `src/solver_components/transitions.py::apply_transition`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`, `tools/run_synthetic_edges.py`
+  - rationale: when the generated runtime ACE UID is unknown, enforce exact ACL cardinality plus required dynamic refs instead of guessing the UID. Once a valid GetACL reveals the runtime ACE, bind only the single non-dynamic ACE candidate and later enforce exact ACL equality. Common preconfigured ACE refs are forbidden from standing in as the generated runtime ACE unless they were explicitly added as dynamic ACL refs.
+- Verification:
+  - targeted probes: first created-row GetACL rejects extra builtin ACEs and builtin-only ACLs; AddACE trajectories require both generated runtime ACE and added ACE; observed runtime ACE plus AddACE rejects unrelated extras
+  - unit: full `python3 -m unittest tests.test_solver_rules`: 1366 tests passed
+  - sourced tags: `created-row-accesscontrol-doc` 16 / 0, `created-row-meta-acl-state-doc` 14 / 0
+  - full gate:
+    - `python3 tools/run_sourced_edges.py`: 4399 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - Medium-high. This closes an exact GetACL false-PASS class for dynamically created rows, especially hidden traces that create a row, perform ACL meta-methods, and then validate exact AccessControl results.
+
+
+## 2026-06-08 KST - Created-row side-effect ACE ACL state and empty ACL invocation gating
+
+- Change type: solver AccessControl state repair + official sourced edge coverage
+- Trigger:
+  - case_id: `created-row-meta-acl-state-doc`
+  - concepts: generated side-effect ACE rows, AddACE/RemoveACE/SetACL dynamic ACL state, empty ACL non-invocable associations, direct created-row Get
+  - evidence: Created rows have generated AccessControl/ACE side effects. GetACL returns the current ACL column for the association; AddACE/RemoveACE/SetACL mutate that ACL. An empty ACL makes the InvokingID/MethodID association not invocable.
+  - mismatch summary: GetACL on a generated side-effect ACE returned stale exact refs after AddACE because `_known_acl_return_refs` bypassed dynamic state. Also, `SetACL(row, Get, ACL=[])` made GetACL empty but did not block later direct `Get` success.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_known_acl_return_refs`, `src/solver_components/expectations.py::_acl_refs_with_dynamic_state_preserving_unknown_uid`, `src/solver_components/semantics.py::_method_combo_acl_empty`, `src/solver_components/expectations.py::expected_status`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: preserve unknown generated ACE UIDs in exact ACL comparisons while still applying dynamic ACL mutations, and gate direct methods on dynamic object associations whose ACL replacement is explicitly empty.
+- Verification:
+  - targeted: `created_row` unit subset 23 OK; `created-row-meta-acl-state-doc` 18 / 0
+  - full gate before next patch: unit 1370 OK; sourced 4403 / 0; synthetic 7349 / 0
+- Dashboard relevance:
+  - Medium-high. This targets hidden dynamic-table traces where the private set checks current ACL state after meta-method mutations, not just association existence.
+
+
+## 2026-06-08 KST - Direct BufferOut row-window structs enforce byte-table capacity
+
+- Change type: solver representation/capacity repair + official sourced edge coverage
+- Trigger:
+  - case_ids: `random-bufferout-capacity-doc`, `xor-byte-table-bufferout-doc`, `hashinit-bufferout-capacity-doc`
+  - concepts: byte-table CellBlock, BufferOut capacity, direct row-window dictionaries, Random, XOR, HashInit
+  - evidence: BufferOut identifies byte-table cells that must hold the generated/result bytes. Random, XOR, and HashInit cannot succeed when BufferOut capacity is smaller than the output size.
+  - mismatch summary: too-small nested `CellBlock` wrappers were rejected, but equivalent direct dictionaries such as `{"Table":"DataStore","startRow":0,"endRow":1}` were treated as unknown capacity and allowed.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_byte_table_cellblock_capacity`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: when a BufferOut value contains explicit byte row-window keys, compute capacity even without a nested `CellBlock` wrapper. This preserves existing nested CellBlock behavior and closes representation-only bypasses.
+- Verification:
+  - targeted: direct BufferOut unit subset 3 OK; `random-bufferout-capacity-doc` 3 / 0; `xor-byte-table-bufferout-doc` 10 / 0; `hashinit-bufferout-capacity-doc` 3 / 0
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1373 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4406 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `DATASET_DIR=sm/dataset LABEL_PATH=sm/dataset/label.jsonl PYTHONPATH=sm python3 sm/evaluate.py`: score=100.00
+    - `PYTHONPATH=sm python3 sm/tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `PYTHONPATH=sm python3 sm/tools/score_probe_loop.py --iterations 1 --sleep 0`: completed with no mismatches
+- Dashboard relevance:
+  - High if hidden tests use SDK-style direct row-window BufferOut dictionaries. The fix generalizes capacity validation across Random/XOR/HashInit without relying on a single encoding shape.
+
+
+## 2026-06-08 KST - Level 0 Locking Feature descriptor fixed fields
+
+- Change type: solver descriptor validation repair + official sourced edge coverage
+- Trigger:
+  - case_id: `locking-feature-descriptor-doc`
+  - concepts: Level 0 Discovery, Opal Locking Feature descriptor, fixed descriptor fields, runtime locking/MBR state bits
+  - evidence: the Opal Locking Feature descriptor has fixed fields for descriptor length, MBR shadowing support, media encryption, and locking support; only the enabled/locked/MBR bits are runtime state dependent.
+  - mismatch summary: successful Level 0 Locking Feature responses could include impossible fixed fields such as `Length=0x10`, `MBRShadowingNotSupported=1`, `MediaEncryption=0`, or `LockingSupported=0` without being rejected.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_level0_locking_feature`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: validate fixed descriptor fields whenever they are present, but keep them optional so partial descriptor payloads that only report runtime state bits remain accepted.
+- Verification:
+  - targeted: `python3 -m unittest tests.test_solver_rules -k level0_locking_feature`: 6 tests passed
+  - targeted sourced: `python3 tools/run_sourced_edges.py --tag locking-feature-descriptor-doc`: 15 cases, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1374 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4411 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+    - `python3 tools/score_probe_loop.py --iterations 1 --sleep 0`: completed and queued 18 future wrapper/probe candidates
+- Dashboard relevance:
+  - Medium. This is a short hidden-test-friendly descriptor check and is generalized at the field level rather than tied to one case.
+
+
+## 2026-06-08 KST - Locking full-row Get validates returned stored cells
+
+- Change type: solver Locking state repair + official sourced edge coverage
+- Trigger:
+  - case_id: `locking-composite-get-doc`
+  - concepts: Locking range stored cells, full-row Get, RangeStart/RangeLength, LockOnReset, returned-cell consistency
+  - evidence: Locking range Set mutates stored row values, and Get returns readable cells from that row. A full-row Get may return only some cells, but cells that are returned must reflect the current stored state.
+  - mismatch summary: after `Set(Locking_Range1, RangeStart=120, RangeLength=12, LockOnReset=[0,3])`, a later full-row Get returning stale `LockOnReset=[0]` passed because the verifier only used explicit requested columns/CellBlock windows for exact state checks.
+- Repair path:
+  - files/functions: `src/solver_components/expectations.py::_expected_get`, `tests/test_solver_rules.py`, `tools/run_sourced_edges.py`
+  - rationale: include returned Locking cells in the observed-column set for known range state, so returned full-row values are checked even without a CellBlock. Avoid over-generalizing by requiring known state for optional ranges and by constraining ReEncrypt/status columns only when actually returned or specifically requested.
+- Verification:
+  - targeted:
+    - `python3 tools/run_sourced_edges.py --tag optional-range-maxranges-long-tight-doc`: 10 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag locking-composite-get-doc`: 10 cases, 0 mismatches
+    - focused unit subset for full-row Get and ReEncrypt reset interactions: 3 tests passed
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1378 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4413 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Related rejected/contained probe:
+  - Random wrapper implicit-session handling was reviewed while processing score-probe candidates. The model now preserves Random Count validation for wrapper calls without an explicit raw session, but it still rejects BufferOut writes to DataStore without proper DataStore Set access. The queued BufferOut-pass candidates were not promoted because they would bypass official byte-table ACL semantics.
+- Dashboard relevance:
+  - High. Hidden tests can easily encode long Locking trajectories as full-row Get responses rather than explicit CellBlocks; this repair checks the semantic state instead of the response encoding shape.
+
+
+## 2026-06-08 KST - Log row allocation, NextKey GenKey gating, and host LBA window reconstruction
+
+- Change type: solver state/result repair + official sourced edge coverage
+- Trigger:
+  - case_ids: `log-addlog-doc`, `log-createlog-doc`, `genkey-reencrypt-state-doc`, `locking-geometry-nontransition-data-doc`
+  - concepts: AddLog max_bytes_64, CreateLog MinSize/MaxSize/Rows, Locking NextKey re-encryption state, K_AES GenKey, host media read/write windows, partial LBA overwrite
+  - evidence:
+    - `AddLog` takes `Data : bytes` and Log Data is bounded to 64 bytes.
+    - `CreateLog.MinSize` is the initial number of allocated rows, optional `MaxSize` bounds the host-requested maximum, and successful `Rows` reports the number of allocated rows.
+    - `NextKey` and its referenced media encryption key object are writable only when the owning range `ReEncryptState` is IDLE.
+    - Successful unlocked host writes update user data, and later reads of an LBA window return the bytes in that requested window.
+  - mismatch summary:
+    - `AddLog(Data="AA"*64)` was rejected as overlong because the generic payload length path counted hex characters instead of bytes.
+    - `CreateLog` accepted `Rows < MinSize` and `Rows > MaxSize` because only the three-field shape was checked.
+    - `GenKey(K_AES_128_Range1_Key)` succeeded while that key was referenced as `Locking_GlobalRange.NextKey` and GlobalRange was non-IDLE.
+    - Host reads did not slice exact prior write payloads or overlay later partial LBA writes.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/expectations.py::_expected_add_log`
+    - `src/solver_components/expectations.py::_log_data_too_long`
+    - `src/solver_components/expectations.py::_expected_create_log`
+    - `src/solver_components/expectations.py::_key_is_busy_next_key_for_any_range`
+    - `src/solver_components/semantics.py::_remembered_pattern_analysis_for_lba`
+    - `tests/test_solver_rules.py`
+    - `tools/run_sourced_edges.py`
+  - rationale:
+    - Keep byte-length interpretation scoped to Log `Data` so generic Sign/Firmware host-data strings remain length-checked as strings.
+    - Enforce `CreateLog` row-allocation constraints whenever `Rows` is observable, while preserving wrapper list returns that report the row count positionally.
+    - Treat `NextKey` as a reverse reference: the target K_AES object cannot be regenerated while any observed owning range is re-encrypting.
+    - Reconstruct remembered host media by requested LBA byte positions and prefer the most specific covering write span, so subrange reads and partial overwrites are stateful.
+- Verification:
+  - targeted:
+    - focused unit subset for Log, GenKey, and host window reconstruction: 6 tests passed
+    - `python3 tools/run_sourced_edges.py --tag log-addlog-doc`: 5 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag log-createlog-doc`: 9 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag genkey-reencrypt-state-doc`: 6 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag locking-geometry-nontransition-data-doc`: 26 cases, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1381 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4421 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. These are compact, private-test-friendly semantic checks: exact boundary sizes, row allocation consistency, re-encryption key write blocking, and byte-window host reads after partial writes.
+
+
+## 2026-06-08 KST - Active MBR outside uniform read-lock crossing returns zeroes
+
+- Change type: solver host-I/O state repair + official sourced edge coverage
+- Trigger:
+  - case_id: `mbr-doc`
+  - concepts: MBRControl Enable/Done, Table 230 outside-MBR reads, Locking range crossing, uniform ReadLocked ranges, zero-fill read result
+  - evidence: Core Table 230 says active MBR shadowing outside-MBR reads return user data when read locking is disabled or unlocked, return all zeroes when locked, and use a data-protection error for mixed read-lock boundaries. A request crossing two adjacent ranges is mixed only when effective read-lock state differs across the covered segments.
+  - mismatch summary: after creating two adjacent outside-MBR Locking ranges that both had `ReadLockEnabled=true` and `ReadLocked=true`, a host read spanning both ranges could be classified as a range-crossing data-protection error instead of a zero-fill read.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/semantics.py::_all_read_locked`
+    - `src/solver_components/expectations.py::_expected_host_read`
+    - `tests/test_solver_rules.py`
+    - `tools/run_sourced_edges.py`
+  - rationale: preserve data-protection errors for genuinely mixed read-lock boundaries, but let Table 230's locked/outside active-MBR row control when every effective range segment is read-locked.
+- Verification:
+  - targeted:
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_mbr_shadow_uniform_read_locked_crossing_returns_zeroes`: 1 test passed
+    - `python3 tools/run_sourced_edges.py --tag mbr-doc`: 37 cases, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1382 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4423 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. Hidden tests can combine dynamic range creation with active MBR outside reads; this closes a likely false-negative/false-positive boundary without weakening mixed-boundary error handling.
+
+
+## 2026-06-08 KST - Created-row RemoveACE rejects absent preconfigured ACEs
+
+- Change type: solver ACL mutation repair + official sourced edge coverage
+- Trigger:
+  - case_id: `created-row-failed-meta-nonmutation-doc`
+  - concepts: CreateRow side-effect ACE, created object AccessControl rows, RemoveACE, generated runtime ACE, dynamic ACL non-mutation after failed mutation
+  - evidence:
+    - Core `CreateRow` creates associated AccessControl rows and a new ACE.
+    - The newly created AccessControl rows reference that generated ACE.
+    - `RemoveACE` removes an ACE uidref from the association ACL; an ACE that is not present in the ACL cannot be removed successfully.
+  - mismatch summary:
+    - Before the generated runtime ACE was observed, `RemoveACE(created_row, Get, ACE_Anybody)` could be accepted as `SUCCESS`.
+    - This confused the unknown generated ACE with a known preconfigured ACE and allowed a false mutation path.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/expectations.py::_expected_acl_mutation`
+    - `tests/test_solver_rules.py`
+    - `tools/run_sourced_edges.py`
+  - rationale:
+    - Unknown created-row ACL state still has a semantic invariant: the initial member is generated at CreateRow time, not one of the common builtin ACEs.
+    - A failed removal of a known absent ACE must not poison the later valid path where that ACE is explicitly added and then removed.
+- Verification:
+  - targeted:
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_created_row_removeace_common_ace_fails_before_runtime_ace_observed`: 1 test passed
+    - `python3 tools/run_sourced_edges.py --tag created-row-failed-meta-nonmutation-doc`: 11 cases, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1384 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4429 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. A private trace can create a row and immediately test ACL mutation with a familiar builtin ACE; this repair is grounded in generated-ACE semantics rather than the literal test case.
+
+
+## 2026-06-08 KST - Locking CreateRow validates LockOnReset row values
+
+- Change type: solver row-value validation repair + official sourced edge coverage
+- Trigger:
+  - case_id: `locking-created-row-failed-set-reset-doc`
+  - concepts: Locking table CreateRow, row Values, LockOnReset reset_types, hardware reset, programmatic reset, created-row validity
+  - evidence:
+    - Opal Locking rows support LockOnReset sets `{0}`, `{0,3}`, and optionally `{0,1}` / `{0,1,3}`.
+    - Hardware-only `{1}` and programmatic-only `{3}` are not valid LockOnReset sets.
+    - Core `CreateRow` creates a row in the target table, so supplied row values must satisfy that table's column and reset-list constraints.
+  - mismatch summary:
+    - Raw `CreateRow(Locking, Values={..., LockOnReset=[1]})` and `[3]` could be accepted as successful even though later Set-style validation already rejected invalid reset lists.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/semantics.py::_locking_row_values_invalid`
+    - `src/solver_components/semantics.py::_invalid_set_values`
+    - `src/solver_components/expectations.py::_expected_create_row`
+    - `tests/test_solver_rules.py`
+    - `tools/run_sourced_edges.py`
+  - rationale:
+    - Locking row value validity should be one shared semantic rule for both created rows and later Set calls.
+    - The helper keeps value-type/reset-list/readonly-column checks general and leaves CreateRow-specific geometry allocation checks in the existing CreateRow path.
+- Verification:
+  - targeted:
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_locking_create_row_rejects_invalid_lockonreset_list`: 1 test passed
+    - `python3 tools/run_sourced_edges.py --tag locking-created-row-failed-set-reset-doc`: 14 cases, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1384 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4429 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. This is a compact false PASS shape: a single raw Locking CreateRow with a bad reset list can distinguish a table-aware verifier from a shallow row-allocation checker.
+
+
+## 2026-06-08 KST - Host I/O names canonicalized and Crypto BufferOut byte-table windows tightened
+
+- Change type: solver parser/state repair + official sourced edge coverage
+- Trigger:
+  - case_ids:
+    - `locking-host-io-impossible-doc`
+    - `xor-byte-table-bufferout-doc`
+    - `crypto-cellblock-accesscontrol-doc`
+    - `byte-table-observed-rows-doc`
+    - `datastore-no-values-granularity-doc`
+  - concepts: host read/write wrappers, Locking read/write locks, Crypto BufferOut, byte-table CellBlock, DataStore Rows, MandatoryWriteGranularity
+  - evidence:
+    - Host read/write semantics depend on the I/O operation, and wrapper log casing must not create a distinct operation.
+    - Byte-table CellBlocks select row-byte windows; column selectors are not part of byte-table output windows.
+    - Table descriptor `Rows` is the actual number of addressable byte rows.
+    - `MandatoryWriteGranularity` constrains byte-table writes, and Crypto `BufferOut` writes method output into the selected byte-table window.
+  - mismatch summary:
+    - `operation="READ"` and `operation="WRITE"` parsed as host I/O but did not enter the exact `"Read"`/`"Write"` expected-behavior branches, allowing successful I/O on locked ranges.
+    - `HashInit`/`XOR` BufferOut cellblocks could succeed despite including byte-table column selectors, starting at an observed out-of-bounds DataStore row, or violating an observed mandatory write granularity.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/parsing.py::_canonical_host_io_method`
+    - `src/solver_components/parsing.py::parse_event`
+    - `src/solver_components/expectations.py::_byte_table_cellblock_window`
+    - `src/solver_components/expectations.py::_byte_table_cellblock_has_column_component`
+    - `src/solver_components/expectations.py::_byte_table_output_cellblock_invalid`
+    - `src/solver_components/expectations.py::_crypto_datastore_cellblock_access_error`
+    - `tests/test_solver_rules.py`
+    - `tools/run_sourced_edges.py`
+  - rationale:
+    - Normalize representation before semantic checks so all read/write spellings share the same Locking and media-state code path.
+    - Validate explicit byte-table BufferOut row windows using already-observed descriptor facts, while leaving inline `{"Bytes": ...}` BufferOut shorthand accepted because existing wrapper tests use it as a non-cellblock buffer representation.
+- Verification:
+  - targeted:
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_uppercase_host_io_names_still_apply_locking_state`: 1 test passed
+    - BufferOut targeted unit group: 4 tests passed
+    - `python3 tools/run_sourced_edges.py --tag locking-host-io-impossible-doc`: 6 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag xor-byte-table-bufferout-doc`: 11 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag crypto-cellblock-accesscontrol-doc`: 13 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag byte-table-observed-rows-doc`: 1 case, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag datastore-no-values-granularity-doc`: 1 case, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1389 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4435 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. Both fixes target hidden-test-shaped false PASSes: casing/representation variants that should be semantically identical, and Crypto BufferOut writes constrained by descriptor state observed earlier in the trajectory.
+
+
+## 2026-06-08 KST - Table boolean cells, Crypto stream input, and created-row runtime ACE removal tightened
+
+- Change type: solver semantic repair + official sourced edge coverage
+- Trigger:
+  - case_ids:
+    - `locking-boolean-set-type-tight-doc`
+    - `mbrcontrol-defaults-doc`
+    - `crypto-stream-state-tight-doc`
+    - `hash-stream-state-bufferout-tight-doc`
+    - `created-row-meta-acl-state-doc`
+  - concepts:
+    - stored table boolean cells
+    - Locking row boolean state
+    - MBRControl Enable/Done state
+    - Crypto stream methods and required input payload
+    - created-row side-effect AccessControl rows
+    - generated runtime ACE uidrefs and `RemoveACE`
+  - evidence:
+    - Stored table cells with boolean type should not accept arbitrary string booleans as successful table writes. The repair is scoped to table boolean values and does not change TPerInfo's existing literal handling.
+    - Crypto stream methods that transform input bytes (`Hash`, `HMAC`, `Encrypt`, `Decrypt`) require an input data argument before a successful processed-byte response is meaningful.
+    - Core `CreateRow` creates associated AccessControl rows and a generated ACE. Once that generated ACE UID is observed, it is an ACL member even if it is a raw runtime UID rather than a preconfigured `ACE_*` alias. `RemoveACE` must remove that UID from later `GetACL` exactness and from direct method authorization when it was the only ACE.
+  - mismatch summary:
+    - `Set(Locking_Range1, ReadLockEnabled="true")` and `setMBRControl(Enable="true")` could be accepted even though `"true"` is not a table boolean value in the stored-cell format.
+    - `Hash` / `HMAC` / `Encrypt` / `Decrypt` could accept `SUCCESS` on an open stream with no `Input` / `DataInput` / `Buffer` / `Data` payload at all.
+    - `RemoveACE(created_row, Get, observed_runtime_ace_uid)` did not consistently mutate dynamic ACL state because canonical ACE normalization dropped raw runtime UIDs.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/semantics.py::_is_table_boolean_value`
+    - `src/solver_components/semantics.py::_invalid_set_values`
+    - `src/solver_components/semantics.py::_locking_row_values_invalid`
+    - `src/solver_components/semantics.py::_ace_method_refs`
+    - `src/solver_components/semantics.py::_method_combo_acl_empty`
+    - `src/solver_components/transitions.py::_return_created_runtime_ace_candidates`
+    - `src/solver_components/transitions.py::_apply_acl_mutation_success`
+    - `src/solver_components/expectations.py::_crypto_stream_has_input_arg`
+    - `src/solver_components/expectations.py::_expected_crypto_stream_method`
+    - `src/solver_components/expectations.py::_expected_acl_mutation`
+    - `tests/test_solver_rules.py`
+    - `tools/run_sourced_edges.py`
+  - rationale:
+    - Keep the boolean-type rule general for stored table cells instead of patching only one column or one wrapper spelling.
+    - Make Crypto stream success depend on the presence of input data, not on a particular argument spelling.
+    - Treat generated runtime ACE UIDs as first-class dynamic ACL refs once observed, so `AddACE`, `RemoveACE`, `SetACL`, `GetACL`, and direct method authorization stay consistent.
+- Quarantine / rejected handling:
+  - A LockOnReset disabled-side stored-cell hypothesis was not applied in this batch. It conflicts with earlier logged adjudication and would require a separate official-document review before touching the solver. This is recorded as pending rather than silently ignored.
+- Verification:
+  - targeted:
+    - String boolean and Crypto missing-input unit coverage added and passed inside full unit run.
+    - Created-row runtime ACE RemoveACE unit trajectory added and passed inside full unit run.
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1393 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4446 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `python3 tools/label_consensus.py report`: 4446 cases, 12078 reviews, 3567 accepted, 879 quarantined
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. These are short, private-test-friendly probes: invalid table value representations, missing Crypto input, and raw generated ACE removal after dynamic row creation.
+
+
+## 2026-06-08 KST - Random and Crypto stream destination aliases normalized as BufferOut
+
+- Change type: solver representation repair + access-control guard extension
+- Trigger:
+  - Follow-up alias sweep after the Random `Output` repair.
+  - Local probes showed that accepted output-buffer aliases were not uniformly recognized by result-shape and access-control expectation code.
+- Concepts:
+  - Random BufferOut
+  - Encrypt/Decrypt BufferOut
+  - SDK/log output aliases: `destination`, `dest`, `out`
+  - Crypto output cellblock Set-access requirement
+  - DataStore byte-table write authorization
+- Evidence:
+  - Core Random and Crypto stream methods use `BufferOut` as an output cellblock.
+  - Core Crypto cellblock rules require Set access control on the entirety of an output cellblock.
+  - Existing parser/wrapper normalization already treats nested `destination`, `dest`, and `out` style fields as BufferOut for high-level operation payloads.
+- Mismatch summary:
+  - Random:
+    - `Random(Count=4, destination=cellblock) -> []` predicted FAIL.
+    - `Random(Count=4, destination=cellblock) -> [b"abcd"]` predicted PASS.
+  - Encrypt/Decrypt:
+    - `Encrypt(..., destination=cellblock) -> []` and `Decrypt(..., out=cellblock) -> []` predicted FAIL.
+    - The same calls returning processed bytes predicted PASS even though BufferOut means the method Result is empty.
+  - Access control:
+    - A DataStore output destination alias could miss the existing Crypto BufferOut Set-access check because the access validator only inspected `BufferOut` and `Output` aliases.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/expectations.py::_expected_random`
+    - `src/solver_components/expectations.py::_expected_crypto_stream_method`
+    - `src/solver_components/expectations.py::_crypto_datastore_cellblock_access_error`
+    - `tests/test_solver_rules.py::test_random_output_aliases_use_bufferout_return_shape`
+    - `tests/test_solver_rules.py::test_encrypt_decrypt_destination_aliases_use_bufferout_return_shape`
+    - `tests/test_solver_rules.py::test_crypto_destination_alias_to_datastore_requires_write_access`
+  - rationale:
+    - Keep official BufferOut semantics intact while expanding only representation aliases that the parser/wrapper layer already maps to output-buffer intent.
+    - Apply the alias expansion to both return-shape validation and byte-table output access checks so an alias cannot bypass DataStore/MBR authorization.
+- Verification:
+  - targeted:
+    - Random/Crypto alias unit tests passed.
+    - `python3 tools/run_sourced_edges.py --tag random-doc`: 6 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag random-bufferout-cellblock-acl-doc`: 2 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag random-bufferout-capacity-doc`: 3 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag crypto-stream-state-tight-doc`: 28 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag crypto-cellblock-accesscontrol-doc`: 13 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag crypto-bufferout-capacity-doc`: 4 cases, 0 mismatches
+    - Fresh score probe: 7380 probes, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1402 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4471 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `python3 tools/label_consensus.py report`: 4471 cases, 12078 reviews, 3567 accepted, 904 quarantined
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 851 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. This closes a likely hidden-wrapper representation gap without broad semantic loosening: destination/out aliases now obey the same empty-result and Set-access rules as explicit BufferOut.
+
+## 2026-06-08 KST - Random BufferOut output aliases aligned with parser semantics
+
+- Change type: solver representation repair + probe-generator calibration
+- Trigger:
+  - Fresh probe `analysis/score_probe_queue_fresh2.jsonl` showed only Random BufferOut mismatches after the previous AccessControl/Crypto fixes.
+  - Official review showed the DataStore BufferOut PASS probes were unsafe because Random output cellblocks require Set access control.
+  - A smaller local repro then found a real model bug for raw/intermediate `Output` aliases.
+- Concepts:
+  - Random SP method
+  - BufferOut result-shape rule
+  - SDK/log output aliases
+  - Crypto cellblock Set-access requirement
+- Evidence:
+  - Core `5.6.4.1` defines `ThisSP.Random[Count, BufferOut] => [Result : bytes]`.
+  - Core `5.6.4.1.2` says BufferOut identifies cells where generated bytes are stored.
+  - Core `5.6.4.2.2` says Random fails when BufferOut is not big enough, Set access control is not satisfied, or BufferOut is not a byte-table bytes cellblock.
+  - Core `5.6.5.1` says output cellblocks require access control sufficient to invoke `Set` on the entire parameterized cellblock.
+- Mismatch summary:
+  - Unsafe probe issue:
+    - `getRandomBytes(... output={CellBlock:{Table:DataStore,...}}) -> []` was expected PASS without a LockingSP/DataStore write-authorized context.
+    - Existing official sourced cases correctly treat this as FAIL when Set access is absent.
+  - Actual solver issue:
+    - `Random(Count=4, Output=cellblock) -> []` predicted FAIL.
+    - `Random(Count=4, Output=cellblock) -> [b"abcd"]` predicted PASS.
+    - Parser/unsupported-argument logic already recognized output aliases, but `_expected_random` only treated `BufferOut`, `bufferOut`, and `Buffer` as output-buffer arguments.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/expectations.py::_expected_random`
+    - `tests/test_solver_rules.py::test_random_output_alias_uses_bufferout_return_shape`
+    - `tools/score_probe_loop.py::random_probes`
+  - rationale:
+    - Do not loosen DataStore/MBR BufferOut authorization. That would contradict official cellblock access-control rules and existing sourced tests.
+    - Align Random return-shape validation with the parser's accepted output aliases so wrapper/raw representations have the same semantics.
+- Verification:
+  - targeted:
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_random_output_alias_uses_bufferout_return_shape tests.test_solver_rules.SolverRuleTests.test_random_with_bufferout_requires_empty_result tests.test_solver_rules.SolverRuleTests.test_random_datastore_bufferout_cellblock_requires_set_acl`: passed
+    - `python3 tools/run_sourced_edges.py --tag random-doc`: 6 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag random-bufferout-cellblock-acl-doc`: 2 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag random-bufferout-capacity-doc`: 3 cases, 0 mismatches
+    - `python3 tools/score_probe_loop.py --iterations 1 ...fresh4...`: 7380 probes, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1400 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4471 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `python3 tools/label_consensus.py report`: 4471 cases, 12078 reviews, 3567 accepted, 904 quarantined
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 851 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. Random itself is narrow, but hidden traces often vary wrapper/output field names. This fixes a compact false PASS/FAIL without weakening official DataStore BufferOut authorization.
+
+## 2026-06-08 KST - Hash Verify Signer public-key tracking and created-row GetACL base refs repaired
+
+- Change type: solver state/semantic repair + official sourced edge coverage
+- Trigger:
+  - case_ids:
+    - `verify-hash-signer-publickey-doc`
+    - `created-row-failed-meta-nonmutation-doc`
+    - fresh score-probe created-row wrapper AddACE envelope candidates
+  - concepts:
+    - Hash object `Verify`
+    - Hash Signer column
+    - public key credential references
+    - ambiguous Crypto UID/name parsing
+    - dynamic created-row AccessControl state
+    - CreateTable `GetSetACL` base refs
+  - evidence:
+    - Core hash-object `Verify` signs/verifies using the public key credential referenced by the hash object's Signer column.
+    - Verification fails if the hash object does not reference a public key credential.
+    - Core dynamic table creation can supply ACL refs through `GetSetACL`; later `AddACE` mutates the same association list.
+  - mismatch summary:
+    - `H_SHA_256` with observed `Signer=C_PIN_SID` or `Signer=C_AES_256` could accept `Verify` success with boolean `True`.
+    - Explicit Crypto family names could be overridden by UID-derived symbols, so `Set/Get(H_SHA_256, Signer=...)` sometimes updated the wrong object-family state.
+    - Created rows based on `CreateTable(GetSetACL=[ACE_Anybody])` could reject a later `GetACL` result containing the inherited base alias plus the newly added ACE after wrapper-style `AddACE`.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/models.py::State.hash_signers`
+    - `src/solver_components/transitions.py::_crypto_family_symbol`
+    - `src/solver_components/transitions.py::_update_hash_signer_from_columns`
+    - `src/solver_components/transitions.py::_apply_get_success`
+    - `src/solver_components/transitions.py::_apply_set_success`
+    - `src/solver_components/expectations.py::_expected_verify`
+    - `src/solver_components/expectations.py::_created_row_get_acl_exact_length`
+    - `src/solver_components/expectations.py::_created_row_unknown_runtime_forbidden_refs`
+    - `tests/test_solver_rules.py`
+    - `tools/run_sourced_edges.py`
+  - rationale:
+    - Track the official Signer relation as state instead of special-casing one Verify trajectory.
+    - Prefer explicit wrapper/log object names for Crypto families when they carry more semantic information than an overloaded UID alias.
+    - Let created-row GetACL exactness include base ACL refs supplied by `CreateTable`, while preserving strict RemoveACE behavior before a base/preconfigured ACE has actually been added to the created row's runtime method ACL.
+- Rejected / pending:
+  - Fresh probe no-session Random `BufferOut` rows remain pending. They currently expect success, but BufferOut is a byte-table write into DataStore and may need an authorized LockingSP/DataStore context, so this is not safe to patch without a focused document adjudication.
+- Verification:
+  - targeted:
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_hash_verify_requires_public_key_signer_when_signer_is_observed tests.test_solver_rules.SolverRuleTests.test_public_key_verify_requires_input_and_proof tests.test_solver_rules.SolverRuleTests.test_verify_success_requires_boolean_result`: passed
+    - `python3 tools/run_sourced_edges.py --tag verify-hash-signer-publickey-doc`: 3 cases, 0 mismatches
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_created_row_removeace_common_ace_fails_before_runtime_ace_observed tests.test_solver_rules.SolverRuleTests.test_accesscontrol_addace_policy_request_envelopes_update_dynamic_acl`: passed
+    - `python3 tools/run_sourced_edges.py --tag created-row-failed-meta-nonmutation-doc`: 11 cases, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1399 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4471 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `python3 tools/label_consensus.py report`: 4471 cases, 12078 reviews, 3567 accepted, 904 quarantined
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 851 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium-high. The hash Signer repair is a compact official-rule false PASS. The created-row AddACE/GetACL fix is directly in AccessControl, where prior submissions showed score sensitivity, and it repairs a representation-general state bug rather than a single case.
+
+## 2026-06-08 KST - AccessControl table-level Get universe and positional required method arguments tightened
+
+- Change type: solver semantic repair + official sourced edge coverage
+- Trigger:
+  - case_ids:
+    - `accesscontrol-metadata-table-method-universe-doc`
+    - `package-doc`
+    - `xor-byte-table-bufferout-doc`
+  - concepts:
+    - AccessControl concrete InvokingID/MethodID association existence
+    - Opal Admin SP and Locking SP AccessControl preconfiguration
+    - table-level `Next` vs table-level `Get`
+    - row-object wildcard `Get`
+    - required positional method parameters
+    - `GetPackage`, `SetPackage`, `XOR`
+  - evidence:
+    - Core `GetACL` fails if the `InvokingID` / `MethodID` combination does not exist.
+    - Opal preconfiguration lists exact table-level rows such as `MethodIDTable/Next` and row-object patterns such as `MethodIDObj`, not blanket `MethodIDTable/Get`.
+    - Core method signatures mark required positional parameters with `:`, including `GetPackage[Purpose : ...]`, `SetPackage[Value : ...]`, and `XOR[PatternInput : ..., DeletePattern : ..., Input : ...]`.
+  - mismatch summary:
+    - Missing table-level `Get` AccessControl associations could accept `SUCCESS` and reject the correct `NOT_AUTHORIZED`, especially `MethodIDTable/Get`, `ACETable/Get`, `AuthorityTable/Get`, `C_PINTable/Get`, and Locking `SPTemplatesTable/Get`.
+    - Raw positional `GetPackage["backup"]`, `SetPackage["package"]`, and `XOR["DataStore", false, {Data:"FFFF"}]` were rejected because the expectation path only checked named arguments.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/semantics.py::ADMIN_TABLE_LEVEL_GET_ASSOCIATIONS`
+    - `src/solver_components/semantics.py::LOCKING_TABLE_LEVEL_GET_ASSOCIATIONS`
+    - `src/solver_components/semantics.py::_combo_exists_for_get_acl`
+    - `src/solver_components/expectations.py::_method_positional_arg`
+    - `src/solver_components/expectations.py::_expected_get_package`
+    - `src/solver_components/expectations.py::_expected_set_package`
+    - `src/solver_components/expectations.py::_expected_xor`
+    - `tests/test_solver_rules.py`
+    - `tools/run_sourced_edges.py`
+  - rationale:
+    - Existence checks should use the same exact preconfiguration universe as exact ACL return checks. A known object/table name is not enough to infer an AccessControl row.
+    - Required positional method parameters should be accepted only for their official positions, while named arguments remain the preferred and stricter path.
+    - `SPInfo/Get` was explicitly preserved because Admin and Locking preconfiguration both include that association.
+- Rejected / pending:
+  - MBR active shadow boundary reads were left pending because changing that rule would contradict an existing accepted sourced case. It requires separate document adjudication before any solver change.
+  - Hash `Verify` signer/public-key mismatch and created-row wrapper `AddACE` envelope misses are queued for the next Crypto/AccessControl repair loops.
+- Verification:
+  - targeted:
+    - New AccessControl metadata-table `Get` unit group passed.
+    - New positional `GetPackage`, `SetPackage`, and `XOR` unit group passed.
+    - `python3 tools/run_sourced_edges.py --tag accesscontrol-metadata-table-method-universe-doc`: 78 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag package-doc`: 15 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --tag xor-byte-table-bufferout-doc`: 13 cases, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules`: 1398 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4468 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `python3 tools/label_consensus.py report`: 4468 cases, 12078 reviews, 3567 accepted, 901 quarantined
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 847 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - High. The AccessControl repair is exactly in the historically score-sensitive GetACL area and closes both false PASS and false FAIL behavior for compact hidden traces. The positional-argument repair covers raw official method-call representation without weakening wrapper/named validation.
+
+## 2026-06-08 KST - Split SyncTrustedSession state and TPerSign BufferOut aliases repaired
+
+- Change type: solver semantic repair + parser alias repair + official sourced edge coverage
+- Trigger:
+  - case_ids:
+    - `syncsession-return-shape-doc`
+    - `sign-bufferout-envelope-doc`
+  - concepts:
+    - `StartSession` / `SyncSession` handshake
+    - `StartTrustedSession` / `SyncTrustedSession` split-event representation
+    - `HostSessionID` / `SPSessionID` pairing
+    - optional `HostChallenge` / `SPResponse`
+    - `TPerSign.Sign` `BufferOut` result shape
+  - evidence:
+    - Core secure-startup flows layer a trusted-session exchange on top of the established session IDs from `StartSession`/`SyncSession`.
+    - `SPResponse` is only meaningful when the original `StartSession` included a host challenge.
+    - Crypto Template style methods with `BufferOut` store output bytes in the referenced cells and return an empty result.
+  - mismatch summary:
+    - Separate raw `SyncTrustedSession SUCCESS` after only `StartSession` was accepted even though no preceding `StartTrustedSession` had begun the trusted startup exchange.
+    - Separate `SyncTrustedSession` with `SPResponse` was accepted after a startup path that had no original `HostChallenge`.
+    - High-level `sign` / `tpersign` / `signMessage` / `createSignature` calls recognized top-level `BufferOut` and `output`, but missed top-level `destination` / `out`, so empty-result `BufferOut` cases were rejected and byte-result cases were accepted.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/models.py::Session`
+    - `src/solver_components/transitions.py::_apply_transition`
+    - `src/solver_components/expectations.py::_expected_sync_session`
+    - `src/solver_components/parsing.py::_high_level_event`
+    - `tests/test_solver_rules.py`
+    - `tools/run_sourced_edges.py`
+  - rationale:
+    - Track trusted-startup progress separately from the pending in-line `StartTrustedSession` response shape, because hidden logs may encode the later `SyncTrustedSession` as its own method event.
+    - Preserve the official `HostChallenge` dependency by forbidding `SPResponse` in split `SyncTrustedSession` results unless the original `StartSession` carried that challenge.
+    - Keep parser aliases and expectation aliases aligned for SDK-style crypto wrappers.
+- Rejected / pending:
+  - No leaderboard-driven patch was made. The remaining candidates are still document-driven slices: ACL/ACE edge cases, table malformed params, lifecycle/revert cleanup, re-encryption/data-removal state, and MBR/DataStore byte-table provenance.
+- Verification:
+  - targeted:
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_tpersign_bufferout_wrappers_return_empty_result tests.test_solver_rules.SolverRuleTests.test_separate_sync_trusted_session_requires_start_trusted_session tests.test_solver_rules.SolverRuleTests.test_separate_sync_trusted_session_forbids_sp_response_without_start_challenge tests.test_solver_rules.SolverRuleTests.test_separate_sync_trusted_session_accepts_sp_response_after_start_challenge -q`: passed
+    - `python3 tools/run_sourced_edges.py --tag syncsession-return-shape-doc`: 14 cases, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules -q`: 1406 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4475 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7349 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `python3 tools/label_consensus.py report`: 4475 cases, 12078 reviews, 3567 accepted, 908 quarantined
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/score_probe_loop.py --iterations 1 --sleep 0 --queue analysis/score_probe_queue_20260608_sync_trusted.jsonl --history analysis/score_probe_history_20260608_sync_trusted.jsonl --status analysis/score_probe_status_20260608_sync_trusted.md`: 7380 probes, 0 mismatches
+    - `python3 tools/doc_coverage.py`: 851 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. The trusted-session repair is a compact hidden-representation bug around secure startup, while the TPerSign alias repair is a parser/SDK-shape closure in the same BufferOut family that has repeatedly produced score-sensitive edge clusters.
+
+## 2026-06-08 KST - Direct readLock/writeLock request-envelope wrappers repaired
+
+- Change type: wrapper parser repair + synthetic host-I/O regression coverage
+- Trigger:
+  - case_ids:
+    - `locking-range-lock-envelope-doc`
+  - concepts:
+    - high-level `readLock` / `writeLock` wrappers
+    - request/policy/operation envelopes
+    - Locking Range `ReadLocked` / `WriteLocked` cells
+    - host read/write postconditions
+  - evidence:
+    - The underlying official operation is a Locking Range `Set` of `ReadLocked` or `WriteLocked`.
+    - Once a range has matching geometry and the relevant lock side enabled, a successful lock wrapper must affect later host I/O authorization.
+  - mismatch summary:
+    - Direct `writeLock` and `readLock` wrappers handled direct args and `values` envelopes, but ignored request-like wrappers such as `request`, `policy`, `operation`, `operationRequest`, and `lockingRangeRequest`.
+    - This caused compact private-style traces like `writeLock(request={range:1,...})` to leave the host write path incorrectly unlocked.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/parsing.py::_high_level_event`
+    - `tests/test_solver_rules.py`
+    - `tools/run_synthetic_edges.py`
+  - rationale:
+    - Use the same bounded request-envelope family for direct lock aliases that `setRange` and `lockRange` already use.
+    - Verify the repair through host I/O, not just a later getter, because the score-sensitive behavior is whether locked media becomes inaccessible.
+- Verification:
+  - targeted:
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_tcgstorageapi_direct_lock_alias_request_envelopes_update_host_io_state -q`: passed
+    - `python3 tools/run_synthetic_edges.py --tag locking-range-lock-envelope-doc`: 40 cases, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules -q`: 1407 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4475 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7363 cases, 0 mismatches
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/score_probe_loop.py --iterations 1 --sleep 0 --queue analysis/score_probe_queue_20260608_lock_envelope.jsonl --history analysis/score_probe_history_20260608_lock_envelope.jsonl --status analysis/score_probe_status_20260608_lock_envelope.md`: 7380 probes, 0 mismatches
+- Dashboard relevance:
+  - Medium-high. Prior score gains clustered around wrapper/envelope representations. This repair closes a real false PASS/false FAIL pair in the Locking host-I/O path without relaxing official locking semantics.
+
+## 2026-06-08 KST - Wrapper alias sweep: XOR, Random, and public-key Verify repaired
+
+- Change type: parser repair + wrapper/envelope regression coverage
+- Exploration purpose:
+  - The remaining untriaged official-document gaps are mostly low-priority D slices, while prior dashboard gains clustered around compact SDK-style wrapper/envelope representations.
+  - This pass therefore targeted cases where the same official method semantics appear under alternate JSON names such as `destination`, `out`, `byteCount`, `operation.command`, or `verifyRequest.values`.
+- Trigger:
+  - concepts:
+    - `XOR` `BufferOut` result-shape and byte-table mutation
+    - `Random` `Count` and `BufferOut` aliases
+    - public-key `Verify` requiring both input data and proof data
+  - mismatch summary:
+    - `xor(request={values:{..., destination: CellBlock}})` and `xor(operation={command:{..., out: CellBlock}})` were treated as no-`BufferOut` XOR calls, so byte returns were accepted and empty results were rejected.
+    - `randomBytes` / `getRandomBytes` recognized top-level `BufferOut` and `output`, but missed top-level `destination`, `dest`, and `out`.
+    - `randomBytes` / `getRandomBytes` / `rngBytes` recognized nested `bytes` and `byteCount` as `Count`, but missed those aliases at the top level and silently fell back to default `Count=32`.
+    - `verifySignature(algorithm="rsa2048", input=..., proof=...)` failed because the wrapper did not preserve public-key Verify input data. Nested forms such as `operation.command` also lost the target/proof and could be mistaken for hash Verify.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/parsing.py::_high_level_event`
+    - `tests/test_solver_rules.py`
+    - `tools/run_synthetic_edges.py`
+  - rationale:
+    - Align top-level and nested parser aliases for output-buffer methods so official `BufferOut` semantics are preserved regardless of SDK naming.
+    - Treat `byteCount`, `byte_count`, `bytes`, and `Bytes` as Random `Count` aliases only inside Random wrappers, where they are not ambiguous with an input payload.
+    - For public-key Verify wrappers, preserve explicit `Input`/`input`/`message` data and explicit `Proof`/`proof`/`signature` data separately. A single `payload` without an explicit proof remains legacy proof-like input to avoid over-broad reinterpretation.
+- Verification:
+  - targeted:
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_xor_domain_request_envelopes_preserve_payload_and_bufferout_shape -q`: passed
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_random_wrapper_top_level_destination_aliases_use_bufferout_shape tests.test_solver_rules.SolverRuleTests.test_random_wrapper_top_level_count_aliases_preserve_byte_shape -q`: passed
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_verify_wrapper_public_key_preserves_input_and_proof -q`: passed
+    - `python3 tools/run_synthetic_edges.py --tag xor-domain-request-envelope-doc`: 16 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py --tag verify-wrapper-envelope-doc`: 9 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py --tag parser-representation`: 2868 cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py --tag tcgstorageapi-wrapper`: 1665 cases, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules -q`: 1410 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4475 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7412 cases, 0 mismatches
+    - `python3 tools/label_consensus.py report`: 4475 cases, 12078 reviews, 3567 accepted, 908 quarantined
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+- Dashboard relevance:
+  - Medium-high. These are not leaderboard-derived patches; they come from a document/log-form weakness sweep. They target exactly the kind of clustered private failures that occur when the hidden generator uses a different SDK wrapper vocabulary for already-supported TCG methods.
+
+## 2026-06-08 KST - Locking range selector aliases for direct lock wrappers
+
+- Change type: wrapper parser repair + score-probe/synthetic coverage
+- Exploration purpose:
+  - Fresh probes were clean, and the remaining untriaged official-document gaps were all low-priority D slices. I therefore continued the higher-yield wrapper/envelope sweep around Locking host-I/O behavior.
+- Trigger:
+  - concepts:
+    - direct `readLock` / `writeLock` wrappers
+    - compact range selectors: `bandNumber`, `LR`, `lockingRangeNumber`
+    - Range2 host read/write postconditions
+  - mismatch summary:
+    - `writeLock(bandNumber=2)` and `writeLock(LR=2)` were parsed as `BandNone` rather than `Locking_Range2`.
+    - Nested request forms such as `writeLock(request={bandNumber: 2, ...})` and `readLock(request={LR: 2, ...})` also lost the selected range.
+    - The consequence was a compact false PASS/FAIL pair: the wrapper appeared successful, but later Range2 host I/O remained incorrectly unlocked.
+- Repair path:
+  - files/functions:
+    - `src/solver_components/parsing.py::_band_target_from_range_value`
+    - `src/solver_components/parsing.py::_high_level_event`
+    - `tests/test_solver_rules.py`
+    - `tools/run_synthetic_edges.py`
+    - `tools/score_probe_loop.py`
+  - rationale:
+    - Treat `bandNumber`, `band_number`, `LR`, `lr`, `lockingRangeNumber`, and `locking_range_number` as Locking range selector aliases only inside existing range-selection paths.
+    - Verify through host I/O on Range2 so selector loss to Range1 or `BandNone` is observable.
+- Verification:
+  - targeted:
+    - `python3 -m unittest tests.test_solver_rules.SolverRuleTests.test_tcgstorageapi_direct_lock_alias_request_envelopes_update_host_io_state -q`: passed
+    - `python3 tools/run_synthetic_edges.py --tag locking-range-lock-envelope-doc`: 52 cases, 0 mismatches
+    - `python3 tools/score_probe_loop.py --iterations 1 --sleep 0 --queue analysis/score_probe_queue_20260608_band_selector.jsonl --history analysis/score_probe_history_20260608_band_selector.jsonl --status analysis/score_probe_status_20260608_band_selector.md`: 7392 probes, 0 mismatches
+  - full gate:
+    - `python3 -m unittest tests.test_solver_rules -q`: 1410 tests passed
+    - `python3 tools/run_sourced_edges.py`: 4475 cases, 0 mismatches
+    - `python3 tools/run_sourced_edges.py --consensus-gate`: 3567 accepted cases, 0 mismatches
+    - `python3 tools/run_synthetic_edges.py`: 7424 cases, 0 mismatches
+    - `python3 tools/label_consensus.py report`: 4475 cases, 12078 reviews, 3567 accepted, 908 quarantined
+    - `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py`: score=100.00
+    - `python3 tools/doc_coverage.py`: 851 / 1376 sourced-covered documents, 0 untriaged A/B documents
+- Dashboard relevance:
+  - Medium. This is a small but private-test-shaped parser closure in the historically score-sensitive Locking host-I/O area. It does not change official lock semantics; it only preserves common SDK selector vocabulary before existing state checks run.

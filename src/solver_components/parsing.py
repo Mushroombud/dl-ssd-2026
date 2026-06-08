@@ -649,6 +649,14 @@ def _band_target_from_range_value(value: Any) -> str:
             "Config",
             "policy",
             "Policy",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
             "target",
             "Target",
             "operationRequest",
@@ -1085,6 +1093,9 @@ def _reset_types(value: Any) -> set[int]:
         out.add(2)
     if "PROGRAMMATIC" in text or "TPERRESET" in text:
         out.add(3)
+    if not out and re.fullmatch(r"\s*(?:0x[0-9A-Fa-f]+|\d+)\s*", raw_text):
+        parsed = _parse_int(value)
+        return {parsed} if parsed is not None else set()
     for number in re.findall(r"\d+", raw_text):
         out.add(int(number))
     if out:
@@ -1276,6 +1287,18 @@ def _comid_from_mapping(value: Any) -> str:
         "Values",
         "request",
         "Request",
+        "command",
+        "Command",
+        "cmd",
+        "Cmd",
+        "action",
+        "Action",
+        "operation",
+        "Operation",
+        "operationRequest",
+        "OperationRequest",
+        "target",
+        "Target",
         "policy",
         "Policy",
         "config",
@@ -1315,7 +1338,40 @@ def _comid_from_event_parts(*parts: Any) -> str:
     return ""
 
 
+def _sp_lifecycle_failed(value: Any) -> bool | None:
+    parsed = _parse_int(value)
+    if parsed is not None:
+        if parsed in {4, 13}:
+            return True
+        if parsed in {0, 1, 2, 3, 8, 9, 10, 11, 12}:
+            return False
+        return None
+    text = re.sub(r"[^A-Za-z0-9]", "", _as_text(value or "")).upper()
+    if not text:
+        return None
+    if text in {"FAILED", "ISSUEDFAILED", "MANUFACTUREDFAILED"} or text.endswith("FAILED"):
+        return True
+    if text in {
+        "ISSUED",
+        "ISSUEDDISABLED",
+        "ISSUEDFROZEN",
+        "ISSUEDDISABLEDFROZEN",
+        "MANUFACTUREDINACTIVE",
+        "MFGINACTIVE",
+        "MANUFACTURED",
+        "MANUFACTUREDDISABLED",
+        "MANUFACTUREDFROZEN",
+        "MANUFACTUREDDISABLEDFROZEN",
+        "ACTIVE",
+    }:
+        return False
+    return None
+
+
 def _sp_lifecycle_active(value: Any) -> bool | None:
+    failed = _sp_lifecycle_failed(value)
+    if failed is True:
+        return False
     parsed = _parse_int(value)
     if parsed is not None:
         if parsed == 8:
@@ -3860,6 +3916,8 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Offset",
             "byteOffset",
             "byte_offset",
+            "offsetBytes",
+            "offset_bytes",
             "startOffset",
             "start_offset",
             "startByte",
@@ -3922,6 +3980,8 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "byte_count",
             "byteLength",
             "byte_length",
+            "sizeBytes",
+            "size_bytes",
             "dataLength",
             "data_length",
             "readSize",
@@ -4508,12 +4568,30 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Params",
             "parameters",
             "Parameters",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
             "request",
             "Request",
             "config",
             "Config",
             "policy",
             "Policy",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
             "aclRequest",
             "ACLRequest",
             "acl_request",
@@ -4727,6 +4805,18 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Options",
             "request",
             "Request",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
+            "target",
+            "Target",
             "policy",
             "Policy",
             "config",
@@ -4758,10 +4848,13 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                     break
                 properties_payload = merged_properties_payload
             nested_host = _mapping_value(properties_payload, "HostProperties", "hostProperties", "HOSTPROPERTIES")
-            optional["HostProperties"] = nested_host if nested_host is not None else properties_payload
+            if nested_host is not None:
+                optional["HostProperties"] = nested_host
+            elif any(_as_text(key).replace("_", "").replace("-", "").upper() in HOST_PROPERTY_ALIASES for key in properties_payload):
+                optional["HostProperties"] = properties_payload
             if comid is None:
                 comid = _mapping_value(properties_payload, "ComID", "comid", "comID", "ComId")
-        elif function_alias in {"hostproperties", "sethostproperties", "gethostproperties", "updatehostproperties", "reporthostproperties", "negotiateproperties"}:
+        if "HostProperties" not in optional and function_alias in {"hostproperties", "sethostproperties", "gethostproperties", "updatehostproperties", "reporthostproperties", "negotiateproperties"}:
             optional["HostProperties"] = {}
         if comid is not None:
             optional["ComID"] = comid
@@ -5175,6 +5268,9 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         pin_payload_aliases = (
             "values", "Values", "settings", "Settings", "options", "Options",
             "request", "Request", "config", "Config", "policy", "Policy",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "target", "Target",
+            "operationRequest", "OperationRequest",
             "credentialRequest", "CredentialRequest", "cpinRequest",
             "CPINRequest", "pinRequest", "PinRequest", "policyRequest",
             "PolicyRequest", "credential", "Credential", "cpin", "C_PIN",
@@ -5210,6 +5306,9 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         min_pin_payload_aliases = (
             "values", "Values", "settings", "Settings", "options", "Options",
             "request", "Request", "config", "Config", "policy", "Policy",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "target", "Target",
+            "operationRequest", "OperationRequest",
             "credentialRequest", "CredentialRequest", "cpinRequest",
             "CPINRequest", "pinRequest", "PinRequest", "policyRequest",
             "PolicyRequest", "credential", "Credential", "cpin", "C_PIN",
@@ -5305,12 +5404,28 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Params",
             "parameters",
             "Parameters",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
             "request",
             "Request",
             "config",
             "Config",
             "policy",
             "Policy",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
             "target",
             "Target",
             "operationRequest",
@@ -5442,7 +5557,8 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         try_payload_aliases = (
             "values", "Values", "settings", "Settings", "options", "Options",
             "policy", "Policy", "config", "Config", "request", "Request",
-            "target", "Target", "operationRequest", "OperationRequest",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "target", "Target", "operationRequest", "OperationRequest",
             "credentialRequest", "CredentialRequest", "cpinRequest",
             "CPINRequest", "pinRequest", "PinRequest",
             "counter", "Counter", "pinState", "PinState", "state", "State",
@@ -5478,11 +5594,25 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                         return nested_selector
             return None
 
+        def _counter_getter_auth_as(payload: Any) -> Any:
+            if not isinstance(payload, dict):
+                return None
+            direct = _mapping_value(payload, "authAs", "AuthAs", "auth_as", "authAS")
+            if direct is not None:
+                return direct
+            for envelope in try_payload_aliases:
+                found_envelope, nested = _dict_lookup(payload, envelope)
+                if found_envelope and nested is not payload:
+                    nested_auth_as = _counter_getter_auth_as(nested)
+                    if nested_auth_as is not None:
+                        return nested_auth_as
+            return None
+
         if isinstance(try_payload, dict) and (auth is None or isinstance(auth, dict)):
             auth = _counter_getter_auth_selector(try_payload)
         auth_as = _arg_or_kw(args, kwargs, 1, "authAs", "AuthAs", "auth_as", "authAS") or authas(auth)
         if isinstance(try_payload, dict):
-            auth_as = _mapping_value(try_payload, "authAs", "AuthAs", "auth_as", "authAS") or auth_as
+            auth_as = _counter_getter_auth_as(try_payload) or auth_as
         target = cpin_target(auth, _arg_or_kw(args, kwargs, 2, "obj", "object", "Object"))
         return build(
             "Get",
@@ -5513,8 +5643,9 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         auth_payload_aliases = (
             "values", "Values", "auth", "Auth", "settings", "Settings",
             "options", "Options", "request", "Request", "config", "Config",
-            "policy", "Policy", "target", "Target", "operationRequest",
-            "OperationRequest", "credentialRequest",
+            "policy", "Policy", "command", "Command", "cmd", "Cmd",
+            "action", "Action", "operation", "Operation", "target", "Target",
+            "operationRequest", "OperationRequest", "credentialRequest",
             "CredentialRequest", "authRequest", "AuthRequest",
             "authenticationRequest", "AuthenticationRequest", "proofRequest",
             "ProofRequest", "pinRequest", "PinRequest", "cpinRequest",
@@ -5595,6 +5726,14 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Config",
             "policy",
             "Policy",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
             "operationRequest",
             "OperationRequest",
             "lockingRequest",
@@ -5754,7 +5893,7 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
     }:
         range_no = range_arg(0)
         auth_as = _arg_or_kw(args, kwargs, 1, "authAs", "AuthAs", "auth_as", "authAS")
-        lor_get_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "request", "Request", "query", "Query", "target", "Target", "operationRequest", "OperationRequest", "lockingRequest", "LockingRequest", "rangeRequest", "RangeRequest", "lockingRangeRequest", "LockingRangeRequest", "rangeValues", "RangeValues", "geometry", "Geometry", "window", "Window", "reset", "Reset", "types", "Types", "range", "Range", "selection", "Selection")
+        lor_get_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "request", "Request", "query", "Query", "command", "Command", "cmd", "Cmd", "action", "Action", "operation", "Operation", "target", "Target", "operationRequest", "OperationRequest", "lockingRequest", "LockingRequest", "rangeRequest", "RangeRequest", "lockingRangeRequest", "LockingRangeRequest", "rangeValues", "RangeValues", "geometry", "Geometry", "window", "Window", "reset", "Reset", "types", "Types", "range", "Range", "selection", "Selection")
         lor_payload = _mapping_value(kwargs, *lor_get_payload_aliases)
         if not isinstance(lor_payload, dict):
             lor_payload = _mapping_value(inp, *lor_get_payload_aliases)
@@ -6128,7 +6267,15 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
     if function_alias in range_field_getters:
         column_index = range_field_getters[function_alias]
         range_no = range_arg(0)
-        range_field_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "request", "Request", "query", "Query", "target", "Target", "rangeValues", "RangeValues", "range", "Range", "selection", "Selection")
+        range_field_payload_aliases = (
+            "values", "Values", "settings", "Settings", "options", "Options",
+            "policy", "Policy", "config", "Config", "request", "Request",
+            "query", "Query", "command", "Command", "cmd", "Cmd",
+            "action", "Action", "operation", "Operation",
+            "operationRequest", "OperationRequest", "target", "Target",
+            "rangeValues", "RangeValues", "range", "Range",
+            "selection", "Selection",
+        )
         range_payload = _mapping_value(kwargs, *range_field_payload_aliases)
         if not isinstance(range_payload, dict):
             range_payload = _mapping_value(inp, *range_field_payload_aliases)
@@ -6153,7 +6300,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
     if function_alias == "getrangelocks":
         range_no = range_arg(0)
         auth_as = _arg_or_kw(args, kwargs, 1, "authAs", "AuthAs", "auth_as", "authAS")
-        range_locks_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "request", "Request", "query", "Query", "target", "Target", "lockingRequest", "LockingRequest", "rangeRequest", "RangeRequest", "lockingRangeRequest", "LockingRangeRequest", "rangeValues", "RangeValues", "range", "Range", "selection", "Selection")
+        range_locks_payload_aliases = (
+            "values", "Values", "settings", "Settings", "options", "Options",
+            "policy", "Policy", "config", "Config", "request", "Request",
+            "query", "Query", "command", "Command", "cmd", "Cmd",
+            "action", "Action", "operation", "Operation",
+            "operationRequest", "OperationRequest", "target", "Target",
+            "lockingRequest", "LockingRequest", "rangeRequest", "RangeRequest",
+            "lockingRangeRequest", "LockingRangeRequest", "rangeValues",
+            "RangeValues", "range", "Range", "selection", "Selection",
+        )
         range_payload = _mapping_value(kwargs, *range_locks_payload_aliases)
         if not isinstance(range_payload, dict):
             range_payload = _mapping_value(inp, *range_locks_payload_aliases)
@@ -6309,7 +6465,7 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             canonical_key = setrange_aliases.get(compact, key)
             canonical_optional[canonical_key] = value
         optional = canonical_optional
-        setrange_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "params", "Params", "parameters", "Parameters", "request", "Request", "config", "Config", "policy", "Policy", "security", "Security", "target", "Target", "operationRequest", "OperationRequest", "lockingRequest", "LockingRequest", "rangeRequest", "RangeRequest", "lockingRangeRequest", "LockingRangeRequest", "rangeValues", "RangeValues", "geometry", "Geometry", "window", "Window", "state", "State", "lockState", "LockState", "locks", "Locks", "lock", "Lock")
+        setrange_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "params", "Params", "parameters", "Parameters", "request", "Request", "config", "Config", "policy", "Policy", "security", "Security", "command", "Command", "cmd", "Cmd", "action", "Action", "operation", "Operation", "target", "Target", "operationRequest", "OperationRequest", "lockingRequest", "LockingRequest", "rangeRequest", "RangeRequest", "lockingRangeRequest", "LockingRangeRequest", "rangeValues", "RangeValues", "geometry", "Geometry", "window", "Window", "state", "State", "lockState", "LockState", "locks", "Locks", "lock", "Lock")
         nested_optional_values = _mapping_value(optional, *setrange_payload_aliases)
         if not isinstance(nested_optional_values, dict):
             nested_optional_values = _mapping_value(inp, *setrange_payload_aliases)
@@ -6359,6 +6515,33 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                     "target",
                     "Target",
                 )
+            if isinstance(range_no, dict):
+                nested_range_no = _mapping_value(
+                    range_no,
+                    "rangeNo",
+                    "range",
+                    "Range",
+                    "range_no",
+                    "rangeID",
+                    "rangeId",
+                    "range_id",
+                    "band",
+                    "Band",
+                    "bandID",
+                    "bandId",
+                    "band_id",
+                    "id",
+                    "ID",
+                    "uid",
+                    "UID",
+                    "obj",
+                    "object",
+                    "Object",
+                    "target",
+                    "Target",
+                )
+                if nested_range_no is not None and nested_range_no is not range_no:
+                    range_no = nested_range_no
             if auth_as is None or isinstance(auth_as, dict):
                 auth_as = _mapping_value(nested_optional_values, "authAs", "AuthAs", "auth_as", "authAS")
             for key in setrange_payload_aliases:
@@ -6475,7 +6658,7 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         range_no = range_arg(0)
         auth = _arg_or_kw(args, kwargs, 1, "auth", "Auth")
         auth_as = authas(auth)
-        getrange_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "request", "Request", "query", "Query", "target", "Target", "operationRequest", "OperationRequest", "lockingRequest", "LockingRequest", "rangeRequest", "RangeRequest", "lockingRangeRequest", "LockingRangeRequest", "rangeValues", "RangeValues", "geometry", "Geometry", "window", "Window", "range", "Range", "selection", "Selection")
+        getrange_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "request", "Request", "query", "Query", "command", "Command", "cmd", "Cmd", "action", "Action", "operation", "Operation", "target", "Target", "operationRequest", "OperationRequest", "lockingRequest", "LockingRequest", "rangeRequest", "RangeRequest", "lockingRangeRequest", "LockingRangeRequest", "rangeValues", "RangeValues", "geometry", "Geometry", "window", "Window", "range", "Range", "selection", "Selection")
         range_payload = _mapping_value(kwargs, *getrange_payload_aliases)
         if not isinstance(range_payload, dict):
             range_payload = _mapping_value(inp, *getrange_payload_aliases)
@@ -6529,6 +6712,33 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                     "target",
                     "Target",
                 )
+            if isinstance(range_no, dict):
+                nested_range_no = _mapping_value(
+                    range_no,
+                    "rangeNo",
+                    "range",
+                    "Range",
+                    "range_no",
+                    "rangeID",
+                    "rangeId",
+                    "range_id",
+                    "band",
+                    "Band",
+                    "bandID",
+                    "bandId",
+                    "band_id",
+                    "id",
+                    "ID",
+                    "uid",
+                    "UID",
+                    "obj",
+                    "object",
+                    "Object",
+                    "target",
+                    "Target",
+                )
+                if nested_range_no is not None and nested_range_no is not range_no:
+                    range_no = nested_range_no
             if auth is None:
                 auth = _mapping_value(range_payload, "auth", "Auth", "authority", "Authority")
             auth_as = _mapping_value(range_payload, "authAs", "AuthAs", "auth_as", "authAS") or auth_as or auth
@@ -6536,7 +6746,7 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
 
     if function_alias in {"lockrange", "unlockrange"}:
         range_no = range_arg(0)
-        lock_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "request", "Request", "target", "Target", "lockingRequest", "LockingRequest", "rangeRequest", "RangeRequest", "lockingRangeRequest", "LockingRangeRequest", "locks", "Locks", "lock", "Lock", "lockState", "LockState", "state", "State")
+        lock_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "request", "Request", "command", "Command", "cmd", "Cmd", "action", "Action", "operation", "Operation", "target", "Target", "operationRequest", "OperationRequest", "lockingRequest", "LockingRequest", "rangeRequest", "RangeRequest", "lockingRangeRequest", "LockingRangeRequest", "locks", "Locks", "lock", "Lock", "lockState", "LockState", "state", "State")
         lock_payload = _mapping_value(kwargs, *lock_payload_aliases)
         if not isinstance(lock_payload, dict):
             lock_payload = _mapping_value(inp, *lock_payload_aliases)
@@ -6557,6 +6767,10 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                         lock_payload = {**lock_payload, **deeper_lock_payload}
             if range_no is None or isinstance(range_no, dict):
                 range_no = _mapping_value(lock_payload, "rangeNo", "range", "Range", "range_no", "rangeID", "rangeId", "range_id", "band", "Band", "bandID", "bandId", "band_id", "bandName", "band_name", "bandNo", "band_no", "rangeName", "range_name", "lockingRange", "locking_range", "id", "ID", "uid", "UID", "obj", "object", "Object", "target", "Target")
+            if isinstance(range_no, dict):
+                nested_range_no = _mapping_value(range_no, "rangeNo", "range", "Range", "range_no", "rangeID", "rangeId", "range_id", "band", "Band", "bandID", "bandId", "band_id", "id", "ID", "uid", "UID", "obj", "object", "Object", "target", "Target")
+                if nested_range_no is not None and nested_range_no is not range_no:
+                    range_no = nested_range_no
             auth_as = _mapping_value(lock_payload, "authAs", "AuthAs", "auth_as", "authAS") or auth_as
             read_flag = _mapping_value(lock_payload, "read", "Read", "readLock", "ReadLock", "readLocked", "ReadLocked") if read_flag is None else read_flag
             write_flag = _mapping_value(lock_payload, "write", "Write", "writeLock", "WriteLock", "writeLocked", "WriteLocked") if write_flag is None else write_flag
@@ -6602,6 +6816,10 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         "returnidle": "RETIDLE_req",
         "returnToIdle": "RETIDLE_req",
         "returntoidle": "RETIDLE_req",
+        "returnReEncryptIdle": "RETIDLE_req",
+        "returnreencryptidle": "RETIDLE_req",
+        "returnReEncryptionIdle": "RETIDLE_req",
+        "returnreencryptionidle": "RETIDLE_req",
         "stopReEncrypt": "RETIDLE_req",
         "stopreencrypt": "RETIDLE_req",
         "cancelReEncrypt": "RETIDLE_req",
@@ -6693,6 +6911,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Target",
             "query",
             "Query",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
             "lockingRequest",
             "LockingRequest",
             "rangeRequest",
@@ -6728,14 +6956,78 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             if range_no is None or isinstance(range_no, dict):
                 range_no = reencrypt_range_selector(reencrypt_payload)
             if request is None or isinstance(request, dict):
-                candidate_request = _mapping_value(reencrypt_payload, "ReEncryptRequest", "reencryptRequest", "re_encrypt_request", "request", "Request", "value", "Value")
+                candidate_request = _mapping_value(
+                    reencrypt_payload,
+                    "ReEncryptRequest",
+                    "reencryptRequest",
+                    "re_encrypt_request",
+                    "request",
+                    "Request",
+                    "value",
+                    "Value",
+                    "command",
+                    "Command",
+                    "cmd",
+                    "Cmd",
+                    "action",
+                    "Action",
+                )
                 if isinstance(candidate_request, dict) or candidate_request is None:
-                    candidate_request = _mapping_value(reencrypt_payload, "ReEncryptRequest", "reencryptRequest", "re_encrypt_request", "value", "Value")
+                    candidate_request = _mapping_value(
+                        reencrypt_payload,
+                        "ReEncryptRequest",
+                        "reencryptRequest",
+                        "re_encrypt_request",
+                        "value",
+                        "Value",
+                        "command",
+                        "Command",
+                        "cmd",
+                        "Cmd",
+                        "action",
+                        "Action",
+                    )
                 if isinstance(candidate_request, dict) or candidate_request is None:
-                    for envelope in ("values", "Values", "request", "Request", "policy", "Policy", "config", "Config", "reencrypt", "ReEncrypt"):
+                    for envelope in (
+                        "values",
+                        "Values",
+                        "request",
+                        "Request",
+                        "policy",
+                        "Policy",
+                        "config",
+                        "Config",
+                        "command",
+                        "Command",
+                        "cmd",
+                        "Cmd",
+                        "action",
+                        "Action",
+                        "operation",
+                        "Operation",
+                        "operationRequest",
+                        "OperationRequest",
+                        "reencrypt",
+                        "ReEncrypt",
+                    ):
                         nested_request_payload = _mapping_value(reencrypt_payload, envelope)
                         if isinstance(nested_request_payload, dict):
-                            candidate_request = _mapping_value(nested_request_payload, "ReEncryptRequest", "reencryptRequest", "re_encrypt_request", "value", "Value")
+                            candidate_request = _mapping_value(
+                                nested_request_payload,
+                                "ReEncryptRequest",
+                                "reencryptRequest",
+                                "re_encrypt_request",
+                                "request",
+                                "Request",
+                                "value",
+                                "Value",
+                                "command",
+                                "Command",
+                                "cmd",
+                                "Cmd",
+                                "action",
+                                "Action",
+                            )
                             if not isinstance(candidate_request, dict) and candidate_request is not None:
                                 break
                 if not isinstance(candidate_request, dict):
@@ -6831,7 +7123,17 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         range_no = range_arg(0)
         range_no = reencrypt_range_selector(range_no)
         auth_as = _arg_or_kw(args, kwargs, 1, "authAs", "AuthAs", "auth_as", "authAS")
-        reencrypt_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "request", "Request", "query", "Query", "status", "Status", "target", "Target", "lockingRequest", "LockingRequest", "rangeRequest", "RangeRequest", "lockingRangeRequest", "LockingRangeRequest", "reencryptRequest", "ReEncryptRequest", "reencrypt", "ReEncrypt", "reEncryption", "ReEncryption")
+        reencrypt_payload_aliases = (
+            "values", "Values", "settings", "Settings", "options", "Options",
+            "policy", "Policy", "config", "Config", "request", "Request",
+            "query", "Query", "status", "Status", "target", "Target",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
+            "lockingRequest", "LockingRequest", "rangeRequest", "RangeRequest",
+            "lockingRangeRequest", "LockingRangeRequest", "reencryptRequest",
+            "ReEncryptRequest", "reencrypt", "ReEncrypt", "reEncryption",
+            "ReEncryption",
+        )
         reencrypt_payload = _mapping_value(kwargs, *reencrypt_payload_aliases)
         if not isinstance(reencrypt_payload, dict):
             reencrypt_payload = _mapping_value(inp, *reencrypt_payload_aliases)
@@ -6929,7 +7231,13 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         range_no = range_arg(0)
         range_no = locking_column_range_selector(range_no)
         auth_as = _arg_or_kw(args, kwargs, 1, "authAs", "AuthAs", "auth_as", "authAS")
-        getter_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "request", "Request", "query", "Query", "status", "Status")
+        getter_payload_aliases = (
+            "values", "Values", "settings", "Settings", "options", "Options",
+            "policy", "Policy", "config", "Config", "request", "Request",
+            "query", "Query", "status", "Status", "target", "Target",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
+        )
         getter_payload = _mapping_value(kwargs, *getter_payload_aliases)
         if not isinstance(getter_payload, dict):
             getter_payload = _mapping_value(inp, *getter_payload_aliases)
@@ -6939,9 +7247,20 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                 getter_payload = args[0]
         if isinstance(getter_payload, dict):
             for _ in range(2):
-                nested_getter_payload = _mapping_value(getter_payload, "policy", "Policy", "config", "Config", "request", "Request", "query", "Query", "status", "Status", "locking", "Locking", "range", "Range", "target", "Target")
-                if isinstance(nested_getter_payload, dict) and nested_getter_payload is not getter_payload:
-                    getter_payload = {**getter_payload, **nested_getter_payload}
+                merged_getter_payload = dict(getter_payload)
+                for envelope in (
+                    "policy", "Policy", "config", "Config", "request", "Request",
+                    "query", "Query", "status", "Status", "locking", "Locking",
+                    "range", "Range", "target", "Target", "command", "Command",
+                    "cmd", "Cmd", "action", "Action", "operation", "Operation",
+                    "operationRequest", "OperationRequest",
+                ):
+                    nested_getter_payload = _mapping_value(getter_payload, envelope)
+                    if isinstance(nested_getter_payload, dict) and nested_getter_payload is not getter_payload:
+                        merged_getter_payload.update(nested_getter_payload)
+                if merged_getter_payload == getter_payload:
+                    break
+                getter_payload = merged_getter_payload
             if range_no is None or isinstance(range_no, dict):
                 range_no = locking_column_range_selector(getter_payload)
             auth_as = _mapping_value(getter_payload, "authAs", "AuthAs", "auth_as", "authAS") or auth_as
@@ -6987,6 +7306,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Config",
             "request",
             "Request",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
             "dataRemovalRequest",
             "DataRemovalRequest",
             "removalRequest",
@@ -7008,14 +7337,82 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             if not isinstance(removal_payload, dict):
                 removal_payload = args[0]
         if isinstance(removal_payload, dict):
-            for _ in range(2):
+            for _ in range(4):
+                merged_removal_payload = dict(removal_payload)
                 for envelope in removal_payload_aliases:
                     nested_removal_payload = _mapping_value(removal_payload, envelope)
                     if isinstance(nested_removal_payload, dict) and nested_removal_payload is not removal_payload:
-                        removal_payload = {**removal_payload, **nested_removal_payload}
+                        merged_removal_payload.update(nested_removal_payload)
+                if merged_removal_payload == removal_payload:
+                    break
+                removal_payload = merged_removal_payload
         if isinstance(removal_payload, dict):
             if mechanism is None or isinstance(mechanism, dict):
-                mechanism = _mapping_value(removal_payload, "ActiveDataRemovalMechanism", "activeDataRemovalMechanism", "mechanism", "Mechanism", "dataRemovalMechanism", "value", "Value")
+                mechanism_candidate = _mapping_value(
+                    removal_payload,
+                    "ActiveDataRemovalMechanism",
+                    "activeDataRemovalMechanism",
+                    "mechanism",
+                    "Mechanism",
+                    "dataRemovalMechanism",
+                    "value",
+                    "Value",
+                    "command",
+                    "Command",
+                    "cmd",
+                    "Cmd",
+                    "action",
+                    "Action",
+                )
+                if isinstance(mechanism_candidate, dict) or mechanism_candidate is None:
+                    for envelope in (
+                        "values",
+                        "Values",
+                        "request",
+                        "Request",
+                        "policy",
+                        "Policy",
+                        "config",
+                        "Config",
+                        "command",
+                        "Command",
+                        "cmd",
+                        "Cmd",
+                        "action",
+                        "Action",
+                        "operation",
+                        "Operation",
+                        "operationRequest",
+                        "OperationRequest",
+                        "dataRemoval",
+                        "DataRemoval",
+                        "activeDataRemoval",
+                        "ActiveDataRemoval",
+                        "removal",
+                        "Removal",
+                    ):
+                        nested_removal_payload = _mapping_value(removal_payload, envelope)
+                        if isinstance(nested_removal_payload, dict):
+                            mechanism_candidate = _mapping_value(
+                                nested_removal_payload,
+                                "ActiveDataRemovalMechanism",
+                                "activeDataRemovalMechanism",
+                                "mechanism",
+                                "Mechanism",
+                                "dataRemovalMechanism",
+                                "value",
+                                "Value",
+                                "command",
+                                "Command",
+                                "cmd",
+                                "Cmd",
+                                "action",
+                                "Action",
+                            )
+                            if not isinstance(mechanism_candidate, dict) and mechanism_candidate is not None:
+                                break
+                if not isinstance(mechanism_candidate, dict):
+                    mechanism = mechanism_candidate
             auth_as = _mapping_value(removal_payload, "authAs", "AuthAs", "auth_as", "authAS") or auth_as
         return build("Set", "DataRemovalMechanism", optional={"ActiveDataRemovalMechanism": mechanism, "authAs": auth_as}, sp_value="AdminSP", auth_value=auth_as, challenge=_authas_credential_arg({}, {"authAs": auth_as}, None))
 
@@ -7039,7 +7436,7 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         "isdataremovalactive",
     }:
         auth_as = _arg_or_kw(args, kwargs, 0, "authAs", "AuthAs", "auth_as", "authAS")
-        removal_get_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "request", "Request", "dataRemovalRequest", "DataRemovalRequest", "removalRequest", "RemovalRequest", "adminRequest", "AdminRequest", "dataRemoval", "DataRemoval", "activeDataRemoval", "ActiveDataRemoval", "removal", "Removal")
+        removal_get_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "request", "Request", "command", "Command", "cmd", "Cmd", "action", "Action", "operation", "Operation", "operationRequest", "OperationRequest", "dataRemovalRequest", "DataRemovalRequest", "removalRequest", "RemovalRequest", "adminRequest", "AdminRequest", "dataRemoval", "DataRemoval", "activeDataRemoval", "ActiveDataRemoval", "removal", "Removal")
         removal_payload = _mapping_value(kwargs, *removal_get_payload_aliases)
         if not isinstance(removal_payload, dict):
             removal_payload = _mapping_value(inp, *removal_get_payload_aliases)
@@ -7074,6 +7471,9 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         log_payload_aliases = (
             "values", "Values", "settings", "Settings", "options", "Options",
             "request", "Request", "config", "Config", "policy", "Policy",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
+            "target", "Target",
             "logRequest", "LogRequest", "addLogRequest", "AddLogRequest",
             "logEntryRequest", "LogEntryRequest",
         )
@@ -7112,6 +7512,9 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         log_payload_aliases = (
             "values", "Values", "settings", "Settings", "options", "Options",
             "request", "Request", "config", "Config", "policy", "Policy",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
+            "target", "Target",
             "logRequest", "LogRequest", "clearLogRequest", "ClearLogRequest",
             "flushLogRequest", "FlushLogRequest",
         )
@@ -7145,6 +7548,9 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         log_payload_aliases = (
             "values", "Values", "settings", "Settings", "options", "Options",
             "request", "Request", "config", "Config", "policy", "Policy",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
+            "target", "Target",
             "logRequest", "LogRequest", "createLogRequest", "CreateLogRequest",
             "logListRequest", "LogListRequest",
         )
@@ -7393,11 +7799,12 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         method, default_target = crypto_alias_methods[function_alias]
         target = _arg_or_kw(args, kwargs, 0, "target", "Target", "object", "Object", "obj", "credential", "Credential", "hash", "Hash", "algorithm", "Algorithm", "key", "Key")
         data = _arg_or_kw(args, kwargs, 1, "Data", "data", "DataInput", "dataInput", "Input", "input", "BufferIn", "bufferIn", "payload", "Payload", "bytes", "Bytes")
-        buffer_out = _arg_or_kw(args, kwargs, 2, "BufferOut", "bufferOut", "Output", "output", "buffer", "Buffer")
+        buffer_out = _arg_or_kw(args, kwargs, 2, "BufferOut", "bufferOut", "Output", "output", "buffer", "Buffer", "destination", "Destination", "dest", "Dest", "out", "Out")
         auth_as = _arg_or_kw(args, kwargs, 3, "authAs", "AuthAs", "auth_as", "authAS") or "Anybody"
         crypto_payload_aliases = (
             "values", "Values", "settings", "Settings", "options", "Options",
             "policy", "Policy", "config", "Config", "request", "Request",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
             "operation", "Operation", "cryptoRequest", "CryptoRequest",
             "cipherRequest", "CipherRequest", "hashRequest", "HashRequest",
             "operationRequest", "OperationRequest",
@@ -7425,6 +7832,12 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                     "Config",
                     "request",
                     "Request",
+                    "command",
+                    "Command",
+                    "cmd",
+                    "Cmd",
+                    "action",
+                    "Action",
                     "operation",
                     "Operation",
                     "cryptoRequest",
@@ -7515,6 +7928,8 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "values", "Values", "settings", "Settings", "options", "Options",
             "params", "Params", "parameters", "Parameters", "request", "Request",
             "config", "Config", "policy", "Policy", "package", "Package",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
             "credential", "Credential", "target", "Target", "packageRequest",
             "PackageRequest", "credentialPackageRequest", "CredentialPackageRequest",
             "keyPackageRequest", "KeyPackageRequest",
@@ -7615,6 +8030,8 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "values", "Values", "settings", "Settings", "options", "Options",
             "params", "Params", "parameters", "Parameters", "request", "Request",
             "config", "Config", "policy", "Policy", "package", "Package",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
             "credential", "Credential", "target", "Target", "packageRequest",
             "PackageRequest", "credentialPackageRequest", "CredentialPackageRequest",
             "keyPackageRequest", "KeyPackageRequest",
@@ -7657,6 +8074,10 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                 if selector is not None:
                     auth = selector
             value = _mapping_value(package_payload, "Value", "value", "Package", "package", "data", "Data", "payload", "Payload") or value
+            if isinstance(value, dict):
+                nested_value = _mapping_value(value, "Value", "value", "Package", "package", "data", "Data", "payload", "Payload")
+                if nested_value is not None and not isinstance(nested_value, dict):
+                    value = nested_value
             wrapping_key = _mapping_value(package_payload, "WrappingKey", "wrappingKey", "wrapping_key", "WrappingKeyUID", "wrappingKeyUID") or wrapping_key
             signing_key = _mapping_value(package_payload, "SigningKey", "signingKey", "signing_key", "SigningKeyUID", "signingKeyUID") or signing_key
             auth_as = _mapping_value(package_payload, "authAs", "AuthAs", "auth_as", "authAS") or auth_as or auth
@@ -7682,6 +8103,8 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         table_payload_aliases = (
             "values", "Values", "settings", "Settings", "options", "Options",
             "request", "Request", "config", "Config", "policy", "Policy",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
             "tableRequest", "TableRequest", "createTableRequest",
             "CreateTableRequest", "schemaRequest", "SchemaRequest",
         )
@@ -7804,6 +8227,9 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         row_payload_aliases = (
             "settings", "Settings", "options", "Options", "values", "Values",
             "request", "Request", "config", "Config", "policy", "Policy",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
+            "target", "Target",
             "rowRequest", "RowRequest", "createRowRequest", "CreateRowRequest",
             "tableRequest", "TableRequest",
         )
@@ -7822,6 +8248,10 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                 row_payload = merged_row_payload
             if table is None or isinstance(table, dict):
                 table = _mapping_value(row_payload, "table", "Table", "obj", "object", "Object", "target", "Target")
+            if isinstance(table, dict):
+                nested_table = _mapping_value(table, "table", "Table", "obj", "object", "Object", "uid", "UID", "id", "ID", "name", "Name", "target", "Target")
+                if nested_table is not None and nested_table is not table:
+                    table = nested_table
             row_values = _mapping_value(row_payload, "Values", "values", "RowValues", "rowValues", "row", "Row", "data", "Data") or row_values
             auth_as = _mapping_value(row_payload, "authAs", "AuthAs", "auth_as", "authAS") or auth_as
         optional = {"authAs": auth_as}
@@ -7838,6 +8268,9 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         row_delete_payload_aliases = (
             "settings", "Settings", "options", "Options", "values", "Values",
             "request", "Request", "config", "Config", "policy", "Policy",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
+            "target", "Target",
             "deleteRowRequest", "DeleteRowRequest", "rowRequest", "RowRequest",
             "tableRequest", "TableRequest", "deleteRequest", "DeleteRequest",
         )
@@ -7856,6 +8289,10 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                 row_payload = merged_row_payload
             if table is None or isinstance(table, dict):
                 table = _mapping_value(row_payload, "table", "Table", "obj", "object", "Object", "target", "Target")
+            if isinstance(table, dict):
+                nested_table = _mapping_value(table, "table", "Table", "obj", "object", "Object", "uid", "UID", "id", "ID", "name", "Name", "target", "Target")
+                if nested_table is not None and nested_table is not table:
+                    table = nested_table
             payload_rows = _mapping_value(row_payload, "Rows", "rows", "Row", "row", "UID", "uid", "rowUID", "rowUid", "row_id", "rowId")
             if payload_rows is not None:
                 rows = payload_rows
@@ -7899,6 +8336,9 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         object_delete_payload_aliases = (
             "settings", "Settings", "options", "Options", "values", "Values",
             "request", "Request", "config", "Config", "policy", "Policy",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
+            "target", "Target",
             "deleteRequest", "DeleteRequest", "deleteObjectRequest", "DeleteObjectRequest",
             "objectRequest", "ObjectRequest", "rangeRequest", "RangeRequest",
             "tableRequest", "TableRequest",
@@ -7930,6 +8370,9 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         table_delete_payload_aliases = (
             "settings", "Settings", "options", "Options", "values", "Values",
             "request", "Request", "config", "Config", "policy", "Policy",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
+            "target", "Target",
             "deleteRequest", "DeleteRequest", "deleteTableRequest", "DeleteTableRequest",
             "tableRequest", "TableRequest", "objectRequest", "ObjectRequest",
         )
@@ -7958,12 +8401,14 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
     if function_alias in {"xor", "xordata", "xorbytes", "xordatabytes", "onetimepad", "onetimepadxor", "otpxor"}:
         pattern_input = _arg_or_kw(args, kwargs, 0, "PatternInput", "patternInput", "pattern_input", "Pattern", "pattern")
         data = _arg_or_kw(args, kwargs, 1, "Input", "input", "Data", "data", "Bytes", "bytes", "BufferIn", "bufferIn", "payload", "Payload")
-        buffer_out = _arg_or_kw(args, kwargs, 2, "BufferOut", "bufferOut", "Output", "output", "buffer", "Buffer")
+        buffer_out = _arg_or_kw(args, kwargs, 2, "BufferOut", "bufferOut", "Output", "output", "buffer", "Buffer", "destination", "Destination", "dest", "Dest", "out", "Out")
         delete_pattern = _arg_or_kw(args, kwargs, 3, "DeletePattern", "deletePattern", "Delete", "delete")
         auth_as = _arg_or_kw(args, kwargs, 4, "authAs", "AuthAs", "auth_as", "authAS") or "Anybody"
         xor_payload_aliases = (
             "values", "Values", "settings", "Settings", "options", "Options",
             "request", "Request", "config", "Config", "policy", "Policy",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation",
             "xorRequest", "XorRequest", "XORRequest", "cryptoRequest",
             "CryptoRequest", "byteTableRequest", "ByteTableRequest",
             "operationRequest", "OperationRequest", "cipherRequest", "CipherRequest",
@@ -8196,6 +8641,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "AuthRequest",
             "identityRequest",
             "IdentityRequest",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
         )
         authority_payload = _mapping_value(kwargs, *authority_payload_aliases)
         if not isinstance(authority_payload, dict):
@@ -8310,6 +8765,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "AuthRequest",
             "identityRequest",
             "IdentityRequest",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
         )
         authority_payload = _mapping_value(kwargs, *authority_payload_aliases)
         if not isinstance(authority_payload, dict):
@@ -8407,6 +8872,8 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "AuthRequest", "identityRequest", "IdentityRequest", "userRequest",
             "UserRequest", "policyRequest", "PolicyRequest", "authority",
             "Authority", "identity", "Identity", "user", "User",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
         )
         authority_payload = _mapping_value(kwargs, *authority_payload_aliases)
         if not isinstance(authority_payload, dict):
@@ -8478,6 +8945,18 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "State",
             "control",
             "Control",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
+            "portControl",
+            "PortControl",
             "port",
             "Port",
             "portRequest",
@@ -8576,10 +9055,11 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         "entropybytes",
     }:
         count = _arg_or_kw(args, kwargs, 0, "count", "Count", "numBytes", "num_bytes", "length", "Length", "size", "Size")
-        buffer_out = _arg_or_kw(args, kwargs, 1, "BufferOut", "bufferOut", "Output", "output", "buffer", "Buffer")
+        buffer_out = _arg_or_kw(args, kwargs, 1, "BufferOut", "bufferOut", "Output", "output", "buffer", "Buffer", "destination", "Destination", "dest", "Dest", "out", "Out")
         random_payload_aliases = (
             "values", "Values", "settings", "Settings", "options", "Options",
             "policy", "Policy", "config", "Config", "request", "Request",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
             "operation", "Operation", "randomRequest", "RandomRequest",
             "rngRequest", "RNGRequest", "entropyRequest", "EntropyRequest",
             "operationRequest", "OperationRequest",
@@ -8597,6 +9077,7 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                 for envelope in (
                     "values", "Values", "settings", "Settings", "options", "Options",
                     "policy", "Policy", "config", "Config", "request", "Request",
+                    "command", "Command", "cmd", "Cmd", "action", "Action",
                     "operation", "Operation", "randomRequest", "RandomRequest",
                     "rngRequest", "RNGRequest", "entropyRequest", "EntropyRequest",
                     "operationRequest", "OperationRequest", "random", "Random", "rng", "RNG",
@@ -8637,6 +9118,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Config",
             "request",
             "Request",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
             "credential",
             "Credential",
             "credentialRequest",
@@ -8726,6 +9217,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Config",
             "request",
             "Request",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
             "credential",
             "Credential",
             "auth",
@@ -8778,6 +9279,10 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                     "value",
                     "Value",
                 )
+                if isinstance(activate_credential, dict):
+                    nested_auth = _mapping_value(activate_credential, "auth", "Auth", "authority", "Authority", "user", "User", "identity", "Identity", "username", "Username")
+                    if nested_auth is not None and not isinstance(nested_auth, dict):
+                        auth = nested_auth
             if isinstance(activate_credential, dict):
                 nested_activate_credential = _mapping_value(
                     activate_credential,
@@ -8823,6 +9328,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Config",
             "request",
             "Request",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
             "target",
             "Target",
             "eraseRequest",
@@ -8963,6 +9478,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Config",
             "request",
             "Request",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
             "target",
             "Target",
             "keyRequest",
@@ -9190,8 +9715,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         "Config",
         "request",
         "Request",
+        "command",
+        "Command",
+        "cmd",
+        "Cmd",
+        "action",
+        "Action",
         "operation",
         "Operation",
+        "operationRequest",
+        "OperationRequest",
         "revert",
         "Revert",
         "revertRequest",
@@ -9302,6 +9835,7 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         sign_payload_aliases = (
             "values", "Values", "settings", "Settings", "options", "Options",
             "policy", "Policy", "config", "Config", "request", "Request",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
             "operation", "Operation", "signRequest", "SignRequest",
             "signatureRequest", "SignatureRequest", "operationRequest", "OperationRequest",
         )
@@ -9328,6 +9862,12 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                     "Config",
                     "request",
                     "Request",
+                    "command",
+                    "Command",
+                    "cmd",
+                    "Cmd",
+                    "action",
+                    "Action",
                     "operation",
                     "Operation",
                     "signRequest",
@@ -9362,7 +9902,17 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         return build("Sign", "TPerSign", raw_args=(payload,), optional={"authAs": auth_as, "Data": payload}, sp_value="AdminSP", auth_value=auth_as)
 
     if function_alias == "setmbr":
-        mbr_payload_aliases = ("values", "Values", "settings", "Settings", "options", "Options", "policy", "Policy", "config", "Config", "state", "State", "control", "Control", "status", "Status", "write", "Write", "window", "Window", "range", "Range", "slice", "Slice", "block", "Block", "chunk", "Chunk", "segment", "Segment", "span", "Span", "bounds", "Bounds", "byteRange", "ByteRange", "byte_range", "request", "Request")
+        mbr_payload_aliases = (
+            "values", "Values", "settings", "Settings", "options", "Options",
+            "policy", "Policy", "config", "Config", "state", "State",
+            "control", "Control", "status", "Status", "write", "Write",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
+            "target", "Target", "window", "Window", "range", "Range",
+            "slice", "Slice", "block", "Block", "chunk", "Chunk",
+            "segment", "Segment", "span", "Span", "bounds", "Bounds",
+            "byteRange", "ByteRange", "byte_range", "request", "Request",
+        )
         mbr_payload = _mapping_value(kwargs, *mbr_payload_aliases)
         if not isinstance(mbr_payload, dict):
             mbr_payload = _mapping_value(inp, *mbr_payload_aliases)
@@ -9375,7 +9925,14 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             if isinstance(nested_mbr_payload, dict):
                 mbr_payload = nested_mbr_payload
             for _ in range(2):
-                nested_control_payload = _mapping_value(mbr_payload, "policy", "Policy", "config", "Config", "state", "State", "control", "Control", "status", "Status", "request", "Request", "reset", "Reset")
+                nested_control_payload = _mapping_value(
+                    mbr_payload,
+                    "policy", "Policy", "config", "Config", "state", "State",
+                    "control", "Control", "status", "Status", "command",
+                    "Command", "cmd", "Cmd", "action", "Action", "operation",
+                    "Operation", "operationRequest", "OperationRequest",
+                    "request", "Request", "reset", "Reset",
+                )
                 if isinstance(nested_control_payload, dict) and nested_control_payload is not mbr_payload:
                     mbr_payload = {**mbr_payload, **nested_control_payload}
         source = mbr_payload if isinstance(mbr_payload, dict) else kwargs
@@ -9518,6 +10075,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Status",
             "request",
             "Request",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
             "mbrRequest",
             "MBRRequest",
             "mbrControlRequest",
@@ -9538,7 +10105,7 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             if not isinstance(mbr_payload, dict):
                 mbr_payload = args[0]
         if isinstance(mbr_payload, dict):
-            for _ in range(2):
+            for _ in range(4):
                 merged_mbr_payload = dict(mbr_payload)
                 for envelope in mbr_payload_aliases:
                     nested_mbr_payload = _mapping_value(mbr_payload, envelope)
@@ -9962,6 +10529,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "byte_range",
             "payload",
             "Payload",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
             "request",
             "Request",
             "config",
@@ -10110,6 +10687,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "byte_range",
             "payload",
             "Payload",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
             "request",
             "Request",
             "config",
@@ -10363,6 +10950,14 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Config",
             "policy",
             "Policy",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
             "dataStoreRequest",
             "DataStoreRequest",
             "datastoreRequest",
@@ -10448,6 +11043,8 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                 "Offset",
                 "byteOffset",
                 "byte_offset",
+                "offsetBytes",
+                "offset_bytes",
                 "startOffset",
                 "start_offset",
                 "startByte",
@@ -10573,6 +11170,14 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Config",
             "policy",
             "Policy",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
             "dataStoreRequest",
             "DataStoreRequest",
             "datastoreRequest",
@@ -10630,6 +11235,8 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                 "Offset",
                 "byteOffset",
                 "byte_offset",
+                "offsetBytes",
+                "offset_bytes",
                 "startOffset",
                 "start_offset",
                 "startByte",
@@ -10688,6 +11295,8 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                     "byte_count",
                     "byteLength",
                     "byte_length",
+                    "sizeBytes",
+                    "size_bytes",
                     "dataLength",
                     "data_length",
                     "readSize",
@@ -10828,6 +11437,18 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Parameters",
             "request",
             "Request",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "target",
+            "Target",
+            "operationRequest",
+            "OperationRequest",
             "access",
             "Access",
             "policy",
@@ -10847,10 +11468,15 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             if not isinstance(access_payload, dict):
                 access_payload = args[0]
         if isinstance(access_payload, dict):
-            for envelope in access_payload_aliases:
-                found_nested, nested_payload = _dict_lookup(access_payload, envelope)
-                if found_nested and isinstance(nested_payload, dict) and nested_payload is not access_payload:
-                    access_payload = {**access_payload, **nested_payload}
+            for _ in range(3):
+                merged_access_payload = dict(access_payload)
+                for envelope in access_payload_aliases:
+                    found_nested, nested_payload = _dict_lookup(access_payload, envelope)
+                    if found_nested and isinstance(nested_payload, dict) and nested_payload is not access_payload:
+                        merged_access_payload.update(nested_payload)
+                if merged_access_payload == access_payload:
+                    break
+                access_payload = merged_access_payload
         if isinstance(access_payload, dict):
             if user is None or isinstance(user, dict):
                 user = _mapping_value(access_payload, "user", "User", "identity", "Identity", "subject", "Subject", "authority", "Authority", "auth", "Auth")
@@ -10928,6 +11554,7 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
         attest_payload_aliases = (
             "values", "Values", "settings", "Settings", "options", "Options",
             "policy", "Policy", "config", "Config", "request", "Request",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
             "operation", "Operation", "attestationRequest", "AttestationRequest",
             "firmwareRequest", "FirmwareRequest", "quoteRequest", "QuoteRequest",
             "operationRequest", "OperationRequest",
@@ -10955,6 +11582,12 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                     "Config",
                     "request",
                     "Request",
+                    "command",
+                    "Command",
+                    "cmd",
+                    "Cmd",
+                    "action",
+                    "Action",
                     "operation",
                     "Operation",
                     "attestationRequest",
@@ -11027,7 +11660,9 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "values", "Values", "settings", "Settings", "options", "Options",
             "params", "Params", "parameters", "Parameters", "request", "Request",
             "config", "Config", "policy", "Policy", "query", "Query",
-            "selector", "Selector", "target", "Target", "pskEntry", "PSKEntry",
+            "selector", "Selector", "command", "Command", "cmd", "Cmd",
+            "action", "Action", "operation", "Operation", "operationRequest",
+            "OperationRequest", "target", "Target", "pskEntry", "PSKEntry",
             "pskRequest", "PSKRequest", "tlsPskRequest", "TLSPskRequest",
             "preSharedKeyRequest", "PreSharedKeyRequest",
         )
@@ -11054,6 +11689,15 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             return None
 
         if isinstance(psk_payload, dict):
+            for _ in range(4):
+                merged_psk_payload = dict(psk_payload)
+                for envelope in psk_payload_aliases:
+                    found_envelope, nested_psk_payload = _dict_lookup(psk_payload, envelope)
+                    if found_envelope and isinstance(nested_psk_payload, dict) and nested_psk_payload is not psk_payload:
+                        merged_psk_payload.update(nested_psk_payload)
+                if merged_psk_payload == psk_payload:
+                    break
+                psk_payload = merged_psk_payload
             if psk is None or isinstance(psk, dict):
                 selector = _psk_selector_from_payload(psk_payload)
                 if selector is not None:
@@ -11108,6 +11752,8 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "params", "Params", "parameters", "Parameters", "request", "Request",
             "config", "Config", "policy", "Policy", "state", "State",
             "payload", "Payload", "secret", "Secret", "target", "Target",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
             "pskEntry", "PSKEntry", "pskRequest", "PSKRequest",
             "tlsPskRequest", "TLSPskRequest", "preSharedKeyRequest",
             "PreSharedKeyRequest",
@@ -11130,6 +11776,11 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                 if merged_psk_payload == psk_payload:
                     break
                 psk_payload = merged_psk_payload
+            for value_container in ("psk", "Psk", "preSharedKey", "PreSharedKey", "keyMaterial", "KeyMaterial"):
+                found_container, nested_value_payload = _dict_lookup(psk_payload, value_container)
+                if found_container and isinstance(nested_value_payload, dict) and nested_value_payload is not psk_payload:
+                    psk_payload = {**psk_payload, **nested_value_payload}
+                    break
 
         def _set_psk_selector_from_payload(payload: Any) -> Any:
             if not isinstance(payload, dict):
@@ -11230,6 +11881,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Query",
             "selector",
             "Selector",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
             "port",
             "Port",
             "portRequest",
@@ -11296,6 +11957,8 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "identityRequest", "IdentityRequest", "userRequest", "UserRequest",
             "policyRequest", "PolicyRequest", "queryRequest", "QueryRequest",
             "authority", "Authority", "identity", "Identity", "user", "User",
+            "command", "Command", "cmd", "Cmd", "action", "Action",
+            "operation", "Operation", "operationRequest", "OperationRequest",
             "target", "Target",
         )
         authority_payload = _mapping_value(kwargs, *authority_payload_aliases)
@@ -11364,6 +12027,16 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
             "Config",
             "request",
             "Request",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
+            "operationRequest",
+            "OperationRequest",
             "target",
             "Target",
             "keyRequest",
@@ -11992,6 +12665,43 @@ def _column_from_name(name: Any, symbol: str = "", siblings: set[str] | None = N
         }
         if key in k_aes_names:
             return k_aes_names[key]
+    if symbol.startswith("C_RSA_"):
+        c_rsa_names = {
+            "PADDING": 3,
+            "PADDINGMODE": 3,
+            "PADDING_MODE": 3,
+            "HASH": 12,
+            "HASHPROTOCOL": 12,
+            "HASH_PROTOCOL": 12,
+        }
+        if key in c_rsa_names:
+            return c_rsa_names[key]
+    if symbol.startswith("C_AES_"):
+        c_aes_names = {
+            "KEY": 3,
+            "MODE": 4,
+            "SYMMETRICMODE": 4,
+            "SYMMETRIC_MODE": 4,
+            "FEEDBACKSIZE": 5,
+            "FEEDBACK_SIZE": 5,
+            "RESIDUALDATA": 6,
+            "RESIDUAL_DATA": 6,
+            "RESIDUAL": 6,
+            "HASH": 7,
+            "HASHPROTOCOL": 7,
+            "HASH_PROTOCOL": 7,
+        }
+        if key in c_aes_names:
+            return c_aes_names[key]
+    if symbol.startswith("C_HMAC_"):
+        c_hmac_names = {
+            "KEY": 3,
+            "HASH": 4,
+            "HASHPROTOCOL": 4,
+            "HASH_PROTOCOL": 4,
+        }
+        if key in c_hmac_names:
+            return c_hmac_names[key]
     cec_match = re.match(r"C_EC_(160|163|192|224|233|283|384|521)", symbol)
     if cec_match:
         c_ec_names = {
@@ -12656,6 +13366,8 @@ def _wrapper_byte_start_from_input(event: Any) -> int | None:
         "Offset",
         "byteOffset",
         "byte_offset",
+        "offsetBytes",
+        "offset_bytes",
         "startOffset",
         "start_offset",
         "startByte",
@@ -12697,7 +13409,7 @@ def _wrapper_byte_end_from_input(event: Any, start: int | None) -> int | None:
         parsed_end = _parse_int(explicit_end)
         if parsed_end is not None and not isinstance(explicit_end, bool):
             return parsed_end
-        length = _mapping_value(args[1], "length", "Length", "len", "Len", "size", "Size", "count", "Count", "numBytes", "num_bytes", "nBytes", "nbytes", "byteCount", "byte_count", "byteLength", "byte_length", "dataLength", "data_length", "readSize", "read_size", "windowSize", "window_size")
+        length = _mapping_value(args[1], "length", "Length", "len", "Len", "size", "Size", "count", "Count", "numBytes", "num_bytes", "nBytes", "nbytes", "byteCount", "byte_count", "byteLength", "byte_length", "sizeBytes", "size_bytes", "dataLength", "data_length", "readSize", "read_size", "windowSize", "window_size")
         parsed_length = _parse_int(length)
         if start is not None and parsed_length is not None and parsed_length > 0 and not isinstance(length, bool):
             return start + parsed_length - 1
@@ -12716,7 +13428,7 @@ def _wrapper_byte_end_from_input(event: Any, start: int | None) -> int | None:
         parsed = _parse_int(value)
         if parsed is not None and not isinstance(value, bool):
             return parsed
-    length = _mapping_value(kwargs, "length", "Length", "len", "Len", "size", "Size", "count", "Count", "numBytes", "num_bytes", "nBytes", "nbytes", "byteCount", "byte_count", "byteLength", "byte_length", "dataLength", "data_length", "readSize", "read_size", "windowSize", "window_size")
+    length = _mapping_value(kwargs, "length", "Length", "len", "Len", "size", "Size", "count", "Count", "numBytes", "num_bytes", "nBytes", "nbytes", "byteCount", "byte_count", "byteLength", "byte_length", "sizeBytes", "size_bytes", "dataLength", "data_length", "readSize", "read_size", "windowSize", "window_size")
     parsed_length = _parse_int(length)
     if start is not None and parsed_length is not None and parsed_length > 0:
         return start + parsed_length - 1
@@ -12774,6 +13486,7 @@ def _byte_table_get_range(event: Any) -> tuple[int, int] | None:
         "startoffset": "startrow",
         "offset": "startrow",
         "byteoffset": "startrow",
+        "offsetbytes": "startrow",
         "index": "startrow",
         "position": "startrow",
         "pos": "startrow",
@@ -12793,6 +13506,7 @@ def _byte_table_get_range(event: Any) -> tuple[int, int] | None:
         "nbytes": "length",
         "bytecount": "length",
         "bytelength": "length",
+        "sizebytes": "length",
         "datalength": "length",
         "bytestoread": "length",
         "readlength": "length",
@@ -13131,19 +13845,22 @@ def _cellblock_components(event: Any) -> set[str]:
         text = re.sub(r"[^A-Za-z0-9]", "", _as_text(key)).lower()
         return aliases.get(text)
 
-    def walk(value: Any, *, direct_cellblock: bool = False) -> None:
+    def walk(value: Any, *, direct_cellblock: bool = False, selector_context: bool = False) -> None:
         if isinstance(value, dict):
             for key, item in value.items():
                 normalized_key = re.sub(r"[^A-Za-z0-9]", "", _as_text(key)).lower()
                 if normalized_key == "cellblock":
                     walk(item, direct_cellblock=True)
                     continue
+                if normalized_key in {"target", "selector", "selection"} and not direct_cellblock:
+                    walk(item, direct_cellblock=False, selector_context=True)
+                    continue
                 component = component_for_key(key)
                 if component is not None and direct_cellblock:
                     components.add(component)
-                elif component is not None and normalized_key in aliases:
+                elif component is not None and normalized_key in aliases and not selector_context:
                     components.add(component)
-                walk(item, direct_cellblock=False)
+                walk(item, direct_cellblock=False, selector_context=selector_context)
             return
         if isinstance(value, (list, tuple)):
             if direct_cellblock and len(value) == 2 and not isinstance(value[0], (dict, list, tuple, set)):
@@ -13152,7 +13869,7 @@ def _cellblock_components(event: Any) -> set[str]:
                     components.add(component)
                     return
             for item in value:
-                walk(item, direct_cellblock=direct_cellblock)
+                walk(item, direct_cellblock=direct_cellblock, selector_context=selector_context)
 
     walk(_mapping_value(event.required, "Cellblock", "CellBlock"), direct_cellblock=True)
     walk(event.required, direct_cellblock=False)
@@ -13513,6 +14230,9 @@ HOST_PROPERTY_ALIASES: dict[str, str] = {
 
 TPER_PROPERTY_ALIASES: dict[str, str] = {
     **HOST_PROPERTY_ALIASES,
+    "MAXSESSIONS": "MaxSessions",
+    "MAXAUTHENTICATIONS": "MaxAuthentications",
+    "MAXTRANSACTIONLIMIT": "MaxTransactionLimit",
     "DEFSESSIONTIMEOUT": "DefSessionTimeout",
     "DEFAULTSESSIONTIMEOUT": "DefSessionTimeout",
     "MAXSESSIONTIMEOUT": "MaxSessionTimeout",
@@ -15347,6 +16067,14 @@ def parse_event(raw: dict[str, Any]) -> Event:
             "Config",
             "policy",
             "Policy",
+            "command",
+            "Command",
+            "cmd",
+            "Cmd",
+            "action",
+            "Action",
+            "operation",
+            "Operation",
             "target",
             "Target",
             "operationRequest",

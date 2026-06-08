@@ -70,7 +70,10 @@ def _apply_start_session_success(state: State, event: Event) -> None:
         state.pin_tries[authority] = 0
     if event.sp == "LockingSP":
         state.locking_sp_activated = True
+    if event.sp is not None:
+        state.sp_failed.discard(event.sp)
     returned = _output_return_values(event.raw)
+    startup_sp_challenge = _recursive_named_value(returned, "SPChallenge", "spChallenge") is not None
     state.session = Session(
         open=True,
         sp=event.sp,
@@ -79,6 +82,8 @@ def _apply_start_session_success(state: State, event: Event) -> None:
         host_session_id=_session_id_key(_recursive_named_value(returned, *HOST_SESSION_ID_NAMES)),
         sp_session_id=_session_id_key(_recursive_named_value(returned, *SP_SESSION_ID_NAMES)),
         startup_host_challenge=_raw_arg_value(event.required, event.optional, _method_raw_args(event), "HostChallenge", "Challenge") is not None,
+        startup_sp_challenge=startup_sp_challenge,
+        trusted_startup_pending=startup_sp_challenge,
         comid=event.comid,
     )
     state.pending_deleted_sp = None
@@ -161,14 +166,20 @@ def _apply_get_success(state: State, event: Event) -> None:
         return
 
     if symbol in {"AdminSP", "LockingSP"}:
-        if symbol == "LockingSP" and 6 in returned:
+        if 6 in returned:
             lifecycle_value = returned[6]
             lifecycle = _parse_int(lifecycle_value)
             if lifecycle is not None:
-                state.observed_sp_lifecycle["LockingSP"] = lifecycle
-            active = _sp_lifecycle_active(lifecycle_value)
-            if active is not None:
-                state.locking_sp_activated = active
+                state.observed_sp_lifecycle[symbol] = lifecycle
+            failed = _sp_lifecycle_failed(lifecycle_value)
+            if failed is True:
+                state.sp_failed.add(symbol)
+            elif failed is False:
+                state.sp_failed.discard(symbol)
+            if symbol == "LockingSP":
+                active = _sp_lifecycle_active(lifecycle_value)
+                if active is not None:
+                    state.locking_sp_activated = active
         if 7 in returned:
             state.sp_frozen[symbol] = _as_bool(returned[7])
         return
@@ -712,6 +723,12 @@ def _apply_set_success(state: State, event: Event) -> None:
                 state.datastore_bytes.clear()
         return
 
+    if symbol.startswith("C_AES_"):
+        mode = _parse_int(event.values.get(0x04))
+        if mode is not None:
+            state.caes_modes[symbol] = mode
+        return
+
     if symbol.startswith("Port"):
         row = state.port_values.setdefault(symbol, {})
         for column, value in event.values.items():
@@ -922,6 +939,10 @@ def _apply_properties_success(state: State, event: Event) -> None:
     returned = _output_return_values(event.raw)
     if _host_properties_parameter_present(event):
         _apply_host_property_response(state, event, _returned_host_properties(returned))
+    tper_properties = _returned_tper_properties(returned)
+    max_sessions = _parse_int(tper_properties.get("MaxSessions"))
+    if max_sessions is not None:
+        state.tper_max_sessions = max(0, max_sessions)
 
     def apply_property(kind: str | None, value: Any) -> None:
         if kind is None:
@@ -1094,13 +1115,20 @@ def _remove_created_table_row_state(state: State, row_uid: str) -> None:
         return
     table_and_values = state.created_table_row_values_by_uid.pop(clean_uid, None)
     state.created_table_row_meta_acl_authorities.pop(clean_uid, None)
+    side_effect_aces = {
+        ace_uid
+        for ace_uid, mapped_row_uid in state.created_row_side_effect_ace_by_uid.items()
+        if mapped_row_uid == clean_uid
+    }
+    for ace_uid in side_effect_aces:
+        state.created_row_side_effect_ace_by_uid.pop(ace_uid, None)
     if table_and_values is not None:
         table_uid, row_values = table_and_values
         rows = state.created_table_rows.get(table_uid)
         if rows is not None:
             state.created_table_rows[table_uid] = [row for row in rows if row is not row_values]
             state.created_table_allocated_rows[table_uid] = len(state.created_table_rows[table_uid])
-    _tombstone_method_associations(state, {clean_uid}, ("Get", "Set", "Delete"))
+    _tombstone_method_associations(state, {clean_uid, *side_effect_aces}, ("Get", "Set", "Delete"))
 
 
 def _apply_delete_success(state: State, event: Event) -> None:
@@ -1254,10 +1282,17 @@ def _remove_created_table_state(state: State, table_uid: str) -> None:
     }
     for row_uid in removed_row_uids:
         state.created_table_row_meta_acl_authorities.pop(row_uid, None)
+    removed_side_effect_aces = {
+        ace_uid
+        for ace_uid, row_uid in state.created_row_side_effect_ace_by_uid.items()
+        if row_uid in removed_row_uids
+    }
+    for ace_uid in removed_side_effect_aces:
+        state.created_row_side_effect_ace_by_uid.pop(ace_uid, None)
     for descriptor_uid in descriptor_uids:
         state.created_table_descriptor_uids.pop(descriptor_uid, None)
 
-    removed_invoking_ids |= removed_row_uids
+    removed_invoking_ids |= removed_row_uids | removed_side_effect_aces
     _tombstone_method_associations(state, removed_invoking_ids, ("Next", "Get", "Set", "Delete"))
 
 
@@ -1357,6 +1392,8 @@ def _invalidate_lba_patterns(state: State, keep_global: bool = False) -> None:
 def _reset_locking_sp(state: State, keep_global_key: bool = False) -> None:
     global_generation = _range(state, 0).media_generation
     state.locking_sp_activated = False
+    state.observed_sp_lifecycle.pop("LockingSP", None)
+    state.sp_failed.discard("LockingSP")
     state.sp_enabled.pop("LockingSP", None)
     state.sp_frozen.pop("LockingSP", None)
     state.authority_enabled = {k: v for k, v in state.authority_enabled.items() if not k.startswith(("User", "Admin"))}
@@ -1387,6 +1424,7 @@ def _reset_locking_sp(state: State, keep_global_key: bool = False) -> None:
     state.mbr_table_bytes.clear()
     state.datastore_pattern = None
     state.datastore_bytes.clear()
+    state.caes_modes.clear()
     state.byte_table_rows.clear()
     state.byte_table_mandatory_granularity.clear()
     state.byte_table_recommended_granularity.clear()
@@ -1406,6 +1444,7 @@ def _complete_delete_sp(state: State, sp: str | None) -> None:
     state.deleted_sps.add(sp)
     state.sp_enabled.pop(sp, None)
     state.sp_frozen.pop(sp, None)
+    state.sp_failed.discard(sp)
 
 
 def _reset_factory_state(state: State) -> None:
@@ -1444,9 +1483,11 @@ def _reset_factory_state(state: State) -> None:
     state.authority_uses.clear()
     state.locking_sp_activated = False
     state.observed_sp_lifecycle.clear()
+    state.sp_failed.clear()
     state.sp_enabled.clear()
     state.sp_frozen.clear()
     state.deleted_sps.clear()
+    state.tper_max_sessions = None
     state.pending_deleted_sp = None
     state.created_table_names.clear()
     state.created_table_name_by_uid.clear()
@@ -1559,14 +1600,17 @@ def _apply_crypto_stream_success(state: State, event: Event) -> None:
         return
     if event.method.endswith("Init"):
         state.crypto_streams[key] = True
-        found_buffer_out, _ = _named_method_arg_value(event, "BufferOut", "bufferOut", "Output", "output")
+        found_buffer_out, buffer_out = _named_method_arg_value(event, "BufferOut", "bufferOut", "Output", "output")
         if found_buffer_out:
             state.crypto_stream_bufferout.add(key)
+            state.crypto_stream_bufferout_value[key] = buffer_out
         else:
             state.crypto_stream_bufferout.discard(key)
+            state.crypto_stream_bufferout_value.pop(key, None)
     elif event.method.endswith("Finalize"):
         state.crypto_streams[key] = False
         state.crypto_stream_bufferout.discard(key)
+        state.crypto_stream_bufferout_value.pop(key, None)
 
 
 def _xor_byte_table_symbol(value: Any) -> str:
@@ -1816,6 +1860,7 @@ def apply_transition(state: State, event: Event) -> None:
         return
 
     if event.method in {"StartTrustedSession", "StartTlsSession"} and event.is_success:
+        state.session.trusted_startup_pending = False
         return
 
     if event.method == "Properties" and event.is_success:
@@ -1862,6 +1907,12 @@ def apply_transition(state: State, event: Event) -> None:
         range_id = _getacl_invoking_range_id(event)
         if range_id is not None and range_id != 0:
             _range(state, range_id)
+        (found_invoking, invoking_value), (found_method, method_value) = _access_control_arg_values(event)
+        _, invoking_uid = _object_ref_from_value(invoking_value) if found_invoking else ("", "")
+        method_name = _method_ref_name(method_value) if found_method else None
+        if invoking_uid in state.created_table_row_values_by_uid and method_name in {"Get", "Set", "Delete"}:
+            for ace_uid in _return_uids(_output_return_values(event.raw)):
+                state.created_row_side_effect_ace_by_uid[ace_uid] = invoking_uid
         return
 
     if event.method == "Get":
@@ -1933,6 +1984,7 @@ def apply_transition(state: State, event: Event) -> None:
     if event.method == "Activate" and event.invoking_symbol == "LockingSP":
         state.session.write = True
         state.locking_sp_activated = True
+        state.sp_failed.discard("LockingSP")
         if "SID" in state.pins:
             state.pins["Admin1"] = state.pins["SID"]
         elif "MSID" in state.pins and "Admin1" not in state.pins:

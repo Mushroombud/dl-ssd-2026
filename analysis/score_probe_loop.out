@@ -22,3 +22,13 @@ Traceback (most recent call last):
   File "/Users/seungmin/ssd-project/sm/tools/score_probe_loop.py", line 1370, in lifecycle_probes
     yield Probe(
 TypeError: __init__() missing 1 required positional argument: 'why'
+Traceback (most recent call last):
+  File "/Users/seungmin/ssd-project/sm/tools/score_probe_loop.py", line 26, in <module>
+    from src.solver import NOT_AUTHORIZED, SUCCESS, parse_event, predict_trajectory
+  File "/Users/seungmin/ssd-project/sm/src/__init__.py", line 1, in <module>
+    from .solver import Solver
+  File "/Users/seungmin/ssd-project/sm/src/solver.py", line 11, in <module>
+    from .solver_components import semantics as _semantics
+  File "/Users/seungmin/ssd-project/sm/src/solver_components/semantics.py", line 1331
+    return True
+IndentationError: unexpected indent

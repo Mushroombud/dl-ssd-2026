@@ -90,55 +90,6 @@ at runtime, such as fine-tuned weights, augmented data, or checkpoints.
 It is included in the submission archive when present and may be left
 empty. We provided parsed pdf tcg spec documents into skeleton project.
 
-## RAG Models
-
-The RAG fallback is designed to run fully on-premise with local open-source
-models. Model weights are intentionally not committed to git because they are
-large. They should be downloaded on the target machine into `artifacts/models/`
-before running dense retrieval or reranking.
-
-Install the RAG-only dependencies in the project venv:
-
-```bash
-UV_CACHE_DIR=.uv-cache uv pip install --python .venv/bin/python \
-    sentence-transformers huggingface-hub torch
-```
-
-Download the local Qwen3 embedding and reranking models:
-
-```bash
-.venv/bin/python tools/rag_download_models.py
-```
-
-This creates:
-
-```text
-artifacts/models/Qwen3-Embedding-0.6B/
-artifacts/models/Qwen3-Reranker-0.6B/
-```
-
-The model directory is ignored by git via `.gitignore`. For course submission,
-make sure `artifacts/models/` exists in the submitted directory if the RAG path
-is expected to run without network access.
-
-Run a retrieval smoke test against the public testset:
-
-```bash
-HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-    .venv/bin/python tools/rag_retrieve_testset.py \
-    --candidate-top-k 40 \
-    --final-top-k 10
-```
-
-For a quick lexical-only check that does not require model weights:
-
-```bash
-.venv/bin/python tools/rag_retrieve_testset.py \
-    --no-dense \
-    --no-reranker \
-    --case-limit 3
-```
-
 ### Path Conventions
 
 The working directory differs between the development and grading

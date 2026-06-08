@@ -1,11 +1,11 @@
 # Official Document Inventory Summary
 
-Generated: 2026-06-05T03:43:43
+Generated: 2026-06-02T07:58:57
 
 ## Totals
 
-- Inventory rows: 1380
-- Families: {'core': 1212, 'opal': 168}
+- Inventory rows: 1376
+- Families: {'core': 1208, 'opal': 168}
 - Covered by sourced cases: 811
 - Pending A/B cartography: 0
 - Sections recommended for subsharding: 98
@@ -18,14 +18,14 @@ Generated: 2026-06-05T03:43:43
 - `manual_triaged:duplicate`: 9
 - `manual_triaged:informative`: 51
 - `pending_low_priority_cartography`: 142
-- `pending_non_normative_audit`: 211
+- `pending_non_normative_audit`: 207
 
 ## Priority
 
 - `A`: 169
 - `B`: 393
 - `C`: 409
-- `D`: 409
+- `D`: 405
 
 ## Category
 
@@ -35,7 +35,7 @@ Generated: 2026-06-05T03:43:43
 - `host-io-locking-mbr`: 25
 - `lifecycle-revert`: 171
 - `opal-ssc`: 93
-- `other`: 446
+- `other`: 442
 - `package-crypto`: 197
 - `protocol-session`: 94
 - `table-methods`: 106

@@ -2189,3 +2189,871 @@ Next concrete batch:
   - Repair: added StartSession payload aliases for `target`, `start`, and `startSession`, preserving existing bounded merge and raw StartSession validation.
   - Expanded `startsession-deep-envelope-doc` to cover `operationRequest.session.target + credential/options`, `startupRequest.request.target/auth/proof/settings`, and `config.session.start.values` in addition to the earlier operation/startup session values cases.
   - Verification after extension: targeted unit OK, `startsession-deep-envelope-doc` `10 / 0`, score probe loop no mismatches, full synthetic `6871 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+  - User-requested server update/submission:
+    - Uploaded current local tree to `/workspace/seungmin/sm` and refreshed `/workspace/project` submit files (`src`, `artifacts`, `README.md`, `setup.sh`, `pyproject.toml`, `uv.lock`).
+    - Server public eval before submit: `100.00`; server `startsession-deep-envelope-doc`: `10 / 0`.
+    - Submitted `submit --dir /workspace/project --job-name sm-startsession-deep-envelope-20260604`.
+    - Submission id `e9171c87c76342b39761197e26e43b32`, job_id `1625`, status `Success`, score `88.00`.
+- 2026-06-04 KST - Continued no-submit score-relevant loop:
+  - Found a real current ReEncrypt mismatch class from split wrapper payloads:
+    - `request.target` + `request.command`
+    - `operation.target` + `operation.reencrypt`
+    - `config.target` + `config.action`
+  - Failure mode before repair: `setReEncryptRequest` lowered to `ReEncryptRequest=None` or `BandNone`, so valid `START_req` -> `PENDING` trajectories failed and stale `IDLE` observations passed.
+  - Repair: ReEncrypt setter lowering now treats `operation` / `operationRequest` as bounded envelopes and `command` / `cmd` / `action` as bounded `ReEncryptRequest` value containers.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `reencrypt-nested-envelope-doc` `22 / 0`, score probe loop no mismatches, full synthetic `6877 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-04 KST - Continued no-submit score-relevant loop:
+  - Applied the same split-envelope audit to DataRemoval and found another current mismatch class:
+    - `request.target` + `request.command`
+    - `operation.target` + `operation.dataRemoval`
+    - `config.target` + `config.action`
+    - `policy.operation.activeDataRemoval`
+  - Failure mode before repair: `setDataRemovalMechanism` lowered to `ActiveDataRemovalMechanism=None`, so stale later mechanism observations were false-accepted.
+  - Repair: DataRemoval setter lowering now treats `command` / `cmd` / `action` and `operation` / `operationRequest` as bounded mechanism-value envelopes.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `data-removal-nested-envelope-doc` `20 / 0`, score probe loop no mismatches, full synthetic `6885 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-04 KST - Continued no-submit score-relevant loop:
+  - Applied the split-envelope audit to MBRControl and found valid state trajectories hidden behind:
+    - `request.target` + `request.command`
+    - `operation.target` + `operation.mbrControl`
+    - `config.target` + `config.action`
+  - Failure mode before repair: `setMBRControl` lowered to empty `MBRControl {}`, so later valid `Enabled` / `Done` / `DoneOnReset` observations could be false-rejected.
+  - Repair: MBRControl setter lowering now treats `command` / `cmd` / `action` and `operation` / `operationRequest` as bounded MBRControl value envelopes.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `mbrcontrol-nested-envelope-doc` `12 / 0`, score probe loop no mismatches, full synthetic `6891 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-04 KST - Continued no-submit score-relevant loop:
+  - Extended the split-envelope audit to Admin SP row setters and found real stale-state false PASS classes:
+    - `setPort` with `operation.target` + `operation.portControl` lowered to an empty Port mutation, so stale `PortLocked=False` could pass after a successful lock request.
+    - `setPskEntry` with `operation.target` + `operation.psk` treated the dict-valued PSK payload like a selector/value ambiguity, so stale `Enabled=False` metadata could pass.
+  - Repair: Port setter lowering now recognizes bounded `command` / `cmd` / `action` / `operation` / `operationRequest` / `portControl` wrappers; TLS_PSK setter lowering recognizes bounded split wrappers and treats dict-valued `psk` / `preSharedKey` / `keyMaterial` as value containers while preserving scalar `psk=1` as the selector.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `port-policy-envelope-doc` `48 / 0`, `psk-policy-envelope-doc` `32 / 0`, score probe loop no mismatches, full synthetic `6905 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-04 KST - Continued no-submit score-relevant loop:
+  - Extended the split-envelope audit to Package, Erase, and GenKey wrappers:
+    - `GetPackage` / `SetPackage` with `request.target + request.command` or `operation.target + operation.package` lost `Purpose` / `Value`, causing valid package operations to be false-rejected.
+    - `Erase` with `operation.target + operation.command` lowered to `BandNone`, so old host plaintext could remain falsely accepted after a successful erase.
+    - `GenKey` with `operation.target + operation.command` lost the selected range key/auth, so old host plaintext could remain falsely accepted after a successful key rotation.
+  - Repair: Package, Erase, and GenKey lowering now recognizes bounded `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers; SetPackage additionally unwraps nested dict-valued `Value` containers.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `package-policy-envelope-doc` `26 / 0`, `erase-policy-envelope-doc` `12 / 0`, `genkey-policy-envelope-doc` `40 / 0`, score probe loop no mismatches, full synthetic `6918 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-04 KST - Continued no-submit score-relevant loop:
+  - Audited lifecycle split wrappers and found an Activate false PASS:
+    - `activateLockingSP` with `operation.credential.proof="wrong"` lowered with `authAs=None`.
+    - The wrapper success then activated LockingSP, so a later LockingSP session was false-accepted despite the wrong SID proof.
+  - Repair: Activate lowering now recognizes bounded `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers before validating SID credentials and applying the lifecycle transition.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `activate-policy-envelope-doc` `30 / 0`, score probe loop no mismatches, full synthetic `6930 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-04 KST - Continued no-submit score-relevant loop:
+  - Extended lifecycle audit to TakeOwnership/setup aliases and found another wrong-proof false PASS:
+    - `takeOwnership(operation.credential.proof="wrong")` and `takeOwnership(operation.command.credential="wrong")` lowered with missing credential.
+    - `setupLockingSP(operation.credential.proof="wrong")` lowered without the nested auth/proof.
+    - In both cases the wrapper success activated LockingSP, so later LockingSP sessions were false-accepted.
+  - Repair: TakeOwnership lowering now recognizes bounded `command` / `cmd` / `action` / `operation` / `operationRequest`; Activate/setup lowering now recovers nested auth from dict-valued credentials before proof validation.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `takeownership-policy-envelope-doc` `10 / 0`, `lifecycle-domain-request-envelope-doc` `10 / 0`, score probe loop no mismatches, full synthetic `6936 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-04 KST - Continued no-submit score-relevant loop:
+  - Audited ProtocolReset operation wrappers and found a ComID scoping false FAIL:
+    - `protocolReset(operation.command.ComID=2)` and `protocolReset(operation.target.ComID=2 + operation.command.type)` were treated as if the ComID were missing or defaulted to the active session's ComID.
+    - That could incorrectly abort a ComID 1 session after an unrelated ComID 2 reset, so a later valid ComID 1 operation failed.
+  - Repair: `_comid_from_mapping` now recurses through bounded `command` / `cmd` / `action` / `operation` / `operationRequest` / `target` containers while preserving the existing ComID-scoped reset state rule.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `protocol-reset-domain-request-envelope-doc` `28 / 0`, score probe loop no mismatches, full synthetic `6948 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-04 KST - Continued no-submit score-relevant loop:
+  - Audited RevertSP operation wrappers and found two current mismatch classes:
+    - AdminSP revert with `operation.target + operation.command.psid` lost the PSID, so LockingSP activation was not reset and a later LockingSP session was false-accepted.
+    - LockingSP revert with `operation.target + operation.command.KeepGlobalRangeKey` lost the keep flag, so preserved GlobalRange data was false-rejected.
+  - Repair: RevertSP lowering now recognizes bounded `command` / `cmd` / `action` / `operationRequest` payload containers in addition to the existing policy/config/request wrappers.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `revertsp-policy-envelope-doc` `14 / 0`, score probe loop no mismatches, full synthetic `6952 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-04 KST - Continued no-submit score-relevant loop:
+  - Audited table lifecycle operation wrappers and found valid-operation false rejects:
+    - `createTable(operation.command=...)` lost required table parameters.
+    - `createRow(operation.target.table + operation.command.Values)` lost the dynamic table selector and row values.
+    - `deleteRow(operation.target.table + operation.command.Rows)` lost the table selector and row UID list.
+  - Repair: CreateTable/CreateRow/DeleteRow lowering now recognizes bounded `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers; CreateRow/DeleteRow also unwrap dict-valued `target` containers to recover the table selector.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `table-lifecycle-domain-request-envelope-doc` `13 / 0`, `table-lifecycle-delete-query-envelope-doc` `18 / 0`, score probe loop no mismatches, full synthetic `6958 / 0`, sourced `3997 / 0`, unit `1230 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-04 KST - Continued no-submit score-relevant loop:
+  - Audited AccessControl mutation operation wrappers and found a RemoveACE state false PASS:
+    - `RemoveACE(operation.target + operation.command)` lost `InvokingID` / `MethodID` / `ACE` arguments.
+    - The operation therefore did not remove the ACE from tracked ACL state, and later stale `GetACL` retaining the removed ACE could pass.
+  - Repair: AccessControl meta-method lowering now recognizes bounded `command` / `cmd` / `action` / `operation` / `operationRequest` payload containers before applying existing AddACE/RemoveACE/SetACL/GetACL association rules.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `accesscontrol-nested-mutation-doc` `10 / 0`, score probe loop no mismatches, full synthetic `6964 / 0`, sourced `3997 / 0`, unit `1231 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited Locking range operation wrappers and found stale geometry false PASSes:
+    - `setRange(operation.command=...)` and `setRange(operation.target.rangeId + operation.command.RangeStart/RangeLength)` lost the selected range or update values.
+    - Later stale `getRange` outputs could pass despite a successful range update.
+  - Repair: setRange/getRange lowering now recognizes bounded `command` / `cmd` / `action` / `operation` payload containers and unwraps dict-valued `target` range selectors.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `locking-range-nested-geometry-doc` `14 / 0`, `locking-range-domain-request-doc` `12 / 0`, score probe loop no mismatches, full synthetic `6976 / 0`, sourced `3997 / 0`, unit `1231 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited Locking range lock operation wrappers and found host-I/O false PASSes:
+    - `lockRange(operation.command=...)` and `lockRange(operation.target.rangeId + operation.command.write=true)` lost range/lock arguments.
+    - Later host writes to the supposedly locked range could still pass as `SUCCESS`.
+  - Repair: lockRange/unlockRange lowering now recognizes bounded `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers and unwraps dict-valued target range selectors.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `locking-range-nested-lock-doc` `20 / 0`, score probe loop no mismatches, full synthetic `6982 / 0`, sourced `3997 / 0`, unit `1231 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited DataStore byte-window operation wrappers and found byte-state false FAIL/PASS risk:
+    - `writeDataStore(operation.command=...)` lowered to row 0 with no bytes.
+    - `readDataStore(operation.command=...)` lost offset/length CellBlock selection.
+    - Current byte-window observations could be false-rejected and stale/empty observations could be false-accepted.
+  - Repair: DataStore write/read lowering now recognizes bounded `command` / `cmd` / `action` / `operation` wrappers while preserving existing offset/length/auth/byte comparison semantics.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `datastore-nested-window-envelope-doc` `14 / 0`, score probe loop no mismatches, full synthetic `6988 / 0`, sourced `3997 / 0`, unit `1231 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited MBR byte-window operation wrappers and found stale byte false PASS risk:
+    - `writeMBR(operation.target.offset/length + operation.command.bytes)` lowered to row 0 with no bytes.
+    - Later stale `readMBR` byte observations could pass because the intended byte table window was never tracked.
+  - Repair: MBR write/read lowering now recognizes bounded `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `mbr-nested-window-envelope-doc` `18 / 0`, score probe loop no mismatches, full synthetic `7008 / 0`, sourced `3997 / 0`, unit `1231 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited LockOnReset operation wrappers and found reset-list false PASS risk:
+    - `setLockOnReset(operation.target.rangeId + operation.command.LockOnReset)` lowered to `BandNone` / `LockOnReset=None`.
+    - Later stale `[0]` reset-list observations could pass after a successful intended `[0,3]` update.
+  - Repair: LockOnReset setter/getter lowering now recognizes bounded `command` / `cmd` / `action` / `operation` wrappers and keeps existing selector/reset-list validation semantics.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `lockonreset-nested-envelope-doc` `46 / 0`, score probe loop no mismatches, full synthetic `7008 / 0`, sourced `3997 / 0`, unit `1231 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited C_PIN counter operation getters and found stale counter false PASS risk:
+    - `setPINTries(operation.target.user + operation.command.tries)` updated `C_PIN_User1`.
+    - `getTries(operation.target.user + operation.command.authAs)` lost selector/auth context, so stale `Tries=1` could pass after the successful `Tries=0` update.
+  - Repair: C_PIN counter getter lowering now recognizes bounded `command` / `cmd` / `action` / `operation` wrappers and recursively preserves nested `authAs`.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `credential-counter-operation-envelope-doc` `4 / 0`, score probe loop no mismatches, full synthetic `7012 / 0`, sourced `3997 / 0`, unit `1232 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited Authenticate operation wrappers and found valid-result false rejects:
+    - `authenticate(operation.command.auth/proof)` lost both `Auth` and `Proof`.
+    - Correct-proof `True` and wrong-proof `False` were rejected as malformed/missing-authority cases.
+  - Repair: Authenticate lowering now recognizes bounded `command` / `cmd` / `action` / `operation` wrappers and preserves existing proof truth / Boolean result semantics.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `authenticate-operation-envelope-doc` `9 / 0`, score probe loop no mismatches, full synthetic `7021 / 0`, sourced `3997 / 0`, unit `1233 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited checkPIN operation wrappers and found the same valid-result false rejects:
+    - `checkPIN(operation.command.auth/pin)` lost both authority and PIN.
+    - Correct `True` and wrong `False` results were rejected instead of following Authenticate Boolean-result semantics.
+  - Repair: checkPIN lowering now recognizes bounded `command` / `cmd` / `action` / `operation` wrappers.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `checkpin-operation-envelope-doc` `9 / 0`, score probe loop no mismatches, full synthetic `7030 / 0`, sourced `3997 / 0`, unit `1234 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited changePIN operation wrappers and found credential mutation stale-state failures:
+    - `changePIN(operation.target.auth + operation.command.newPin/authAs)` lost selected C_PIN row, new PIN, and authenticator.
+    - Later current-PIN checks were false-rejected while stale old-PIN checks could be false-accepted.
+  - Repair: changePIN/setPIN lowering now recognizes bounded `command` / `cmd` / `action` / `operation` / `target` / `operationRequest` wrappers.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `credential-pin-operation-envelope-doc` `6 / 0`, score probe loop no mismatches, full synthetic `7036 / 0`, sourced `3997 / 0`, unit `1235 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited setMinPINLength operation wrappers and found C_PIN policy stale-state failures:
+    - `setMinPINLength(operation.target.auth + operation.command.length/authAs)` lowered to no target, `_MinPINLength=None`, and `authAs=None`.
+    - A later too-short `changePIN` and stale `getMinPINLength=5` could both pass after the intended update to 6.
+  - Repair: setMinPINLength lowering now recognizes bounded `command` / `cmd` / `action` / `operation` / `target` / `operationRequest` wrappers and preserves selected C_PIN, length, and authenticator.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `credential-minpin-operation-envelope-doc` `9 / 0`, score probe loop no mismatches, full synthetic `7045 / 0`, sourced `3997 / 0`, unit `1236 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited ReEncrypt operation wrappers and found a stale status false PASS:
+    - `getReEncryptStatus(operation.target.rangeId + operation.command.authAs)` lowered to `BandNone` with no authenticator.
+    - After successful `START_req`, stale `ReEncryptState=IDLE` could pass instead of being rejected.
+  - Repair: ReEncrypt setter/getter lowering now recognizes bounded `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers and preserves range/auth metadata.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `reencrypt-operation-envelope-doc` `6 / 0`, score probe loop no mismatches, full synthetic `7051 / 0`, sourced `3997 / 0`, unit `1237 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited Locking column getter operation wrappers and found stale getter false PASSes:
+    - `getAdvKeyMode`, `getLastReEncryptLBA`, and `getLastReEncryptStatus` with `operation.target.rangeId + operation.command.authAs` lowered to `BandNone`.
+    - Current tracked values passed, but stale values also passed because range/auth metadata was lost.
+  - Repair: bounded Locking column getters now recognize `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers and merge both `target` and `command` payloads.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `locking-column-operation-envelope-doc` `30 / 0`, score probe loop no mismatches, full synthetic `7081 / 0`, sourced `3997 / 0`, unit `1237 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited DataStore access operation wrappers and found a User access false FAIL/PASS pair:
+    - `readAccess(operation.target.user/table + operation.command.authAs)` lowered to `ACE_DataStoreNone_Get_All` with invalid `user=None`.
+    - Later User1 `readData` with correct PIN was false-rejected, while unauthorized empty reads were false-accepted.
+  - Repair: DataStore access-grant lowering now recognizes `command` / `cmd` / `action` / `operation` / `target` / `operationRequest` wrappers and merges target+command before extracting user/table/mode/auth.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `datastore-access-operation-envelope-doc` `8 / 0`, score probe loop no mismatches, full synthetic `7089 / 0`, sourced `3997 / 0`, unit `1237 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited getMEK/getActiveKey operation wrappers and found a stale media-key false PASS:
+    - `getMEK(operation.target.rangeId=2 + operation.command.authAs)` lowered to `BandNone`.
+    - After Range2 ActiveKey was set to `K_AES_256_Range2_Key`, stale Range1 ActiveKey UID was still accepted.
+  - Repair: media-key read lowering now recognizes `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers and preserves range/auth metadata.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `getmek-operation-envelope-doc` `12 / 0`, score probe loop no mismatches, full synthetic `7101 / 0`, sourced `3997 / 0`, unit `1237 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited Authority counter getter operation wrappers and found a stale counter false PASS:
+    - `getAuthorityLimit(operation.target.identity + operation.command.authAs)` and `getAuthorityUses(...)` accepted stale zero values after tracked `Authority_User1` counters were set.
+    - The parser was losing the Authority selector inside operation-style envelopes before existing CellBlock comparison ran.
+  - Repair: Authority counter setter/getter/enable wrapper payload alias sets now recognize `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `authority-counter-operation-envelope-doc` `8 / 0`, score probe loop no mismatches, full synthetic `7109 / 0`, sourced `3997 / 0`, unit `1237 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited Authority.Enabled getter operation wrappers and found a stale Boolean false PASS:
+    - After `enableAuthority(User1, false)`, `getAuthority/isUserEnabled/getUserEnabled/getAuthorityEnabled` with `operation.target.identity + operation.command.authAs` accepted stale `True`.
+    - The parser was losing the Authority selector in operation/command/action-style getter envelopes.
+  - Repair: Authority.Enabled getter lowering now recognizes `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `authority-enabled-operation-envelope-doc` `32 / 0`, score probe loop no mismatches, full synthetic `7141 / 0`, sourced `3997 / 0`, unit `1238 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited TLS_PSK_Key getter operation wrappers and found a stale metadata false PASS:
+    - After `setPskEntry(psk_id=1, Enabled=True, CipherSuite=0x1301)`, `getPskEntry(operation.target.psk + operation.command.authAs)` accepted stale `Enabled=False`.
+    - The parser was losing the selected TLS_PSK_Key row in operation/command/action-style getter envelopes.
+  - Repair: PSK getter lowering now recognizes `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers and merges nested target/command metadata.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `psk-getter-operation-envelope-doc` `8 / 0`, score probe loop no mismatches, full synthetic `7149 / 0`, sourced `3997 / 0`, unit `1238 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited created-table delete operation wrappers and found a lifecycle false FAIL/PASS pair:
+    - `deleteTable(operation.target.table + operation.command.authAs)` was rejected after a successful `CreateTable`.
+    - Since the Delete transition did not apply, a later raw `Get` on the deleted table could still pass.
+  - Repair: table/object delete lowering now recognizes `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers and preserves target/auth metadata.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `table-delete-operation-envelope-doc` `8 / 0`, score probe loop no mismatches, full synthetic `7157 / 0`, sourced `3997 / 0`, unit `1238 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited Log operation wrappers and found valid-result false FAILs:
+    - `addLog(operation.target.log + operation.command.name/data/authAs)` lost required AddLog fields.
+    - `createLog(operation.command.name/minSize/...)` lost CreateLog parameters and rejected valid three-field results.
+  - Repair: AddLog/ClearLog/CreateLog lowering now recognizes `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers and preserves target/payload/auth metadata.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `log-operation-envelope-doc` `24 / 0`, score probe loop no mismatches, full synthetic `7181 / 0`, sourced `3997 / 0`, unit `1238 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited HostProperties operation wrappers and found a per-ComID state false PASS/FAIL pair:
+    - `setHostProperties(operation.target.ComID + operation.command.HostProperties)` lost the submitted properties and accepted stale defaults.
+    - After preserving the setter, selector-only `getHostProperties(operation.target.ComID=2)` still accepted ComID 1 values because HostProperties response validation was not enabled for operation-style getters.
+  - Repair: Properties lowering now recognizes `command` / `cmd` / `action` / `operation` / `operationRequest` / `target` wrappers, preserves submitted HostProperties, extracts ComID selectors, and marks HostProperties wrapper getters for response validation even when no new HostProperties are submitted.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `host-properties-operation-envelope-doc` `16 / 0`, score probe loop no mismatches, full synthetic `7197 / 0`, sourced `3997 / 0`, unit `1239 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited Port getter operation wrappers and found a stale state false PASS:
+    - After `setPort(Port2, PortLocked=True)`, `getPort(operation.target.port=Port2 + operation.command.authAs)` accepted stale `PortLocked=False`.
+    - Setter state was already tracked; the getter lost the selected Port row in operation/command/action-style selector envelopes.
+  - Repair: Port getter lowering now recognizes `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers before lowering to AdminSP Port table Get.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `port-operation-envelope-doc` `24 / 0`, score probe loop no mismatches, full synthetic `7221 / 0`, sourced `3997 / 0`, unit `1239 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited DataRemoval getter operation wrappers and found a valid-current false FAIL:
+    - After `setDataRemovalMechanism(... ActiveDataRemovalMechanism=2)`, `getDataRemovalMechanism(operation.target.table=DataRemovalMechanism + operation.command.authAs)` rejected the current value.
+    - The parser recovered auth after alias expansion, but `_cellblock_components` was counting wrapper `target.table` as an official CellBlock Table component.
+  - Repair: DataRemoval getter lowering now recognizes operation wrappers, and CellBlock component detection treats `target` / `selector` / `selection` dictionaries as SDK selector metadata rather than official CellBlock components.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `data-removal-operation-envelope-doc` `8 / 0`, score probe loop no mismatches, full synthetic `7229 / 0`, sourced `3997 / 0`, unit `1240 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited stateless operation-command wrappers and found valid-current false FAILs:
+    - `getRandomBytes(operation.command.count=8)` preserved Count after parser alias expansion but was rejected because `command` was treated as an unsupported Random parameter.
+    - `firmwareAttestation(operation.command.nonce=...)` and `sign(operation.command.payload=...)` lost required payload fields before result-shape validation.
+  - Repair: Random/FirmwareAttestation/Sign lowering now recognizes `command` / `cmd` / `action` envelopes, and Random unsupported-argument checking treats those as containers rather than official parameters.
+  - Verification after repair: direct fuzz fixed, targeted units OK, `random-operation-envelope-doc` `8 / 0`, `firmware-attestation-operation-envelope-doc` `8 / 0`, `sign-operation-envelope-doc` `8 / 0`, score probe loop no mismatches, full synthetic `7253 / 0`, sourced `3997 / 0`, unit `1241 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited XOR / Hash operation-command wrappers and found valid-current false FAILs:
+    - `xor(operation.command.PatternInput/Input)` lost payload bytes and rejected the valid direct XOR result.
+    - `hash(operation.command.data)` after `hashInit` lost the digest input and rejected valid digest-byte output.
+  - Repair: XOR and crypto stream lowering now recognize `command` / `cmd` / `action` / `operation` / `operationRequest` wrappers and preserve payload bytes before existing result comparison/stream-state validation.
+  - Verification after repair: direct fuzz fixed, targeted units OK, `xor-operation-envelope-doc` `8 / 0`, `crypto-operation-envelope-doc` `8 / 0`, score probe loop no mismatches, full synthetic `7269 / 0`, sourced `3997 / 0`, unit `1241 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited Locking boolean getter operation wrappers and found stale state false PASSes:
+    - After `setRange(rangeId=1, ReadLocked=True, WriteLocked=True)`, `getReadLocked`, `getWriteLocked`, and `getRangeLocks` with `operation.command`, `operation.target + operation.command`, `operationRequest.command`, `command`, or `action` selectors accepted stale `False`.
+    - The parser lost selected range/auth metadata before existing Locking table state comparison ran.
+  - Repair: Locking range-field and composite lock getter lowering now recognizes operation-style selector envelopes.
+  - Verification after repair: direct fuzz fixed, targeted unit OK, `locking-column-operation-envelope-doc` `70 / 0`, score probe loop no mismatches, full synthetic `7315 / 0`, sourced `3997 / 0`, unit `1241 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited `setMBR` operation wrappers and found both current-state false FAILs and stale byte false PASSes:
+    - `setMBR(operation.command.Enabled/Done/DoneOnReset)` did not update MBRControl cells.
+    - `setMBR(operation.command.offset/bytes)` did not mutate the MBR byte table, so stale later `readMBR` bytes were accepted.
+  - Repair: compact `setMBR` lowering now recognizes operation-style command/action envelopes before deciding between MBRControl Set and MBR byte-table Set.
+  - Verification after repair: direct fuzz fixed, targeted units OK, `mbr-operation-envelope-doc` `20 / 0`, score probe loop no mismatches, full synthetic `7335 / 0`, sourced `3997 / 0`, unit `1241 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited ReEncrypt RETIDLE wrapper aliases and found a state-machine false FAIL/PASS pair:
+    - From observed `ReEncryptState=PAUSED`, `returnReEncryptIdle(operation.command.rangeId/authAs)` rejected correct later `IDLE` and accepted stale `PAUSED`.
+    - Existing aliases already modeled this as `RETIDLE_req`; this naming variant was missing.
+  - Repair: `returnReEncryptIdle` / `returnReEncryptionIdle` now lower to `RETIDLE_req` and preserve operation-style range/auth selectors.
+  - Verification after repair: direct fuzz fixed, targeted units OK, `reencrypt-operation-envelope-doc` `16 / 0`, score probe loop no mismatches, full synthetic `7349 / 0`, sourced `3997 / 0`, unit `1242 OK`, public eval `100.00`, doc coverage `811 / 1376`, untriaged A/B `0`.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited C_PIN TryLimit/Tries/Persistence wrapper trajectories after a suspected `checkPIN` Tries mismatch.
+  - Finding: the solver was correct for official C_PIN columns (`TryLimit=5`, `Tries=6`, `Persistence=7`). The apparent mismatch came from a local probe/test fixture that used column `7` as if it were `Tries`; official documents define column `7` as boolean `Persistence`.
+  - Cleanup: corrected C_PIN counter getter fixture setup in `tests/test_solver_rules.py`, `tools/score_probe_loop.py`, and `tools/run_synthetic_edges.py` from invalid `Persistence=2` to `Persistence=False`, keeping `TryLimit=3` and `Tries=1` unchanged.
+  - Verification: targeted unit `test_cpin_counter_getter_policy_config_envelopes_select_credential` passed, `run_synthetic_edges.py --tag tcgstorageapi-wrapper` passed `1629 / 0`, and `score_probe_loop.py --iterations 1 --sleep 0` completed with no mismatches.
+  - Additional audit: AccessControl/GetACL `operation.command`, `operation.target+command`, `operationRequest.command`, `command`, `action`, and `op` method aliases already preserve `InvokingID`/`MethodID` and reject incomplete ACL lists.
+  - Dashboard relevance: Low direct score impact, but high harness-integrity value. It prevents invalid context records from weakening future TryLimit/Tries edge-case conclusions.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited uncovered package/crypto D-priority documents for issued object metadata read-only rules.
+  - Found a concrete solver gap: issued credential/hash object rows such as `H_SHA_256`, `C_AES_128`, `C_RSA_2048`, `C_HMAC_160`, and `C_EC_160` accepted host `Set` success for column `1` `Name` and column `2` `CommonName`.
+  - Official evidence: core docs state that `Name` and `CommonName` of C_RSA/C_AES/C_EC/C_HMAC/H_SHA objects that exist at issuance SHALL NOT be modifiable by the host.
+  - Repair: added a narrow issued-family predicate in `semantics.py::_invalid_set_values` so only exact issued crypto/hash family object names reject `Name`/`CommonName` Set success. Created/test rows such as `C_AES_256_Test` remain settable to avoid overgeneralizing the rule.
+  - Added regression coverage: unit tests `test_issued_crypto_name_commonname_set_rejects_success` and `test_created_crypto_test_row_metadata_remains_settable`; sourced tag `crypto-issued-metadata-readonly-doc` with 30 cases and evidence-backed repair metadata.
+  - Verification: targeted unit OK, `run_sourced_edges.py --tag crypto-issued-metadata-readonly-doc` passed `30 / 0`, full unit `1244 OK`, synthetic `7349 / 0`, sourced `4027 / 0`, public eval `100.00`, score probe loop completed with no mismatches, doc coverage increased to `825 / 1376` with untriaged A/B still `0`.
+  - Dashboard relevance: Medium. This is not the historically strongest Locking/AccessControl cluster, but it is a real official-doc false PASS over package/crypto metadata, and private tests may include issued row read-only variants beyond Authority/ACE/C_PIN/MethodID/Table/SPInfo.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited CryptoSuite metadata after the issued crypto read-only repair and found another official-doc false PASS:
+    - `CryptoSuite` and `CryptoSuite_*` accepted successful `Set` for read-only metadata columns.
+    - Official docs define CryptoSuite as TPer metadata describing available crypto functionality; UID, CryptoCall, CryptoLen, CryptoOp, Special, Time, and Variance SHALL NOT be modifiable by the host.
+  - Repair: `semantics.py::_invalid_set_values` now rejects host Set for `CryptoSuite` and concrete `CryptoSuite_*` rows.
+  - Added regression coverage: unit `test_cryptosuite_metadata_set_rejects_success`; sourced tag `cryptosuite-readonly-doc` with 20 cases and evidence-backed repair metadata.
+  - Verification: targeted unit OK, `run_sourced_edges.py --tag cryptosuite-readonly-doc` passed `20 / 0`, full unit `1245 OK`, synthetic `7349 / 0`, sourced `4047 / 0`, public eval `100.00`, score probe loop completed with no mismatches, doc coverage increased to `833 / 1376` with untriaged A/B still `0`.
+  - Dashboard relevance: Low-medium. This is a clean package/crypto metadata false PASS, likely less score-sensitive than Locking/AccessControl but safely grounded and narrow.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited remaining read-only false PASS probes around certificate metadata.
+  - Found a concrete solver gap: `Certificates` / `Certificate` accepted host `Set` success for columns `0` UID, `1` Name, and `2` CommonName.
+  - Official evidence: Core Certificates table defines UID as non-modifiable, and Name/CommonName as non-modifiable for Certificates objects that exist at issuance.
+  - Repair: `semantics.py::_invalid_set_values` now rejects columns `0/1/2` only for exact `Certificates` / `Certificate` targets. `Certificates_Test` and CertData/CertSize columns remain unaffected to avoid overgeneralizing beyond the document wording.
+  - Added regression coverage: unit tests `test_issued_certificates_metadata_set_rejects_success` and `test_created_certificate_test_row_metadata_remains_settable`; sourced tag `certificates-issued-readonly-doc` with 14 cases and evidence-backed repair metadata.
+  - Verification: targeted unit OK, `run_sourced_edges.py --tag certificates-issued-readonly-doc` passed `14 / 0`, full unit `1247 OK`, synthetic `7349 / 0`, sourced `4061 / 0`, public eval `100.00`, score probe loop completed with no mismatches, doc coverage increased to `837 / 1376` with untriaged A/B still `0`.
+  - Dashboard relevance: Low-medium. This is a safe official-doc false PASS in certificate metadata; it is less likely than Locking/AccessControl to be score-dense but fits the issued read-only pattern that previously moved score.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited remaining LogList read-only probes.
+  - Found a narrow false PASS: exact `LogList` / `LogListTable` direct `Set` accepted success, even though concrete LogList rows already rejected read-only cells and only allow `HighSecurity`.
+  - Official evidence: LogList is the object table for log-table metadata. UID/Name/CommonName/Log/Serial are not host-modifiable, while HighSecurity is a row cell controlled on concrete LogList objects, not by blanket table-target Set.
+  - Repair: `semantics.py::_invalid_set_values` now rejects direct Set on `LogList` / `LogListTable`, while preserving concrete row behavior such as `LogList_Audit.HighSecurity` Set.
+  - Added regression coverage: unit `test_loglist_table_direct_set_rejects_success`; sourced `loglist-readonly-doc` gained the exact table-target impossible-success case.
+  - Verification: targeted unit OK, `run_sourced_edges.py --tag loglist-readonly-doc` passed `3 / 0`, full unit `1248 OK`, synthetic `7349 / 0`, sourced `4062 / 0`, public eval `100.00`, score probe loop completed with no mismatches, doc coverage stayed `837 / 1376` with untriaged A/B still `0`.
+  - Dashboard relevance: Low. This closes a table-vs-row false PASS in Log metadata without touching CreateLog or HighSecurity row mutation.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited LogEntry alias handling after LogList repair and found another narrow false PASS:
+    - `LogEntry` and `LogEntry_1` accepted successful direct `Set` of Log table row cells such as Data, while `Log_Row1` was already rejected.
+    - The official Log table model exposes log entries through Log table methods; existing Log entries/row cells are TPer log data, not host-modifiable object rows.
+  - Repair: `semantics.py::_invalid_set_values` now treats `LogEntry` and `LogEntry_*` as Log row aliases for the existing read-only row rule.
+  - Added regression coverage: `test_log_entry_rows_are_not_host_modifiable` now includes `LogEntry_1`; sourced `log-entry-readonly-expanded-doc` gained the alias Data-column impossible-success case.
+  - Verification: direct fuzz fixed for `LogEntry`, `LogEntry_1`, `Log_Row1`, and `Log_Audit`; targeted unit OK; `run_sourced_edges.py --tag log-entry-readonly-expanded-doc` passed `13 / 0`; full unit `1248 OK`; synthetic `7349 / 0`; sourced `4063 / 0`; public eval `100.00`; score probe loop completed with no mismatches; doc coverage stayed `837 / 1376` with untriaged A/B still `0`.
+  - Dashboard relevance: Low. This is a safe alias closure for Log row immutability, less likely to be score-dense than Locking/DataStore/AccessControl but useful against private naming variants.
+- 2026-06-05 KST - Continued no-submit score-relevant loop with parallel subagent audit:
+  - Local DataStore probe found a wrapper valid-current false FAIL:
+    - `writeDataStore(offsetBytes=5, buffer=AABBCC)` followed by `readDataStore(offsetBytes=6, sizeBytes=2)` rejected the correct `BBCC` window.
+    - Repair: parser byte-table aliases now treat `offsetBytes` as a byte offset and `sizeBytes` as a byte-window length in top-level kwargs and shared byte-table helpers.
+  - C_PIN/Auth subagent found an official Authenticate false PASS/FAIL pair:
+    - `Authenticate(Authority=TPerSign, Proof=nonce)` and enabled `AdminExch` with Proof were accepted as `SUCCESS False`, but Core says Proof supplied to a non-Password/non-Anybody authority in Awaiting Challenge state returns `INVALID_PARAMETER` with empty result.
+    - Repair: `_expected_authenticate` checks issued authority operation before the TPerSign/disabled false-result branches.
+  - Locking subagent found optional-feature false FAILs:
+    - `LockOnReset=[0,1]` / `[0,1,3]` and `MBRControl.DoneOnReset=[0,1]` / `[0,1,3]` with `INVALID_PARAMETER` were rejected.
+    - Repair: `_expected_set` now allows either `SUCCESS` or `INVALID_PARAMETER` for Hardware-containing reset lists that Opal marks MAY-support, while mandatory `{0}` and `{0,3}` remain successful.
+  - AccessControl subagent found an unsourced self-association false PASS:
+    - `GetACL(InvokingID=AccessControl, MethodID=SetACL)` accepted `SUCCESS`, but the extracted Core meta-method set covers `GetACL`, `AddACE`, `RemoveACE`, and `DeleteMethod`; no `SetACL` section or `SetACLACL` metadata column exists.
+    - Repair: `SetACL` is now treated as a meta-ACL method name for association-existence checks, so querying its AccessControl row returns absent/unauthorized instead of successful.
+  - Added regression coverage: 5 unit tests; sourced cases for `auth-operation-doc`, `locking-reset-list-restrictions-no-mutation-doc`, and `accesscontrol-meta-self-association-doc`; score probe gained the DataStore `offsetBytes`/`sizeBytes` alias pair.
+  - Verification: targeted units OK; targeted sourced tags OK; score probe loop completed with no mismatches; full unit `1253 OK`; synthetic `7349 / 0`; sourced `4078 / 0`; public eval `100.00`; doc coverage `837 / 1376`, untriaged A/B `0`.
+  - Dashboard relevance: Medium-high for Authenticate and AccessControl because both are private-test-shaped official rule boundaries; medium for Locking optional reset rejection; low-medium for DataStore alias unless private uses SDK-style byte-window names.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited Core GenKey family semantics after a local probe showed valid credential GenKey success was being rejected.
+  - Found concrete false FAILs: `C_RSA_1024/2048.GenKey` with omitted/default or explicit `PublicExponent=65537`, plus `C_AES_128`, `C_HMAC_160`, and `C_EC_256` GenKey without special parameters. `H_SHA_256` remains invalid because H_SHA is not in the GenKey target family list.
+  - Repair: `GenKey` association and expected-response logic now covers Core's C_AES_*, K_AES_*, C_EC_*, C_PIN, C_RSA_*, and C_HMAC_* target families. `PublicExponent` is allowed only for C_RSA, `PinLength` only for C_PIN, and all successful credential-family GenKey responses require an empty result.
+  - Added regression coverage: 5 unit tests and sourced `genkey-credential-family-doc` cases, plus expanded `genkey-result-shape-doc` for RSA/AES/HMAC/EC.
+  - Dashboard relevance: Medium. This closes valid-success false negatives in package/crypto credential methods, a likely private-test side cluster even if less historically dense than Locking/AccessControl.
+- 2026-06-05 KST - Continued no-submit score-relevant loop with subagent findings:
+  - Audited non-password session startup authorities after a subagent found `MakerPuK`/`MakerSymK` challenge-response startup false FAIL/PASS pairs.
+  - Found false FAILs: `StartSession(HostSigningAuthority=MakerPuK|MakerSymK)` without `HostChallenge` but with returned `SPChallenge` was rejected as if the authority were password-based.
+  - Found false PASSes: after `SyncSession` returned `SPChallenge`, `StartTrustedSession` without `HostResponse` was accepted, and ordinary methods could run before the trusted half completed.
+  - Repair: session state now tracks `startup_sp_challenge` and `trusted_startup_pending`; Sign/SymK/HMAC startup authorities require returned `SPChallenge` instead of input `HostChallenge`; `StartTrustedSession` requires `HostResponse` when `SPChallenge` was returned; ordinary SP methods are blocked until trusted startup completes.
+  - Added regression coverage: 6 unit tests and 6 sourced `session-startup-security-long-doc` cases.
+  - Dashboard relevance: High. This is a state-machine correction in session startup, with both false reject and false accept surfaces and official Core wording.
+- 2026-06-05 KST - Continued no-submit score-relevant loop with crypto/MBR ACL audit:
+  - Audited Crypto Template cellblock access after a subagent found MBR BufferOut and XOR DeletePattern false PASSes.
+  - Found false PASSes: `HashInit/Encrypt/XOR` with `BufferOut` pointing at MBR succeeded for read-only or unauthenticated Locking sessions, and `XOR(DeletePattern=True)` succeeded for DataStore/MBR PatternInput without Set ACL authority.
+  - Repair: byte-table cellblock access checks now cover both DataStore and MBR. MBR input cellblocks remain readable by Anybody, but MBR output/zeroing paths require write session plus Admins Set authority. `_explicit_byte_table_ref_symbol` now recognizes sibling `Table` fields before descending into nested `CellBlock`.
+  - Added regression coverage: 3 unit tests, 2 sourced `crypto-cellblock-accesscontrol-doc` MBR cases, and 3 sourced `xor-byte-table-bufferout-doc` MBR/DeletePattern cases.
+  - Verification after GenKey + session startup + crypto/MBR repairs: unit `1267 OK`; synthetic `7349 / 0`; sourced `4105 / 0`; public eval `100.00`; doc coverage `837 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This targets a private-test-shaped boundary where crypto method success depends on cross-table ACL semantics rather than only result shape.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited CreateTable/CreateRow schema handling after subagent flagged named `Columns` false PASSes.
+  - Found concrete false PASSes: a created object table declared with named column definitions like `[["Entry", "uid"], ["Tag", "name"]]` accepted `CreateRow` success with only column `1`, or with undeclared column `99`, because the named schema collapsed to an empty declared-column set.
+  - Official evidence: Core `CreateTable.Columns` uses host-supplied column names and type uidrefs, and the ordering of those named values determines the created table columns. Core `CreateRow` requires values for every column, and columns not in the table definition are invalid.
+  - Repair: `_create_table_column_schema` now preserves numeric definitions and assigns ordered column numbers to name/type definitions, including unique/non-unique grouped lists.
+  - Added regression coverage: 3 unit tests and 3 sourced `create-row-unique-columns-doc` cases for named Columns success, missing column rejection, and undeclared column rejection.
+  - Verification: targeted unit OK; targeted sourced tag `13 / 0`; full unit `1270 OK`; synthetic `7349 / 0`; sourced `4108 / 0`; public eval `100.00`; doc coverage `837 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This is a direct false PASS repair in dynamic table lifecycle behavior, and private tests often use human-readable column-name schema rather than numeric-only schema.
+- 2026-06-05 KST - Continued no-submit score-relevant loop:
+  - Audited CreateRow side-effect ACE associations after subagent flagged a dynamic AccessControl false FAIL.
+  - Found concrete false FAIL: after a created row's GetACL returned the new side-effect ACE UID, `GetACL(InvokingID=<that ACE>, MethodID=Get)` with the same ACE UID in the ACL was rejected as if the ACE object association did not exist.
+  - Official evidence: Core CreateRow creates AccessControl rows for the created object's default methods, creates a new ACE for those AccessControl rows, and creates additional AccessControl rows for that new ACE's methods referencing that same ACE.
+  - Repair: when a successful created-row GetACL response reveals ACE uidrefs, the solver records those observed side-effect ACEs and permits their Get/Set/Delete method associations with self-referential ACL expectations. Row/table deletion removes and tombstones those observed side-effect ACE associations.
+  - Added regression coverage: 2 unit tests and 2 sourced `created-row-accesscontrol-doc` cases.
+  - Verification: targeted unit OK; targeted sourced tag `14 / 0`; full unit `1272 OK`; synthetic `7349 / 0`; sourced `4110 / 0`; public eval `100.00`; doc coverage `837 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This is a dynamic AccessControl lifecycle correction, and AccessControl association existence/ACL exactness has been one of the most score-sensitive clusters.
+- 2026-06-06 KST - Continued no-submit score-relevant loop:
+  - Audited Random `BufferOut` cellblock semantics after Crypto/MBR ACL repairs.
+  - Found concrete false PASSes:
+    - `Random(BufferOut=DataStore cellblock)` succeeded after the DataStore Set ACE BooleanExpr was emptied.
+    - `Random(BufferOut=MBR cellblock)` succeeded in a Locking session without MBR Set authority.
+  - Official evidence: Core Random declares `BufferOut = cell_block`, says successful `BufferOut` returns an empty Result, and its fails section says Random fails when Set access control is not satisfied for BufferOut. Core Crypto Template cellblock rules also require Set access on output buffers.
+  - Repair: `_expected_random` now invokes the shared byte-table cellblock access check before accepting `BufferOut` success, so DataStore and MBR output buffers follow the same Set ACL rule already used by Encrypt/Hash/Sign/XOR.
+  - Added regression coverage: 2 unit tests and sourced tag `random-bufferout-cellblock-acl-doc` with 2 official-doc-backed false-PASS cases.
+  - Verification: targeted unit OK; `run_sourced_edges.py --tag random-doc` `6 / 0`; `run_sourced_edges.py --tag random-bufferout-cellblock-acl-doc` `2 / 0`; direct probes now FAIL as expected; full unit `1274 OK`; synthetic `7349 / 0` after updating Random BufferOut wrapper PASS cases to run under an authorized Locking Admin session; sourced `4112 / 0`; public eval `100.00`; doc coverage `838 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This is a cross-feature Random + byte-table ACL boundary, more private-test-shaped than simple Random result-length checks and close to the MBR/DataStore areas that have historically mattered.
+- 2026-06-06 KST - Continued no-submit AccessControl association audit:
+  - Audited `ThisSP` association scope after confirming DataStore/MBR SP-method associations were already rejected.
+  - Found a narrow false PASS: `GetACL(InvokingID=ThisSP, MethodID=Get|Set)` was accepted because generic object `Get`/`Set` association logic ran before SP-method-specific `ThisSP` handling.
+  - Official evidence: Opal preconfigures concrete `ThisSP` AccessControl rows for SP methods such as `Authenticate`, `Random`, and Locking `RevertSP`; Core defines other SP methods such as `GetFreeSpace` on `ThisSP`. No generic `ThisSP/Get` or `ThisSP/Set` AccessControl rows are listed.
+  - Repair: `_combo_exists_for_get_acl` now rejects generic `Get` and `Set` when the parameterized InvokingID is exactly `ThisSP`, while preserving `ThisSP/Authenticate`, `ThisSP/Random`, `ThisSP/RevertSP`, and `ThisSP/GetFreeSpace`.
+  - Added regression coverage: 1 unit test with `Get`/`Set` subcases and 2 sourced `accesscontrol-sp-method-scope-doc` cases.
+  - Verification: targeted unit OK; `run_sourced_edges.py --tag accesscontrol-sp-method-scope-doc` `20 / 0`; direct probes confirm only `ThisSP/Get` and `ThisSP/Set` changed to FAIL; full unit `1275 OK`; synthetic `7349 / 0`; sourced `4116 / 0`; public eval `100.00`; doc coverage `838 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This is directly in the AccessControl association-existence cluster that has been score-sensitive, and the fix is intentionally narrower than the earlier risky association generalizations.
+- 2026-06-06 KST - Continued no-submit Random BufferOut capacity audit:
+  - Audited the remaining Random fails condition after the BufferOut Set-ACL repair.
+  - Found concrete false PASS: an authorized `Random(Count=4, BufferOut=DataStore rows 0..1)` with empty success result was accepted even though the output range can hold only two bytes.
+  - Official evidence: Core Random Count is the generated byte count, BufferOut identifies cells where those bytes are stored, and the Random fails section says the method fails if BufferOut is not big enough to hold Count bytes.
+  - Repair: `_expected_random` now computes known byte-table BufferOut cellblock capacity from explicit row-window aliases and rejects success when capacity is less than Count. The repair deliberately does not infer capacity from abstract column-only cellblocks such as `startColumn/endColumn`, where byte capacity is not known from the local trajectory.
+  - Added regression coverage: 1 unit test with too-small and exact-fit subcases; sourced tag `random-bufferout-capacity-doc` with 1 PASS and 1 FAIL case.
+  - Verification: targeted unit OK; `run_sourced_edges.py --tag random-doc` `6 / 0`; `run_sourced_edges.py --tag random-bufferout-capacity-doc` `2 / 0`; existing Random BufferOut ACL sourced tag still `2 / 0`; direct probes now reject too-small row ranges, preserve exact-fit row ranges, and preserve abstract column-only BufferOut success; full unit `1276 OK`; synthetic `7349 / 0`; sourced `4118 / 0`; public eval `100.00`; doc coverage `838 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This is a precise official Random edge case combining Count, byte-table cellblock sizing, and BufferOut result shape.
+- 2026-06-06 KST - Continued no-submit Encrypt/Decrypt BufferOut capacity audit:
+  - Extended the BufferOut capacity probe from Random to Crypto Template stream update methods.
+  - Found concrete false PASSes: authorized `Encrypt` and `Decrypt` with open streams accepted success when direct input was four bytes but DataStore BufferOut addressed only rows 0..1.
+  - Official evidence: Core Encrypt/Decrypt fails sections require DataInput byte size to be the same size as or smaller than the BufferOut/Result cell size when BufferOut is specified.
+  - Repair: `_expected_crypto_stream_method` now compares direct input byte length against explicit byte-table BufferOut row-window capacity before accepting empty-result `Encrypt`/`Decrypt` BufferOut success.
+  - Added regression coverage: 1 unit test with Encrypt/Decrypt too-small and exact-fit subcases; sourced tag `crypto-bufferout-capacity-doc` with 4 cases.
+  - Verification: targeted unit OK; `run_sourced_edges.py --tag crypto-bufferout-capacity-doc` `4 / 0`; direct probes now reject oversized input and preserve exact-fit input for both Encrypt and Decrypt; full unit `1277 OK`; synthetic `7349 / 0`; sourced `4122 / 0`; public eval `100.00`; doc coverage `838 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This is another compact official BufferOut edge case in Crypto Template stream behavior, adjacent to previous DataStore/MBR ACL fixes.
+- 2026-06-06 KST - Continued no-submit HashInit BufferOut capacity audit:
+  - Extended BufferOut sizing checks from Random and Encrypt/Decrypt to hash initialization.
+  - Found concrete false PASS: authorized `HashInit(H_SHA_256, BufferOut=DataStore rows 0..1)` accepted empty-result success even though the output cellblock can hold only two bytes and the H_SHA_256 hash result is 32 bytes.
+  - Official evidence: Core `HashInit` fails if BufferOut is specified and is not larger than or equal to the size of the hash calculation result; H_SHA_256 declares 32-byte hash-state fields.
+  - Repair: `_expected_crypto_stream_method` now checks explicit byte-table row-window capacity for `HashInit` against the invoking H_SHA result width. The repair deliberately does not infer capacity from abstract `Bytes` placeholders or column-only cellblocks.
+  - Added regression coverage: 1 unit test with 31-byte FAIL and 32-byte PASS subcases; sourced tag `hashinit-bufferout-capacity-doc` with 2 cases.
+  - Verification: targeted unit OK; `run_sourced_edges.py --tag hashinit-bufferout-capacity-doc` `2 / 0`; full unit `1278 OK`; synthetic `7349 / 0`; sourced `4124 / 0`; public eval `100.00`; doc coverage `838 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This is a precise official Crypto Template boundary combining hash algorithm width, byte-table BufferOut sizing, and stream initialization.
+- 2026-06-06 KST - Continued no-submit HMACFinalize BufferOut capacity audit:
+  - Audited the stateful HMAC counterpart of the hash BufferOut capacity rule.
+  - Found concrete false PASS: after `HMACInit(H_SHA_256, BufferOut=DataStore rows 0..30)`, `HMACFinalize` accepted success even though the remembered output cellblock is shorter than the 32-byte H_SHA_256 HMAC result.
+  - Official evidence: Core `HMACInit` supplies the BufferOut cellblock for the HMAC result, and `HMACFinalize` fails if the specified BufferOut cellblock is not larger than or equal to the HMAC result.
+  - Repair: stream state now preserves the actual Init BufferOut value in `State.crypto_stream_bufferout_value`, and `_expected_crypto_stream_method` checks that remembered capacity at `HMACFinalize`. The rule only rejects known too-small explicit row-window cellblocks and remains lenient for unknown-capacity abstractions.
+  - Added regression coverage: 1 unit test with 31-byte FAIL and 32-byte PASS subcases; sourced tag `hmac-finalize-bufferout-capacity-doc` with 2 cases.
+  - Verification: targeted unit OK; `run_sourced_edges.py --tag hmac-finalize-bufferout-capacity-doc` `2 / 0`; full unit `1279 OK`; synthetic `7349 / 0`; sourced `4126 / 0`; public eval `100.00`; doc coverage `838 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This is a stateful Crypto Template edge case and extends the BufferOut sizing cluster without broadening unrelated parameter validation.
+- 2026-06-06 KST - Continued no-submit Verify cellblock ACL audit:
+  - Audited Verify after the crypto cellblock repairs and found that Verify had only result-shape validation.
+  - Found concrete false PASSes: after emptying the DataStore Get ACE BooleanExpr, `Verify` still accepted `SUCCESS True` when either the data input or the proof used a DataStore cellblock.
+  - Official evidence: Core Verify allows cellblocks for both DataInput and Proof/ProofBuffer, and fails when Get access control on those cellblocks is not fulfilled.
+  - Repair: `_expected_verify` now invokes the shared crypto byte-table cellblock access checker. The checker now examines all relevant input argument names instead of stopping at the first present input, so `Input={Data: ...}` no longer masks a separate `Data={ProofBuffer: ...}` cellblock.
+  - Added regression coverage: 1 unit test with data-input and proof-buffer subcases; sourced tag `verify-cellblock-accesscontrol-doc` with 2 cases.
+  - Verification: targeted unit OK; `run_sourced_edges.py --tag verify-cellblock-accesscontrol-doc` `2 / 0`; existing `crypto-cellblock-accesscontrol-doc` remains `12 / 0`; full unit `1280 OK`; synthetic `7349 / 0`; sourced `4128 / 0`; public eval `100.00`; doc coverage `838 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This closes a direct false PASS in Verify, adjacent to the Crypto Template ACL cluster and likely to appear in private tests that vary Input versus ProofBuffer cellblock placement.
+- 2026-06-06 KST - Continued no-submit Verify target-family audit:
+  - Audited Verify object-family scope after the Verify ACL repair.
+  - Found concrete false PASSes: `Verify SUCCESS True` was accepted on `K_AES_256`, `C_AES_256`, and `C_PIN_SID`, even though Verify is defined only for public key credentials or hash objects.
+  - Official evidence: Core verifying section splits invocation into public key credential Verify and hash object Verify; public key verification is RSA/EC-style, and hash-object verification is on H_SHA.
+  - Repair: `_expected_verify` now rejects successful Verify on non-H_SHA, non-C_RSA, non-C_EC concrete target families while preserving valid H_SHA/RSA/EC targets. Explicit valid invoking names are honored before UID-derived aliases to avoid over-rejecting existing name-rich traces with ambiguous sample UIDs.
+  - Added regression coverage: 1 unit test with invalid K_AES/C_AES/C_PIN and valid H_SHA/C_RSA/C_EC subcases; sourced tag `verify-target-family-doc` with 6 cases.
+  - Verification: targeted unit OK; `run_sourced_edges.py --tag verify-target-family-doc` `6 / 0`; full unit `1281 OK`; synthetic `7349 / 0`; sourced `4134 / 0`; public eval `100.00`; doc coverage `839 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This fixes a broad false PASS class in a cryptographic method that private tests can easily vary by target object family.
+- 2026-06-06 KST - Continued no-submit Sign target-family audit:
+  - Audited Sign after the Verify target-family repair.
+  - Found concrete false PASSes: `Sign SUCCESS` was accepted on `K_AES_256`, `C_AES_256`, and `C_PIN_SID`, and public-key `Sign` on `C_RSA_2048`/`C_EC_256` accepted success even when no input data or input cellblock was supplied.
+  - Official evidence: Core signing section defines Sign on a public key credential with private key such as C_RSA/C_EC, or on an H_SHA hash object that references such a credential. Public-key credential signing signs supplied input data or a referenced input cellblock; H_SHA signing may omit input and sign the Accumulator.
+  - Repair: `_expected_sign` now rejects non-H_SHA/non-C_RSA/non-C_EC generic targets and requires input for C_RSA/C_EC Sign. TPerSign special handling is unchanged. Existing wrapper/synthetic shape cases were corrected from C_AES to C_RSA targets so they continue testing result shape without contradicting the official target-family rule.
+  - Added regression coverage: 2 unit tests with invalid K_AES/C_AES/C_PIN, valid H_SHA/C_RSA/C_EC, and public-key no-input subcases; sourced tag `sign-target-family-doc` with 9 cases.
+  - Verification: targeted unit OK; `run_sourced_edges.py --tag sign-target-family-doc` `9 / 0`; full unit `1283 OK`; synthetic `7349 / 0`; sourced `4143 / 0`; public eval `100.00`; doc coverage `840 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This closes a broad false PASS class parallel to Verify target-family enforcement and is likely private-test-shaped because it only requires swapping the cryptographic target object family.
+- 2026-06-06 KST - Continued no-submit Sign BufferOut capacity audit:
+  - Audited Sign BufferOut sizing after the Sign target-family repair.
+  - Found concrete false PASS: `Sign(C_RSA_2048, Input=4 bytes, BufferOut=DataStore rows 0..1)` accepted empty-result success even though the output row range can hold only two bytes.
+  - Official evidence: Core Sign BufferOut requires the Input byte length to be equal in size to or smaller than the result cellblock, and the fails section rejects invalid/unauthorized BufferOut cellblocks.
+  - Repair: `_expected_sign` now compares known direct input byte length with explicit byte-table BufferOut row-window capacity before accepting empty-result Sign success. Unknown-capacity abstractions remain lenient.
+  - Added regression coverage: 1 unit test with too-small and exact-fit subcases; sourced tag `sign-bufferout-capacity-doc` with 2 cases.
+  - Verification: targeted unit OK; `run_sourced_edges.py --tag sign-bufferout-capacity-doc` `2 / 0`; full unit `1284 OK`; synthetic `7349 / 0`; sourced `4145 / 0`; public eval `100.00`; doc coverage `840 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This extends the official BufferOut capacity cluster to Sign, alongside Random, Encrypt/Decrypt, HashInit, and HMACFinalize.
+- 2026-06-06 KST - Continued no-submit public-key Verify input/proof audit:
+  - Audited public-key Verify argument presence after Verify target-family enforcement.
+  - Found concrete false PASSes: `Verify(C_RSA_2048) SUCCESS True` was accepted with no input/proof, with input only, and with proof only.
+  - Official evidence: public-key credential Verify compares supplied DataInput against supplied Proof using the invoking public key. H_SHA Verify may default omitted values to the hash object's Proof and Accumulator columns, but the public-key credential path provides only direct bytes or cellblocks for both values.
+  - Repair: `_expected_verify` now requires both input data and proof data for C_RSA/C_EC targets, while preserving H_SHA omitted-input/proof behavior.
+  - Added regression coverage: 1 unit test with missing input/proof subcases and valid public-key/hash controls; sourced tag `verify-publickey-input-proof-doc` with 5 cases.
+  - Verification: targeted unit OK; `run_sourced_edges.py --tag verify-publickey-input-proof-doc` `5 / 0`; full unit `1285 OK`; synthetic `7349 / 0`; sourced `4150 / 0`; public eval `100.00`; doc coverage `840 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This closes another broad false PASS class in Verify that private tests can exercise with short trajectories.
+- 2026-06-08 KST - Continued no-submit package Authority/Credential boundary audit:
+  - Audited key-package method scope after the crypto target-family work.
+  - Found concrete false PASSes: `GetPackage(TPerSign)` and `SetPackage(TperAttestation)` were accepted because the solver treated those Authority rows as CredentialObjectUID targets; `GetPackage(C_PIN_SID, SigningKey=TPerSign)` was likewise accepted as if an Authority row were a valid signing credential.
+  - Official evidence: Core `GetPackage`/`SetPackage` are `CredentialObjectUID` methods and WrappingKey/SigningKey parameters are uidrefs to credential objects. The TPerSign/TPerExch authority section says those are Authority rows whose Credential column locates the TPer credential; the Authority row itself is not the credential object.
+  - Repair: `_is_credential_symbol` no longer classifies `TPerSign` or `TperAttestation` as credential objects. This preserves `TPerSign.Sign` and `TperAttestation.FirmwareAttestation` through their dedicated method rules while closing package-method misuse.
+  - Added regression coverage: 3 unit tests and 3 sourced `package-doc` cases for authority target/signing-key misuse.
+  - Verification: package unit slice `12 OK`; `run_sourced_edges.py --tag package-doc` `13 / 0`; direct AccessControl probe now leaves `TPerSign/Sign` and `TperAttestation/FirmwareAttestation` open while closing `GetPackage`/`SetPackage` on those authority objects; full unit `1288 OK`; synthetic `7349 / 0`; sourced `4174 / 0`; public eval `100.00`; doc coverage `840 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium. This is a short-trajectory false PASS in official package-method typing, and it reduces a risky broad credential classification without touching the known TPer signing/attestation method paths.
+- 2026-06-08 KST - Continued no-submit Sign/Verify unissued crypto-family audit:
+  - Audited the concrete crypto family-size boundary after target-family enforcement.
+  - Found concrete false PASSes: `Sign`/`Verify` on `C_RSA_3072`, `C_RSA_4096`, `C_EC_571`, and `H_SHA_224` were accepted because the solver used only broad `C_RSA_`, `C_EC_`, and `H_SHA_` prefixes.
+  - Official evidence: Core lists concrete C_RSA credential table groups only for 1024/2048, C_EC groups for 160/163/192/224/233/256/283/384/521, and H_SHA support objects for 1/256/384/512. Sign/Verify are defined on those public-key credential/hash object families, not arbitrary unissued sizes.
+  - Repair: added `_invalid_concrete_sign_verify_target` and wired it into `_expected_sign` and `_expected_verify`. Existing issued families and instance names such as `H_SHA_512_Test` remain valid; ambiguous `Unknown*` targets remain lenient.
+  - Added regression coverage: 2 unit tests with invalid family-size subcases and 8 sourced `sign-target-family-doc` / `verify-target-family-doc` cases.
+  - Verification: targeted unit slice `4 OK`; `verify-target-family-doc` `10 / 0`; `sign-target-family-doc` `13 / 0`; direct matrix now preserves `C_RSA_1024/2048`, `C_EC_256`, `H_SHA_1/256/512`, and `H_SHA_512_Test`, while rejecting `C_RSA_3072/4096`, `C_EC_571`, and `H_SHA_224`; full unit `1290 OK`; synthetic `7349 / 0`; sourced `4182 / 0`; public eval `100.00`; doc coverage `840 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This is a compact official false PASS family in score-sensitive crypto target selection; private tests can trigger it with one target-name substitution.
+- 2026-06-08 KST - Continued no-submit Hash/HMAC unissued H_SHA-family audit:
+  - Extended the unissued crypto-family probe from Sign/Verify to hash stream initialization.
+  - Found concrete false PASSes: `HashInit(H_SHA_224)` and `HMACInit(H_SHA_224)` accepted empty-result success because stream object validation only checked the `H_SHA_` prefix.
+  - Official evidence: Core H_SHA support object families are H_SHA_1, H_SHA_256, H_SHA_384, and H_SHA_512. HashInit/HMACInit open streams on H_SHA hash objects; an unissued family such as H_SHA_224 is not a valid concrete target.
+  - Repair: `_crypto_stream_object_error` now reuses the concrete crypto-family whitelist for Hash/HMAC stream targets. Valid issued families and instance names such as `H_SHA_512_Test` remain valid.
+  - Added regression coverage: 1 unit test with HashInit/HMACInit invalid and valid-instance subcases; 2 sourced `hash-stream-state-bufferout-tight-doc` impossible-success cases.
+  - Verification: targeted unit slice `3 OK`; `hash-stream-state-bufferout-tight-doc` `9 / 0`; direct matrix preserves H_SHA_1/256/384/512 and `H_SHA_512_Test` while rejecting H_SHA_224; full unit `1291 OK`; synthetic `7349 / 0`; sourced `4184 / 0`; public eval `100.00`; doc coverage `840 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This is the same compact family-size boundary as the Sign/Verify repair, now applied to stream Init methods.
+- 2026-06-08 KST - Continued no-submit Encrypt/Decrypt target-object audit:
+  - Audited encryption/decryption stream target scope after tightening H_SHA streams.
+  - Found broad false PASSes: `EncryptInit`/`DecryptInit` accepted success on non-encryption objects such as `C_PIN_SID`, `C_HMAC_256`, `TPerSign`, `LockingInfo`, `DataStore`, and unissued `C_AES_512`.
+  - Official evidence: Core Encrypt/Decrypt streams use the invoking credential/key object's key, mode, and residual-data behavior. C_AES and K_AES-style key rows are encryption-capable; password credentials, HMAC credentials, Authority rows, byte tables, metadata objects, and unissued AES sizes are not valid stream targets.
+  - Repair: added `_encrypt_decrypt_target_allowed` and wired it through `_crypto_stream_object_error` for Encrypt/Decrypt methods. Existing `K_AES_256_Range1_Key`, `K_AES_256_GlobalRange_Key`, and issued `C_AES_128/256` paths remain valid.
+  - Added regression coverage: 1 unit test with EncryptInit/DecryptInit invalid-target subcases; 12 sourced `crypto-stream-state-tight-doc` impossible-success cases.
+  - Verification: targeted unit slice `3 OK`; `crypto-stream-state-tight-doc` `25 / 0`; direct matrix preserves K_AES key rows and C_AES_256 while rejecting C_PIN, C_HMAC, TPerSign, LockingInfo, DataStore, H_SHA, and C_AES_512 targets; full unit `1292 OK`; synthetic `7349 / 0`; sourced `4196 / 0`; public eval `100.00`; doc coverage `840 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This closes a broad one-step false PASS class in Crypto Template stream target selection.
+- 2026-06-08 KST - Continued no-submit crypto-family Get/Set existence audit:
+  - Audited ordinary `Get`/`Set` after the Sign/Verify/Hash/Encrypt family-size repairs.
+  - Found concrete false PASSes: `Get SUCCESS` was accepted for unissued concrete family rows `C_AES_512`, `C_HMAC_128`, `C_RSA_4096`, `C_EC_571`, and `H_SHA_224`; `Set SUCCESS` was also accepted for `C_HMAC_128`, `C_EC_571`, and `H_SHA_224`.
+  - Official evidence: Core enumerates concrete credential/hash table groups only for C_RSA_1024/2048, C_AES_128/256, C_EC_160/163/192/224/233/256/283/384/521, C_HMAC_160/256/384/512, and H_SHA_1/256/384/512.
+  - Repair: added `_invalid_concrete_crypto_family_target` and applied it to `_expected_get` and `_expected_set`; `_invalid_concrete_sign_verify_target` now delegates to the shared family whitelist. Issued families and instance names such as `H_SHA_512_Test` remain valid.
+  - Added regression coverage: 2 unit tests and 12 sourced `crypto-family-get-doc` cases covering issued-row controls and impossible-success unissued-family `Get`/`Set`.
+  - Verification: targeted unit `2 OK`; `crypto-family-get-doc` `12 / 0`; direct matrix now rejects the unissued family rows while preserving issued `Get` targets and valid `H_SHA_512_Test`; full unit `1294 OK`; synthetic `7349 / 0`; sourced `4208 / 0`; public eval `100.00`; doc coverage `840 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This closes a short, score-shaped false PASS family that private tests can trigger with a one-token target-family substitution.
+- 2026-06-08 KST - Continued no-submit H_SHA Set fixed-bytes audit:
+  - Audited fixed-byte crypto column validation after the family-existence repair.
+  - Found concrete false PASS: `Set(H_SHA_256.Accumulator="AA")` and related short Proof/Accumulator writes were accepted even though H_SHA Proof/Accumulator columns are fixed bytes_20/32/48/64 depending on the family.
+  - Official evidence: Core H_SHA_1/256/384/512 table descriptions declare Proof column 0x03 and Accumulator column 0x04 as bytes_20, bytes_32, bytes_48, and bytes_64 respectively.
+  - Repair: added `_hsha_fixed_length` and extended `_invalid_set_values` so successful H_SHA Proof/Accumulator `Set` must provide exactly the declared fixed byte length. Existing fixed-byte Get validation remains unchanged.
+  - Added regression coverage: 1 unit test and 16 additional sourced `hsha-fixed-bytes-doc` Set cases, raising that tag to 32 cases.
+  - Verification: targeted unit `2 OK`; `hsha-fixed-bytes-doc` `32 / 0`; direct matrix preserves exact-length H_SHA Set and rejects short values; full unit `1295 OK`; synthetic `7349 / 0`; sourced `4224 / 0`; public eval `100.00`; doc coverage `840 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This closes a compact typed-column false PASS that private tests can express with a single short byte string in a credential table Set.
+- 2026-06-08 KST - Continued no-submit C_EC uinteger Set type audit:
+  - Audited C_EC curve parameter Set typing after the H_SHA fixed-byte repair.
+  - Found concrete false PASSes: `Set(C_EC_256.p=True)`, `Set(C_EC_256.p=-1)`, and `Set(C_EC_256.p="not-int")` were accepted, even though C_EC curve columns before Hash are uinteger_N fields.
+  - Official evidence: Core C_EC table descriptions declare curve parameter columns such as p/r/b/x/y/alpha/u/v as uinteger_N fields; e.g. C_EC_256 uses uinteger_36, C_EC_384 uses uinteger_48, and C_EC_521 uses uinteger_66.
+  - Repair: added `_cec_uinteger_columns_invalid` and wired it into `_invalid_set_values`; uinteger curve parameter Set values now reject booleans, negative numbers, and nonnumeric text while preserving nonnegative numeric values.
+  - Added regression coverage: 1 unit test and 5 sourced `cec-uinteger-set-type-doc` cases.
+  - Verification: targeted unit `1 OK`; `cec-uinteger-set-type-doc` `5 / 0`; direct probe rejects bool/negative/text and preserves 0/1; full unit `1296 OK`; synthetic `7349 / 0`; sourced `4229 / 0`; public eval `100.00`; doc coverage `840 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This closes another short typed-column false PASS in a credential table family private tests can vary by column and EC family.
+- 2026-06-08 KST - Continued no-submit C_EC uinteger Get return audit:
+  - Audited C_EC curve parameter `Get` return typing after the Set-side repair.
+  - Found concrete false PASSes: `Get(C_EC_256.p)` accepted returned cells `True`, `-1`, and `"not-int"` even though the same curve parameter columns are uinteger_N fields.
+  - Official evidence: Core C_EC table descriptions declare curve parameter columns before the Hash column as uinteger_N fields, so successful returned cells for p/r/b/x/y/alpha/u/v must be nonnegative numeric uintegers.
+  - Repair: `_credential_get_column_types` now marks C_EC columns from 0x03 up to the family Hash column as `uinteger`, preserving existing Hash Protocol validation at the Hash column. The generic return-cell validator then rejects bool, negative, and nonnumeric values.
+  - Added regression coverage: 1 unit test and 5 additional sourced `cec-uinteger-set-type-doc` Get cases, raising that tag to 10 cases.
+  - Verification: targeted unit `2 OK`; `cec-uinteger-set-type-doc` `10 / 0`; direct probe rejects bool/negative/text Get cells and preserves 0/1; full unit `1297 OK`; synthetic `7349 / 0`; sourced `4234 / 0`; public eval `100.00`; doc coverage `840 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This closes the read-side mirror of the C_EC typed-column false PASS, which private tests can express without needing a prior Set.
+- 2026-06-08 KST - Continued no-submit C_RSA uinteger Get return audit:
+  - Audited C_RSA key-parameter `Get` return typing after the C_EC typed-column repair.
+  - Found concrete false PASSes: `Get(C_RSA_2048.Pu_Exp)` accepted returned cells `True`, `-1`, and `"not-int"` even though C_RSA Pu_Exp/Mod/Pr_Exp/P/Q/Dmp1/Dmq1/Iqmp are uinteger_N fields.
+  - Official evidence: Core C_RSA_1024 and C_RSA_2048 table descriptions declare columns 0x04 through 0x0B as uinteger_128/256/64 fields depending on family and column.
+  - Repair: `_credential_get_column_types` now marks C_RSA columns 0x04 through 0x0B as `uinteger` returned-cell types. This intentionally leaves ChainLimit and Certificate out because they have distinct signed/reference semantics.
+  - Added regression coverage: 1 unit test and 5 sourced `crsa-uinteger-get-type-doc` cases.
+  - Verification: targeted unit `1 OK`; `crsa-uinteger-get-type-doc` `5 / 0`; direct probe rejects bool/negative/text and preserves 0/65537; full unit `1298 OK`; synthetic `7349 / 0`; sourced `4239 / 0`; public eval `100.00`; doc coverage `840 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This closes a short read-side typed-column false PASS in public-key credential tables, parallel to the C_EC Get repair.
+- 2026-06-08 KST - Continued no-submit public-key ChainLimit Get type audit:
+  - Audited public-key credential ChainLimit `Get` return typing after the RSA uinteger repair.
+  - Found concrete false PASSes: `Get(C_RSA_2048.ChainLimit)` and `Get(C_EC_256.ChainLimit)` accepted returned cells `True` and `"not-int"`.
+  - Official evidence: Core C_RSA and C_EC public-key credential table descriptions declare ChainLimit as `integer_1`/`int_1_def_0`; the ChainLimit text gives integer values special meanings, including `-1` for no limit and `0` for no chain.
+  - Repair: added a conservative signed `integer` returned-cell validator that rejects booleans and nonnumeric text while preserving integer values including `-1`; `_credential_get_column_types` now marks C_RSA and C_EC ChainLimit columns with that type.
+  - Added regression coverage: 1 unit test and 10 sourced `publickey-chainlimit-get-type-doc` cases across C_RSA_2048 and C_EC_256.
+  - Verification: targeted unit `1 OK`; `publickey-chainlimit-get-type-doc` `10 / 0`; direct probe rejects bool/text and preserves `-1/0/1`; full unit `1299 OK`; synthetic `7349 / 0`; sourced `4249 / 0`; public eval `100.00`; doc coverage `843 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium. This closes a compact public-key typed-return false PASS without over-constraining ChainLimit's signed integer semantics.
+- 2026-06-08 KST - Continued no-submit public-key Certificate object-ref Get type audit:
+  - Audited public-key credential Certificate `Get` return typing after the ChainLimit repair.
+  - Found concrete false PASSes: `Get(C_RSA_2048.Certificate)` and `Get(C_EC_256.Certificate)` accepted returned cells `True`, `123`, and `"not-a-reference"`.
+  - Official evidence: Core C_RSA and C_EC public-key credential table descriptions declare Certificate as `Certificates_object_ref`; the Certificate text says this is a reference to a Certificates object identifying a certificate chain when needed.
+  - Repair: added a conservative `Certificates_object_ref` returned-cell validator and marked C_RSA/C_EC Certificate columns with it. UID-like values and Certificate/Certificates-style symbols remain accepted; booleans, integers, and unrelated text are rejected.
+  - Added regression coverage: 1 unit test and 10 sourced `publickey-certificate-ref-get-type-doc` cases across C_RSA_2048 and C_EC_256.
+  - Verification: targeted unit `1 OK`; `publickey-certificate-ref-get-type-doc` `10 / 0`; direct probe rejects bool/int/unrelated text and preserves UID/symbol refs; full unit `1300 OK`; synthetic `7349 / 0`; sourced `4259 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium. This closes a read-side object-reference false PASS in public-key credential metadata while leaving dynamic certificate row references possible.
+- 2026-06-08 KST - Continued no-submit AccessControl object-row Set association audit:
+  - Audited GetACL association existence for preconfigured Opal object rows after the earlier AccessControl score-risk review.
+  - Found concrete false PASSes: GetACL success was accepted for `SPTemplates_Base/Set`, `SPTemplates_Admin/Set`, `Template_1/Set`, `AdminSP/Set`, `LockingSP/Set`, `SecretProtect_1/Set`, and `SecretProtect_2/Set`.
+  - Official evidence: Opal preconfigures those rows/objects for Get or special object-reference access, but does not define host-invoked generic Set associations for them in the fixed Admin/Locking SP method universe.
+  - Repair: `_combo_exists_for_get_acl` now rejects `Set` associations for AdminSP/LockingSP object rows and SPTemplates/Template/SecretProtect rows while preserving known `Get` associations.
+  - Added regression coverage: 2 unit tests and 7 additional sourced `accesscontrol-template-table-method-universe-doc` impossible-success cases.
+  - Verification: targeted unit slice OK; `accesscontrol-template-table-method-universe-doc` `35 / 0`; full unit `1305 OK`; synthetic `7349 / 0`; sourced `4278 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high but score-risky. This is a compact AccessControl false PASS class, so the repair was kept deliberately narrow to avoid repeating the prior broad GetACL score regression.
+- 2026-06-08 KST - Continued no-submit Locking RangeStart-only alignment audit:
+  - Audited alignment postconditions for Set calls that modify only RangeStart while reusing an existing RangeLength.
+  - Found concrete false PASSes: moving RangeStart to zero or from zero accepted success even when the final existing RangeLength violated Opal LengthAlignment. The old guard checked length alignment only when column 4 was present in the current Set.
+  - Official evidence: Opal alignment rules apply to the final non-global Locking range geometry. If AlignmentRequired is true, a nonzero RangeStart or RangeLength must satisfy the StartAlignment and LengthAlignment formulas after Set/CreateRow.
+  - Repair: `_range_values_invalid_for_geometry` now rechecks LengthAlignment whenever a Set creates or changes either RangeStart or RangeLength, using final merged geometry rather than only the columns present in the current call.
+  - Added regression coverage: 1 unit test and 4 sourced `range-alignment-doc` status-pair cases.
+  - Verification: targeted unit slice OK; `range-alignment-doc` `20 / 0`; direct probes for moving to/from zero now fail; full unit `1305 OK`; synthetic `7349 / 0`; sourced `4278 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This is a short, stateful Locking geometry false PASS with likely private-test relevance because it requires only a prior valid geometry observation and a partial Set.
+- 2026-06-08 KST - Continued no-submit reset_types hex-token parsing audit:
+  - Audited reset_types parser after the Locking explorer found `0x03` accepted as if it were `{0,3}`.
+  - Found concrete false PASSes: `Locking.LockOnReset="0x03"` and `MBRControl.DoneOnReset="0x03"` accepted SUCCESS even though `0x03` is a single Programmatic reset_types enum value, and Opal support is required for `{0}` and `{0,3}` rather than Programmatic-only `{3}`.
+  - Official evidence: Opal reset_types values are enumerated reset conditions. Numeric and hex scalar tokens denote single enum values; list/comma forms denote sets. Single Programmatic-only reset lists are unsupported for LockOnReset and MBRDoneOnReset.
+  - Repair: `_reset_types` now parses a simple numeric or hex token as one enum value before falling back to digit extraction for composite strings. This rejects `0x03`/`0x0003` while preserving `0x00`, `0,3`, and `[0,3]`.
+  - Added regression coverage: 2 unit tests and 8 sourced `locking-reset-types-alias-reject-tight-doc` status-pair cases.
+  - Verification: targeted unit slice OK; `locking-reset-types-alias-reject-tight-doc` `32 / 0`; direct probe rejects `0x03`, `0x0003`, and `[3]`, while preserving `0x00`, `0,3`, and `[0,3]`; full unit `1305 OK`; synthetic `7349 / 0`; sourced `4278 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This closes a plausible parser-shaped private false PASS in reset state machinery without broadening or changing the official supported set semantics.
+- 2026-06-08 KST - Continued no-submit public-key declared-width uinteger_N audit:
+  - Audited C_RSA and C_EC public-key uinteger_N fields after the prior generic integer-type repairs.
+  - Found concrete false PASSes: successful `Set` and `Get` were accepted for values larger than the declared uinteger_N width, e.g. `C_RSA_2048.Pu_Exp = 1 << 2048`, `C_RSA_2048.P = 1 << 1024`, and `C_EC_256.p = 1 << (36 * 8)`. C_RSA Set also accepted bool/text values for uinteger fields.
+  - Official evidence: Core C_RSA_1024/2048 tables declare Pu_Exp/Mod/Pr_Exp and P/Q/Dmp1/Dmq1/Iqmp as uinteger_128/256/64 depending on row and column; Core C_EC family tables declare curve parameters as family-specific uinteger_20/21/24/28/30/36/48/66 fields.
+  - Repair: added C_RSA and C_EC declared-width lookup helpers for Set validation and Get returned-cell typing. The generic uinteger_N return validator now enforces the byte-width ceiling while still preserving exact max values.
+  - Added regression coverage: 2 unit tests plus sourced C_EC and C_RSA width cases; `cec-uinteger-set-type-doc` increased to `14` cases and `crsa-uinteger-get-type-doc` increased to `16` cases.
+  - Verification: targeted unit slice `4 OK`; `cec-uinteger-set-type-doc` `14 / 0`; `crsa-uinteger-get-type-doc` `16 / 0`; direct probes reject over-width/bool/text values and preserve max in-width values; full unit `1307 OK`; synthetic `7349 / 0`; sourced `4291 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This closes compact public-key credential false PASSes that private tests can express by changing one key-parameter value around an exact declared-width boundary.
+- 2026-06-08 KST - Continued no-submit LockOnReset stored-cell recovery audit:
+  - Audited LockOnReset recovery when ReadLockEnabled and WriteLockEnabled are false, including created Locking rows.
+  - Found concrete false PASS: after setting `Locking_Range1` to disabled/unlocked with `LockOnReset=[0]`, a PowerCycle was allowed to report stored `ReadLocked=False` and `WriteLocked=False`; the solver rejected the officially consistent `True/True` stored cells. The same stale sourced expectation existed for created disabled Locking rows.
+  - Official evidence: Core LockOnReset reset types set the stored ReadLocked and WriteLocked cells on matching reset events. ReadLockEnabled/WriteLockEnabled decide whether those stored cells affect host I/O and the Level 0 Locked bit; they do not erase or prevent stored-cell updates.
+  - Repair: `_apply_reset_event` now sets stored `read_locked` and `write_locked` whenever the reset type matches `lock_on_reset_types`, independent of enabled bits. Sourced trajectories were corrected so disabled matching resets produce latent stored locks while host I/O and Level0 remain unlocked until the relevant enable bit is set.
+  - Added/updated regression coverage: 2 unit tests, plus corrected sourced expectations in `locking-disabled-disregard-long-doc`, `locking-toggle-reenable-long-doc`, `locking-created-row-default-lockonreset-doc`, and `locking-created-row-failed-set-reset-doc`.
+  - Verification: targeted unit `2 OK`; sourced tags `locking-disabled-disregard-long-doc` `25 / 0`, `locking-toggle-reenable-long-doc` `32 / 0`, `locking-created-row-default-lockonreset-doc` `12 / 0`, `locking-created-row-failed-set-reset-doc` `10 / 0`; full unit `1307 OK`; synthetic `7349 / 0`; sourced `4291 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This is a deep Locking state-machine repair: hidden tests can observe it through table Get, later re-enable trajectories, created rows, Level0, or host I/O.
+- 2026-06-08 KST - Continued no-submit AccessControl MethodID/Revert/Admin exactness audit:
+  - Audited AccessControl/GetACL candidates from the AccessControl explorer and direct local probes.
+  - Found concrete false PASSes: `GetACL(MethodID_GetACL, Set)` in Admin SP and `GetACL(MethodID_GenKey, Set)` in Locking SP were accepted even though MethodID object rows use issued read-only/special object associations rather than ordinary Set associations. `GetACL(ThisSP, RevertSP)` in Admin SP was also accepted even though Opal Admin SP uses `Revert`, not `RevertSP`.
+  - Found concrete false FAIL: Admin SP `GetACL(LockingSP, Revert)` with `ACE_SP_SID + ACE_Admin` was rejected.
+  - Found exact-ACL false PASSes: Locking SP `Authority_Admin3/Set` accepted incomplete or arbitrary ACE lists; the Admin2+ pattern should require both `ACE_Authority_Set_Enabled` and `ACE_Admins_Set_CommonName`.
+  - Official evidence: Opal Admin/Locking MethodID and AccessControl preconfiguration rows define concrete InvokingID/MethodID associations; MethodID object rows are not generic Set targets; Admin SP lists Revert rather than RevertSP; Locking SP AdminMMMM Set rows use Enabled plus CommonName ACEs.
+  - Repair: `_combo_exists_for_get_acl` now rejects `MethodID_*/Set`, includes Admin `LockingSP/Revert`, and removes Admin `ThisSP/RevertSP`. `_known_acl_return_refs` now has Admin `LockingSP/Revert` and generalizes Locking `Authority_Admin2+ / Set` exact ACL refs.
+  - Added regression coverage: 6 unit tests and 15 sourced cases across `getacl-locking-special-object-expanded-doc` and `getacl-admin-locking-remaining-exact-acl-long-doc`.
+  - Verification: targeted unit `6 OK`; `getacl-locking-special-object-expanded-doc` `48 / 0`; `getacl-admin-locking-remaining-exact-acl-long-doc` `41 / 0`; direct probes now fail the missing associations and incomplete Admin3 ACL while accepting the exact associations; full unit `1315 OK`; synthetic `7349 / 0`; sourced `4316 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This is exactly the score-sensitive AccessControl/GetACL surface, but the repair is narrow and source-backed to avoid broad association-regression risk.
+- 2026-06-08 KST - Continued no-submit DataStore raw Set endRow-window audit:
+  - Audited DataStore byte-table raw Set representations from the DataStore explorer.
+  - Found concrete false PASS: raw DataStore `Set` with `[(1, 0), (2, 3), ("Bytes", "AA")]` was accepted as if Set had an explicit endRow window, but byte-table Set uses `Where.Row` plus `Values.Bytes`; endRow belongs to Get Cellblock range selection.
+  - Official evidence: Core byte-table Set uses `Where` and `Values.Bytes`; Core Cellblock startRow/endRow row windows are Get selection components. Existing sourced rules already rejected structured `Where.Row + EndRow`, so this extends that rule to raw numeric representation.
+  - Repair: `_byte_table_raw_args_invalid` now rejects raw Set numeric/keyed endRow windows while preserving the existing tcgstorageapi-compatible `(row-range, payload)` loose representation and raw `Values.Bytes` payload encoding.
+  - Added regression coverage: 2 unit tests and 1 sourced `datastore-set-where-row-only-doc` status-pair case.
+  - Verification: targeted unit `3 OK`; `datastore-set-where-row-only-doc` `10 / 0`; direct probes reject raw numeric endRow success, accept invalid-parameter rejection, and preserve raw Values.Bytes writes; full unit `1315 OK`; synthetic `7349 / 0`; sourced `4316 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium. This closes a compact raw-method byte-table false PASS without disturbing higher-level DataStore wrapper aliases.
+- 2026-06-08 KST - Continued no-submit invalid RangeCrossingBehavior state propagation audit:
+  - Audited Level 0 Opal SSC V2 `RangeCrossingBehavior` after the Locking explorer found a context/target split: the invalid descriptor itself failed, but the same invalid descriptor used as context left later unlocked crossing writes accepted.
+  - Found concrete false PASS: `RangeCrossingBehavior=2` followed by an unlocked host write spanning GlobalRange and Range1 accepted `SUCCESS`. The descriptor field is a bit, so only 0 and 1 are defined for later range-crossing semantics.
+  - Official evidence: Opal SSC V2 Level 0 Discovery table defines Range Crossing Behavior as bit 0; Opal range-crossing behavior says bit 0 processes an unlocked crossing transfer and bit 1 terminates it. No invalid observed value can establish a valid processing mode.
+  - Repair: `_apply_level0_opal_ssc_v2_success` now records any parsed observed value, not only 0/1. Host read/write expectation logic keeps unknown/unobserved behavior permissive, but if an observed value is non-0/1 it forbids successful unlocked crossing I/O.
+  - Added regression coverage: 1 unit test and 1 sourced `level0-range-crossing-locking-doc` impossible-success case.
+  - Verification: targeted unit `1 OK`; `level0-range-crossing-locking-doc` `12 / 0`; full unit `1316 OK`; synthetic `7349 / 0`; sourced `4317 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This closes a subtle state-propagation false PASS in the Locking state machine while preserving the intended permissiveness for unobserved device behavior.
+- 2026-06-08 KST - Continued no-submit DataStore official Cellblock component audit:
+  - Audited raw DataStore Get parameterization after the DataStore explorer flagged broad byte-window aliases.
+  - Found concrete false PASS: a raw official `Get(DataStore)` with `required.Cellblock=[{"startRow": 2}, {"length": 4}]` accepted `SUCCESS` and returned bytes 2..5. In the official `cell_block` type, the components are Table, startRow, endRow, startColumn, and endColumn; `length` is not a Cellblock component.
+  - Official evidence: Core `cell_block` assigns named components `0x00` through `0x04`; byte-table Get uses startRow/endRow and returns Bytes in row order. There is no `length` component inside a raw Cellblock.
+  - Repair: added a narrow parser invalidity check for length/count/size aliases only when they appear under an explicit raw method `Cellblock`. Existing wrapper or raw shorthand byte-window aliases such as top-level `offset/length` remain accepted.
+  - Added regression coverage: 2 unit tests and 1 sourced `datastore-byte-table-row-option-doc` status-pair case.
+  - Verification: targeted unit `3 OK`; `datastore-byte-table-row-option-doc` `14 / 0`; parser-representation synthetic `2868 / 0`; full unit `1318 OK`; synthetic `7349 / 0`; sourced `4319 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium. This closes a raw official-method parser false PASS while preserving the compatibility aliases used by wrapper and parser-representation tests.
+- 2026-06-08 KST - Continued no-submit DataStore byte-table return-shape audit:
+  - Audited DataStore Get return payload forms after the DataStore explorer found a single-cell RowValues encoding accepted as a byte payload.
+  - Found concrete false PASS: a successful DataStore byte-table `Get` over row 0 accepted `return_values=[[{"1": "AA"}]]`. Byte-table Get returns the `Bytes` alternative, while `RowValues` is the non-byte/object-table alternative.
+  - Official evidence: Core Get returns `typeOr { Bytes, RowValues }`; Core byte-table retrieval returns Bytes ordered from lowest row to highest and says unauthorized byte-table Get returns an empty results list. RowValues is for non-byte table cells.
+  - Repair: added `ExpectedResponse.forbid_return_row_values_payload` and enabled it for MBR/DataStore byte-table Get. The engine now rejects explicit RowValues-like payloads for byte-table success while preserving byte strings, byte arrays, and wrapper byte payloads.
+  - Added regression coverage: 1 unit test and 1 sourced `datastore-payload-doc` return-value pair strengthening the existing RowValues rejection with a single-row/single-column shape.
+  - Verification: targeted unit `1 OK`; `datastore-payload-doc` `10 / 0`; full unit `1319 OK`; synthetic `7349 / 0`; sourced `4321 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This is a compact byte-table return-shape false PASS likely expressible by hidden tests that confuse object-table RowValues with byte-table Bytes.
+- 2026-06-08 KST - Continued no-submit byte-table Table descriptor returned-cell audit:
+  - Audited DataStore/MBR Table descriptor returned cells after the DataStore explorer found missing descriptor invariants.
+  - Found concrete false PASSes: `Table_DataStore.Get` accepted non-null `LastID`, and accepted `RecommendedAccessGranularity=0` for the Opal DataStore byte-table descriptor.
+  - Official evidence: Core Table descriptor `LastID` SHALL be the null UID for byte tables. Opal byte-table descriptor `RecommendedAccessGranularity` is a `uinteger_4`; if there is no recommended alignment it SHALL be set to one, so zero is not a valid byte-table descriptor value.
+  - Repair: `_table_descriptor_expected_cells` now records byte-table descriptor `LastID == null UID` and enforces `RecommendedAccessGranularity >= 1` for byte tables, while preserving object-table granularity zero rules and existing MandatoryWriteGranularity bounds.
+  - Added regression coverage: 2 unit tests, 2 sourced `byte-table-descriptor-column-doc` return-value pairs for DataStore/MBR LastID, and 1 sourced `byte-table-granularity-doc` return-value pair for DataStore recommended granularity zero.
+  - Verification: targeted unit `2 OK`; `byte-table-descriptor-column-doc` `12 / 0`; `byte-table-granularity-doc` `28 / 0`; full unit `1321 OK`; synthetic `7349 / 0`; sourced `4327 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium. This closes compact descriptor false PASSes that private tests can express by changing a single returned descriptor cell, without broad association or parser changes.
+- 2026-06-08 KST - Continued no-submit Locking GenKey ActiveKey precision audit:
+  - Audited media invalidation after the Locking explorer found GenKey was keyed only by range id.
+  - Found concrete false FAIL/PASS pair: after `ActiveKey=null`, a successful `GenKey(K_AES_256_Range1_Key)` incorrectly made old host data unreadable and allowed arbitrary changed data. The same over-invalidation occurred when `ActiveKey=K_AES_256_Range1_Key` but the target was `K_AES_128_Range1_Key`.
+  - Official evidence: the Locking range `ActiveKey` column identifies the current media encryption key for that range. GenKey changes the targeted K_AES credential object; it cryptographically erases user data only when that targeted key is the key currently used to encrypt that media.
+  - Repair: range-key GenKey now increments a range's media generation only when ActiveKey is unobserved or the observed ActiveKey resolves to the targeted K_AES object. Observed null ActiveKey and observed different-family ActiveKey leave remembered host data readable.
+  - Added regression coverage: 3 unit tests and 2 sourced `locking-crossing-genkey-media-doc` read-result pairs.
+  - Verification: targeted unit `3 OK`; `locking-crossing-genkey-media-doc` `13 / 0`; full unit `1324 OK`; synthetic `7349 / 0`; sourced `4331 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This is a score-relevant Locking state-machine correction because hidden cases can combine ActiveKey observations, GenKey, and later host reads without needing exotic parser syntax.
+- 2026-06-08 KST - Continued no-submit Locking boolean Get type and context-poisoning audit:
+  - Audited Locking range boolean returned cells after the Locking explorer found `WriteLocked="nonsense"` accepted and coerced.
+  - Found concrete false PASSes: successful `Get(Locking_Range1)` accepted non-boolean values for columns 5-8 (`ReadLockEnabled`, `WriteLockEnabled`, `ReadLocked`, `WriteLocked`). Invalid boolean context could also overwrite stored lock state through `_as_bool` coercion.
+  - Official evidence: Locking range columns 5-8 are declared boolean cells. Successful object-table Get must return values of the declared column type, and invalid observed values should not become trusted state.
+  - Repair: `_expected_get` now marks Locking columns 5-8 as `boolean` returned-cell types, and `_update_range_from_columns` updates those stored booleans only when `_optional_bool` parses a real boolean value.
+  - Added regression coverage: 2 unit tests and 4 sourced `locking-range-get-doc` return-value pairs.
+  - Verification: targeted unit `2 OK`; `locking-range-get-doc` `20 / 0`; full unit `1326 OK`; synthetic `7349 / 0`; sourced `4339 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This closes a compact hidden-test shape where one malformed Locking.Get cell could flip later host I/O behavior.
+- 2026-06-08 KST - Continued no-submit MBRControl boolean Get type and shadowing poisoning audit:
+  - Audited MBRControl returned cells after the same boolean-coercion pattern appeared in the MBR shadowing state machine.
+  - Found concrete false PASSes: successful `Get(MBRControl)` accepted non-boolean `Enable` or `Done` values. A malformed `Enable` observation could be coerced to false and disable active MBR shadowing for later host writes.
+  - Official evidence: MBRControl `Enable` and `Done` are boolean cells, while `DoneOnReset` is reset_types. Successful Get must return declared cell types, and malformed observations should not update trusted MBR shadow state.
+  - Repair: MBRControl Get now validates columns 1 and 2 as boolean returned-cell types, and MBRControl state transition updates `Enabled`/`Done` only when `_optional_bool` parses a valid boolean.
+  - Added regression coverage: 2 unit tests and 2 sourced `mbrcontrol-defaults-doc` impossible-return cases.
+  - Verification: targeted unit `2 OK`; `mbrcontrol-defaults-doc` `10 / 0`; full unit `1328 OK`; synthetic `7349 / 0`; sourced `4341 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This closes a short MBR shadowing false PASS pattern: one malformed Get cell followed by host I/O in the MBR region.
+- 2026-06-08 KST - Continued no-submit SPInfo, ReEncrypt reset-stop, optional range/user observation, and DataStore empty-result shape audit:
+  - Audited four score-facing false-PASS clusters from local probes and subagent reports.
+  - Found concrete false PASSes: `SPInfo.Get` accepted invalid `SPSessionTimeout`/`Enabled` return types; `ContOnReset=[PowerCycle]` let ACTIVE/PENDING re-encryption survive `HardwareReset` instead of pausing; successful `K_AES_Range9.Get`, `Authority_User9.Get`, and `C_PIN_User9.Get` did not conflict with later `MaxRanges=8` or user-count 8 observations; unauthorized DataStore byte-table `Get` accepted boolean `False` as an empty result.
+  - Official evidence: SPInfo columns have declared `uinteger_4` and boolean types; ContOnReset is a reset-types set controlling whether reset-stop pauses re-encryption with GeneralStatus 34 or 5; Opal optional RangeNNNN/K_AES/UserMMMM rows are bounded by observed support counts; byte-table Get returns Bytes or an empty results list, not a boolean status payload.
+  - Repair: added SPInfo returned-cell type validation and safe state updates; generalized `_apply_reset_event` to pause ReEncrypt when the observed reset type is not in `ContOnReset`; tracked successful K_AES range-key Get and UserMMMM object Get observations for later support-count consistency; forbade boolean payloads for unauthorized DataStore empty results.
+  - Added regression coverage: 7 unit tests and sourced cases in `spinfo-get-types-doc`, `reencrypt-reset-doc`, `lockinginfo-maxranges-consistency-doc`, `user-mmmm-count-boundary-doc`, and `datastore-empty-booleanexpr-doc`.
+  - Verification: targeted unit/tests for all four clusters OK; targeted sourced tags all 0 mismatches; full unit `1335 OK`; sourced `4354 / 0`; synthetic `7349 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High for ReEncrypt/optional Range/User support consistency, medium-high for SPInfo/DataStore return-shape checks. These are compact hidden-test-friendly false PASS classes and the repairs are state/general-rule based rather than single-case exceptions.
+- 2026-06-08 KST - Continued no-submit Locking ActiveKey/NextKey initial preconfiguration audit:
+  - Audited initial Locking range key columns after the Locking explorer found preconfigured key cells were under-constrained.
+  - Found concrete false PASSes: initial `Locking_Range1.Get` accepted `ActiveKey=K_AES_256_Range2_Key`, and accepted non-null `NextKey=K_AES_256_Range1_Key`.
+  - Official evidence: Opal preconfigures `Locking_Range1` with ActiveKey pointing to that LBA range's own media encryption key and NextKey empty. Core Locking defines ActiveKey as the media encryption key currently used by the range and NextKey as the next key, so a fresh preconfigured range cannot initially point to another range's key or expose a pending next key.
+  - Repair: successful Locking range Get now checks unobserved initial ActiveKey against the same-range K_AES 128/256 key set, treats wrapper `getMEK` as permissive when the exact 128/256 family is not yet known, and checks unobserved initial NextKey as null UID. Engine returned-cell comparison now accepts the expected set of media-key refs for key columns.
+  - Added regression coverage: 2 unit tests and 4 sourced `locking-activekey-preconfig-doc` return-value pairs.
+  - Verification: targeted unit `3 OK`; `locking-activekey-preconfig-doc` `4 / 0`; full unit `1337 OK`; sourced `4358 / 0`; synthetic `7349 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This is a compact Locking state false PASS class and also improves later GenKey/host I/O reasoning by anchoring initial media-key identity to the documented preconfiguration.
+- 2026-06-08 KST - Continued no-submit DataStore AccessControl ACL mutation audit:
+  - Audited DataStore Get/Set authorization after the DataStore explorer flagged that AccessControl association ACL mutations were only reflected in later GetACL outputs, not in actual DataStore access checks.
+  - Found concrete false PASS/FAIL cluster: after `SetACL(DataStore, Get, ACL=[])`, Admin payload reads still passed while empty-result reads failed; after `SetACL(DataStore, Set, ACL=[ACE_Anybody])`, unauthenticated Set still failed. Official `RemoveACE`/`AddACE` variants showed the same missing state path before repair.
+  - Official evidence: the AccessControl `ACL` column is the access control list for an object/method association and is modified/accessed through `GetACL`, `RemoveACE`, and `AddACE`. Opal preconfigures separate DataStore Get and Set AccessControl rows, so mutations to those ACLs must affect later DataStore Get/Set authorization.
+  - Repair: added DataStore association ACL ref-state helpers that combine replacement/addition/removal state, and routed DataStore Get/Set authorization through the current association ACL refs. This preserves default Admins behavior, supports ACE BooleanExpr personalization, blocks empty association ACLs, and authorizes added `ACE_Anybody`.
+  - Added regression coverage: 7 unit tests and 8 sourced `datastore-meta-acl-replacement-doc` cases.
+  - Verification: targeted unit `7 OK`; `datastore-meta-acl-replacement-doc` `8 / 0`; full unit `1344 OK`; sourced `4366 / 0`; synthetic `7349 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This hits a score-facing DataStore/AccessControl interaction: hidden tests can mutate association ACLs and then test real byte-table behavior rather than only GetACL return values.
+- 2026-06-08 KST - Continued no-submit Locking AdminMMMM/C_PIN_AdminMMMM GetACL exact-return audit:
+  - Audited remaining Locking SP exact ACL rows after the AccessControl explorer found Admin-pattern Get rows were admitted but not exact-checked.
+  - Found concrete false PASSes: `GetACL(Authority_Admin2, Get)` and `GetACL(C_PIN_Admin2, Get)` accepted arbitrary `ACE_Anybody` return lists. Correct exact lists are `ACE_Authority_Get_All + ACE_Anybody_Get_CommonName` for Authority Admin Get, and `ACE_C_PIN_Admins_Get_All_NOPIN` for C_PIN Admin Get.
+  - Official evidence: Opal preconfigures Locking SP Authority_AdminMMMM/Get and C_PIN_AdminMMMM/Get rows with the same class/common Get ACEs used by Admin1/UserMMMM patterns, and GetACL returns the exact AccessControl ACL column as ACE uidrefs.
+  - Repair: generalized `_known_acl_return_refs` for Locking SP `Authority_AdminN/Get` and `C_PIN_AdminN/Get` so exact ACL validation applies to Admin2+ rows, while preserving existing dynamic AddACE/RemoveACE handling.
+  - Added regression coverage: 4 unit tests and 3 sourced exact-ACL return pairs under `user-mmmm-accesscontrol-exact-doc`; tag metadata and source rule now explicitly cover AdminMMMM as well as UserMMMM.
+  - Verification: targeted unit `4 OK`; `user-mmmm-accesscontrol-exact-doc` `18 / 0`; full unit `1348 OK`; sourced `4372 / 0`; synthetic `7349 / 0`; public eval `100.00`; doc coverage `846 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This is a compact hidden-test pattern: same valid association universe, but wrong ACE uidref list returned from GetACL.
+- 2026-06-08 KST - Continued no-submit Additional DataStore payload isolation audit:
+  - Audited optional/additional DataStore byte-table state after the DataStore explorer found base `DataStore` and `DataStore2` payloads were conflated.
+  - Found concrete false PASS/FAIL pair: after writing `AABB` to base `DataStore` and `CCDD` to `DataStore2`, a base `DataStore.Get` returning `CCDD` passed while returning the correct `AABB` failed. `DataStore2.Get` should independently return `CCDD`.
+  - Official evidence: Opal references Additional DataStore Tables and identifies DataStore tables as byte tables. Core byte tables are independent raw data storage tables; Set modifies the invoked byte table beginning at `Where.Row`, and Get returns bytes from the invoked byte table.
+  - Repair: added per-DataStore payload maps in `State`, plus helper accessors for base vs additional DataStore payloads. DataStore Set/Get/XOR/delete-pattern/reset paths now use the invoked DataStore symbol instead of one shared byte map.
+  - Added regression coverage: 3 unit tests and 4 sourced `additional-datastore-isolation-doc` cases.
+  - Verification: targeted unit `3 OK`; `additional-datastore-isolation-doc` `4 / 0`; full unit `1351 OK`; sourced `4376 / 0`; synthetic `7349 / 0`; public eval `100.00`; doc coverage `847 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High if hidden tests include Additional DataStore tables; this closes a state-model bug where writes to one byte table changed expectations for a different byte table.
+- 2026-06-08 KST - Continued no-submit Additional DataStore identity/ACL/descriptor/XOR extension:
+  - Extended the Additional DataStore audit after subagents found fresh false PASSes beyond payload isolation.
+  - Found concrete false PASSes: `XOR(PatternInput=DataStore2)` accepted a result computed from base `DataStore`; `XOR` accepted a too-small BufferOut cellblock; `SetACL(DataStore2, Get, ACL=[])` did not block later `DataStore2.Get` bytes; `GetACL(DataStore2, Get)` accepted `ACE_Anybody`; `Table_DataStore2.Get` accepted object-table descriptor cells and did not constrain later byte windows after an observed `Rows` value.
+  - Official evidence: Additional DataStore tables are independent byte tables with their own Table, AccessControl, and ACE preconfiguration; GetACL returns the exact association ACL; Core byte-table Get/Set and XOR BufferOut operate on byte-table cellblock sizes.
+  - Repair: canonicalized DataStore UID/name aliases for internal payload keys, generalized DataStore default ACL refs (`DataStore2.Get -> ACE_0003FC02`, `DataStore2.Set -> ACE_0003FC03`), normalized AccessControl combo keys for additional DataStores, mapped `Table_DataStoreN` descriptors to byte-table symbols, and made XOR BufferOut capacity use cellblock size rather than only byte payload length.
+  - Added regression coverage: 6 unit tests and 12 new sourced cases under the expanded `additional-datastore-isolation-doc` tag.
+  - Verification: full unit `1356 OK`; sourced `4388 / 0`; synthetic `7349 / 0`; public eval `100.00`; doc coverage `847 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. This turns Additional DataStore handling from payload-only into full table identity semantics across ACLs, descriptors, bounds, and crypto/XOR interactions.
+- 2026-06-08 KST - Continued no-submit ReEncrypt reset/status return-state audit:
+  - Audited ReEncrypt state-machine returned values after the Locking explorer reported null `ContOnReset` and status-column false PASSes.
+  - Found concrete false PASS/FAIL cluster: `ContOnReset=null` did not behave like an empty reset set and left `START_req` in `PENDING` after `PowerCycle`; `ReEncryptRequest.Get` accepted scalar/list payloads despite returning no value; initial/IDLE `LastReEncStat` and `GeneralStatus` accepted non-empty values; PENDING `GeneralStatus` accepted PAUSED-band value `5`.
+  - Official evidence: `ReEncryptRequest.Get` returns no value; `ContOnReset` is a reset-types set whose empty/null value causes reset-stop and PAUSED state; `LastReEncStat` is valid only when ReEncryptState is COMPLETED/PENDING/PAUSED; `GeneralStatus` is valid only in PAUSED or PENDING, with different value bands.
+  - Repair: normalize `ContOnReset=None` to the empty reset set in transitions, enforce zero-length return for standalone `ReEncryptRequest.Get`, and validate unobserved `LastReEncStat`/`GeneralStatus` by current ReEncryptState and status band while preserving already-observed/known status values for consistency checks.
+  - Added regression coverage: 7 unit tests and 7 sourced cases across `reencrypt-column-types-doc`, `reencrypt-status-enum-doc`, and `reencrypt-reset-doc`; existing enum boolean sourced cases were tightened to include a valid ReEncryptState context.
+  - Verification: full unit `1362 OK`; sourced `4395 / 0`; synthetic `7349 / 0`; public eval `100.00`; doc coverage `847 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High. These are compact Locking/ReEncrypt private-test shapes with single-column returned values or one reset transition, and the fix is state-machine based rather than case-specific.
+- 2026-06-08 KST - Continued no-submit created-row runtime ACE GetACL exactness audit:
+  - Audited Pascal's created object-row AccessControl finding: successful `CreateRow` creates object-method AccessControl rows and a generated ACE, but the verifier only required a non-empty GetACL list before the generated ACE UID was learned.
+  - Found concrete false PASSes: first `GetACL(created_row, Get)` accepted extra builtin ACEs such as `ACE_Admin`; a builtin ACE alone could be treated as the generated runtime ACE; after `AddACE(created_row, Get, ACE_Admin)`, later GetACL accepted either missing the generated runtime ACE or including extra unrelated ACEs.
+  - Official evidence: Core table methods create a new object row and associated AccessControl rows; the created-row association ACL contains the generated ACE uidref, and `GetACL` returns the association ACL as an ACE uidref list. `AddACE` adds to that ACL; it does not replace the generated ACE.
+  - Repair: tightened `_expected_get_acl` for created rows so unknown runtime ACEs are constrained by exact cardinality, dynamic AddACE refs are required, common builtin ACEs cannot masquerade as the generated ACE, and once the runtime ACE UID is observed the full exact ACL is enforced. Hardened GetACL state transition so only the one non-dynamic returned ACE candidate is bound as the created-row side-effect ACE.
+  - Added regression coverage: 4 unit tests plus 4 sourced cases under `created-row-accesscontrol-doc` and `created-row-meta-acl-state-doc`; updated synthetic wrapper AddACE expectations to use generated runtime ACE + added ACE instead of stale `ACE_Anybody`.
+  - Verification: full unit `1366 OK`; sourced `4399 / 0`; synthetic `7349 / 0`; public eval `100.00`; doc coverage `847 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: Medium-high. This is a realistic hidden-test shape for dynamic tables: a private trace can create a row, mutate the association ACL, and then check exact GetACL semantics rather than only non-empty output.
+- 2026-06-08 KST - Continued no-submit created-row/side-effect ACE ACL invocation-state audit:
+  - Followed Anscombe's AccessControl findings beyond runtime ACE exactness.
+  - Found concrete misses: `GetACL` on the generated side-effect ACE ignored later `AddACE`/dynamic ACL state, and `SetACL(created_row, Get, ACL=[])` correctly made GetACL empty but did not block a later direct `Get` success on the created row.
+  - Repair: changed side-effect ACE exact ACL computation to preserve unknown generated ACE UIDs while applying dynamic AddACE/RemoveACE/SetACL state; added a dynamic-object method gate so empty ACL replacements make the direct method non-invocable.
+  - Added regression coverage: 4 unit tests and 4 sourced cases under `created-row-meta-acl-state-doc`.
+  - Verification: full unit `1370 OK`; sourced `4403 / 0`; synthetic `7349 / 0` before the next BufferOut patch.
+  - Dashboard relevance: Medium-high. Hidden traces can create rows, mutate object/ACE ACLs, and then validate direct invocation or exact GetACL state.
+- 2026-06-08 KST - Continued no-submit direct BufferOut cellblock capacity audit:
+  - Followed Fermat's byte-table/payload findings for direct `{Table,startRow,endRow}` BufferOut structs.
+  - Found concrete false PASS class: Random, XOR, and HashInit capacity checks rejected too-small nested `CellBlock` wrappers but accepted too-small direct BufferOut row-window dictionaries.
+  - Repair: extended `_byte_table_cellblock_capacity` to compute direct row-window capacity when a byte row window is present without a nested `CellBlock` key.
+  - Added regression coverage: 3 unit tests and 3 sourced cases across `random-bufferout-capacity-doc`, `xor-byte-table-bufferout-doc`, and `hashinit-bufferout-capacity-doc`.
+  - Verification: full unit `1373 OK`; sourced `4406 / 0`; synthetic `7349 / 0`; public eval `100.00`; doc coverage `847 / 1376`, untriaged A/B `0`; score probe loop completed with no mismatches.
+  - Dashboard relevance: High for wrapper/private traces. This is a representation gap rather than a new semantic domain: the same too-small BufferOut must fail whether encoded as `CellBlock:{...}` or directly as `{Table,startRow,endRow}`.
+- 2026-06-08 KST - Continued no-submit Level 0 Locking Feature fixed-field audit:
+  - Followed Fermat's Level 0 Locking descriptor finding after confirming prior sourced cases only checked dynamic state bits.
+  - Found concrete false PASS class: `Level0Discovery(FeatureCode=0x0002)` accepted impossible successful Locking Feature descriptor fields such as `Length=0x10`, `MBRShadowingNotSupported=1`, `MediaEncryption=0`, or `LockingSupported=0`.
+  - Official evidence: the Opal Locking Feature descriptor has fixed fields independent of runtime state: descriptor length `0x0C`, MBR shadowing unsupported flag `0`, media encryption `1`, and locking supported `1`. Runtime fields such as `LockingEnabled`, `Locked`, `MBREnabled`, and `MBRDone` still track current state.
+  - Repair: extended `_expected_level0_locking_feature` to validate fixed fields when they appear, while preserving partial descriptor returns that only expose dynamic state bits.
+  - Added regression coverage: 1 unit test with four impossible fixed-field variants and 5 sourced `locking-feature-descriptor-doc` cases.
+  - Verification: targeted `locking-feature-descriptor-doc` `15 / 0`; targeted `level0_locking_feature` unit `6 OK`; full unit `1374 OK`; sourced `4411 / 0`; synthetic `7349 / 0`; consensus gate `3567 / 0`; public eval `100.00`; doc coverage `847 / 1376`, untriaged A/B `0`; score probe loop found 18 queued wrapper/probe candidates for future repair.
+  - Dashboard relevance: Medium. This closes a compact descriptor false-PASS pattern; hidden tests can check single fixed fields without needing a long state trajectory.
+- 2026-06-08 KST - Continued no-submit Locking full-row returned-cell state audit:
+  - Audited Locking range Get after the Locking state explorer found that stateful cells were checked for explicit CellBlock requests but not always for full-row returns.
+  - Found concrete false PASS: after setting `Locking_Range1` geometry and `LockOnReset=[0,3]`, a later full-row `Get(Locking_Range1)` with returned cells `{RangeStart=120, RangeLength=12, LockOnReset=[0]}` was accepted even though the returned stored cell 9 was stale.
+  - Official evidence: successful `Set` updates stored Locking range cells, and successful `Get` returns readable cells from that stored row. A full-row Get may omit some optional cells, but any returned stored cells must match the current row state.
+  - Repair: generalized Locking Get validation so returned full-row cells for observed/preconfigured ranges participate in exact state checks even when no CellBlock was requested. Optional/unobserved rows such as Range10 are not forced to default 0/0 merely because MaxRanges permits their existence, and ReEncrypt/status cells are only constrained when actually returned or specifically requested.
+  - Added regression coverage: 1 unit trajectory and 2 sourced `locking-composite-get-doc` cases for correct vs stale full-row returned cells.
+  - Verification: full unit `1378 OK`; sourced `4413 / 0`; synthetic `7349 / 0`; consensus gate `3567 / 0`; public eval `100.00`; doc coverage `847 / 1376`, untriaged A/B `0`.
+  - Score-probe note: reviewed queued Random wrapper/BufferOut candidates and did not weaken DataStore Set ACL enforcement. Random wrapper calls without explicit raw sessions now preserve Count validation, but BufferOut writes still require DataStore Set access because that is the official byte-table access rule.
+  - Dashboard relevance: High. This closes a private-test-friendly Locking state false PASS class where hidden traces can set several cells and later return a partial full-row object without a CellBlock wrapper.
+- 2026-06-08 KST - Continued no-submit Log/CreateLog, GenKey NextKey, and host media window audit:
+  - Spawned focused subagents for Log maintenance and GenKey/Locking media-key state, then locally reproduced only candidates with official-doc backing and current-model disagreement.
+  - Found concrete Log false FAIL/PASS cluster: `AddLog` rejected exactly 64 bytes when encoded as a hex byte string; `CreateLog` accepted successful `Rows` below `MinSize` and above `MaxSize`. The `AddLog` repair was kept local to Log Data byte-length parsing so Sign/Firmware generic host-data limits still use ordinary input string length.
+  - Found concrete GenKey false PASS: a media key referenced by `Locking_GlobalRange.NextKey` could be regenerated while that GlobalRange was non-IDLE. Official `NextKey` rules say the referenced media encryption key object is writable only while that range's `ReEncryptState` is IDLE.
+  - Found concrete host I/O false FAIL/PASS cluster: after an exact multi-byte host write, subrange reads expected the whole original payload; after a partial overwrite, full reads accepted the stale full-span payload and rejected the overlaid bytes.
+  - Repair: `AddLog` now uses byte payload length for its Data field only; `CreateLog` constrains returned `Rows` against `MinSize`/`MaxSize` when the row count is observable by name or position; `GenKey` now checks reverse `NextKey` references across all observed ranges; host remembered-media analysis now reconstructs requested LBA windows byte-by-byte while preserving compact repeated-pattern behavior.
+  - Added regression coverage: 5 unit trajectories and 8 sourced cases across `log-addlog-doc`, `log-createlog-doc`, `genkey-reencrypt-state-doc`, and `locking-geometry-nontransition-data-doc`.
+  - Verification: targeted units `6 OK`; targeted sourced tags all `0` mismatches; full unit `1381 OK`; sourced `4421 / 0`; synthetic `7349 / 0`; consensus gate `3567 / 0`; public eval `100.00`; doc coverage `847 / 1376`, untriaged A/B `0`.
+  - Dashboard relevance: High. This loop closes score-shaped semantic bugs in result constraints, ReEncrypt/NextKey state gating, and host-media byte windows rather than only adding shallow aliases.
+- 2026-06-08 KST - Continued no-submit MBR active uniform read-lock crossing audit:
+  - Audited Table 230 outside-MBR read behavior after finding that the verifier treated every read across multiple Locking ranges as a range-crossing data-protection error, even when every effective segment was read-locked.
+  - Found concrete false PASS/FAIL pair: with `MBRControl.Enable=true`, `Done=false`, `Locking_Range1` covering LBAs `300000..300003`, and a created adjacent range covering `300004..300007`, both with `ReadLockEnabled=true` and `ReadLocked=true`, a host read over `300000..300007` should return zeroes. The previous model could prefer data-protection error solely because the LBA window crossed a range boundary.
+  - Official evidence: Core Table 230 distinguishes outside-MBR active-shadow reads by lock state: unlocked/disabled returns user data, locked returns all zeroes, and mixed read-lock boundaries are data-protection errors. A boundary crossing where all covered segments are read-locked is not a mixed boundary.
+  - Repair: added `_all_read_locked` in `semantics.py` and made `_expected_host_read` choose data-protection error for active-MBR outside crossing only when not all effective ranges are read-locked. Uniform read-locked outside reads now use the existing zero-fill expectation.
+  - Added regression coverage: 1 unit test and 2 sourced `mbr-doc` cases for correct zero-fill vs impossible data-protection status.
+  - Verification: targeted unit `1 OK`; `mbr-doc` `37 / 0`; full unit `1382 OK`; sourced `4423 / 0`; synthetic `7349 / 0`; consensus gate `3567 / 0`; public eval `100.00`; doc coverage `847 / 1376`, untriaged A/B `0`.
+  - Dashboard relevance: Medium-high. This is a compact hidden-test shape combining MBR active shadowing, dynamic Locking range creation, and range-crossing semantics; the repair is state-based and preserves mixed-boundary errors.
+- 2026-06-08 KST - Continued no-submit Random/Crypto destination BufferOut alias repair:
+  - Continued the score-first representation mismatch sweep after the automatic fresh probe was clean.
+  - Found concrete Random false PASS/FAIL extension: `destination`, `Destination`, `dest`, and `Dest` were allowed Random output-buffer aliases, but `_expected_random` did not treat them as BufferOut. Empty Result therefore failed while a returned byte payload passed.
+  - Found concrete Encrypt/Decrypt false PASS/FAIL class: stream `Encrypt`/`Decrypt` calls using `destination`, `dest`, `Out`, or `out` as output-buffer aliases had the same inverted behavior. The access-control check also did not inspect these aliases, so a DataStore destination alias could bypass byte-table Set-access validation.
+  - Repair:
+    - Extended Random BufferOut detection to include `Destination`, `destination`, `Dest`, and `dest`.
+    - Extended Crypto stream Init/Encrypt/Decrypt output-buffer detection and byte-table output access validation to include `Destination`, `destination`, `Dest`, `dest`, `Out`, and `out`.
+  - Added regression coverage:
+    - Random output aliases now cover `Output/output/Out/out/Destination/destination/Dest/dest`, with empty result PASS and returned-bytes FAIL.
+    - Encrypt/Decrypt destination aliases now cover empty result PASS and returned-bytes FAIL.
+    - DataStore `destination` alias now requires write access and fails when `ACE_DataStore_Set_All` has been emptied.
+  - Verification:
+    - Targeted units OK.
+    - Targeted sourced tags `random-doc`, `random-bufferout-cellblock-acl-doc`, `random-bufferout-capacity-doc`, `crypto-stream-state-tight-doc`, `crypto-cellblock-accesscontrol-doc`, and `crypto-bufferout-capacity-doc` all `0` mismatches.
+    - Fresh probe `7380 / 0`.
+    - Full unit `1402 OK`; sourced `4471 / 0`; synthetic `7349 / 0`; consensus gate `3567 / 0`; public eval `100.00`; doc coverage `851 / 1376`, untriaged A/B `0`.
+  - Dashboard relevance: Medium-high. This is a compact hidden-log representation class: SDK traces often spell output buffers as `destination`, `dest`, or `out`, and the previous model could accept the wrong return shape or miss DataStore Set-access requirements.
+- 2026-06-08 KST - Continued no-submit Random BufferOut output-alias calibration:
+  - Paused the loop to reassess the current score path and fresh probe state. Subagents could not run because the workspace spend cap blocked all spawned agents, so the investigation continued locally.
+  - Fresh probe `analysis/score_probe_queue_fresh2.jsonl` initially showed 26 Random BufferOut mismatches. Document review showed these were unsafe probe expectations, not solver bugs: Core requires Set access control on output cellblocks, and existing sourced cases already reject no-session/no-authority DataStore or MBR BufferOut success.
+  - Probe repair: changed Random BufferOut PASS probes to use a generic BufferOut cellblock instead of DataStore, and added an explicit DataStore BufferOut without write access FAIL probe. Fresh probe then covered 7380 probes with 0 mismatches.
+  - Found concrete solver false PASS/FAIL class after the probe cleanup: raw/intermediate Random calls using `Output` as the BufferOut alias had inverted return-shape behavior. `SUCCESS` with empty result failed, while `SUCCESS` returning generated bytes passed.
+  - Repair: aligned `_expected_random` with parser/output alias handling by treating `Output`, `output`, `Out`, and `out` as BufferOut aliases for Random result-shape validation.
+  - Added regression coverage: 1 unit test covering `Output` alias empty-result PASS and returned-bytes FAIL.
+  - Verification: targeted Random units OK; targeted Random sourced tags `random-doc`, `random-bufferout-cellblock-acl-doc`, and `random-bufferout-capacity-doc` all `0` mismatches; fresh probe `7380 / 0`; full unit `1400 OK`; sourced `4471 / 0`; synthetic `7349 / 0`; consensus gate `3567 / 0`; public eval `100.00`; doc coverage `851 / 1376`, untriaged A/B `0`.
+  - Dashboard relevance: Medium. This is a compact representation bug in a wrapper-heavy area: hidden logs may use SDK-style `Output` aliases for Random BufferOut, and the previous model could score both the empty-result and returned-bytes cases backward.
+- 2026-06-08 KST - Continued no-submit hash Verify signer and created-row GetACL base-alias audit:
+  - Followed the queued Crypto/public-key signer mismatch and the fresh score probe's created-row wrapper AddACE misses.
+  - Found concrete hash false PASS class: after an `H_SHA_*` object's Signer column is observed as a non-public-key credential such as `C_PIN_SID` or `C_AES_256`, `Verify` could still accept `SUCCESS` with boolean `True`.
+  - Found concrete parser/state issue: explicit crypto-family names such as `H_SHA_256` could be hidden by ambiguous UID mapping to a different family object, so later Verify checks did not see the observed Signer state.
+  - Found concrete created-row false FAIL class: when `CreateTable(GetSetACL=[ACE_Anybody])` supplied base ACL refs, a later wrapper `AddACE` followed by `GetACL` returning the base alias plus the added ACE could be rejected because created-row exact length/state counted only runtime ACE assumptions.
+  - Official evidence: Core hash object `Verify` uses the public key credential referenced by the Signer column and fails if the hash object does not reference a public key credential. Core created-object ACLs may inherit supplied base `GetSetACL` refs while dynamic AddACE mutates the association list.
+  - Repair:
+    - Added state tracking for `H_SHA_*` Signer column from successful `Get` / `Set`.
+    - Made explicit crypto-family object names win over ambiguous UID-derived aliases for crypto state updates.
+    - Tightened hash `Verify` so known non-public-key Signers reject successful verification.
+    - Adjusted created-row GetACL exactness so CreateTable `GetSetACL` base aliases are allowed in GetACL results, while RemoveACE remains strict before a ref is actually in the runtime ACL.
+  - Added regression coverage: 1 unit test for hash Signer public-key requirements, extended the created-row wrapper AddACE dynamic ACL unit, and added 3 sourced `verify-hash-signer-publickey-doc` cases.
+  - Verification: targeted hash units OK; targeted created-row AddACE/RemoveACE units OK; `verify-hash-signer-publickey-doc` `3 / 0`; `created-row-failed-meta-nonmutation-doc` `11 / 0`; full unit `1399 OK`; sourced `4471 / 0`; synthetic `7349 / 0`; consensus gate selected `3567`, mismatches `0`; public eval `100.00`; doc coverage `851 / 1376`, untriaged A/B `0`; consensus report `4471` cases, `3567` accepted, `904` quarantined.
+  - Fresh probe status: created-row wrapper AddACE rows that were previously current-model FAIL now predict PASS. No-session Random `BufferOut` rows still appear as probe mismatches, but remain pending doc adjudication because BufferOut writes to a DataStore byte table and may require an authorized DataStore/LockingSP context.
+  - Dashboard relevance: Medium-high. Hash Signer validity is compact and doc-explicit; created-row AddACE/GetACL base alias handling is in the historically score-sensitive AccessControl area without loosening RemoveACE.
+- 2026-06-08 KST - Continued no-submit created-row RemoveACE preconfigured-ACE rejection audit:
+  - Followed the created-row ACL explorer after it found that a newly created object row could successfully `RemoveACE(ACE_Anybody)` or another builtin ACE before the generated runtime ACE had ever been observed.
+  - Found concrete false PASS class: after `CreateRow`, the created object's initial method ACL is backed by a generated runtime ACE, not by a common preconfigured ACE. A `RemoveACE` targeting `ACE_Anybody` before that ACE was added to the ACL should fail and must not mutate later ACL state.
+  - Official evidence: Core `CreateRow` creates associated AccessControl rows and a new ACE; all new AccessControl rows reference the new ACE. `RemoveACE` removes an ACE uidref from the association ACL, so removing a known preconfigured ACE that is not in that ACL is invalid.
+  - Repair: tightened `_expected_acl_mutation` for `RemoveACE` so unknown created-row runtime ACLs reject removal of forbidden known preconfigured ACE refs, while still allowing a later `AddACE(ACE_Admin)` followed by `RemoveACE(ACE_Admin)` after that ACE is actually present.
+  - Added regression coverage: 1 unit test and 2 sourced `created-row-failed-meta-nonmutation-doc` cases for failed preconfigured-ACE removal and non-poisoning of a later dynamic AddACE/RemoveACE path.
+  - Verification: targeted unit `1 OK`; `created-row-failed-meta-nonmutation-doc` `11 / 0`; full unit `1384 OK`; sourced `4429 / 0`; synthetic `7349 / 0`; consensus gate `3567 / 0`; public eval `100.00`; doc coverage `847 / 1376`, untriaged A/B `0`.
+  - Dashboard relevance: Medium-high. Private traces can create dynamic rows and probe ACL mutation with familiar builtin ACE names; this repair blocks a false success without hard-coding a single UID.
+- 2026-06-08 KST - Continued no-submit Locking CreateRow reset-list value validation audit:
+  - Followed the Locking row explorer after it found that raw `CreateRow` on the Locking table accepted invalid `LockOnReset` reset-type lists such as `[1]` or `[3]`.
+  - Found concrete false PASS class: `CreateRow(Locking, Values={RangeStart, RangeLength, lock booleans, LockOnReset=[1]})` could succeed even though a hardware-only or programmatic-only reset list is not a valid Opal Locking row value.
+  - Official evidence: Opal Locking rows only support LockOnReset sets `{0}`, `{0,3}`, and optionally `{0,1}` / `{0,1,3}`; hardware-only `{1}` and programmatic-only `{3}` are not valid. Core requires rows created by `CreateRow` to satisfy the destination table's row-value constraints.
+  - Repair: extracted Locking row value validation into `_locking_row_values_invalid` and reused it from both ordinary `Set` validation and Locking `CreateRow` expectation handling, so type/reset-list restrictions apply to created row values before accepting success.
+  - Added regression coverage: 1 unit test and 2 sourced `locking-created-row-failed-set-reset-doc` cases for hardware-only and programmatic-only invalid LockOnReset values.
+  - Verification: targeted unit `1 OK`; `locking-created-row-failed-set-reset-doc` `14 / 0`; full unit `1384 OK`; sourced `4429 / 0`; synthetic `7349 / 0`; consensus gate `3567 / 0`; public eval `100.00`; doc coverage `847 / 1376`, untriaged A/B `0`.
+  - Dashboard relevance: Medium-high. This is a short hidden-test-friendly false PASS: a single raw CreateRow can expose whether created Locking rows obey the same official column/reset-list constraints as later Set calls.
+- 2026-06-08 KST - Continued no-submit host I/O spelling and Crypto BufferOut byte-table audit:
+  - Followed Archimedes' host I/O finding and Newton's BufferOut finding, then locally reproduced only candidates that had official-doc backing and current-model disagreement.
+  - Found concrete host false PASS class: raw wrapper-style host I/O with `operation="READ"` or `operation="WRITE"` parsed as host I/O but bypassed the exact `"Read"`/`"Write"` comparisons used by `_expected_host_io` and successful host-write state transitions. A locked range could therefore accept a successful uppercase read/write.
+  - Found concrete Crypto BufferOut false PASS class: byte-table BufferOut cellblocks for `HashInit`/`XOR` could include column selectors, exceed an observed DataStore `Rows` boundary, or violate an observed DataStore `MandatoryWriteGranularity` while still accepting `SUCCESS`.
+  - Official evidence: host read/write behavior is defined by the operation, not by string casing in wrapper logs; byte-table windows are row-byte windows, Rows is the actual number of addressable rows, and MandatoryWriteGranularity constrains byte-table writes. Crypto `BufferOut` writes method output into the referenced byte-table window, so it must obey the same row-window validity constraints.
+  - Repair: added `_canonical_host_io_method` in the parser so `READ/read/Read` and `WRITE/write/Write` feed the same semantic path; added explicit byte-table BufferOut validation for output cellblocks, rejecting column selectors, observed row-boundary overflows, and mandatory-granularity violations without rejecting existing inline `{"Bytes": ...}` shorthand cases.
+  - Added regression coverage: 5 unit tests and 6 sourced cases across `locking-host-io-impossible-doc`, `xor-byte-table-bufferout-doc`, `crypto-cellblock-accesscontrol-doc`, `byte-table-observed-rows-doc`, and `datastore-no-values-granularity-doc`.
+  - Verification: targeted unit `5 OK`; targeted sourced tags all `0` mismatches; full unit `1389 OK`; sourced `4435 / 0`; synthetic `7349 / 0`; consensus gate `3567 / 0`; public eval `100.00`; doc coverage `847 / 1376`, untriaged A/B `0`.
+  - Dashboard relevance: High. These are private-test-friendly representation and state bugs: hidden traces can vary wrapper operation casing or combine observed byte-table descriptors with Crypto BufferOut windows without requiring long setup.
+- 2026-06-08 KST - Continued no-submit table boolean, Crypto required-input, and dynamic runtime-ACE RemoveACE audit:
+  - Spawned/closed focused concept agents for AccessControl created-row dynamic ACE mutation, Crypto stream argument obligations, and LockOnReset disabled-side recovery.
+  - Accepted findings:
+    - Table boolean cells in Set/CreateRow-style stored values must use table boolean values, not arbitrary string tokens such as `"true"` / `"false"`. Kept TPerInfo string-literal handling separate because existing official/wrapper coverage expects uppercase boolean literals there.
+    - `Hash`, `HMAC`, `Encrypt`, and `Decrypt` on open Crypto streams require an Input-like data argument before a successful processed-byte response can be trusted.
+    - Created-row runtime ACE UIDs returned by GetACL are real dynamic ACL refs even when they are raw UIDs rather than preconfigured `ACE_*` aliases; later `RemoveACE` must remove them from exact GetACL state and from direct method authorization.
+  - Rejected/pending finding:
+    - A LockOnReset disabled-side stored-cell proposal was left unpatched for now because it conflicts with earlier logged doc adjudication and existing sourced regression intent. It remains a pending doc review item, not a solver rule.
+  - Found concrete false PASS classes:
+    - `Set(Locking_Range1, ReadLockEnabled="true")` and wrapper `setMBRControl(Enable="true")` could accept string booleans as successful table writes.
+    - Open Crypto stream operations could accept `SUCCESS` for `Hash`/`HMAC`/`Encrypt`/`Decrypt` without any Input/DataInput/Buffer/Data payload.
+    - After a created-row runtime ACE UID was observed, `RemoveACE(created_row, Get, runtime_uid)` failed to mutate exact ACL state and could allow stale GetACL/direct Get success.
+  - Repair:
+    - Added a dedicated table-boolean value helper and applied it to Locking, MBRControl, SPInfo, Authority, C_PIN, LogList, Port, TLS_PSK, AdminSP, and LockingSP stored boolean cells.
+    - Added Crypto stream required-input validation for `Hash`, `HMAC`, `Encrypt`, and `Decrypt`.
+    - Preserved raw dynamic runtime ACE UIDs through ACE extraction, transition candidate binding, ACL mutation validation, and dynamic-object method authorization.
+  - Added regression coverage:
+    - 3 unit tests covering Locking string booleans, MBRControl string booleans, Crypto missing Input, plus 1 created-row runtime RemoveACE state unit trajectory.
+    - Sourced cases under `locking-boolean-set-type-tight-doc`, `mbrcontrol-defaults-doc`, `crypto-stream-state-tight-doc`, `hash-stream-state-bufferout-tight-doc`, and `created-row-meta-acl-state-doc`.
+  - Verification:
+    - Full unit: `python3 -m unittest tests.test_solver_rules` => `1393 OK`.
+    - Sourced: `python3 tools/run_sourced_edges.py` => `4446 / 0`.
+    - Synthetic: `python3 tools/run_synthetic_edges.py` => `7349 / 0`.
+    - Public eval: `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py` => `score=100.00`.
+    - Doc coverage: `python3 tools/doc_coverage.py` => `docs=1376`, `cases=4446`, `covered_docs=847`, `untriaged_A_B=0`.
+    - Consensus report: `cases=4446`, `reviews=12078`, `accepted=3567`, `quarantined=879`.
+    - Consensus gate: selected `3567`, mismatches `0`.
+  - Dashboard relevance: Medium-high. This batch targets compact hidden-test shapes: type-strict table writes, Crypto method argument omissions, and dynamic created-row ACL mutation over raw runtime UIDs.
+- 2026-06-08 KST - Continued no-submit AccessControl table-level Get universe and positional required-argument audit:
+  - Spawned/closed focused subagents for AccessControl/GetACL, Locking/MBR, and DataStore/Crypto/Package.
+  - Accepted findings:
+    - AccessControl association existence was over-broad for table-level `Get`: missing concrete rows such as `AdminSP MethodIDTable/Get`, `AdminSP ACETable/Get`, `LockingSP SPTemplatesTable/Get`, and `LockingSP C_PINTable/Get` could accept `SUCCESS` and reject the correct `NOT_AUTHORIZED`.
+    - Required positional parameters for `GetPackage`, `SetPackage`, and `XOR` were rejected even though Core method signatures mark them with `:` positional required syntax.
+  - Repair:
+    - Added exact table-level `Get` allowlists for Admin and Locking SP preconfiguration. Preserved valid `SPInfo/Get`, Admin `SPTemplatesTable/Get`, Admin `TemplateTable/Get`, Admin `SPTable/Get`, Locking `SecretProtectTable/Get`, and row-object wildcard associations.
+    - Added a positional method-argument helper in expectations and used it for `GetPackage Purpose`, `SetPackage Value`, and `XOR PatternInput/DeletePattern/Input` with optional positional BufferOut handling.
+  - Added regression coverage:
+    - Unit tests for missing metadata-table `GetACL` associations and valid table-level `Get` associations.
+    - Unit tests for positional `GetPackage`, `SetPackage`, and `XOR`.
+    - Sourced cases under `accesscontrol-metadata-table-method-universe-doc`, `package-doc`, and `xor-byte-table-bufferout-doc`.
+  - Rejected/pending findings:
+    - MBR shadow boundary read was identified as a plausible false FAIL, but existing sourced consensus currently asserts partial-boundary data-protection behavior. This needs a separate doc adjudication before changing solver behavior.
+    - A trajectory-poisoning idea where an impossible successful Global Range geometry Set mutates later state was left lower priority because hidden/evaluation trajectories usually judge the final event under trusted context.
+    - A hash `Verify` signer-credential mismatch candidate remains queued for a later Crypto/public-key audit.
+  - Verification:
+    - Full unit: `python3 -m unittest tests.test_solver_rules` => `1398 OK`.
+    - Sourced: `python3 tools/run_sourced_edges.py` => `4468 / 0`.
+    - Synthetic: `python3 tools/run_synthetic_edges.py` => `7349 / 0`.
+    - Public eval: `DATASET_DIR=dataset LABEL_PATH=dataset/label.jsonl python3 evaluate.py` => `score=100.00`.
+    - Doc coverage: `docs=1376`, `cases=4468`, `covered_docs=847`, `untriaged_A_B=0`.
+    - Consensus report: `cases=4468`, `reviews=12078`, `accepted=3567`, `quarantined=901`.
+    - Consensus gate: selected `3567`, mismatches `0`.
+  - Next queue:
+    - `score_probe_queue.jsonl` is now highlighting created-row wrapper `AddACE` envelope misses where `values`, `policy.association`, `request.accessControlRequest`, or `params.target` carry the association and ACE argument but dynamic ACL state is not updated.
+  - Dashboard relevance: High. The AccessControl part is a compact exact-preconfiguration false PASS/FAIL in the historically score-sensitive GetACL area; the positional-argument fixes close raw-method representation gaps for Package and XOR without loosening named-argument validation.

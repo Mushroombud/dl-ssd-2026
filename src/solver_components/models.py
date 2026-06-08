@@ -104,6 +104,8 @@ class Session:
     host_session_id: str | None = None
     sp_session_id: str | None = None
     startup_host_challenge: bool = False
+    startup_sp_challenge: bool = False
+    trusted_startup_pending: bool = False
     comid: str = ""
 
 
@@ -146,6 +148,7 @@ class State:
     session: Session = field(default_factory=Session)
     crypto_streams: dict[tuple[str, str], bool] = field(default_factory=dict)
     crypto_stream_bufferout: set[tuple[str, str]] = field(default_factory=set)
+    crypto_stream_bufferout_value: dict[tuple[str, str], Any] = field(default_factory=dict)
     pins: dict[str, str] = field(default_factory=dict)
     invalidated_pin_values: dict[str, set[str]] = field(default_factory=dict)
     pin_min_lengths: dict[str, int] = field(default_factory=dict)
@@ -163,10 +166,12 @@ class State:
     authority_uses: dict[str, int] = field(default_factory=dict)
     locking_sp_activated: bool = False
     observed_sp_lifecycle: dict[str, int] = field(default_factory=dict)
+    sp_failed: set[str] = field(default_factory=set)
     sp_enabled: dict[str, bool] = field(default_factory=dict)
     sp_frozen: dict[str, bool] = field(default_factory=dict)
     sp_session_timeouts: dict[str, int] = field(default_factory=dict)
     tper_def_session_timeout: int | None = None
+    tper_max_sessions: int | None = None
     tper_max_session_timeout: int | None = None
     tper_min_session_timeout: int | None = None
     tper_def_trans_timeout: int | None = None
@@ -184,6 +189,7 @@ class State:
     created_table_rows: dict[str, list[dict[int, Any]]] = field(default_factory=dict)
     created_table_row_values_by_uid: dict[str, tuple[str, dict[int, Any]]] = field(default_factory=dict)
     created_table_row_meta_acl_authorities: dict[str, set[str]] = field(default_factory=dict)
+    created_row_side_effect_ace_by_uid: dict[str, str] = field(default_factory=dict)
     created_table_descriptor_uids: dict[str, str] = field(default_factory=dict)
     created_table_min_sizes: dict[str, int] = field(default_factory=dict)
     created_table_max_sizes: dict[str, int] = field(default_factory=dict)
@@ -211,6 +217,7 @@ class State:
     data_removal_mechanism: Any = None
     datastore_pattern: str | None = None
     datastore_bytes: dict[int, str] = field(default_factory=dict)
+    caes_modes: dict[str, int] = field(default_factory=dict)
     port_values: dict[str, dict[int, Any]] = field(default_factory=dict)
     psk_values: dict[str, dict[int, Any]] = field(default_factory=dict)
     byte_table_rows: dict[str, int] = field(default_factory=dict)

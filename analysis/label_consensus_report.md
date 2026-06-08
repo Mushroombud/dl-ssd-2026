@@ -1,6 +1,6 @@
 # Label Consensus Report
 
-Generated: 2026-05-31T20:21:19
+Generated: 2026-06-08T20:33:30
 
 ## Policy
 
@@ -12,8 +12,8 @@ Generated: 2026-05-31T20:21:19
 
 ## Summary
 
-- accepted: 3591
-- needs_review: 278
+- accepted: 3567
+- needs_review: 783
 - quarantine_author_disagreement: 1
 - quarantine_concerns: 88
 - quarantine_disagreement: 19
@@ -21,6 +21,356 @@ Generated: 2026-05-31T20:21:19
 
 ## Non-Accepted Cases
 
+- `cec-uinteger-set-type-doc-34fb7df1df` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger curve parameter Set rejects boolean: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-0acadadb3d` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger curve parameter Set rejects negative: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-f36268757b` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger curve parameter Set rejects nonnumeric text: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-df2164358b` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger curve parameter Set accepts 0
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-9c99339c55` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger curve parameter Set accepts 1
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-c51d618b10` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger_36 curve parameter Set rejects value above declared width: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-bb8b622e67` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger_36 curve parameter Set accepts maximum declared value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-e38922a7ee` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger curve parameter Get rejects boolean return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-f4e06c19fc` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger curve parameter Get rejects negative return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-07a79e8438` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger curve parameter Get rejects nonnumeric text return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-4d6577a304` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger curve parameter Get accepts 0 return
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-31825a67ec` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger curve parameter Get accepts 1 return
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-a89232d2b6` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger_36 curve parameter Get rejects value above declared width
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `cec-uinteger-set-type-doc-97dad3eb14` [needs_review] cec-uinteger-set-type-doc
+  - internal name: C_EC_256 uinteger_36 curve parameter Get accepts maximum declared value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-ec, set, get-postcondition, uinteger, curve-parameters, type-validation
+  - repair hint: Check C_EC curve parameter values: uinteger_N columns must be nonnegative numeric values on successful Set and returned Get cells, not booleans or arbitrary text.
+  - evidence: core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt
+- `crsa-uinteger-get-type-doc-9abcf9127a` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 uinteger key parameter Set rejects boolean: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-97faa32c0e` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 uinteger key parameter Set rejects negative: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-ec7cb1006c` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 uinteger key parameter Set rejects nonnumeric text: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-665519a13a` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 Pu_Exp uinteger_256 Set rejects value above declared width: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-b3da1eec65` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 P uinteger_128 Set rejects value above declared width: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-b91c0bb9d0` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 Pu_Exp uinteger_256 Set accepts maximum declared value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-9a92d97ee7` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 P uinteger_128 Set accepts maximum declared value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-8192a9235f` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 uinteger key parameter Get rejects boolean return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-cd9460ffb4` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 uinteger key parameter Get rejects negative return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-ec6bfba6e3` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 uinteger key parameter Get rejects nonnumeric text return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-360d23f673` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 Pu_Exp uinteger_256 Get rejects value above declared width
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-2cf3f402ea` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 P uinteger_128 Get rejects value above declared width
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-5a1bcde52b` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 Pu_Exp uinteger_256 Get accepts maximum declared value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-d140a14814` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 P uinteger_128 Get accepts maximum declared value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-eace642a7c` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 uinteger key parameter Get accepts 0 return
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `crsa-uinteger-get-type-doc-098d712395` [needs_review] crsa-uinteger-get-type-doc
+  - internal name: C_RSA_2048 uinteger key parameter Get accepts 65537 return
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, get-postcondition, uinteger, rsa-key-fields, type-validation
+  - repair hint: Check C_RSA returned Get cells: Pu_Exp, Mod, Pr_Exp, P, Q, Dmp1, Dmq1, and Iqmp are uinteger_N fields, so successful returned cells cannot be booleans, negative numbers, or nonnumeric text.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt
+- `publickey-chainlimit-get-type-doc-ade5adf67f` [needs_review] publickey-chainlimit-get-type-doc
+  - internal name: C_RSA_2048 ChainLimit Get rejects boolean return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, integer, chainlimit, type-validation
+  - repair hint: Check public-key credential ChainLimit returned Get cells: ChainLimit is an integer_1/int_1_def_0 field, where -1 means no limit and 0 means no chain, so booleans and nonnumeric text cannot be accepted as successful returned ChainLimit values.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.14.txt, core/5.3.2.14.txt, core/5.3.2.14.14.txt, core/5.3.2.17.txt, core/5.3.2.17.13.txt, core/5.3.2.20.txt
+- `publickey-chainlimit-get-type-doc-9ad70b9761` [needs_review] publickey-chainlimit-get-type-doc
+  - internal name: C_RSA_2048 ChainLimit Get rejects nonnumeric text return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, integer, chainlimit, type-validation
+  - repair hint: Check public-key credential ChainLimit returned Get cells: ChainLimit is an integer_1/int_1_def_0 field, where -1 means no limit and 0 means no chain, so booleans and nonnumeric text cannot be accepted as successful returned ChainLimit values.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.14.txt, core/5.3.2.14.txt, core/5.3.2.14.14.txt, core/5.3.2.17.txt, core/5.3.2.17.13.txt, core/5.3.2.20.txt
+- `publickey-chainlimit-get-type-doc-0d69e43875` [needs_review] publickey-chainlimit-get-type-doc
+  - internal name: C_RSA_2048 ChainLimit Get accepts integer -1 return
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, integer, chainlimit, type-validation
+  - repair hint: Check public-key credential ChainLimit returned Get cells: ChainLimit is an integer_1/int_1_def_0 field, where -1 means no limit and 0 means no chain, so booleans and nonnumeric text cannot be accepted as successful returned ChainLimit values.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.14.txt, core/5.3.2.14.txt, core/5.3.2.14.14.txt, core/5.3.2.17.txt, core/5.3.2.17.13.txt, core/5.3.2.20.txt
+- `publickey-chainlimit-get-type-doc-c766b33fae` [needs_review] publickey-chainlimit-get-type-doc
+  - internal name: C_RSA_2048 ChainLimit Get accepts integer 0 return
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, integer, chainlimit, type-validation
+  - repair hint: Check public-key credential ChainLimit returned Get cells: ChainLimit is an integer_1/int_1_def_0 field, where -1 means no limit and 0 means no chain, so booleans and nonnumeric text cannot be accepted as successful returned ChainLimit values.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.14.txt, core/5.3.2.14.txt, core/5.3.2.14.14.txt, core/5.3.2.17.txt, core/5.3.2.17.13.txt, core/5.3.2.20.txt
+- `publickey-chainlimit-get-type-doc-7dbd4cc7d3` [needs_review] publickey-chainlimit-get-type-doc
+  - internal name: C_RSA_2048 ChainLimit Get accepts integer 1 return
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, integer, chainlimit, type-validation
+  - repair hint: Check public-key credential ChainLimit returned Get cells: ChainLimit is an integer_1/int_1_def_0 field, where -1 means no limit and 0 means no chain, so booleans and nonnumeric text cannot be accepted as successful returned ChainLimit values.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.14.txt, core/5.3.2.14.txt, core/5.3.2.14.14.txt, core/5.3.2.17.txt, core/5.3.2.17.13.txt, core/5.3.2.20.txt
+- `publickey-chainlimit-get-type-doc-a7ac4209a3` [needs_review] publickey-chainlimit-get-type-doc
+  - internal name: C_EC_256 ChainLimit Get rejects boolean return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, integer, chainlimit, type-validation
+  - repair hint: Check public-key credential ChainLimit returned Get cells: ChainLimit is an integer_1/int_1_def_0 field, where -1 means no limit and 0 means no chain, so booleans and nonnumeric text cannot be accepted as successful returned ChainLimit values.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.14.txt, core/5.3.2.14.txt, core/5.3.2.14.14.txt, core/5.3.2.17.txt, core/5.3.2.17.13.txt, core/5.3.2.20.txt
+- `publickey-chainlimit-get-type-doc-e577c2f3e3` [needs_review] publickey-chainlimit-get-type-doc
+  - internal name: C_EC_256 ChainLimit Get rejects nonnumeric text return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, integer, chainlimit, type-validation
+  - repair hint: Check public-key credential ChainLimit returned Get cells: ChainLimit is an integer_1/int_1_def_0 field, where -1 means no limit and 0 means no chain, so booleans and nonnumeric text cannot be accepted as successful returned ChainLimit values.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.14.txt, core/5.3.2.14.txt, core/5.3.2.14.14.txt, core/5.3.2.17.txt, core/5.3.2.17.13.txt, core/5.3.2.20.txt
+- `publickey-chainlimit-get-type-doc-31dc85608d` [needs_review] publickey-chainlimit-get-type-doc
+  - internal name: C_EC_256 ChainLimit Get accepts integer -1 return
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, integer, chainlimit, type-validation
+  - repair hint: Check public-key credential ChainLimit returned Get cells: ChainLimit is an integer_1/int_1_def_0 field, where -1 means no limit and 0 means no chain, so booleans and nonnumeric text cannot be accepted as successful returned ChainLimit values.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.14.txt, core/5.3.2.14.txt, core/5.3.2.14.14.txt, core/5.3.2.17.txt, core/5.3.2.17.13.txt, core/5.3.2.20.txt
+- `publickey-chainlimit-get-type-doc-9b6ffc9c4b` [needs_review] publickey-chainlimit-get-type-doc
+  - internal name: C_EC_256 ChainLimit Get accepts integer 0 return
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, integer, chainlimit, type-validation
+  - repair hint: Check public-key credential ChainLimit returned Get cells: ChainLimit is an integer_1/int_1_def_0 field, where -1 means no limit and 0 means no chain, so booleans and nonnumeric text cannot be accepted as successful returned ChainLimit values.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.14.txt, core/5.3.2.14.txt, core/5.3.2.14.14.txt, core/5.3.2.17.txt, core/5.3.2.17.13.txt, core/5.3.2.20.txt
+- `publickey-chainlimit-get-type-doc-b0ed4aff76` [needs_review] publickey-chainlimit-get-type-doc
+  - internal name: C_EC_256 ChainLimit Get accepts integer 1 return
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, integer, chainlimit, type-validation
+  - repair hint: Check public-key credential ChainLimit returned Get cells: ChainLimit is an integer_1/int_1_def_0 field, where -1 means no limit and 0 means no chain, so booleans and nonnumeric text cannot be accepted as successful returned ChainLimit values.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.14.txt, core/5.3.2.14.txt, core/5.3.2.14.14.txt, core/5.3.2.17.txt, core/5.3.2.17.13.txt, core/5.3.2.20.txt
+- `publickey-certificate-ref-get-type-doc-fe5f557faf` [needs_review] publickey-certificate-ref-get-type-doc
+  - internal name: C_RSA_2048 Certificate Get rejects boolean return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, certificate, object-ref, type-validation
+  - repair hint: Check public-key credential Certificate returned Get cells: Certificate is a Certificates_object_ref, so booleans, integers, and arbitrary non-reference text are not compliant successful returned cells.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.15.txt, core/5.3.2.14.txt, core/5.3.2.14.15.txt, core/5.3.2.17.txt, core/5.3.2.17.14.txt, core/5.3.2.20.txt
+- `publickey-certificate-ref-get-type-doc-d3e0486beb` [needs_review] publickey-certificate-ref-get-type-doc
+  - internal name: C_RSA_2048 Certificate Get rejects integer return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, certificate, object-ref, type-validation
+  - repair hint: Check public-key credential Certificate returned Get cells: Certificate is a Certificates_object_ref, so booleans, integers, and arbitrary non-reference text are not compliant successful returned cells.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.15.txt, core/5.3.2.14.txt, core/5.3.2.14.15.txt, core/5.3.2.17.txt, core/5.3.2.17.14.txt, core/5.3.2.20.txt
+- `publickey-certificate-ref-get-type-doc-7621fe08bf` [needs_review] publickey-certificate-ref-get-type-doc
+  - internal name: C_RSA_2048 Certificate Get rejects nonnumeric text return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, certificate, object-ref, type-validation
+  - repair hint: Check public-key credential Certificate returned Get cells: Certificate is a Certificates_object_ref, so booleans, integers, and arbitrary non-reference text are not compliant successful returned cells.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.15.txt, core/5.3.2.14.txt, core/5.3.2.14.15.txt, core/5.3.2.17.txt, core/5.3.2.17.14.txt, core/5.3.2.20.txt
+- `publickey-certificate-ref-get-type-doc-b432f4c53c` [needs_review] publickey-certificate-ref-get-type-doc
+  - internal name: C_RSA_2048 Certificate Get accepts object reference 0000000A00000001
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, certificate, object-ref, type-validation
+  - repair hint: Check public-key credential Certificate returned Get cells: Certificate is a Certificates_object_ref, so booleans, integers, and arbitrary non-reference text are not compliant successful returned cells.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.15.txt, core/5.3.2.14.txt, core/5.3.2.14.15.txt, core/5.3.2.17.txt, core/5.3.2.17.14.txt, core/5.3.2.20.txt
+- `publickey-certificate-ref-get-type-doc-cd287d0bad` [needs_review] publickey-certificate-ref-get-type-doc
+  - internal name: C_RSA_2048 Certificate Get accepts object reference Certificates_Test
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, certificate, object-ref, type-validation
+  - repair hint: Check public-key credential Certificate returned Get cells: Certificate is a Certificates_object_ref, so booleans, integers, and arbitrary non-reference text are not compliant successful returned cells.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.15.txt, core/5.3.2.14.txt, core/5.3.2.14.15.txt, core/5.3.2.17.txt, core/5.3.2.17.14.txt, core/5.3.2.20.txt
+- `publickey-certificate-ref-get-type-doc-5cadf08df5` [needs_review] publickey-certificate-ref-get-type-doc
+  - internal name: C_EC_256 Certificate Get rejects boolean return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, certificate, object-ref, type-validation
+  - repair hint: Check public-key credential Certificate returned Get cells: Certificate is a Certificates_object_ref, so booleans, integers, and arbitrary non-reference text are not compliant successful returned cells.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.15.txt, core/5.3.2.14.txt, core/5.3.2.14.15.txt, core/5.3.2.17.txt, core/5.3.2.17.14.txt, core/5.3.2.20.txt
+- `publickey-certificate-ref-get-type-doc-44b27d5c42` [needs_review] publickey-certificate-ref-get-type-doc
+  - internal name: C_EC_256 Certificate Get rejects integer return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, certificate, object-ref, type-validation
+  - repair hint: Check public-key credential Certificate returned Get cells: Certificate is a Certificates_object_ref, so booleans, integers, and arbitrary non-reference text are not compliant successful returned cells.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.15.txt, core/5.3.2.14.txt, core/5.3.2.14.15.txt, core/5.3.2.17.txt, core/5.3.2.17.14.txt, core/5.3.2.20.txt
+- `publickey-certificate-ref-get-type-doc-e14d285681` [needs_review] publickey-certificate-ref-get-type-doc
+  - internal name: C_EC_256 Certificate Get rejects nonnumeric text return
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, certificate, object-ref, type-validation
+  - repair hint: Check public-key credential Certificate returned Get cells: Certificate is a Certificates_object_ref, so booleans, integers, and arbitrary non-reference text are not compliant successful returned cells.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.15.txt, core/5.3.2.14.txt, core/5.3.2.14.15.txt, core/5.3.2.17.txt, core/5.3.2.17.14.txt, core/5.3.2.20.txt
+- `publickey-certificate-ref-get-type-doc-3ba74840c5` [needs_review] publickey-certificate-ref-get-type-doc
+  - internal name: C_EC_256 Certificate Get accepts object reference 0000000A00000001
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, certificate, object-ref, type-validation
+  - repair hint: Check public-key credential Certificate returned Get cells: Certificate is a Certificates_object_ref, so booleans, integers, and arbitrary non-reference text are not compliant successful returned cells.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.15.txt, core/5.3.2.14.txt, core/5.3.2.14.15.txt, core/5.3.2.17.txt, core/5.3.2.17.14.txt, core/5.3.2.20.txt
+- `publickey-certificate-ref-get-type-doc-ea03cf2387` [needs_review] publickey-certificate-ref-get-type-doc
+  - internal name: C_EC_256 Certificate Get accepts object reference Certificates_Test
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, c-rsa, c-ec, get-postcondition, certificate, object-ref, type-validation
+  - repair hint: Check public-key credential Certificate returned Get cells: Certificate is a Certificates_object_ref, so booleans, integers, and arbitrary non-reference text are not compliant successful returned cells.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.13.15.txt, core/5.3.2.14.txt, core/5.3.2.14.15.txt, core/5.3.2.17.txt, core/5.3.2.17.14.txt, core/5.3.2.20.txt
 - `cpin-password-return-type-doc-9f85d98fe9` [needs_review] cpin-password-return-type-doc
   - internal name: C_PIN MSID PIN Get accepts password length 32 and rejects length 33: correct return value
   - author label: PASS
@@ -115,6 +465,20 @@ Generated: 2026-05-31T20:21:19
   - agent_omicron2: PASS conf=0.82 concerns=Assumes the boundary-crossing request is the Mixed row; the target also uses INVALID_PARAMETER rather than the snippet's literal Data Protection Error.
   - agent_xi2: PASS conf=0.88 concerns=-
   - agent_zeta: PASS conf=0.92 concerns=-
+- `locking-host-io-impossible-doc-7478fa9e40` [needs_review] locking-host-io-impossible-doc
+  - internal name: Uppercase READ operation cannot bypass enabled ReadLocked range
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, host-io, readlocked, writelocked, mbrcontrol, data-protection-error
+  - repair hint: Check that enabled ReadLocked/WriteLocked ranges forbid successful host I/O without relying on a concrete status-code mapping for Data Protection Error.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, core/5.7.3.2.txt
+- `locking-host-io-impossible-doc-312e9769e5` [needs_review] locking-host-io-impossible-doc
+  - internal name: Uppercase WRITE operation cannot bypass enabled WriteLocked range
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, host-io, readlocked, writelocked, mbrcontrol, data-protection-error
+  - repair hint: Check that enabled ReadLocked/WriteLocked ranges forbid successful host I/O without relying on a concrete status-code mapping for Data Protection Error.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, core/5.7.3.2.txt
 - `mbr-doc-6de85002a7` [quarantine_author_disagreement] mbr-doc
   - internal name: MBR active read inside shadow must not return old user data
   - author label: FAIL
@@ -145,6 +509,20 @@ Generated: 2026-05-31T20:21:19
   - mbr_table_a: PASS conf=1.0 concerns=-
   - mbr_table_b: PASS conf=0.75 concerns=The snippet states the authorization requirement but does not define the exact error code mapping, so confidence is medium rather than high.
   - mbr_table_c: PASS conf=1.0 concerns=-
+- `mbr-doc-11f73817f9` [needs_review] mbr-doc
+  - internal name: MBR active outside uniformly read-locked range crossing returns zeroes
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: host-io, mbr-shadowing, locking-range, table-230-231
+  - repair hint: Check MBRControl Enable/Done, LBA relation to the MBR region, mixed locking ranges, and read-result comparators.
+  - evidence: core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, core/5.7.2.2.6.txt, core/5.7.2.2.8.txt, core/5.7.3.2.txt
+- `mbr-doc-1565c27967` [needs_review] mbr-doc
+  - internal name: MBR active outside uniformly read-locked range crossing is not data protection error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: host-io, mbr-shadowing, locking-range, table-230-231
+  - repair hint: Check MBRControl Enable/Done, LBA relation to the MBR region, mixed locking ranges, and read-result comparators.
+  - evidence: core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, core/5.7.2.2.6.txt, core/5.7.2.2.8.txt, core/5.7.3.2.txt
 - `authority-password-operation-doc-135f96eeeb` [needs_review] authority-password-operation-doc
   - internal name: Admin SP Authority Admin1 Get reports Password operation: correct return value
   - author label: PASS
@@ -271,6 +649,55 @@ Generated: 2026-05-31T20:21:19
   - ace_kaes_set_crosscheck_a: FAIL conf=0.94 concerns=-
   - ace_kaes_set_crosscheck_b: FAIL conf=0.93 concerns=-
   - ace_kaes_set_crosscheck_c: FAIL conf=0.9 concerns=The label assumes the symbolic User1/Admins names in the response correspond to the Authority UID references in the trajectory and evidence.
+- `auth-operation-doc-7b996f2baf` [needs_review] auth-operation-doc
+  - internal name: TPerSign explicit Authenticate with Proof returns INVALID_PARAMETER: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: auth, authority, operation-column, authenticate, return-bool
+  - repair hint: Check Authority.Operation handling for explicit Authenticate; Exchange and TPerSign operations should not authenticate as SUCCESS True.
+  - evidence: core/5.3.4.1.2.txt, core/5.3.4.1.2.4.txt, core/5.3.4.1.14.1.txt
+- `auth-operation-doc-1f758c8696` [needs_review] auth-operation-doc
+  - internal name: TPerSign explicit Authenticate with Proof returns INVALID_PARAMETER: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: auth, authority, operation-column, authenticate, return-bool
+  - repair hint: Check Authority.Operation handling for explicit Authenticate; Exchange and TPerSign operations should not authenticate as SUCCESS True.
+  - evidence: core/5.3.4.1.2.txt, core/5.3.4.1.2.4.txt, core/5.3.4.1.14.1.txt
+- `auth-operation-doc-d45efe5847` [needs_review] auth-operation-doc
+  - internal name: AdminExch explicit Authenticate with Proof must not return SUCCESS False
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: auth, authority, operation-column, authenticate, return-bool
+  - repair hint: Check Authority.Operation handling for explicit Authenticate; Exchange and TPerSign operations should not authenticate as SUCCESS True.
+  - evidence: core/5.3.4.1.2.txt, core/5.3.4.1.2.4.txt, core/5.3.4.1.14.1.txt
+- `syncsession-return-shape-doc-b6446dff60` [needs_review] syncsession-return-shape-doc
+  - internal name: Separate SyncTrustedSession before StartTrustedSession must not succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: session-manager, sync-session, sync-trusted-session, return-shape, session-id, spchallenge, spresponse
+  - repair hint: Check SyncSession/SyncTrustedSession returned parameter shape: successful StartSession returns HostSessionID and SPSessionID, SPChallenge is omitted unless HostSigningAuthority directly invokes a signing credential, and SPResponse is omitted unless the original StartSession contained HostChallenge.
+  - evidence: core/5.2.3.1.txt, core/5.2.3.2.txt, core/5.2.3.2.1.txt, core/5.2.3.2.2.txt, core/5.2.3.2.3.txt, core/5.2.3.3.txt, core/5.2.3.3.3.txt, core/5.2.3.4.txt, core/5.2.3.4.1.txt, core/5.2.3.4.2.txt, core/5.2.3.4.3.txt, core/5.3.4.1.3.txt
+- `syncsession-return-shape-doc-9c24c7e172` [needs_review] syncsession-return-shape-doc
+  - internal name: Separate SyncTrustedSession omits SPResponse when startup had no HostChallenge: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: session-manager, sync-session, sync-trusted-session, return-shape, session-id, spchallenge, spresponse
+  - repair hint: Check SyncSession/SyncTrustedSession returned parameter shape: successful StartSession returns HostSessionID and SPSessionID, SPChallenge is omitted unless HostSigningAuthority directly invokes a signing credential, and SPResponse is omitted unless the original StartSession contained HostChallenge.
+  - evidence: core/5.2.3.1.txt, core/5.2.3.2.txt, core/5.2.3.2.1.txt, core/5.2.3.2.2.txt, core/5.2.3.2.3.txt, core/5.2.3.3.txt, core/5.2.3.3.3.txt, core/5.2.3.4.txt, core/5.2.3.4.1.txt, core/5.2.3.4.2.txt, core/5.2.3.4.3.txt, core/5.3.4.1.3.txt
+- `syncsession-return-shape-doc-dc41b6a3d4` [needs_review] syncsession-return-shape-doc
+  - internal name: Separate SyncTrustedSession omits SPResponse when startup had no HostChallenge: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: session-manager, sync-session, sync-trusted-session, return-shape, session-id, spchallenge, spresponse
+  - repair hint: Check SyncSession/SyncTrustedSession returned parameter shape: successful StartSession returns HostSessionID and SPSessionID, SPChallenge is omitted unless HostSigningAuthority directly invokes a signing credential, and SPResponse is omitted unless the original StartSession contained HostChallenge.
+  - evidence: core/5.2.3.1.txt, core/5.2.3.2.txt, core/5.2.3.2.1.txt, core/5.2.3.2.2.txt, core/5.2.3.2.3.txt, core/5.2.3.3.txt, core/5.2.3.3.3.txt, core/5.2.3.4.txt, core/5.2.3.4.1.txt, core/5.2.3.4.2.txt, core/5.2.3.4.3.txt, core/5.3.4.1.3.txt
+- `syncsession-return-shape-doc-6561b9f4be` [needs_review] syncsession-return-shape-doc
+  - internal name: Separate SyncTrustedSession may carry SPResponse after StartSession HostChallenge
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: session-manager, sync-session, sync-trusted-session, return-shape, session-id, spchallenge, spresponse
+  - repair hint: Check SyncSession/SyncTrustedSession returned parameter shape: successful StartSession returns HostSessionID and SPSessionID, SPChallenge is omitted unless HostSigningAuthority directly invokes a signing credential, and SPResponse is omitted unless the original StartSession contained HostChallenge.
+  - evidence: core/5.2.3.1.txt, core/5.2.3.2.txt, core/5.2.3.2.1.txt, core/5.2.3.2.2.txt, core/5.2.3.2.3.txt, core/5.2.3.3.txt, core/5.2.3.3.3.txt, core/5.2.3.4.txt, core/5.2.3.4.1.txt, core/5.2.3.4.2.txt, core/5.2.3.4.3.txt, core/5.3.4.1.3.txt
 - `startsession-hostsessionid-echo-tight-do-7d3e36aea2` [quarantine_concerns] startsession-hostsessionid-echo-tight-doc
   - internal name: SyncSession lower-camel hostSessionID still echoes StartSession HostSessionID: correct return value
   - author label: PASS
@@ -409,6 +836,111 @@ Generated: 2026-05-31T20:21:19
   - concepts: admin-sp, start-session, read-write-session, cross-sp-session, session-state
   - repair hint: Check that an open read-write AdminSP session cannot be combined with sessions to other SPs, and a read-write AdminSP StartSession cannot succeed while another SP session is open.
   - evidence: core/5.4.4.3.txt, core/5.2.3.1.txt, core/5.2.3.1.3.txt, core/3.3.7.1.5.txt, core/3.3.9.5.txt
+- `crypto-stream-state-tight-doc-86e5ac6334` [needs_review] crypto-stream-state-tight-doc
+  - internal name: HMAC requires Input while HMAC stream is open: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-5c39651a98` [needs_review] crypto-stream-state-tight-doc
+  - internal name: Encrypt requires Input while Encrypt stream is open: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-76883ca780` [needs_review] crypto-stream-state-tight-doc
+  - internal name: EncryptInit cannot target non-encryption object C_PIN_SID: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-97d893303f` [needs_review] crypto-stream-state-tight-doc
+  - internal name: EncryptInit cannot target non-encryption object C_HMAC_256: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-2dd81100cb` [needs_review] crypto-stream-state-tight-doc
+  - internal name: EncryptInit cannot target non-encryption object TPerSign: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-4506980481` [needs_review] crypto-stream-state-tight-doc
+  - internal name: EncryptInit cannot target non-encryption object LockingInfo: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-c671102d98` [needs_review] crypto-stream-state-tight-doc
+  - internal name: EncryptInit cannot target non-encryption object DataStore: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-d55e844cee` [needs_review] crypto-stream-state-tight-doc
+  - internal name: EncryptInit cannot target non-encryption object C_AES_512: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-8ac27796d9` [needs_review] crypto-stream-state-tight-doc
+  - internal name: Decrypt requires Input while Decrypt stream is open: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-632fcc7a29` [needs_review] crypto-stream-state-tight-doc
+  - internal name: DecryptInit cannot target non-encryption object C_PIN_SID: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-0d240e7d7e` [needs_review] crypto-stream-state-tight-doc
+  - internal name: DecryptInit cannot target non-encryption object C_HMAC_256: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-0ce54f6794` [needs_review] crypto-stream-state-tight-doc
+  - internal name: DecryptInit cannot target non-encryption object TPerSign: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-8060a57db6` [needs_review] crypto-stream-state-tight-doc
+  - internal name: DecryptInit cannot target non-encryption object LockingInfo: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-feef29c3a9` [needs_review] crypto-stream-state-tight-doc
+  - internal name: DecryptInit cannot target non-encryption object DataStore: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
+- `crypto-stream-state-tight-doc-0d21eaffc1` [needs_review] crypto-stream-state-tight-doc
+  - internal name: DecryptInit cannot target non-encryption object C_AES_512: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hmac, encrypt, decrypt, stream-state, impossible-success
+  - repair hint: Check per-object crypto stream state: Init opens one stream, a second Init before Finalize cannot succeed, HMAC/Encrypt/Decrypt and Finalize require an open stream, and Finalize closes the stream.
+  - evidence: core/3.3.7.2.txt, core/5.6.4.3.txt, core/5.6.4.3.2.1.txt, core/5.6.4.3.3.txt, core/5.6.4.5.txt, core/5.6.4.5.2.txt, core/5.6.4.6.txt, core/5.6.4.6.2.1.txt, core/5.6.4.6.3.txt, core/5.6.4.7.txt, core/5.6.4.8.txt, core/5.6.4.8.2.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.4.14.3.txt, core/5.6.4.15.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, core/5.6.5.3.txt, core/5.6.5.7.txt, core/5.6.5.8.txt, core/5.3.2.12.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.26.txt, core/5.7.2.1.txt, core/5.7.2.4.txt
 - `crypto-stream-bufferout-result-tight-doc-7c09b49947` [needs_review] crypto-stream-bufferout-result-tight-doc
   - internal name: Encrypt with BufferOut returns empty result
   - author label: PASS
@@ -437,6 +969,18 @@ Generated: 2026-05-31T20:21:19
   - concepts: crypto-template, hmac, encrypt, decrypt, bufferout, result-shape
   - repair hint: Check crypto stream BufferOut result shape: Encrypt/Decrypt with BufferOut return an empty result, and HMAC after HMACInit with BufferOut also returns an empty result.
   - evidence: core/5.6.4.4.txt, core/5.6.4.4.1.txt, core/5.6.4.4.2.txt, core/5.6.4.4.3.1.txt, core/5.6.4.7.txt, core/5.6.4.7.1.txt, core/5.6.4.7.2.txt, core/5.6.4.7.3.1.txt, core/5.6.4.14.1.txt, core/5.6.4.15.1.txt, core/5.6.4.15.2.1.txt
+- `hmac-finalize-bufferout-capacity-doc-b5edb7df79` [needs_review] hmac-finalize-bufferout-capacity-doc
+  - internal name: HMACFinalize cannot succeed when HMACInit BufferOut is shorter than H_SHA_256 result: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: hmac-finalize-bufferout-capacity-doc
+  - evidence: core/5.6.3.2.txt, core/5.6.4.14.txt, core/5.6.4.14.1.txt, core/5.6.4.14.2.1.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, opal/4.3.8.1.txt
+- `hmac-finalize-bufferout-capacity-doc-6202c0b5da` [needs_review] hmac-finalize-bufferout-capacity-doc
+  - internal name: HMACFinalize can succeed when HMACInit BufferOut is exactly 32 bytes
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: hmac-finalize-bufferout-capacity-doc
+  - evidence: core/5.6.3.2.txt, core/5.6.4.14.txt, core/5.6.4.14.1.txt, core/5.6.4.14.2.1.txt, core/5.6.4.16.txt, core/5.6.4.16.2.txt, opal/4.3.8.1.txt
 - `crypto-cellblock-accesscontrol-doc-97f98eab3c` [needs_review] crypto-cellblock-accesscontrol-doc
   - internal name: Encrypt DataStore input cellblock requires DataStore Get ACE: impossible success
   - author label: FAIL
@@ -467,6 +1011,30 @@ Generated: 2026-05-31T20:21:19
   - reason: 0/3 independent reviews present
   - concepts: crypto-cellblock-accesscontrol-doc
   - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `crypto-bufferout-capacity-doc-48adb2e2e6` [needs_review] crypto-bufferout-capacity-doc
+  - internal name: Encrypt DataStore BufferOut exact byte range may hold input
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-bufferout-capacity-doc
+  - evidence: core/5.6.4.4.txt, core/5.6.4.4.1.txt, core/5.6.4.4.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.txt, core/5.6.4.7.1.txt, core/5.6.4.7.2.txt, core/5.6.4.7.4.txt, core/5.6.5.1.txt, opal/4.3.8.1.txt
+- `crypto-bufferout-capacity-doc-b88100b0d1` [needs_review] crypto-bufferout-capacity-doc
+  - internal name: Encrypt DataStore BufferOut too small for direct input cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-bufferout-capacity-doc
+  - evidence: core/5.6.4.4.txt, core/5.6.4.4.1.txt, core/5.6.4.4.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.txt, core/5.6.4.7.1.txt, core/5.6.4.7.2.txt, core/5.6.4.7.4.txt, core/5.6.5.1.txt, opal/4.3.8.1.txt
+- `crypto-bufferout-capacity-doc-4f5bcd262b` [needs_review] crypto-bufferout-capacity-doc
+  - internal name: Decrypt DataStore BufferOut exact byte range may hold input
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-bufferout-capacity-doc
+  - evidence: core/5.6.4.4.txt, core/5.6.4.4.1.txt, core/5.6.4.4.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.txt, core/5.6.4.7.1.txt, core/5.6.4.7.2.txt, core/5.6.4.7.4.txt, core/5.6.5.1.txt, opal/4.3.8.1.txt
+- `crypto-bufferout-capacity-doc-c9b4209b7c` [needs_review] crypto-bufferout-capacity-doc
+  - internal name: Decrypt DataStore BufferOut too small for direct input cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-bufferout-capacity-doc
+  - evidence: core/5.6.4.4.txt, core/5.6.4.4.1.txt, core/5.6.4.4.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.txt, core/5.6.4.7.1.txt, core/5.6.4.7.2.txt, core/5.6.4.7.4.txt, core/5.6.5.1.txt, opal/4.3.8.1.txt
 - `crypto-cellblock-accesscontrol-doc-33ed92e835` [needs_review] crypto-cellblock-accesscontrol-doc
   - internal name: Sign DataStore BufferOut cellblock requires DataStore Set ACE: impossible success
   - author label: FAIL
@@ -497,55 +1065,208 @@ Generated: 2026-05-31T20:21:19
   - reason: 0/3 independent reviews present
   - concepts: crypto-cellblock-accesscontrol-doc
   - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `crypto-cellblock-accesscontrol-doc-ac10491488` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: HashInit MBR BufferOut cellblock requires MBR Set ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `crypto-cellblock-accesscontrol-doc-9608a75aa0` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: Encrypt MBR BufferOut cellblock requires MBR Set ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
 - `hash-stream-state-bufferout-tight-doc-bcc88fbd96` [needs_review] hash-stream-state-bufferout-tight-doc
   - internal name: Hash cannot run before HashInit opens the stream: impossible success
   - author label: FAIL
   - reason: 0/3 independent reviews present
   - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
   - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
-  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+  - evidence: core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.5.2.txt, core/5.6.5.3.txt
 - `hash-stream-state-bufferout-tight-doc-b254c08faf` [needs_review] hash-stream-state-bufferout-tight-doc
   - internal name: HashFinalize cannot run before HashInit opens the stream: impossible success
   - author label: FAIL
   - reason: 0/3 independent reviews present
   - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
   - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
-  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+  - evidence: core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.5.2.txt, core/5.6.5.3.txt
+- `hash-stream-state-bufferout-tight-doc-4d86706973` [needs_review] hash-stream-state-bufferout-tight-doc
+  - internal name: HashInit cannot target unissued H_SHA_224 family: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
+  - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
+  - evidence: core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.5.2.txt, core/5.6.5.3.txt
+- `hash-stream-state-bufferout-tight-doc-70ed4271ea` [needs_review] hash-stream-state-bufferout-tight-doc
+  - internal name: HMACInit cannot target unissued H_SHA_224 family: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
+  - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
+  - evidence: core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.5.2.txt, core/5.6.5.3.txt
+- `crypto-family-get-doc-55749d6106` [needs_review] crypto-family-get-doc
+  - internal name: Get accepts issued concrete crypto family row C_AES_128
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, hash-table, issued-family, get, crypto-family-size, impossible-success
+  - repair hint: Check concrete crypto table-family existence before accepting Get: Core lists only specific C_AES, C_HMAC, C_RSA, C_EC, and H_SHA family sizes, so same-prefix unissued rows such as C_AES_512 or H_SHA_224 cannot be successful concrete Get targets.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.17.txt, core/5.3.2.18.txt, core/5.3.2.19.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `crypto-family-get-doc-075b8fc750` [needs_review] crypto-family-get-doc
+  - internal name: Get accepts issued concrete crypto family row C_HMAC_256
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, hash-table, issued-family, get, crypto-family-size, impossible-success
+  - repair hint: Check concrete crypto table-family existence before accepting Get: Core lists only specific C_AES, C_HMAC, C_RSA, C_EC, and H_SHA family sizes, so same-prefix unissued rows such as C_AES_512 or H_SHA_224 cannot be successful concrete Get targets.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.17.txt, core/5.3.2.18.txt, core/5.3.2.19.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `crypto-family-get-doc-483b82fc2c` [needs_review] crypto-family-get-doc
+  - internal name: Get accepts issued concrete crypto family row C_RSA_2048
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, hash-table, issued-family, get, crypto-family-size, impossible-success
+  - repair hint: Check concrete crypto table-family existence before accepting Get: Core lists only specific C_AES, C_HMAC, C_RSA, C_EC, and H_SHA family sizes, so same-prefix unissued rows such as C_AES_512 or H_SHA_224 cannot be successful concrete Get targets.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.17.txt, core/5.3.2.18.txt, core/5.3.2.19.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `crypto-family-get-doc-f8472d3049` [needs_review] crypto-family-get-doc
+  - internal name: Get accepts issued concrete crypto family row H_SHA_512_Test
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, hash-table, issued-family, get, crypto-family-size, impossible-success
+  - repair hint: Check concrete crypto table-family existence before accepting Get: Core lists only specific C_AES, C_HMAC, C_RSA, C_EC, and H_SHA family sizes, so same-prefix unissued rows such as C_AES_512 or H_SHA_224 cannot be successful concrete Get targets.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.17.txt, core/5.3.2.18.txt, core/5.3.2.19.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `crypto-family-get-doc-57be24a8d3` [needs_review] crypto-family-get-doc
+  - internal name: Get cannot target unissued concrete crypto family row C_AES_512: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, hash-table, issued-family, get, crypto-family-size, impossible-success
+  - repair hint: Check concrete crypto table-family existence before accepting Get: Core lists only specific C_AES, C_HMAC, C_RSA, C_EC, and H_SHA family sizes, so same-prefix unissued rows such as C_AES_512 or H_SHA_224 cannot be successful concrete Get targets.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.17.txt, core/5.3.2.18.txt, core/5.3.2.19.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `crypto-family-get-doc-ed815d350f` [needs_review] crypto-family-get-doc
+  - internal name: Get cannot target unissued concrete crypto family row C_HMAC_128: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, hash-table, issued-family, get, crypto-family-size, impossible-success
+  - repair hint: Check concrete crypto table-family existence before accepting Get: Core lists only specific C_AES, C_HMAC, C_RSA, C_EC, and H_SHA family sizes, so same-prefix unissued rows such as C_AES_512 or H_SHA_224 cannot be successful concrete Get targets.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.17.txt, core/5.3.2.18.txt, core/5.3.2.19.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `crypto-family-get-doc-d8c09393b9` [needs_review] crypto-family-get-doc
+  - internal name: Get cannot target unissued concrete crypto family row C_RSA_4096: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, hash-table, issued-family, get, crypto-family-size, impossible-success
+  - repair hint: Check concrete crypto table-family existence before accepting Get: Core lists only specific C_AES, C_HMAC, C_RSA, C_EC, and H_SHA family sizes, so same-prefix unissued rows such as C_AES_512 or H_SHA_224 cannot be successful concrete Get targets.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.17.txt, core/5.3.2.18.txt, core/5.3.2.19.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `crypto-family-get-doc-a7d62705da` [needs_review] crypto-family-get-doc
+  - internal name: Get cannot target unissued concrete crypto family row C_EC_571: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, hash-table, issued-family, get, crypto-family-size, impossible-success
+  - repair hint: Check concrete crypto table-family existence before accepting Get: Core lists only specific C_AES, C_HMAC, C_RSA, C_EC, and H_SHA family sizes, so same-prefix unissued rows such as C_AES_512 or H_SHA_224 cannot be successful concrete Get targets.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.17.txt, core/5.3.2.18.txt, core/5.3.2.19.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `crypto-family-get-doc-fc3c802504` [needs_review] crypto-family-get-doc
+  - internal name: Get cannot target unissued concrete crypto family row H_SHA_224: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, hash-table, issued-family, get, crypto-family-size, impossible-success
+  - repair hint: Check concrete crypto table-family existence before accepting Get: Core lists only specific C_AES, C_HMAC, C_RSA, C_EC, and H_SHA family sizes, so same-prefix unissued rows such as C_AES_512 or H_SHA_224 cannot be successful concrete Get targets.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.17.txt, core/5.3.2.18.txt, core/5.3.2.19.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `crypto-family-get-doc-d3ab07d64f` [needs_review] crypto-family-get-doc
+  - internal name: Set cannot target unissued concrete crypto family row C_HMAC_128: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, hash-table, issued-family, get, crypto-family-size, impossible-success
+  - repair hint: Check concrete crypto table-family existence before accepting Get: Core lists only specific C_AES, C_HMAC, C_RSA, C_EC, and H_SHA family sizes, so same-prefix unissued rows such as C_AES_512 or H_SHA_224 cannot be successful concrete Get targets.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.17.txt, core/5.3.2.18.txt, core/5.3.2.19.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `crypto-family-get-doc-0b42f01f82` [needs_review] crypto-family-get-doc
+  - internal name: Set cannot target unissued concrete crypto family row C_EC_571: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, hash-table, issued-family, get, crypto-family-size, impossible-success
+  - repair hint: Check concrete crypto table-family existence before accepting Get: Core lists only specific C_AES, C_HMAC, C_RSA, C_EC, and H_SHA family sizes, so same-prefix unissued rows such as C_AES_512 or H_SHA_224 cannot be successful concrete Get targets.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.17.txt, core/5.3.2.18.txt, core/5.3.2.19.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `crypto-family-get-doc-74453d40bf` [needs_review] crypto-family-get-doc
+  - internal name: Set cannot target unissued concrete crypto family row H_SHA_224: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-table, hash-table, issued-family, get, crypto-family-size, impossible-success
+  - repair hint: Check concrete crypto table-family existence before accepting Get: Core lists only specific C_AES, C_HMAC, C_RSA, C_EC, and H_SHA family sizes, so same-prefix unissued rows such as C_AES_512 or H_SHA_224 cannot be successful concrete Get targets.
+  - evidence: core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.15.txt, core/5.3.2.16.txt, core/5.3.2.17.txt, core/5.3.2.18.txt, core/5.3.2.19.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.3.2.26.txt, core/5.3.2.27.txt, core/5.3.2.28.txt, core/5.3.2.29.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hash-stream-state-bufferout-tight-doc-362d08fc7b` [needs_review] hash-stream-state-bufferout-tight-doc
   - internal name: Hash can run while Hash stream is open
   - author label: PASS
   - reason: 0/3 independent reviews present
   - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
   - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
-  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+  - evidence: core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.5.2.txt, core/5.6.5.3.txt
+- `hash-stream-state-bufferout-tight-doc-220c671e95` [needs_review] hash-stream-state-bufferout-tight-doc
+  - internal name: Hash requires Input while Hash stream is open: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
+  - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
+  - evidence: core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.5.2.txt, core/5.6.5.3.txt
 - `hash-stream-state-bufferout-tight-doc-730771a014` [needs_review] hash-stream-state-bufferout-tight-doc
   - internal name: Second HashInit before HashFinalize cannot succeed: impossible success
   - author label: FAIL
   - reason: 0/3 independent reviews present
   - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
   - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
-  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+  - evidence: core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.5.2.txt, core/5.6.5.3.txt
 - `hash-stream-state-bufferout-tight-doc-0ff0e93916` [needs_review] hash-stream-state-bufferout-tight-doc
   - internal name: Hash after HashFinalize cannot succeed: impossible success
   - author label: FAIL
   - reason: 0/3 independent reviews present
   - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
   - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
-  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+  - evidence: core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.5.2.txt, core/5.6.5.3.txt
 - `hash-stream-state-bufferout-tight-doc-e5acf64509` [needs_review] hash-stream-state-bufferout-tight-doc
   - internal name: Hash after HashInit BufferOut returns empty result
   - author label: PASS
   - reason: 0/3 independent reviews present
   - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
   - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
-  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+  - evidence: core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.5.2.txt, core/5.6.5.3.txt
 - `hash-stream-state-bufferout-tight-doc-3d2741584e` [needs_review] hash-stream-state-bufferout-tight-doc
   - internal name: Hash after HashInit BufferOut cannot return consumed data: impossible success
   - author label: FAIL
   - reason: 0/3 independent reviews present
   - concepts: crypto-template, hash, stream-state, bufferout, result-shape, impossible-success
   - repair hint: Check Hash stream semantics: HashInit opens one stream, Hash/HashFinalize require an open stream, Finalize closes it, and HashInit BufferOut makes successful Hash return an empty result.
-  - evidence: core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.5.2.txt
+  - evidence: core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.12.txt, core/5.6.4.12.1.txt, core/5.6.4.12.2.1.txt, core/5.6.4.13.txt, core/5.6.4.13.1.1.txt, core/5.6.4.14.txt, core/5.6.4.14.2.1.txt, core/5.6.5.2.txt, core/5.6.5.3.txt
+- `hashinit-bufferout-capacity-doc-b949213787` [needs_review] hashinit-bufferout-capacity-doc
+  - internal name: HashInit H_SHA_256 BufferOut shorter than 32-byte result cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: hashinit-bufferout-capacity-doc
+  - evidence: core/5.6.3.2.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.11.3.txt, opal/4.3.8.1.txt
+- `hashinit-bufferout-capacity-doc-1a4a5571d7` [needs_review] hashinit-bufferout-capacity-doc
+  - internal name: HashInit H_SHA_256 direct BufferOut row window shorter than 32-byte result cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: hashinit-bufferout-capacity-doc
+  - evidence: core/5.6.3.2.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.11.3.txt, opal/4.3.8.1.txt
+- `crypto-cellblock-accesscontrol-doc-8012086e59` [needs_review] crypto-cellblock-accesscontrol-doc
+  - internal name: HashInit H_SHA_256 DataStore BufferOut cellblock cannot include byte-table column selectors: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.4.1.2.txt, core/5.6.4.4.4.txt, core/5.6.4.7.1.2.txt, core/5.6.4.7.4.txt, core/5.6.4.9.1.2.txt, core/5.6.4.9.4.txt, core/5.6.4.11.1.2.txt, core/5.6.4.11.3.txt, core/5.6.4.12.1.2.txt, core/5.6.4.12.3.txt, core/5.6.4.15.1.2.txt, core/5.6.4.13.2.txt, core/5.6.4.15.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.3.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `byte-table-observed-rows-doc-d3be4fce9c` [needs_review] byte-table-observed-rows-doc
+  - internal name: HashInit H_SHA_256 DataStore BufferOut at observed Rows boundary cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: byte-table-observed-rows-doc
+  - evidence: core/3.2.5.1.txt, core/5.1.4.2.3.txt, core/5.3.2.3.txt, core/5.3.2.3.8.txt, core/5.3.3.6.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+- `datastore-no-values-granularity-doc-9e34db5b60` [needs_review] datastore-no-values-granularity-doc
+  - internal name: HashInit H_SHA_256 DataStore BufferOut must align to observed MandatoryWriteGranularity: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore-no-values-granularity-doc
+  - evidence: core/5.3.3.7.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.6.2.1.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/5.3.1.1.2.txt
+- `hashinit-bufferout-capacity-doc-09e2b81df0` [needs_review] hashinit-bufferout-capacity-doc
+  - internal name: HashInit H_SHA_256 BufferOut exactly 32 bytes can succeed
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: hashinit-bufferout-capacity-doc
+  - evidence: core/5.6.3.2.txt, core/5.6.4.11.txt, core/5.6.4.11.1.txt, core/5.6.4.11.2.1.txt, core/5.6.4.11.3.txt, opal/4.3.8.1.txt
 - `xor-byte-table-bufferout-doc-88bb6bd32f` [needs_review] xor-byte-table-bufferout-doc
   - internal name: XOR without BufferOut returns bytewise XOR result: correct return value
   - author label: PASS
@@ -560,9 +1281,37 @@ Generated: 2026-05-31T20:21:19
   - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
   - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
   - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `xor-byte-table-bufferout-doc-61327b57bd` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR required parameters can be positional: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `xor-byte-table-bufferout-doc-90283a60dc` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR required parameters can be positional: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
 - `xor-byte-table-bufferout-doc-0454cb8517` [needs_review] xor-byte-table-bufferout-doc
   - internal name: XOR with BufferOut returns empty result
   - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `xor-byte-table-bufferout-doc-a46040c691` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR direct BufferOut row window smaller than result cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `xor-byte-table-bufferout-doc-ad36c4a241` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR DataStore BufferOut must align to observed MandatoryWriteGranularity: impossible success
+  - author label: FAIL
   - reason: 0/3 independent reviews present
   - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
   - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
@@ -583,6 +1332,27 @@ Generated: 2026-05-31T20:21:19
   - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
 - `xor-byte-table-bufferout-doc-4370f68ed9` [needs_review] xor-byte-table-bufferout-doc
   - internal name: XOR DeletePattern clears PatternInput byte table: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `xor-byte-table-bufferout-doc-e233c29fc4` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR DeletePattern requires DataStore Set ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `xor-byte-table-bufferout-doc-1ded48df95` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR DeletePattern requires MBR Set ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
+  - repair hint: Check XOR SP method semantics: PatternInput must reference a byte table at least as large as the input, no BufferOut means the result is returned, BufferOut means an empty result, and DeletePattern=True clears the pattern byte table after success.
+  - evidence: core/5.6.4.17.txt, core/5.6.4.17.1.txt, core/5.6.4.17.2.txt, core/5.6.4.17.3.txt, core/5.6.4.17.3.1.txt, core/5.6.4.17.4.txt, core/5.6.4.17.5.1.txt, core/5.6.4.17.6.txt, core/5.6.5.1.txt, core/5.6.5.4.txt, opal/4.3.8.1.txt
+- `xor-byte-table-bufferout-doc-8aab01055d` [needs_review] xor-byte-table-bufferout-doc
+  - internal name: XOR MBR BufferOut cellblock requires MBR Set ACE: impossible success
   - author label: FAIL
   - reason: 0/3 independent reviews present
   - concepts: crypto-template, xor, byte-table, pattern-input, bufferout, delete-pattern
@@ -609,6 +1379,126 @@ Generated: 2026-05-31T20:21:19
   - concepts: crypto-template, verify, hash-object, public-key-credential, result-shape
   - repair hint: Check Verify result shape: successful Verify on a hash object or public key credential returns a Boolean result, so non-Boolean successful return payloads are invalid.
   - evidence: core/5.6.4.10.txt, core/5.6.4.10.3.txt, core/5.6.4.10.3.1.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt
+- `verify-cellblock-accesscontrol-doc-8391b88d48` [needs_review] verify-cellblock-accesscontrol-doc
+  - internal name: Verify DataInput cellblock requires DataStore Get ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.1.txt, core/5.6.4.10.1.2.txt, core/5.6.4.10.2.txt, core/5.6.4.10.2.2.txt, core/5.6.4.10.4.txt, opal/4.3.1.6.txt
+- `verify-cellblock-accesscontrol-doc-5179f9f6ff` [needs_review] verify-cellblock-accesscontrol-doc
+  - internal name: Verify ProofBuffer cellblock requires DataStore Get ACE: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-cellblock-accesscontrol-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.1.txt, core/5.6.4.10.1.2.txt, core/5.6.4.10.2.txt, core/5.6.4.10.2.2.txt, core/5.6.4.10.4.txt, opal/4.3.1.6.txt
+- `verify-target-family-doc-7bfd557f8c` [needs_review] verify-target-family-doc
+  - internal name: Verify is not defined on K_AES_256: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-target-family-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `verify-target-family-doc-11f11723f2` [needs_review] verify-target-family-doc
+  - internal name: Verify is not defined on C_AES_256: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-target-family-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `verify-target-family-doc-0f5e8241b3` [needs_review] verify-target-family-doc
+  - internal name: Verify is not defined on C_PIN_SID: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-target-family-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `verify-target-family-doc-24cc331b95` [needs_review] verify-target-family-doc
+  - internal name: Verify is not defined on unissued crypto family C_RSA_3072: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-target-family-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `verify-target-family-doc-97c7664831` [needs_review] verify-target-family-doc
+  - internal name: Verify is not defined on unissued crypto family C_RSA_4096: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-target-family-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `verify-target-family-doc-3cdf74c60f` [needs_review] verify-target-family-doc
+  - internal name: Verify is not defined on unissued crypto family C_EC_571: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-target-family-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `verify-target-family-doc-113b839080` [needs_review] verify-target-family-doc
+  - internal name: Verify is not defined on unissued crypto family H_SHA_224: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-target-family-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `verify-target-family-doc-5fdd3e4505` [needs_review] verify-target-family-doc
+  - internal name: Verify may be invoked on H_SHA_256
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: verify-target-family-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `verify-target-family-doc-4e6090b48a` [needs_review] verify-target-family-doc
+  - internal name: Verify may be invoked on C_RSA_2048
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: verify-target-family-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `verify-target-family-doc-fdb58f4f32` [needs_review] verify-target-family-doc
+  - internal name: Verify may be invoked on C_EC_256
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: verify-target-family-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `verify-publickey-input-proof-doc-cb0cc51a41` [needs_review] verify-publickey-input-proof-doc
+  - internal name: Public key Verify without input or proof cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-publickey-input-proof-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.1.txt, core/5.6.4.10.2.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt
+- `verify-publickey-input-proof-doc-cb97ed313f` [needs_review] verify-publickey-input-proof-doc
+  - internal name: Public key Verify without proof cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-publickey-input-proof-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.1.txt, core/5.6.4.10.2.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt
+- `verify-publickey-input-proof-doc-ca2722184d` [needs_review] verify-publickey-input-proof-doc
+  - internal name: Public key Verify without input cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-publickey-input-proof-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.1.txt, core/5.6.4.10.2.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt
+- `verify-publickey-input-proof-doc-8813edafb4` [needs_review] verify-publickey-input-proof-doc
+  - internal name: Public key Verify with input and proof may succeed
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: verify-publickey-input-proof-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.1.txt, core/5.6.4.10.2.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt
+- `verify-publickey-input-proof-doc-e80a1816e3` [needs_review] verify-publickey-input-proof-doc
+  - internal name: Hash object Verify may omit input and proof
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: verify-publickey-input-proof-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.1.txt, core/5.6.4.10.2.txt, core/5.6.5.6.1.txt, core/5.6.5.6.2.txt
+- `verify-hash-signer-publickey-doc-3bd66bf126` [needs_review] verify-hash-signer-publickey-doc
+  - internal name: Hash object Verify fails when Signer is C_PIN_SID: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-hash-signer-publickey-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.2.txt, core/5.6.3.1.6.txt, core/5.6.3.2.6.txt, core/5.6.3.3.6.txt, core/5.6.3.4.6.txt
+- `verify-hash-signer-publickey-doc-dae3b374b2` [needs_review] verify-hash-signer-publickey-doc
+  - internal name: Hash object Verify fails when Signer is C_AES_256: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: verify-hash-signer-publickey-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.2.txt, core/5.6.3.1.6.txt, core/5.6.3.2.6.txt, core/5.6.3.3.6.txt, core/5.6.3.4.6.txt
+- `verify-hash-signer-publickey-doc-ea08c6ef7b` [needs_review] verify-hash-signer-publickey-doc
+  - internal name: Hash object Verify may succeed when Signer is public key credential
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: verify-hash-signer-publickey-doc
+  - evidence: core/5.6.4.10.txt, core/5.6.4.10.4.txt, core/5.6.5.6.2.txt, core/5.6.3.1.6.txt, core/5.6.3.2.6.txt, core/5.6.3.3.6.txt, core/5.6.3.4.6.txt
 - `sign-bufferout-result-tight-doc-12ffa20d98` [needs_review] sign-bufferout-result-tight-doc
   - internal name: Sign with BufferOut returns empty result
   - author label: PASS
@@ -630,6 +1520,166 @@ Generated: 2026-05-31T20:21:19
   - concepts: crypto-template, sign, hash-object, public-key-credential, bufferout, result-shape
   - repair hint: Check generic Crypto Template Sign result shape: without BufferOut the signed data is returned, while with BufferOut the signed data is stored to the output cellblock and the method result is empty.
   - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.2.txt, core/5.6.4.9.3.1.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt
+- `sign-bufferout-capacity-doc-ad3a7f3619` [needs_review] sign-bufferout-capacity-doc
+  - internal name: Sign DataStore BufferOut exact byte range may hold input
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: sign-bufferout-capacity-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.2.txt, core/5.6.4.9.4.txt, core/5.6.5.5.1.txt, opal/4.3.8.1.txt
+- `sign-bufferout-capacity-doc-a75dd79094` [needs_review] sign-bufferout-capacity-doc
+  - internal name: Sign DataStore BufferOut too small for direct input cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sign-bufferout-capacity-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.2.txt, core/5.6.4.9.4.txt, core/5.6.5.5.1.txt, opal/4.3.8.1.txt
+- `sign-target-family-doc-0708a617b1` [needs_review] sign-target-family-doc
+  - internal name: Sign is not defined on K_AES_256: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `sign-target-family-doc-1432e814bb` [needs_review] sign-target-family-doc
+  - internal name: Sign is not defined on C_AES_256: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `sign-target-family-doc-2d6dacf104` [needs_review] sign-target-family-doc
+  - internal name: Sign is not defined on C_PIN_SID: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `sign-target-family-doc-867b326d59` [needs_review] sign-target-family-doc
+  - internal name: Sign is not defined on unissued crypto family C_RSA_3072: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `sign-target-family-doc-018691afc3` [needs_review] sign-target-family-doc
+  - internal name: Sign is not defined on unissued crypto family C_RSA_4096: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `sign-target-family-doc-ed5323f301` [needs_review] sign-target-family-doc
+  - internal name: Sign is not defined on unissued crypto family C_EC_571: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `sign-target-family-doc-1ca9c318a5` [needs_review] sign-target-family-doc
+  - internal name: Sign is not defined on unissued crypto family H_SHA_224: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `sign-target-family-doc-6d62c1b4f8` [needs_review] sign-target-family-doc
+  - internal name: Sign may be invoked on H_SHA_256 with input data
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `sign-target-family-doc-59df3b8925` [needs_review] sign-target-family-doc
+  - internal name: Sign may be invoked on C_RSA_2048 with input data
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `sign-target-family-doc-75c0b9d1ca` [needs_review] sign-target-family-doc
+  - internal name: Sign may be invoked on C_EC_256 with input data
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `sign-target-family-doc-0ad1e812cf` [needs_review] sign-target-family-doc
+  - internal name: Public key Sign on C_RSA_2048 without input data cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `sign-target-family-doc-a2119399be` [needs_review] sign-target-family-doc
+  - internal name: Public key Sign on C_EC_256 without input data cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `sign-target-family-doc-c813530b84` [needs_review] sign-target-family-doc
+  - internal name: Hash object Sign may omit input and sign the accumulator
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: sign-target-family-doc
+  - evidence: core/5.6.4.9.txt, core/5.6.4.9.1.txt, core/5.6.4.9.4.txt, core/5.6.5.5.txt, core/5.6.5.5.1.txt, core/5.6.5.5.2.txt, core/5.3.2.13.txt, core/5.3.2.14.txt, core/5.3.2.17.txt, core/5.3.2.20.txt, core/5.3.2.21.txt, core/5.3.2.22.txt, core/5.3.2.23.txt, core/5.3.2.24.txt, core/5.3.2.25.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `session-startup-security-long-doc-7cbbbca4a9` [needs_review] session-startup-security-long-doc
+  - internal name: MakerPuK HostSigningAuthority starts challenge-response without HostChallenge
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: auth, session-startup, hostchallenge, signedhash, secure-messaging, key-exchange, authority-state
+  - repair hint: Check long StartSession state: HostChallenge must carry the current password for Password authorities; HashAndSign requires a non-empty SignedHash only during startup; Secure requires an exchange authority with a credential and uses latest Authority state.
+  - evidence: core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.4.1.3.txt, core/5.3.4.1.6.txt, core/5.3.4.1.9.txt, core/5.3.4.1.10.txt, core/5.2.3.1.4.txt, core/5.2.3.3.6.txt, core/5.2.3.4.6.txt
+- `session-startup-security-long-doc-c5d09ea656` [needs_review] session-startup-security-long-doc
+  - internal name: MakerSymK HostSigningAuthority starts challenge-response without HostChallenge
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: auth, session-startup, hostchallenge, signedhash, secure-messaging, key-exchange, authority-state
+  - repair hint: Check long StartSession state: HostChallenge must carry the current password for Password authorities; HashAndSign requires a non-empty SignedHash only during startup; Secure requires an exchange authority with a credential and uses latest Authority state.
+  - evidence: core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.4.1.3.txt, core/5.3.4.1.6.txt, core/5.3.4.1.9.txt, core/5.3.4.1.10.txt, core/5.2.3.1.4.txt, core/5.2.3.3.6.txt, core/5.2.3.4.6.txt
+- `session-startup-security-long-doc-35376b7a2a` [needs_review] session-startup-security-long-doc
+  - internal name: MakerPuK HostSigningAuthority cannot omit required SPChallenge
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: auth, session-startup, hostchallenge, signedhash, secure-messaging, key-exchange, authority-state
+  - repair hint: Check long StartSession state: HostChallenge must carry the current password for Password authorities; HashAndSign requires a non-empty SignedHash only during startup; Secure requires an exchange authority with a credential and uses latest Authority state.
+  - evidence: core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.4.1.3.txt, core/5.3.4.1.6.txt, core/5.3.4.1.9.txt, core/5.3.4.1.10.txt, core/5.2.3.1.4.txt, core/5.2.3.3.6.txt, core/5.2.3.4.6.txt
+- `session-startup-security-long-doc-fb2367a712` [needs_review] session-startup-security-long-doc
+  - internal name: StartTrustedSession after SPChallenge requires HostResponse
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: auth, session-startup, hostchallenge, signedhash, secure-messaging, key-exchange, authority-state
+  - repair hint: Check long StartSession state: HostChallenge must carry the current password for Password authorities; HashAndSign requires a non-empty SignedHash only during startup; Secure requires an exchange authority with a credential and uses latest Authority state.
+  - evidence: core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.4.1.3.txt, core/5.3.4.1.6.txt, core/5.3.4.1.9.txt, core/5.3.4.1.10.txt, core/5.2.3.1.4.txt, core/5.2.3.3.6.txt, core/5.2.3.4.6.txt
+- `session-startup-security-long-doc-77a6286fd1` [needs_review] session-startup-security-long-doc
+  - internal name: Regular method before StartTrustedSession is not yet in an open challenge-response session
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: auth, session-startup, hostchallenge, signedhash, secure-messaging, key-exchange, authority-state
+  - repair hint: Check long StartSession state: HostChallenge must carry the current password for Password authorities; HashAndSign requires a non-empty SignedHash only during startup; Secure requires an exchange authority with a credential and uses latest Authority state.
+  - evidence: core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.4.1.3.txt, core/5.3.4.1.6.txt, core/5.3.4.1.9.txt, core/5.3.4.1.10.txt, core/5.2.3.1.4.txt, core/5.2.3.3.6.txt, core/5.2.3.4.6.txt
+- `session-startup-security-long-doc-bdc705e01e` [needs_review] session-startup-security-long-doc
+  - internal name: StartTrustedSession HostResponse opens the pending challenge-response session
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: auth, session-startup, hostchallenge, signedhash, secure-messaging, key-exchange, authority-state
+  - repair hint: Check long StartSession state: HostChallenge must carry the current password for Password authorities; HashAndSign requires a non-empty SignedHash only during startup; Secure requires an exchange authority with a credential and uses latest Authority state.
+  - evidence: core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.4.1.3.txt, core/5.3.4.1.6.txt, core/5.3.4.1.9.txt, core/5.3.4.1.10.txt, core/5.2.3.1.4.txt, core/5.2.3.3.6.txt, core/5.2.3.4.6.txt
+- `spinfo-get-types-doc-d50776d2b5` [needs_review] spinfo-get-types-doc
+  - internal name: Admin SP SPInfo SPSessionTimeout Get cannot return boolean token
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: spinfo, get, typed-return, session-timeout, enabled, boolean, uinteger
+  - repair hint: Check SPInfo.Get returned-cell validation: SPSessionTimeout is uinteger_4 and Enabled is boolean, and malformed observations must not poison SP enabled state.
+  - evidence: core/5.1.3.93.txt, core/5.3.2.1.txt, core/5.3.2.1.6.txt, core/5.3.2.1.7.txt, opal/4.2.1.1.txt, opal/4.3.1.1.txt
+- `spinfo-get-types-doc-b2e663abaf` [needs_review] spinfo-get-types-doc
+  - internal name: Admin SP SPInfo Enabled Get cannot return non-boolean text
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: spinfo, get, typed-return, session-timeout, enabled, boolean, uinteger
+  - repair hint: Check SPInfo.Get returned-cell validation: SPSessionTimeout is uinteger_4 and Enabled is boolean, and malformed observations must not poison SP enabled state.
+  - evidence: core/5.1.3.93.txt, core/5.3.2.1.txt, core/5.3.2.1.6.txt, core/5.3.2.1.7.txt, opal/4.2.1.1.txt, opal/4.3.1.1.txt
+- `spinfo-get-types-doc-55dbfe4ca4` [needs_review] spinfo-get-types-doc
+  - internal name: Locking SP SPInfo SPSessionTimeout Get cannot return boolean token
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: spinfo, get, typed-return, session-timeout, enabled, boolean, uinteger
+  - repair hint: Check SPInfo.Get returned-cell validation: SPSessionTimeout is uinteger_4 and Enabled is boolean, and malformed observations must not poison SP enabled state.
+  - evidence: core/5.1.3.93.txt, core/5.3.2.1.txt, core/5.3.2.1.6.txt, core/5.3.2.1.7.txt, opal/4.2.1.1.txt, opal/4.3.1.1.txt
+- `spinfo-get-types-doc-c6dab7373e` [needs_review] spinfo-get-types-doc
+  - internal name: Locking SP SPInfo Enabled Get cannot return non-boolean text
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: spinfo, get, typed-return, session-timeout, enabled, boolean, uinteger
+  - repair hint: Check SPInfo.Get returned-cell validation: SPSessionTimeout is uinteger_4 and Enabled is boolean, and malformed observations must not poison SP enabled state.
+  - evidence: core/5.1.3.93.txt, core/5.3.2.1.txt, core/5.3.2.1.6.txt, core/5.3.2.1.7.txt, opal/4.2.1.1.txt, opal/4.3.1.1.txt
 - `sp-lifecycle-state-enum-doc-aab216f083` [needs_review] sp-lifecycle-state-enum-doc
   - internal name: SP LifeCycleState Get accepts Issued and rejects reserved Core gap: correct return value
   - author label: PASS
@@ -778,6 +1828,71 @@ Generated: 2026-05-31T20:21:19
   - concepts: tperinfo, get, typed-return, uid, gudid, bytes-12, uinteger, programmatic-reset, boolean
   - repair hint: Check TPerInfo successful Get return typing: UID is uid/bytes_8, GUDID is bytes_12, Bytes/Generation/FirmwareVersion/ProtocolVersion/SpaceForIssuance are uinteger_8 or uinteger_4, and Opal ProgrammaticResetEnable is boolean. The table is readable by Anybody, but success cannot carry malformed typed cells.
   - evidence: core/5.1.3.txt, core/5.1.3.10.txt, core/5.1.3.16.txt, core/5.1.3.81.txt, core/5.1.3.82.txt, core/5.1.3.93.txt, core/5.1.3.97.txt, core/5.4.2.1.txt, core/5.4.2.1.1.txt, core/5.4.2.1.3.txt, opal/4.2.3.1.txt
+- `log-addlog-doc-df62473efb` [needs_review] log-addlog-doc
+  - internal name: AddLog Data exactly 64 bytes may succeed
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: log-template, addlog, read-only-session, return-values, logkind
+  - repair hint: Check AddLog table target, read-only session allowance, empty result shape, and max 64-byte Data payload.
+  - evidence: core/5.8.2.1.txt, core/5.8.4.2.txt, core/5.8.4.3.txt, core/5.8.3.1.txt, core/5.8.3.1.3.1.txt
+- `log-entry-readonly-expanded-doc-9f090b8a7d` [needs_review] log-entry-readonly-expanded-doc
+  - internal name: LogEntry alias Data column cannot be host-modified: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: log-template, log-table, log-entry-row, read-only-column, set
+  - repair hint: Check that every Log table entry-row column is treated as not directly host-modifiable, not only timestamp/data cells.
+  - evidence: core/5.8.2.1.txt, core/5.8.2.1.1.txt, core/5.8.2.1.2.txt, core/5.8.2.1.3.txt, core/5.8.2.1.4.txt, core/5.8.2.1.5.txt, core/5.8.2.1.6.txt, core/5.8.2.1.7.txt, core/5.8.2.1.8.txt, core/5.8.2.1.9.txt, core/5.8.2.1.10.txt, core/5.8.2.1.11.txt, core/5.8.2.1.12.txt, core/5.8.2.1.13.txt, core/5.8.2.1.14.txt
+- `log-createlog-doc-2f927665b9` [needs_review] log-createlog-doc
+  - internal name: Successful CreateLog Rows must be at least MinSize
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: log-template, createlog, loglist, return-values, duplicate-name
+  - repair hint: Check CreateLog required parameters, LogList target, unsigned MinSize, duplicate log-table names, and the three-field LogListUID/LogTableUID/Rows success result.
+  - evidence: core/5.8.2.1.txt, core/5.8.2.2.txt, core/5.8.3.2.txt, core/5.8.3.2.1.txt, core/5.8.3.2.2.txt, core/5.8.3.2.3.txt, core/5.8.3.2.6.txt, core/5.8.3.2.7.1.txt, core/5.8.3.2.7.2.txt, core/5.8.3.2.7.3.txt, core/5.8.3.2.8.txt, core/5.1.3.82.txt, core/5.3.2.12.txt
+- `log-createlog-doc-36a03a3734` [needs_review] log-createlog-doc
+  - internal name: Successful CreateLog Rows must not exceed MaxSize
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: log-template, createlog, loglist, return-values, duplicate-name
+  - repair hint: Check CreateLog required parameters, LogList target, unsigned MinSize, duplicate log-table names, and the three-field LogListUID/LogTableUID/Rows success result.
+  - evidence: core/5.8.2.1.txt, core/5.8.2.2.txt, core/5.8.3.2.txt, core/5.8.3.2.1.txt, core/5.8.3.2.2.txt, core/5.8.3.2.3.txt, core/5.8.3.2.6.txt, core/5.8.3.2.7.1.txt, core/5.8.3.2.7.2.txt, core/5.8.3.2.7.3.txt, core/5.8.3.2.8.txt, core/5.1.3.82.txt, core/5.3.2.12.txt
+- `loglist-readonly-doc-7e6a4ff099` [needs_review] loglist-readonly-doc
+  - internal name: Host cannot directly Set the LogList table target
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: log-template, loglist, readonly-columns, delete, set
+  - repair hint: Check LogList read-only columns Log and Serial, and reject direct deletion of Log tables via the Table table path.
+  - evidence: core/5.8.2.2.txt, core/5.8.2.2.4.txt, core/5.8.2.2.5.txt, core/5.8.4.4.txt
+- `random-bufferout-cellblock-acl-doc-e66882f962` [needs_review] random-bufferout-cellblock-acl-doc
+  - internal name: Random DataStore BufferOut requires DataStore Set ACL
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: random-bufferout-cellblock-acl-doc
+  - evidence: core/5.6.4.1.txt, core/5.6.4.1.2.txt, core/5.6.4.1.3.1.txt, core/5.6.4.2.2.txt, core/5.6.5.1.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+- `random-bufferout-cellblock-acl-doc-5c5f8c8ae7` [needs_review] random-bufferout-cellblock-acl-doc
+  - internal name: Random MBR BufferOut requires MBR Set authority
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: random-bufferout-cellblock-acl-doc
+  - evidence: core/5.6.4.1.txt, core/5.6.4.1.2.txt, core/5.6.4.1.3.1.txt, core/5.6.4.2.2.txt, core/5.6.5.1.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+- `random-bufferout-capacity-doc-fd6ba605bf` [needs_review] random-bufferout-capacity-doc
+  - internal name: Random BufferOut exact byte range may hold Count bytes
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: random-bufferout-capacity-doc
+  - evidence: core/5.6.4.1.txt, core/5.6.4.1.1.txt, core/5.6.4.1.2.txt, core/5.6.4.1.3.1.txt, core/5.6.4.2.2.txt, opal/4.3.8.1.txt
+- `random-bufferout-capacity-doc-290d46db68` [needs_review] random-bufferout-capacity-doc
+  - internal name: Random BufferOut too small for Count cannot succeed
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: random-bufferout-capacity-doc
+  - evidence: core/5.6.4.1.txt, core/5.6.4.1.1.txt, core/5.6.4.1.2.txt, core/5.6.4.1.3.1.txt, core/5.6.4.2.2.txt, opal/4.3.8.1.txt
+- `random-bufferout-capacity-doc-0abf82bd6c` [needs_review] random-bufferout-capacity-doc
+  - internal name: Random direct BufferOut row window too small for Count cannot succeed
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: random-bufferout-capacity-doc
+  - evidence: core/5.6.4.1.txt, core/5.6.4.1.1.txt, core/5.6.4.1.2.txt, core/5.6.4.1.3.1.txt, core/5.6.4.2.2.txt, opal/4.3.8.1.txt
 - `random-count-uinteger-tight-doc-a9748f5539` [quarantine_concerns] random-count-uinteger-tight-doc
   - internal name: Random raw positional Count True is not a uinteger: impossible success
   - author label: FAIL
@@ -788,6 +1903,62 @@ Generated: 2026-05-31T20:21:19
   - random_count_uinteger_a: FAIL conf=0.97 concerns=The trajectory encodes args as a raw boolean rather than the usual required/optional structure, but the case name and evidence identify it as positional Count true.
   - random_count_uinteger_b: FAIL conf=0.97 concerns=-
   - random_count_uinteger_c: FAIL conf=0.98 concerns=-
+- `package-doc-47ea4fcbda` [needs_review] package-doc
+  - internal name: GetPackage accepts positional Purpose parameter
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-package, getpackage, setpackage, credential-uidref, return-values
+  - repair hint: Check GetPackage Purpose, WrappingKey/SigningKey credential uidrefs, SetPackage Value, credential targets, and SetPackage empty success result.
+  - evidence: core/5.1.3.26.txt, core/5.3.3.17.txt, core/5.3.3.17.1.txt, core/5.3.3.17.2.txt, core/5.3.3.17.3.txt, core/5.3.3.17.6.1.txt, core/5.3.3.17.7.txt, core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.3.18.3.txt, core/5.3.3.18.4.txt, core/5.3.3.18.5.txt, core/5.3.4.5.txt, core/5.1.4.2.12.txt, core/5.3.2.12.txt, core/5.3.4.1.2.4.txt, core/5.7.2.1.txt
+- `package-doc-9ab6665721` [needs_review] package-doc
+  - internal name: GetPackage success cannot return boolean instead of package bytes
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-package, getpackage, setpackage, credential-uidref, return-values
+  - repair hint: Check GetPackage Purpose, WrappingKey/SigningKey credential uidrefs, SetPackage Value, credential targets, and SetPackage empty success result.
+  - evidence: core/5.1.3.26.txt, core/5.3.3.17.txt, core/5.3.3.17.1.txt, core/5.3.3.17.2.txt, core/5.3.3.17.3.txt, core/5.3.3.17.6.1.txt, core/5.3.3.17.7.txt, core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.3.18.3.txt, core/5.3.3.18.4.txt, core/5.3.3.18.5.txt, core/5.3.4.5.txt, core/5.1.4.2.12.txt, core/5.3.2.12.txt, core/5.3.4.1.2.4.txt, core/5.7.2.1.txt
+- `package-doc-3792509e54` [needs_review] package-doc
+  - internal name: GetPackage success cannot return list-wrapped boolean instead of package bytes
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-package, getpackage, setpackage, credential-uidref, return-values
+  - repair hint: Check GetPackage Purpose, WrappingKey/SigningKey credential uidrefs, SetPackage Value, credential targets, and SetPackage empty success result.
+  - evidence: core/5.1.3.26.txt, core/5.3.3.17.txt, core/5.3.3.17.1.txt, core/5.3.3.17.2.txt, core/5.3.3.17.3.txt, core/5.3.3.17.6.1.txt, core/5.3.3.17.7.txt, core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.3.18.3.txt, core/5.3.3.18.4.txt, core/5.3.3.18.5.txt, core/5.3.4.5.txt, core/5.1.4.2.12.txt, core/5.3.2.12.txt, core/5.3.4.1.2.4.txt, core/5.7.2.1.txt
+- `package-doc-28885632a3` [needs_review] package-doc
+  - internal name: GetPackage success cannot return status string instead of package bytes
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-package, getpackage, setpackage, credential-uidref, return-values
+  - repair hint: Check GetPackage Purpose, WrappingKey/SigningKey credential uidrefs, SetPackage Value, credential targets, and SetPackage empty success result.
+  - evidence: core/5.1.3.26.txt, core/5.3.3.17.txt, core/5.3.3.17.1.txt, core/5.3.3.17.2.txt, core/5.3.3.17.3.txt, core/5.3.3.17.6.1.txt, core/5.3.3.17.7.txt, core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.3.18.3.txt, core/5.3.3.18.4.txt, core/5.3.3.18.5.txt, core/5.3.4.5.txt, core/5.1.4.2.12.txt, core/5.3.2.12.txt, core/5.3.4.1.2.4.txt, core/5.7.2.1.txt
+- `package-doc-c73e1fd806` [needs_review] package-doc
+  - internal name: SetPackage accepts positional Value parameter
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential-package, getpackage, setpackage, credential-uidref, return-values
+  - repair hint: Check GetPackage Purpose, WrappingKey/SigningKey credential uidrefs, SetPackage Value, credential targets, and SetPackage empty success result.
+  - evidence: core/5.1.3.26.txt, core/5.3.3.17.txt, core/5.3.3.17.1.txt, core/5.3.3.17.2.txt, core/5.3.3.17.3.txt, core/5.3.3.17.6.1.txt, core/5.3.3.17.7.txt, core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.3.18.3.txt, core/5.3.3.18.4.txt, core/5.3.3.18.5.txt, core/5.3.4.5.txt, core/5.1.4.2.12.txt, core/5.3.2.12.txt, core/5.3.4.1.2.4.txt, core/5.7.2.1.txt
+- `package-doc-cb3334fce4` [needs_review] package-doc
+  - internal name: GetPackage on TPerSign authority object cannot succeed
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-package, getpackage, setpackage, credential-uidref, return-values
+  - repair hint: Check GetPackage Purpose, WrappingKey/SigningKey credential uidrefs, SetPackage Value, credential targets, and SetPackage empty success result.
+  - evidence: core/5.1.3.26.txt, core/5.3.3.17.txt, core/5.3.3.17.1.txt, core/5.3.3.17.2.txt, core/5.3.3.17.3.txt, core/5.3.3.17.6.1.txt, core/5.3.3.17.7.txt, core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.3.18.3.txt, core/5.3.3.18.4.txt, core/5.3.3.18.5.txt, core/5.3.4.5.txt, core/5.1.4.2.12.txt, core/5.3.2.12.txt, core/5.3.4.1.2.4.txt, core/5.7.2.1.txt
+- `package-doc-ea0e04ffb4` [needs_review] package-doc
+  - internal name: SetPackage on TperAttestation authority object cannot succeed
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-package, getpackage, setpackage, credential-uidref, return-values
+  - repair hint: Check GetPackage Purpose, WrappingKey/SigningKey credential uidrefs, SetPackage Value, credential targets, and SetPackage empty success result.
+  - evidence: core/5.1.3.26.txt, core/5.3.3.17.txt, core/5.3.3.17.1.txt, core/5.3.3.17.2.txt, core/5.3.3.17.3.txt, core/5.3.3.17.6.1.txt, core/5.3.3.17.7.txt, core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.3.18.3.txt, core/5.3.3.18.4.txt, core/5.3.3.18.5.txt, core/5.3.4.5.txt, core/5.1.4.2.12.txt, core/5.3.2.12.txt, core/5.3.4.1.2.4.txt, core/5.7.2.1.txt
+- `package-doc-57be632caf` [needs_review] package-doc
+  - internal name: GetPackage SigningKey cannot be an Authority row
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential-package, getpackage, setpackage, credential-uidref, return-values
+  - repair hint: Check GetPackage Purpose, WrappingKey/SigningKey credential uidrefs, SetPackage Value, credential targets, and SetPackage empty success result.
+  - evidence: core/5.1.3.26.txt, core/5.3.3.17.txt, core/5.3.3.17.1.txt, core/5.3.3.17.2.txt, core/5.3.3.17.3.txt, core/5.3.3.17.6.1.txt, core/5.3.3.17.7.txt, core/5.3.3.18.txt, core/5.3.3.18.1.txt, core/5.3.3.18.2.txt, core/5.3.3.18.3.txt, core/5.3.3.18.4.txt, core/5.3.3.18.5.txt, core/5.3.4.5.txt, core/5.1.4.2.12.txt, core/5.3.2.12.txt, core/5.3.4.1.2.4.txt, core/5.7.2.1.txt
 - `cpin-setpackage-invalidates-pin-doc-38844f18e4` [quarantine_concerns] cpin-setpackage-invalidates-pin-doc
   - internal name: SetPackage on C_PIN_User1 invalidates old PIN for later StartSession: correct status
   - author label: PASS
@@ -888,6 +2059,48 @@ Generated: 2026-05-31T20:21:19
   - readonly_nonpersist_a: PASS conf=0.82 concerns=-
   - readonly_nonpersist_b: FAIL conf=0.97 concerns=-
   - readonly_nonpersist_c: FAIL conf=0.97 concerns=-
+- `datastore-empty-booleanexpr-doc-3b0bb10e72` [needs_review] datastore-empty-booleanexpr-doc
+  - internal name: Empty DataStore Get BooleanExpr cannot return boolean false: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, byte-table, ace, booleanexpr, empty-expression, authorization, failed-set, nonmutation
+  - repair hint: Check accepted empty ACE BooleanExpr state: if a DataStore Get/Set ACE is successfully set to an empty list, the ACE always resolves False; byte-table Get then succeeds with an empty result, Set fails with NOT_AUTHORIZED, and failed Set attempts must not mutate the bytes.
+  - evidence: core/5.3.4.3.3.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+- `datastore-empty-booleanexpr-doc-477bcbf0f1` [needs_review] datastore-empty-booleanexpr-doc
+  - internal name: Empty DataStore Get BooleanExpr cannot return boolean false: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, byte-table, ace, booleanexpr, empty-expression, authorization, failed-set, nonmutation
+  - repair hint: Check accepted empty ACE BooleanExpr state: if a DataStore Get/Set ACE is successfully set to an empty list, the ACE always resolves False; byte-table Get then succeeds with an empty result, Set fails with NOT_AUTHORIZED, and failed Set attempts must not mutate the bytes.
+  - evidence: core/5.3.4.3.3.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+- `datastore-set-where-row-only-doc-45a025cf2d` [needs_review] datastore-set-where-row-only-doc
+  - internal name: DataStore raw Set numeric endRow window is invalid: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, byte-table, set, where, row-address, invalid-parameter, nonmutation
+  - repair hint: Check that byte-table Set accepts a Row-valued Where but rejects Get/Cellblock-style row ranges such as Row+EndRow; failed Set attempts must not mutate tracked bytes.
+  - evidence: core/5.3.3.7.txt, core/5.3.3.7.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, core/5.1.4.2.3.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `datastore-set-where-row-only-doc-97d07636d6` [needs_review] datastore-set-where-row-only-doc
+  - internal name: DataStore raw Set numeric endRow window is invalid: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, byte-table, set, where, row-address, invalid-parameter, nonmutation
+  - repair hint: Check that byte-table Set accepts a Row-valued Where but rejects Get/Cellblock-style row ranges such as Row+EndRow; failed Set attempts must not mutate tracked bytes.
+  - evidence: core/5.3.3.7.txt, core/5.3.3.7.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.4.txt, core/5.1.4.2.3.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `datastore-byte-table-row-option-doc-769c06e5a9` [needs_review] datastore-byte-table-row-option-doc
+  - internal name: DataStore Get Cellblock length alias is invalid for byte table: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, byte-table, cellblock, where, row-option, uid-option, invalid-parameter
+  - repair hint: Check byte-table row selectors by option kind: Set.Where must use Row, and Get Cellblock.startRow on a byte table must be a RowNumber/Row option rather than a UID option.
+  - evidence: core/5.1.4.2.3.txt, core/5.3.3.6.txt, core/5.3.3.6.3.txt, core/5.3.3.7.txt, core/5.3.3.7.1.txt, core/5.3.3.7.2.1.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `datastore-byte-table-row-option-doc-2eefdfc32e` [needs_review] datastore-byte-table-row-option-doc
+  - internal name: DataStore Get Cellblock length alias is invalid for byte table: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, byte-table, cellblock, where, row-option, uid-option, invalid-parameter
+  - repair hint: Check byte-table row selectors by option kind: Set.Where must use Row, and Get Cellblock.startRow on a byte table must be a RowNumber/Row option rather than a UID option.
+  - evidence: core/5.1.4.2.3.txt, core/5.3.3.6.txt, core/5.3.3.6.3.txt, core/5.3.3.7.txt, core/5.3.3.7.1.txt, core/5.3.3.7.2.1.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
 - `datastore-sparse-fill-doc-25d98e253f` [quarantine_disagreement] datastore-sparse-fill-doc
   - internal name: Personalized Get ACE blocks later Admin sparse payload read: correct return value
   - author label: PASS
@@ -908,6 +2121,174 @@ Generated: 2026-05-31T20:21:19
   - datastore_ace_fix_a: FAIL conf=0.99 concerns=-
   - datastore_ace_fix_b: FAIL conf=0.99 concerns=-
   - datastore_ace_fix_c: PASS conf=0.99 concerns=-
+- `datastore-meta-acl-replacement-doc-5efd4a078d` [needs_review] datastore-meta-acl-replacement-doc
+  - internal name: RemoveACE deleting DataStore Get ACL ACE makes Admin read empty: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, accesscontrol, acl, addace, removeace, authorization, postcondition
+  - repair hint: Check that AccessControl AddACE/RemoveACE mutations to the DataStore Get/Set association ACLs change later DataStore authorization, not just later GetACL return values.
+  - evidence: core/5.3.2.7.5.txt, core/5.3.4.3.1.txt, core/5.3.3.14.txt, core/5.3.3.15.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+- `datastore-meta-acl-replacement-doc-533151afce` [needs_review] datastore-meta-acl-replacement-doc
+  - internal name: RemoveACE deleting DataStore Get ACL ACE makes Admin read empty: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, accesscontrol, acl, addace, removeace, authorization, postcondition
+  - repair hint: Check that AccessControl AddACE/RemoveACE mutations to the DataStore Get/Set association ACLs change later DataStore authorization, not just later GetACL return values.
+  - evidence: core/5.3.2.7.5.txt, core/5.3.4.3.1.txt, core/5.3.3.14.txt, core/5.3.3.15.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+- `datastore-meta-acl-replacement-doc-41567e4f73` [needs_review] datastore-meta-acl-replacement-doc
+  - internal name: RemoveACE deleting DataStore Get ACL ACE cannot return boolean false: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, accesscontrol, acl, addace, removeace, authorization, postcondition
+  - repair hint: Check that AccessControl AddACE/RemoveACE mutations to the DataStore Get/Set association ACLs change later DataStore authorization, not just later GetACL return values.
+  - evidence: core/5.3.2.7.5.txt, core/5.3.4.3.1.txt, core/5.3.3.14.txt, core/5.3.3.15.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+- `datastore-meta-acl-replacement-doc-4643ec0ff1` [needs_review] datastore-meta-acl-replacement-doc
+  - internal name: RemoveACE deleting DataStore Get ACL ACE cannot return boolean false: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, accesscontrol, acl, addace, removeace, authorization, postcondition
+  - repair hint: Check that AccessControl AddACE/RemoveACE mutations to the DataStore Get/Set association ACLs change later DataStore authorization, not just later GetACL return values.
+  - evidence: core/5.3.2.7.5.txt, core/5.3.4.3.1.txt, core/5.3.3.14.txt, core/5.3.3.15.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+- `datastore-meta-acl-replacement-doc-7768f094b2` [needs_review] datastore-meta-acl-replacement-doc
+  - internal name: AddACE Anybody to DataStore Set ACL authorizes unauthenticated Set: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, accesscontrol, acl, addace, removeace, authorization, postcondition
+  - repair hint: Check that AccessControl AddACE/RemoveACE mutations to the DataStore Get/Set association ACLs change later DataStore authorization, not just later GetACL return values.
+  - evidence: core/5.3.2.7.5.txt, core/5.3.4.3.1.txt, core/5.3.3.14.txt, core/5.3.3.15.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+- `datastore-meta-acl-replacement-doc-97207f58ac` [needs_review] datastore-meta-acl-replacement-doc
+  - internal name: AddACE Anybody to DataStore Set ACL authorizes unauthenticated Set: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, accesscontrol, acl, addace, removeace, authorization, postcondition
+  - repair hint: Check that AccessControl AddACE/RemoveACE mutations to the DataStore Get/Set association ACLs change later DataStore authorization, not just later GetACL return values.
+  - evidence: core/5.3.2.7.5.txt, core/5.3.4.3.1.txt, core/5.3.3.14.txt, core/5.3.3.15.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+- `datastore-meta-acl-replacement-doc-095fa7bf40` [needs_review] datastore-meta-acl-replacement-doc
+  - internal name: AddACE Anybody DataStore Set mutation is visible to later Admin Get: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, accesscontrol, acl, addace, removeace, authorization, postcondition
+  - repair hint: Check that AccessControl AddACE/RemoveACE mutations to the DataStore Get/Set association ACLs change later DataStore authorization, not just later GetACL return values.
+  - evidence: core/5.3.2.7.5.txt, core/5.3.4.3.1.txt, core/5.3.3.14.txt, core/5.3.3.15.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+- `datastore-meta-acl-replacement-doc-e3b59b9e70` [needs_review] datastore-meta-acl-replacement-doc
+  - internal name: AddACE Anybody DataStore Set mutation is visible to later Admin Get: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, accesscontrol, acl, addace, removeace, authorization, postcondition
+  - repair hint: Check that AccessControl AddACE/RemoveACE mutations to the DataStore Get/Set association ACLs change later DataStore authorization, not just later GetACL return values.
+  - evidence: core/5.3.2.7.5.txt, core/5.3.4.3.1.txt, core/5.3.3.14.txt, core/5.3.3.15.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+- `additional-datastore-isolation-doc-57cf19e275` [needs_review] additional-datastore-isolation-doc
+  - internal name: Additional DataStore2 write does not overwrite base DataStore payload: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-78f662bad3` [needs_review] additional-datastore-isolation-doc
+  - internal name: Additional DataStore2 write does not overwrite base DataStore payload: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-9e8d22e614` [needs_review] additional-datastore-isolation-doc
+  - internal name: Additional DataStore2 keeps its own payload: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-07c1b03792` [needs_review] additional-datastore-isolation-doc
+  - internal name: Additional DataStore2 keeps its own payload: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-a8a83c87e4` [needs_review] additional-datastore-isolation-doc
+  - internal name: Additional DataStore2 GetACL returns its exact Get ACE: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-28557d874c` [needs_review] additional-datastore-isolation-doc
+  - internal name: Additional DataStore2 GetACL returns its exact Get ACE: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-f535ded0de` [needs_review] additional-datastore-isolation-doc
+  - internal name: Additional DataStore2 empty Get ACL blocks byte payload: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-dc162ca0bc` [needs_review] additional-datastore-isolation-doc
+  - internal name: Additional DataStore2 empty Get ACL blocks byte payload: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-817ec2a78f` [needs_review] additional-datastore-isolation-doc
+  - internal name: Additional DataStore2 descriptor reports Byte kind: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-742aac13a6` [needs_review] additional-datastore-isolation-doc
+  - internal name: Additional DataStore2 descriptor reports Byte kind: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-205299d442` [needs_review] additional-datastore-isolation-doc
+  - internal name: Additional DataStore2 observed Rows bounds later Get: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-dd0c80e2ea` [needs_review] additional-datastore-isolation-doc
+  - internal name: Additional DataStore2 observed Rows bounds later Get: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-8a2a27b22c` [needs_review] additional-datastore-isolation-doc
+  - internal name: XOR uses additional DataStore2 pattern input independently: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-072d9554c9` [needs_review] additional-datastore-isolation-doc
+  - internal name: XOR uses additional DataStore2 pattern input independently: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-7726e856de` [needs_review] additional-datastore-isolation-doc
+  - internal name: XOR BufferOut cellblock must fit result bytes: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
+- `additional-datastore-isolation-doc-356fca605b` [needs_review] additional-datastore-isolation-doc
+  - internal name: XOR BufferOut cellblock must fit result bytes: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, additional-datastore, byte-table, payload-isolation, accesscontrol, descriptor, xor, postcondition
+  - repair hint: Check that additional DataStore byte tables keep independent identity across payloads, descriptor rows, AccessControl/GetACL rows, row bounds, and XOR PatternInput/BufferOut handling.
+  - evidence: opal/2.10.txt, core/3.2.5.1.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt
 - `byte-table-row-bounds-doc-c5a65f6d92` [quarantine_concerns] byte-table-row-bounds-doc
   - internal name: DataStore Get negative startRow fails: correct status
   - author label: PASS
@@ -1023,6 +2404,20 @@ Generated: 2026-05-31T20:21:19
   - new_highscore_a: PASS conf=0.8 concerns=Failure status is well supported; the row also shows a byte return on the failing command, which the embedded snippets do not define explicitly.
   - new_highscore_b: PASS conf=0.86 concerns=The target also carries a byte return value on a failing method; the cited snippets establish failure but not an error payload shape.
   - new_highscore_c: PASS conf=0.94 concerns=-
+- `datastore-payload-doc-20632eeb43` [needs_review] datastore-payload-doc
+  - internal name: DataStore one-row Get cannot encode byte as RowValues cell: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, byte-table, set, get, payload-provenance, postcondition
+  - repair hint: Check that successful DataStore byte-table Set records the payload and later DataStore Get returns that payload rather than stale or arbitrary bytes.
+  - evidence: core/5.1.3.12.txt, core/5.1.3.14.txt, core/5.3.3.6.txt, core/5.3.3.6.2.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/4.3.1.8.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
+- `datastore-payload-doc-28e97bba1d` [needs_review] datastore-payload-doc
+  - internal name: DataStore one-row Get cannot encode byte as RowValues cell: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: datastore, byte-table, set, get, payload-provenance, postcondition
+  - repair hint: Check that successful DataStore byte-table Set records the payload and later DataStore Get returns that payload rather than stale or arbitrary bytes.
+  - evidence: core/5.1.3.12.txt, core/5.1.3.14.txt, core/5.3.3.6.txt, core/5.3.3.6.2.txt, core/5.3.3.6.2.1.txt, core/5.3.3.7.txt, core/5.3.3.7.2.1.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, opal/4.3.8.1.txt, opal/4.3.1.8.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/5.1.1.2.txt
 - `datastore-no-values-granularity-tight-do-0613834f08` [quarantine_disagreement] datastore-no-values-granularity-tight-doc
   - internal name: DataStore no-Values Set at unaligned row still succeeds as no-op: correct success
   - author label: PASS
@@ -1205,6 +2600,118 @@ Generated: 2026-05-31T20:21:19
   - p: FAIL conf=0.95 concerns=Assumes the trajectory value [0] denotes the Power Cycle reset type, consistent with the included Opal preconfiguration snippet.
   - q: PASS conf=0.98 concerns=-
   - r: PASS conf=0.98 concerns=-
+- `locking-range-get-doc-4426c9feb9` [needs_review] locking-range-get-doc
+  - internal name: Locking Get ReadLockEnabled returns a boolean cell: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, set, get, range-geometry, lock-enabled, postcondition
+  - repair hint: Check that successful Locking Set operations update observable RangeStart, RangeLength, ReadLockEnabled, and WriteLockEnabled cells for later Get responses.
+  - evidence: core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.2.txt
+- `locking-range-get-doc-ad7635fde0` [needs_review] locking-range-get-doc
+  - internal name: Locking Get ReadLockEnabled returns a boolean cell: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, set, get, range-geometry, lock-enabled, postcondition
+  - repair hint: Check that successful Locking Set operations update observable RangeStart, RangeLength, ReadLockEnabled, and WriteLockEnabled cells for later Get responses.
+  - evidence: core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.2.txt
+- `locking-range-get-doc-25ebe28433` [needs_review] locking-range-get-doc
+  - internal name: Locking Get WriteLockEnabled returns a boolean cell: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, set, get, range-geometry, lock-enabled, postcondition
+  - repair hint: Check that successful Locking Set operations update observable RangeStart, RangeLength, ReadLockEnabled, and WriteLockEnabled cells for later Get responses.
+  - evidence: core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.2.txt
+- `locking-range-get-doc-f185254922` [needs_review] locking-range-get-doc
+  - internal name: Locking Get WriteLockEnabled returns a boolean cell: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, set, get, range-geometry, lock-enabled, postcondition
+  - repair hint: Check that successful Locking Set operations update observable RangeStart, RangeLength, ReadLockEnabled, and WriteLockEnabled cells for later Get responses.
+  - evidence: core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.2.txt
+- `locking-range-get-doc-d3174cc921` [needs_review] locking-range-get-doc
+  - internal name: Locking Get ReadLocked returns a boolean cell: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, set, get, range-geometry, lock-enabled, postcondition
+  - repair hint: Check that successful Locking Set operations update observable RangeStart, RangeLength, ReadLockEnabled, and WriteLockEnabled cells for later Get responses.
+  - evidence: core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.2.txt
+- `locking-range-get-doc-922257bd26` [needs_review] locking-range-get-doc
+  - internal name: Locking Get ReadLocked returns a boolean cell: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, set, get, range-geometry, lock-enabled, postcondition
+  - repair hint: Check that successful Locking Set operations update observable RangeStart, RangeLength, ReadLockEnabled, and WriteLockEnabled cells for later Get responses.
+  - evidence: core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.2.txt
+- `locking-range-get-doc-ac25d8147a` [needs_review] locking-range-get-doc
+  - internal name: Locking Get WriteLocked returns a boolean cell: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, set, get, range-geometry, lock-enabled, postcondition
+  - repair hint: Check that successful Locking Set operations update observable RangeStart, RangeLength, ReadLockEnabled, and WriteLockEnabled cells for later Get responses.
+  - evidence: core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.2.txt
+- `locking-range-get-doc-7e4153232f` [needs_review] locking-range-get-doc
+  - internal name: Locking Get WriteLocked returns a boolean cell: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, set, get, range-geometry, lock-enabled, postcondition
+  - repair hint: Check that successful Locking Set operations update observable RangeStart, RangeLength, ReadLockEnabled, and WriteLockEnabled cells for later Get responses.
+  - evidence: core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.2.txt
+- `locking-composite-get-doc-196bf01f4c` [needs_review] locking-composite-get-doc
+  - internal name: Full-row Locking Get checks returned stored cells even without Cellblock: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, cellblock, set, get, reset-types, postcondition
+  - repair hint: Check that multi-column Locking Get cellblocks require every tracked requested state cell to match the current Locking row state.
+  - evidence: core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.1.3.67.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.2.txt, opal/4.3.5.2.2.txt
+- `locking-composite-get-doc-a25c9d8f07` [needs_review] locking-composite-get-doc
+  - internal name: Full-row Locking Get checks returned stored cells even without Cellblock: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, cellblock, set, get, reset-types, postcondition
+  - repair hint: Check that multi-column Locking Get cellblocks require every tracked requested state cell to match the current Locking row state.
+  - evidence: core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.1.3.67.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.2.txt, opal/4.3.5.2.2.txt
+- `locking-toggle-reenable-long-doc-7654917961` [needs_review] locking-toggle-reenable-long-doc
+  - internal name: Disabled LockOnReset stores latent locks before later re-enable: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, lockenabled, locked-cell, lock-on-reset, reset-types, level0-discovery, host-io, long-trajectory
+  - repair hint: Check long Locking enable/disable trajectories: disabled lock features make stored locked cells ineffective without preventing host Set of those cells; clearing or setting a locked cell while disabled must become meaningful after re-enable, and disabled LockOnReset remains ineffective unless the feature is re-enabled before the matching reset.
+  - evidence: core/3.3.6.5.txt, core/3.3.6.5.2.txt, core/3.3.6.5.3.txt, core/3.3.7.1.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.2.txt, opal/3.2.3.txt, opal/4.2.3.1.txt, opal/4.3.5.2.txt
+- `locking-toggle-reenable-long-doc-bcaaa15f28` [needs_review] locking-toggle-reenable-long-doc
+  - internal name: Disabled LockOnReset stores latent locks before later re-enable: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, lockenabled, locked-cell, lock-on-reset, reset-types, level0-discovery, host-io, long-trajectory
+  - repair hint: Check long Locking enable/disable trajectories: disabled lock features make stored locked cells ineffective without preventing host Set of those cells; clearing or setting a locked cell while disabled must become meaningful after re-enable, and disabled LockOnReset remains ineffective unless the feature is re-enabled before the matching reset.
+  - evidence: core/3.3.6.5.txt, core/3.3.6.5.2.txt, core/3.3.6.5.3.txt, core/3.3.7.1.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.2.txt, opal/3.2.3.txt, opal/4.2.3.1.txt, opal/4.3.5.2.txt
+- `locking-toggle-reenable-long-doc-43a1d30ddf` [needs_review] locking-toggle-reenable-long-doc
+  - internal name: Re-enable after disabled LockOnReset makes latent read lock effective: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, lockenabled, locked-cell, lock-on-reset, reset-types, level0-discovery, host-io, long-trajectory
+  - repair hint: Check long Locking enable/disable trajectories: disabled lock features make stored locked cells ineffective without preventing host Set of those cells; clearing or setting a locked cell while disabled must become meaningful after re-enable, and disabled LockOnReset remains ineffective unless the feature is re-enabled before the matching reset.
+  - evidence: core/3.3.6.5.txt, core/3.3.6.5.2.txt, core/3.3.6.5.3.txt, core/3.3.7.1.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.2.txt, opal/3.2.3.txt, opal/4.2.3.1.txt, opal/4.3.5.2.txt
+- `locking-toggle-reenable-long-doc-f3857210ce` [needs_review] locking-toggle-reenable-long-doc
+  - internal name: Re-enable after disabled LockOnReset makes latent write lock effective: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, lockenabled, locked-cell, lock-on-reset, reset-types, level0-discovery, host-io, long-trajectory
+  - repair hint: Check long Locking enable/disable trajectories: disabled lock features make stored locked cells ineffective without preventing host Set of those cells; clearing or setting a locked cell while disabled must become meaningful after re-enable, and disabled LockOnReset remains ineffective unless the feature is re-enabled before the matching reset.
+  - evidence: core/3.3.6.5.txt, core/3.3.6.5.2.txt, core/3.3.6.5.3.txt, core/3.3.7.1.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.2.txt, opal/3.2.3.txt, opal/4.2.3.1.txt, opal/4.3.5.2.txt
+- `locking-disabled-disregard-long-doc-db874feb0d` [needs_review] locking-disabled-disregard-long-doc
+  - internal name: Matching disabled LockOnReset still sets stored lock cells: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, lockenabled, locked-cell, lock-on-reset, level0-discovery, host-io, long-trajectory
+  - repair hint: Check that disabled ReadLockEnabled/WriteLockEnabled makes the corresponding stored locked cell and LockOnReset ineffective for host I/O and Level 0 Locked, without erasing the stored cell; re-enabling the feature makes the stored locked cell meaningful again.
+  - evidence: core/3.3.6.5.txt, core/3.3.6.5.2.txt, core/3.3.6.5.3.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.2.txt, opal/4.3.5.2.txt
+- `locking-disabled-disregard-long-doc-8503e44800` [needs_review] locking-disabled-disregard-long-doc
+  - internal name: Matching disabled LockOnReset still sets stored lock cells: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, lockenabled, locked-cell, lock-on-reset, level0-discovery, host-io, long-trajectory
+  - repair hint: Check that disabled ReadLockEnabled/WriteLockEnabled makes the corresponding stored locked cell and LockOnReset ineffective for host I/O and Level 0 Locked, without erasing the stored cell; re-enabling the feature makes the stored locked cell meaningful again.
+  - evidence: core/3.3.6.5.txt, core/3.3.6.5.2.txt, core/3.3.6.5.3.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.2.txt, opal/4.3.5.2.txt
 - `locking-multi-range-reset-clean-doc-261ad36c4b` [quarantine_concerns] locking-multi-range-reset-clean-doc
   - internal name: PowerCycle-locked first range rejects host write while second range is unlocked: impossible success
   - author label: FAIL
@@ -1255,6 +2762,41 @@ Generated: 2026-05-31T20:21:19
   - locking_hotplug_a: FAIL conf=0.86 concerns=The packet snippets do not include the general method/session validity rule, so this relies on the reset evidence that all open sessions are aborted.
   - locking_hotplug_b: FAIL conf=0.88 concerns=-
   - locking_hotplug_c: FAIL conf=0.84 concerns=The packet evidence does not include a separate general rule for method invocation after an aborted session, so this relies on the explicit session-abort reset rule.
+- `locking-feature-descriptor-doc-92e5c8d199` [needs_review] locking-feature-descriptor-doc
+  - internal name: Activated Locking Feature descriptor reports mandatory Opal fixed fields
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: level0-discovery, locking-feature, locked-bit, mbr-shadowing, state-observation
+  - repair hint: Check Level 0 Locking Feature descriptor bits: LockingEnabled follows Locking SP lifecycle, Locked follows enabled read/write lock cells, and MBR bits follow MBRControl Enable/Done.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.6.5.1.txt, core/3.3.6.5.4.txt, core/3.3.6.5.5.txt, core/3.3.6.5.6.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, opal/3.1.1.txt, opal/3.1.1.3.txt, opal/3.1.1.3.1.txt, opal/4.3.5.3.txt
+- `locking-feature-descriptor-doc-f67d7553a7` [needs_review] locking-feature-descriptor-doc
+  - internal name: Activated Locking Feature descriptor rejects impossible Length
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0-discovery, locking-feature, locked-bit, mbr-shadowing, state-observation
+  - repair hint: Check Level 0 Locking Feature descriptor bits: LockingEnabled follows Locking SP lifecycle, Locked follows enabled read/write lock cells, and MBR bits follow MBRControl Enable/Done.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.6.5.1.txt, core/3.3.6.5.4.txt, core/3.3.6.5.5.txt, core/3.3.6.5.6.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, opal/3.1.1.txt, opal/3.1.1.3.txt, opal/3.1.1.3.1.txt, opal/4.3.5.3.txt
+- `locking-feature-descriptor-doc-d2dce10d47` [needs_review] locking-feature-descriptor-doc
+  - internal name: Activated Locking Feature descriptor rejects impossible MBR shadowing unsupported flag
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0-discovery, locking-feature, locked-bit, mbr-shadowing, state-observation
+  - repair hint: Check Level 0 Locking Feature descriptor bits: LockingEnabled follows Locking SP lifecycle, Locked follows enabled read/write lock cells, and MBR bits follow MBRControl Enable/Done.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.6.5.1.txt, core/3.3.6.5.4.txt, core/3.3.6.5.5.txt, core/3.3.6.5.6.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, opal/3.1.1.txt, opal/3.1.1.3.txt, opal/3.1.1.3.1.txt, opal/4.3.5.3.txt
+- `locking-feature-descriptor-doc-b4612609ae` [needs_review] locking-feature-descriptor-doc
+  - internal name: Activated Locking Feature descriptor rejects impossible MediaEncryption
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0-discovery, locking-feature, locked-bit, mbr-shadowing, state-observation
+  - repair hint: Check Level 0 Locking Feature descriptor bits: LockingEnabled follows Locking SP lifecycle, Locked follows enabled read/write lock cells, and MBR bits follow MBRControl Enable/Done.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.6.5.1.txt, core/3.3.6.5.4.txt, core/3.3.6.5.5.txt, core/3.3.6.5.6.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, opal/3.1.1.txt, opal/3.1.1.3.txt, opal/3.1.1.3.1.txt, opal/4.3.5.3.txt
+- `locking-feature-descriptor-doc-86dbcaff17` [needs_review] locking-feature-descriptor-doc
+  - internal name: Activated Locking Feature descriptor rejects impossible LockingSupported
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0-discovery, locking-feature, locked-bit, mbr-shadowing, state-observation
+  - repair hint: Check Level 0 Locking Feature descriptor bits: LockingEnabled follows Locking SP lifecycle, Locked follows enabled read/write lock cells, and MBR bits follow MBRControl Enable/Done.
+  - evidence: core/3.3.6.5.3.txt, core/3.3.6.5.1.txt, core/3.3.6.5.4.txt, core/3.3.6.5.5.txt, core/3.3.6.5.6.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, opal/3.1.1.txt, opal/3.1.1.3.txt, opal/3.1.1.3.1.txt, opal/4.3.5.3.txt
 - `data-removal-interrupted-bit-doc-d14ca120e9` [quarantine_disagreement] data-removal-interrupted-bit-doc
   - internal name: Fresh Data Removal Feature descriptor rejects named Interrupted alias set: correct return value
   - author label: PASS
@@ -1265,6 +2807,160 @@ Generated: 2026-05-31T20:21:19
   - data_removal_interrupt_a: PASS conf=0.7 concerns=The packet uses the shortened field name OperationInterrupted rather than the descriptor/Table 9 name Data Removal Operation Interrupted; if exact response-field naming is required, this would be noncompliant.
   - data_removal_interrupt_b: PASS conf=0.7 concerns=The response names the field OperationInterrupted rather than the spec's Data Removal Operation Interrupted parameter, so the structural mapping is slightly ambiguous.
   - data_removal_interrupt_c: FAIL conf=0.68 concerns=If OperationInterrupted is an accepted alias in this test harness, the zero value would otherwise match the no-interruption trajectory; the packet sources only name Data Removal Operation Interrupted.
+- `level0-range-crossing-locking-doc-75f1e7901f` [needs_review] level0-range-crossing-locking-doc
+  - internal name: Invalid RangeCrossingBehavior cannot permit unlocked crossing write: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0-discovery, opal-ssc-v2, range-crossing, locking-range, host-io, state-machine
+  - repair hint: Check that the observed Opal SSC V2 RangeCrossingBehavior bit constrains later unlocked host I/O spanning multiple Locking ranges: 0 processes the transfer, 1 terminates it; single-range I/O and locked-range protection remain governed by the Locking table.
+  - evidence: opal/3.1.1.txt, opal/3.1.1.5.txt, opal/3.1.1.5.1.txt, opal/3.1.1.5.2.txt, opal/4.3.7.txt, opal/4.3.5.2.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.3.2.txt
+- `locking-crossing-genkey-media-doc-4d3d881e22` [needs_review] locking-crossing-genkey-media-doc
+  - internal name: Range1 GenKey does not invalidate plaintext media when ActiveKey is null: correct data
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, range-crossing, host-io, media-key, genkey, data-removal, segment-tracking, long-trajectory
+  - repair hint: Check host writes that span multiple effective Locking ranges: remember media data per range segment, so a later GenKey on one range invalidates only that segment while unaffected segments remain readable.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.3.1.txt, core/5.7.2.3.4.txt, core/5.7.2.4.4.txt, core/5.7.3.2.txt, opal/3.1.1.5.txt, opal/3.1.1.6.3.txt, opal/4.3.5.5.txt, opal/4.3.7.txt
+- `locking-crossing-genkey-media-doc-f797cfaa78` [needs_review] locking-crossing-genkey-media-doc
+  - internal name: Range1 GenKey does not invalidate plaintext media when ActiveKey is null: impossible data
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, range-crossing, host-io, media-key, genkey, data-removal, segment-tracking, long-trajectory
+  - repair hint: Check host writes that span multiple effective Locking ranges: remember media data per range segment, so a later GenKey on one range invalidates only that segment while unaffected segments remain readable.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.3.1.txt, core/5.7.2.3.4.txt, core/5.7.2.4.4.txt, core/5.7.3.2.txt, opal/3.1.1.5.txt, opal/3.1.1.6.3.txt, opal/4.3.5.5.txt, opal/4.3.7.txt
+- `locking-crossing-genkey-media-doc-ddd5ee8b85` [needs_review] locking-crossing-genkey-media-doc
+  - internal name: K AES 128 Range1 GenKey leaves data readable when ActiveKey is K AES 256 Range1: correct data
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, range-crossing, host-io, media-key, genkey, data-removal, segment-tracking, long-trajectory
+  - repair hint: Check host writes that span multiple effective Locking ranges: remember media data per range segment, so a later GenKey on one range invalidates only that segment while unaffected segments remain readable.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.3.1.txt, core/5.7.2.3.4.txt, core/5.7.2.4.4.txt, core/5.7.3.2.txt, opal/3.1.1.5.txt, opal/3.1.1.6.3.txt, opal/4.3.5.5.txt, opal/4.3.7.txt
+- `locking-crossing-genkey-media-doc-f6a464b7f0` [needs_review] locking-crossing-genkey-media-doc
+  - internal name: K AES 128 Range1 GenKey leaves data readable when ActiveKey is K AES 256 Range1: impossible data
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, range-crossing, host-io, media-key, genkey, data-removal, segment-tracking, long-trajectory
+  - repair hint: Check host writes that span multiple effective Locking ranges: remember media data per range segment, so a later GenKey on one range invalidates only that segment while unaffected segments remain readable.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.3.1.txt, core/5.7.2.3.4.txt, core/5.7.2.4.4.txt, core/5.7.3.2.txt, opal/3.1.1.5.txt, opal/3.1.1.6.3.txt, opal/4.3.5.5.txt, opal/4.3.7.txt
+- `mbrcontrol-defaults-doc-0f4adf5a65` [needs_review] mbrcontrol-defaults-doc
+  - internal name: Fresh Opal MBRControl cannot report non-boolean Enable
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: mbr-shadowing, mbrcontrol, preconfiguration, get, reset-types
+  - repair hint: Check MBRControl Get return-cell validation against Opal preconfiguration defaults and any prior successful Set of Enable, Done, or MBRDoneOnReset.
+  - evidence: core/5.7.2.5.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, core/5.7.2.5.4.txt, core/5.3.4.2.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.3.txt, opal/4.3.5.3.1.txt
+- `mbrcontrol-defaults-doc-49b544aa4d` [needs_review] mbrcontrol-defaults-doc
+  - internal name: TCGstorageAPI setMBRControl cannot accept string true Enable
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: mbr-shadowing, mbrcontrol, preconfiguration, get, reset-types
+  - repair hint: Check MBRControl Get return-cell validation against Opal preconfiguration defaults and any prior successful Set of Enable, Done, or MBRDoneOnReset.
+  - evidence: core/5.7.2.5.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, core/5.7.2.5.4.txt, core/5.3.4.2.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.3.txt, opal/4.3.5.3.1.txt
+- `mbrcontrol-defaults-doc-f4ba3f5dc7` [needs_review] mbrcontrol-defaults-doc
+  - internal name: Fresh Opal MBRControl cannot report non-boolean Done
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: mbr-shadowing, mbrcontrol, preconfiguration, get, reset-types
+  - repair hint: Check MBRControl Get return-cell validation against Opal preconfiguration defaults and any prior successful Set of Enable, Done, or MBRDoneOnReset.
+  - evidence: core/5.7.2.5.txt, core/5.7.2.5.2.txt, core/5.7.2.5.3.txt, core/5.7.2.5.4.txt, core/5.3.4.2.6.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.5.3.txt, opal/4.3.5.3.1.txt
+- `locking-reset-list-restrictions-no-mutat-7201caa945` [needs_review] locking-reset-list-restrictions-no-mutation-doc
+  - internal name: PowerCycle-plus-Hardware LockOnReset Set may be rejected when optional Hardware reset support is absent
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: reset-types, lock-on-reset, mbr-done-on-reset, set, invalid-parameter, failed-set-nonmutation, state-observation
+  - repair hint: Check Opal reset_types list restrictions for LockOnReset and MBRDoneOnReset: unsupported lists are invalid parameter values, and a failed Set must not mutate later Get or reset behavior.
+  - evidence: core/5.1.5.11.txt, core/5.3.3.7.3.txt, core/5.3.4.2.6.txt, core/5.7.2.2.10.txt, core/5.7.2.5.4.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-list-restrictions-no-mutat-7618e933d8` [needs_review] locking-reset-list-restrictions-no-mutation-doc
+  - internal name: PowerCycle-plus-Hardware LockOnReset Set may succeed when optional Hardware reset support is present
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: reset-types, lock-on-reset, mbr-done-on-reset, set, invalid-parameter, failed-set-nonmutation, state-observation
+  - repair hint: Check Opal reset_types list restrictions for LockOnReset and MBRDoneOnReset: unsupported lists are invalid parameter values, and a failed Set must not mutate later Get or reset behavior.
+  - evidence: core/5.1.5.11.txt, core/5.3.3.7.3.txt, core/5.3.4.2.6.txt, core/5.7.2.2.10.txt, core/5.7.2.5.4.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-list-restrictions-no-mutat-578d6ff741` [needs_review] locking-reset-list-restrictions-no-mutation-doc
+  - internal name: PowerCycle-plus-Hardware-plus-Programmatic LockOnReset Set may be rejected when optional Hardware reset support is absent
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: reset-types, lock-on-reset, mbr-done-on-reset, set, invalid-parameter, failed-set-nonmutation, state-observation
+  - repair hint: Check Opal reset_types list restrictions for LockOnReset and MBRDoneOnReset: unsupported lists are invalid parameter values, and a failed Set must not mutate later Get or reset behavior.
+  - evidence: core/5.1.5.11.txt, core/5.3.3.7.3.txt, core/5.3.4.2.6.txt, core/5.7.2.2.10.txt, core/5.7.2.5.4.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-list-restrictions-no-mutat-810c322bd1` [needs_review] locking-reset-list-restrictions-no-mutation-doc
+  - internal name: PowerCycle-plus-Hardware-plus-Programmatic LockOnReset Set may succeed when optional Hardware reset support is present
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: reset-types, lock-on-reset, mbr-done-on-reset, set, invalid-parameter, failed-set-nonmutation, state-observation
+  - repair hint: Check Opal reset_types list restrictions for LockOnReset and MBRDoneOnReset: unsupported lists are invalid parameter values, and a failed Set must not mutate later Get or reset behavior.
+  - evidence: core/5.1.5.11.txt, core/5.3.3.7.3.txt, core/5.3.4.2.6.txt, core/5.7.2.2.10.txt, core/5.7.2.5.4.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-list-restrictions-no-mutat-142846526e` [needs_review] locking-reset-list-restrictions-no-mutation-doc
+  - internal name: PowerCycle-plus-Hardware MBRDoneOnReset Set may be rejected when optional Hardware reset support is absent
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: reset-types, lock-on-reset, mbr-done-on-reset, set, invalid-parameter, failed-set-nonmutation, state-observation
+  - repair hint: Check Opal reset_types list restrictions for LockOnReset and MBRDoneOnReset: unsupported lists are invalid parameter values, and a failed Set must not mutate later Get or reset behavior.
+  - evidence: core/5.1.5.11.txt, core/5.3.3.7.3.txt, core/5.3.4.2.6.txt, core/5.7.2.2.10.txt, core/5.7.2.5.4.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-list-restrictions-no-mutat-213d3b4f6c` [needs_review] locking-reset-list-restrictions-no-mutation-doc
+  - internal name: PowerCycle-plus-Hardware MBRDoneOnReset Set may succeed when optional Hardware reset support is present
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: reset-types, lock-on-reset, mbr-done-on-reset, set, invalid-parameter, failed-set-nonmutation, state-observation
+  - repair hint: Check Opal reset_types list restrictions for LockOnReset and MBRDoneOnReset: unsupported lists are invalid parameter values, and a failed Set must not mutate later Get or reset behavior.
+  - evidence: core/5.1.5.11.txt, core/5.3.3.7.3.txt, core/5.3.4.2.6.txt, core/5.7.2.2.10.txt, core/5.7.2.5.4.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-list-restrictions-no-mutat-ec565bf061` [needs_review] locking-reset-list-restrictions-no-mutation-doc
+  - internal name: PowerCycle-plus-Hardware-plus-Programmatic MBRDoneOnReset Set may be rejected when optional Hardware reset support is absent
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: reset-types, lock-on-reset, mbr-done-on-reset, set, invalid-parameter, failed-set-nonmutation, state-observation
+  - repair hint: Check Opal reset_types list restrictions for LockOnReset and MBRDoneOnReset: unsupported lists are invalid parameter values, and a failed Set must not mutate later Get or reset behavior.
+  - evidence: core/5.1.5.11.txt, core/5.3.3.7.3.txt, core/5.3.4.2.6.txt, core/5.7.2.2.10.txt, core/5.7.2.5.4.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-list-restrictions-no-mutat-f89fe85d92` [needs_review] locking-reset-list-restrictions-no-mutation-doc
+  - internal name: PowerCycle-plus-Hardware-plus-Programmatic MBRDoneOnReset Set may succeed when optional Hardware reset support is present
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: reset-types, lock-on-reset, mbr-done-on-reset, set, invalid-parameter, failed-set-nonmutation, state-observation
+  - repair hint: Check Opal reset_types list restrictions for LockOnReset and MBRDoneOnReset: unsupported lists are invalid parameter values, and a failed Set must not mutate later Get or reset behavior.
+  - evidence: core/5.1.5.11.txt, core/5.3.3.7.3.txt, core/5.3.4.2.6.txt, core/5.7.2.2.10.txt, core/5.7.2.5.4.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.2.3.1.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-created-row-default-lockonreset--14fec4989a` [needs_review] locking-created-row-default-lockonreset-doc
+  - internal name: Created disabled Locking row default LockOnReset stores latent locks after PowerCycle: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, create-row, default-cells, lock-on-reset, delete-row, range-reuse, state-observation
+  - repair hint: Check dynamically created Locking rows: CreateRow initializes default lock cells including Power Cycle LockOnReset, later Set/reset behavior applies to the created row, DeleteRow removes its lock effect, and recreated geometry gets fresh defaults.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.4.2.3.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.3.4.2.4.txt, opal/3.3.5.2.txt, opal/4.3.5.2.txt, opal/4.3.5.2.2.txt
+- `locking-created-row-default-lockonreset--91c8b7edae` [needs_review] locking-created-row-default-lockonreset-doc
+  - internal name: Created disabled Locking row default LockOnReset stores latent locks after PowerCycle: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, create-row, default-cells, lock-on-reset, delete-row, range-reuse, state-observation
+  - repair hint: Check dynamically created Locking rows: CreateRow initializes default lock cells including Power Cycle LockOnReset, later Set/reset behavior applies to the created row, DeleteRow removes its lock effect, and recreated geometry gets fresh defaults.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.4.2.3.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.3.4.2.4.txt, opal/3.3.5.2.txt, opal/4.3.5.2.txt, opal/4.3.5.2.2.txt
+- `locking-created-row-failed-set-reset-doc-5d412220cb` [needs_review] locking-created-row-failed-set-reset-doc
+  - internal name: Locking CreateRow rejects Programmatic-only LockOnReset row value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, create-row, failed-set-nonmutation, range-geometry, lock-on-reset, reset, state-observation, long-trajectory
+  - repair hint: Check that failed Set operations on created Locking rows, including overlap and unsupported reset_types, do not mutate stored geometry, lock cells, or LockOnReset before later PowerCycle, HotPlug, TPER_RESET, or ProtocolStackReset observations.
+  - evidence: core/3.3.7.1.5.txt, core/5.1.5.11.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.3.5.2.txt, opal/4.3.5.2.2.txt
+- `locking-created-row-failed-set-reset-doc-fad3178b3c` [needs_review] locking-created-row-failed-set-reset-doc
+  - internal name: Locking CreateRow rejects Programmatic-only LockOnReset row value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, create-row, failed-set-nonmutation, range-geometry, lock-on-reset, reset, state-observation, long-trajectory
+  - repair hint: Check that failed Set operations on created Locking rows, including overlap and unsupported reset_types, do not mutate stored geometry, lock cells, or LockOnReset before later PowerCycle, HotPlug, TPER_RESET, or ProtocolStackReset observations.
+  - evidence: core/3.3.7.1.5.txt, core/5.1.5.11.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.3.5.2.txt, opal/4.3.5.2.2.txt
+- `locking-created-row-failed-set-reset-doc-000222aeee` [needs_review] locking-created-row-failed-set-reset-doc
+  - internal name: Locking CreateRow rejects Hardware-only LockOnReset row value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, create-row, failed-set-nonmutation, range-geometry, lock-on-reset, reset, state-observation, long-trajectory
+  - repair hint: Check that failed Set operations on created Locking rows, including overlap and unsupported reset_types, do not mutate stored geometry, lock cells, or LockOnReset before later PowerCycle, HotPlug, TPER_RESET, or ProtocolStackReset observations.
+  - evidence: core/3.3.7.1.5.txt, core/5.1.5.11.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.3.5.2.txt, opal/4.3.5.2.2.txt
+- `locking-created-row-failed-set-reset-doc-a2449c0c47` [needs_review] locking-created-row-failed-set-reset-doc
+  - internal name: Locking CreateRow rejects Hardware-only LockOnReset row value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, create-row, failed-set-nonmutation, range-geometry, lock-on-reset, reset, state-observation, long-trajectory
+  - repair hint: Check that failed Set operations on created Locking rows, including overlap and unsupported reset_types, do not mutate stored geometry, lock cells, or LockOnReset before later PowerCycle, HotPlug, TPER_RESET, or ProtocolStackReset observations.
+  - evidence: core/3.3.7.1.5.txt, core/5.1.5.11.txt, core/5.3.4.2.2.txt, core/5.3.4.2.6.txt, core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.7.2.2.10.txt, core/5.7.3.1.1.txt, core/5.7.3.1.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt, opal/3.2.3.txt, opal/3.3.5.2.txt, opal/4.3.5.2.txt, opal/4.3.5.2.2.txt
 - `locking-reencrypt-enum-type-tight-doc-7a1d3eaed7` [quarantine_concerns] locking-reencrypt-enum-type-tight-doc
   - internal name: Locking ReEncryptRequest START_req succeeds from IDLE: correct success
   - author label: PASS
@@ -1285,6 +2981,62 @@ Generated: 2026-05-31T20:21:19
   - locking_reencrypt_enum_a: FAIL conf=0.93 concerns=The trajectory does not explicitly read ReEncryptState before the request, so IDLE is inferred from the fresh Locking row setup and lack of prior transitions.
   - locking_reencrypt_enum_b: FAIL conf=0.96 concerns=The snippets do not explicitly show the created row's ReEncryptState value, so IDLE is inferred from the case trajectory and name rather than directly observed.
   - locking_reencrypt_enum_c: FAIL conf=0.92 concerns=Trajectory does not explicitly show a Get of ReEncryptState, but the case trajectory creates a fresh Locking row and the case is framed as START_req from IDLE.
+- `locking-geometry-nontransition-data-doc-d40dc96ca1` [needs_review] locking-geometry-nontransition-data-doc
+  - internal name: Host read slices exact prior write payload to requested LBA window: correct data
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, range-geometry, range-start-length, host-io, data-preservation, nontransition, long-trajectory
+  - repair hint: Check RangeStart/RangeLength mutations against host data tracking: data written to LBAs that remain controlled by the same Locking row after a valid geometry change must still be readable, while failed geometry changes must not mutate either geometry or remembered media data.
+  - evidence: core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.3.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt
+- `locking-geometry-nontransition-data-doc-24bf18c390` [needs_review] locking-geometry-nontransition-data-doc
+  - internal name: Host read slices exact prior write payload to requested LBA window: impossible data
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, range-geometry, range-start-length, host-io, data-preservation, nontransition, long-trajectory
+  - repair hint: Check RangeStart/RangeLength mutations against host data tracking: data written to LBAs that remain controlled by the same Locking row after a valid geometry change must still be readable, while failed geometry changes must not mutate either geometry or remembered media data.
+  - evidence: core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.3.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt
+- `locking-geometry-nontransition-data-doc-04a4b765a9` [needs_review] locking-geometry-nontransition-data-doc
+  - internal name: Host read overlays later partial LBA write on earlier media data: correct data
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, range-geometry, range-start-length, host-io, data-preservation, nontransition, long-trajectory
+  - repair hint: Check RangeStart/RangeLength mutations against host data tracking: data written to LBAs that remain controlled by the same Locking row after a valid geometry change must still be readable, while failed geometry changes must not mutate either geometry or remembered media data.
+  - evidence: core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.3.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt
+- `locking-geometry-nontransition-data-doc-9a9862d536` [needs_review] locking-geometry-nontransition-data-doc
+  - internal name: Host read overlays later partial LBA write on earlier media data: impossible data
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, range-geometry, range-start-length, host-io, data-preservation, nontransition, long-trajectory
+  - repair hint: Check RangeStart/RangeLength mutations against host data tracking: data written to LBAs that remain controlled by the same Locking row after a valid geometry change must still be readable, while failed geometry changes must not mutate either geometry or remembered media data.
+  - evidence: core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, core/5.7.3.2.txt, core/5.7.3.3.txt, core/5.7.3.4.txt, core/5.7.3.5.txt
+- `range-alignment-doc-55d35b9fd4` [needs_review] range-alignment-doc
+  - internal name: Set RangeStart to zero rechecks existing RangeLength alignment: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, range-alignment, range-start-length, locking-info, opal-ssc, create-row, set
+  - repair hint: Check AlignmentRequired, AlignmentGranularity, LowestAlignedLBA, StartAlignment, and the two RangeLength formulas for RangeStart zero vs nonzero.
+  - evidence: core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, opal/4.3.5.2.1.1.txt, opal/4.3.5.2.1.2.txt
+- `range-alignment-doc-95433c8625` [needs_review] range-alignment-doc
+  - internal name: Set RangeStart to zero rechecks existing RangeLength alignment: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, range-alignment, range-start-length, locking-info, opal-ssc, create-row, set
+  - repair hint: Check AlignmentRequired, AlignmentGranularity, LowestAlignedLBA, StartAlignment, and the two RangeLength formulas for RangeStart zero vs nonzero.
+  - evidence: core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, opal/4.3.5.2.1.1.txt, opal/4.3.5.2.1.2.txt
+- `range-alignment-doc-1a4c9df752` [needs_review] range-alignment-doc
+  - internal name: Set RangeStart from zero rechecks existing RangeLength alignment: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, range-alignment, range-start-length, locking-info, opal-ssc, create-row, set
+  - repair hint: Check AlignmentRequired, AlignmentGranularity, LowestAlignedLBA, StartAlignment, and the two RangeLength formulas for RangeStart zero vs nonzero.
+  - evidence: core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, opal/4.3.5.2.1.1.txt, opal/4.3.5.2.1.2.txt
+- `range-alignment-doc-e5774786a3` [needs_review] range-alignment-doc
+  - internal name: Set RangeStart from zero rechecks existing RangeLength alignment: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, range-alignment, range-start-length, locking-info, opal-ssc, create-row, set
+  - repair hint: Check AlignmentRequired, AlignmentGranularity, LowestAlignedLBA, StartAlignment, and the two RangeLength formulas for RangeStart zero vs nonzero.
+  - evidence: core/5.7.2.2.4.txt, core/5.7.2.2.5.txt, opal/4.3.5.2.1.1.txt, opal/4.3.5.2.1.2.txt
 - `lockinginfo-readonly-doc-c489c15671` [needs_review] lockinginfo-readonly-doc
   - internal name: Host cannot modify LockingInfo KeysAvailableCfg: impossible success
   - author label: FAIL
@@ -1358,6 +3110,202 @@ Generated: 2026-05-31T20:21:19
   - concepts: locking-info, get, typed-return, uid, uinteger, maxranges, max-reencryptions
   - repair hint: Check LockingInfo successful Get return typing: UID is uid/bytes_8 while Version, MaxRanges, and MaxReEncryptions are uinteger_4 values. These cells are readable configuration data but cannot carry malformed typed values.
   - evidence: core/5.1.3.81.txt, core/5.1.3.93.txt, core/5.7.2.1.txt, core/5.7.2.1.1.txt, core/5.7.2.1.3.txt, core/5.7.2.1.5.txt, core/5.7.2.1.6.txt
+- `locking-boolean-set-type-tight-doc-3149179d65` [needs_review] locking-boolean-set-type-tight-doc
+  - internal name: Locking ReadLockEnabled rejects string true Set value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, boolean-column, type-checking, set, nonmutation, host-io
+  - repair hint: Check that Locking boolean cells ReadLockEnabled, WriteLockEnabled, ReadLocked, and WriteLocked reject non-boolean Set values and leave prior lock state unchanged.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt
+- `locking-boolean-set-type-tight-doc-178d71ef4a` [needs_review] locking-boolean-set-type-tight-doc
+  - internal name: Locking WriteLockEnabled rejects string true Set value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, boolean-column, type-checking, set, nonmutation, host-io
+  - repair hint: Check that Locking boolean cells ReadLockEnabled, WriteLockEnabled, ReadLocked, and WriteLocked reject non-boolean Set values and leave prior lock state unchanged.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt
+- `locking-boolean-set-type-tight-doc-b1e3f46e54` [needs_review] locking-boolean-set-type-tight-doc
+  - internal name: Locking ReadLocked rejects string true Set value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, boolean-column, type-checking, set, nonmutation, host-io
+  - repair hint: Check that Locking boolean cells ReadLockEnabled, WriteLockEnabled, ReadLocked, and WriteLocked reject non-boolean Set values and leave prior lock state unchanged.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt
+- `locking-boolean-set-type-tight-doc-3cacefdbd9` [needs_review] locking-boolean-set-type-tight-doc
+  - internal name: Locking WriteLocked rejects string true Set value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, boolean-column, type-checking, set, nonmutation, host-io
+  - repair hint: Check that Locking boolean cells ReadLockEnabled, WriteLockEnabled, ReadLocked, and WriteLocked reject non-boolean Set values and leave prior lock state unchanged.
+  - evidence: core/5.7.2.2.6.txt, core/5.7.2.2.7.txt, core/5.7.2.2.8.txt, core/5.7.2.2.9.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt
+- `locking-reset-types-alias-reject-tight-d-a51c502e82` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: LockOnReset rejects invalid native True reset_types value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-780c1d71ec` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: LockOnReset rejects invalid native True reset_types value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-0b1dad07b0` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: LockOnReset rejects invalid native False reset_types value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-15aab70599` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: LockOnReset rejects invalid native False reset_types value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-bd8e8bc65e` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: LockOnReset rejects invalid string true list reset_types value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-a19ddd5604` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: LockOnReset rejects invalid string true list reset_types value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-2cdcedc921` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: LockOnReset rejects invalid string false list reset_types value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-e00abd2cca` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: LockOnReset rejects invalid string false list reset_types value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-56f03d3b72` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: LockOnReset rejects invalid hex Programmatic-only reset_types value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-9a2f032908` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: LockOnReset rejects invalid hex Programmatic-only reset_types value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-61516d7092` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: LockOnReset rejects invalid zero-padded hex Programmatic-only reset_types value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-2cfbce11a6` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: LockOnReset rejects invalid zero-padded hex Programmatic-only reset_types value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-070f461463` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: MBRDoneOnReset rejects invalid native True reset_types value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-6148abf657` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: MBRDoneOnReset rejects invalid native True reset_types value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-3936bcf1c9` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: MBRDoneOnReset rejects invalid native False reset_types value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-724f972c06` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: MBRDoneOnReset rejects invalid native False reset_types value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-3dc1afab8d` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: MBRDoneOnReset rejects invalid string true list reset_types value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-a6e0b46013` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: MBRDoneOnReset rejects invalid string true list reset_types value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-2b3ad2c09f` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: MBRDoneOnReset rejects invalid hex Programmatic-only reset_types value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-9ec2072ae9` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: MBRDoneOnReset rejects invalid hex Programmatic-only reset_types value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-1b16a6c9ce` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: MBRDoneOnReset rejects invalid zero-padded hex Programmatic-only reset_types value: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `locking-reset-types-alias-reject-tight-d-888c9de48f` [needs_review] locking-reset-types-alias-reject-tight-doc
+  - internal name: MBRDoneOnReset rejects invalid zero-padded hex Programmatic-only reset_types value: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, mbrcontrol, reset-types, protocol-stack-reset, lock-on-reset, done-on-reset, cont-on-reset, type-checking, nonmutation
+  - repair hint: Check that ProtocolStackReset/StackReset/TCGReset commands are interface reset commands, not Opal reset_types values for LockOnReset or ContOnReset; rejected Set attempts must not mutate reset behavior.
+  - evidence: core/5.7.2.2.10.txt, core/5.7.2.2.17.txt, core/5.7.2.5.4.txt, core/5.7.2.2.13.txt, core/5.7.2.2.20.txt, core/5.3.4.2.6.txt, core/5.1.5.11.txt, opal/3.3.5.2.txt, opal/3.3.6.txt, opal/4.3.5.2.2.txt, opal/4.3.5.3.1.txt
+- `reencrypt-column-types-doc-385c281627` [needs_review] reencrypt-column-types-doc
+  - internal name: ReEncryptRequest Get success must not return scalar/list payload 'START_req'
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, mediakey-object-uidref, reencrypt-request, get-postcondition
+  - repair hint: Check Locking ActiveKey uidref type validation and ReEncryptRequest Get result semantics.
+  - evidence: core/5.7.2.2.txt, core/5.7.2.2.11.txt, core/5.7.2.2.12.txt, core/5.7.2.2.14.txt, core/5.1.3.53.txt, core/5.1.3.65.txt, core/5.7.3.7.2.txt, core/5.7.3.7.4.txt, opal/4.3.5.2.txt
+- `reencrypt-column-types-doc-6e33398065` [needs_review] reencrypt-column-types-doc
+  - internal name: ReEncryptRequest Get success must not return scalar/list payload ['START_req']
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, mediakey-object-uidref, reencrypt-request, get-postcondition
+  - repair hint: Check Locking ActiveKey uidref type validation and ReEncryptRequest Get result semantics.
+  - evidence: core/5.7.2.2.txt, core/5.7.2.2.11.txt, core/5.7.2.2.12.txt, core/5.7.2.2.14.txt, core/5.1.3.53.txt, core/5.1.3.65.txt, core/5.7.3.7.2.txt, core/5.7.3.7.4.txt, opal/4.3.5.2.txt
 - `reencrypt-status-enum-doc-88728e441d` [quarantine_concerns] reencrypt-status-enum-doc
   - internal name: LastReEncStat Get accepts named Success and rejects high reserved value: correct return value
   - author label: PASS
@@ -1378,6 +3326,27 @@ Generated: 2026-05-31T20:21:19
   - reencrypt_status_enum_a: FAIL conf=0.95 concerns=-
   - reencrypt_status_enum_b: FAIL conf=0.95 concerns=-
   - reencrypt_status_enum_c: FAIL conf=0.86 concerns=The source also states values 0-31 are valid for the PAUSED state; I interpret that as the PAUSED numeric range, not permission to use entries separately marked reserved.
+- `reencrypt-status-enum-doc-753a6e89f1` [needs_review] reencrypt-status-enum-doc
+  - internal name: Initial IDLE LastReEncStat Get cannot return non-empty status
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, general-status, last-reenc-stat, reserved-enum, get-postcondition
+  - repair hint: Check returned enum values for LastReEncStat and GeneralStatus: last_reenc_stat values 4-7 are reserved, and gen_status values 7-31 are reserved even when the column is otherwise valid in PAUSED/PENDING states.
+  - evidence: core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.7.2.2.19.txt, core/5.7.2.2.20.txt
+- `reencrypt-status-enum-doc-b03d44d8bc` [needs_review] reencrypt-status-enum-doc
+  - internal name: Initial IDLE GeneralStatus Get cannot return pending status
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, general-status, last-reenc-stat, reserved-enum, get-postcondition
+  - repair hint: Check returned enum values for LastReEncStat and GeneralStatus: last_reenc_stat values 4-7 are reserved, and gen_status values 7-31 are reserved even when the column is otherwise valid in PAUSED/PENDING states.
+  - evidence: core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.7.2.2.19.txt, core/5.7.2.2.20.txt
+- `reencrypt-status-enum-doc-0c44ac6cf7` [needs_review] reencrypt-status-enum-doc
+  - internal name: PENDING GeneralStatus Get cannot return PAUSED-band status
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, general-status, last-reenc-stat, reserved-enum, get-postcondition
+  - repair hint: Check returned enum values for LastReEncStat and GeneralStatus: last_reenc_stat values 4-7 are reserved, and gen_status values 7-31 are reserved even when the column is otherwise valid in PAUSED/PENDING states.
+  - evidence: core/5.1.3.34.txt, core/5.1.3.45.txt, core/5.7.2.2.19.txt, core/5.7.2.2.20.txt
 - `locking-verify-mode-enum-doc-d2cb17a010` [needs_review] locking-verify-mode-enum-doc
   - internal name: Locking VerifyMode accepts verify-enabled enum value: correct success
   - author label: PASS
@@ -1420,6 +3389,454 @@ Generated: 2026-05-31T20:21:19
   - concepts: locking-range, reencryption, verify-mode, reserved-enum, set, get-postcondition
   - repair hint: Check Locking VerifyMode enum validation; valid values are 0 No verify and 1 Verify enabled, while 2-7 are reserved and cannot be accepted in successful Set or Get results.
   - evidence: core/5.1.3.98.txt, core/5.7.2.2.16.txt, core/5.7.3.7.5.txt
+- `crypto-issued-metadata-readonly-doc-1c1b218f5e` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued H_SHA_256 Name Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-6ffa4eab16` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued H_SHA_256 Name Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-19c48999a8` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued H_SHA_256 CommonName Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-6edfa3b771` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued H_SHA_256 CommonName Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-6e1429dfaa` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_RSA_1024 Name Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-1a9189b920` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_RSA_1024 Name Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-b57852a624` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_RSA_1024 CommonName Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-5422385e15` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_RSA_1024 CommonName Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-b798a47423` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_RSA_2048 Name Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-f898a57266` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_RSA_2048 Name Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-eec9314b3c` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_RSA_2048 CommonName Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-fca95da4da` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_RSA_2048 CommonName Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-cbf4a57e56` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_AES_128 Name Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-d04ebab291` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_AES_128 Name Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-127aa47886` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_AES_128 CommonName Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-bc821f15c7` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_AES_128 CommonName Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-19be364ce0` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_AES_256 Name Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-7f5c6a346d` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_AES_256 Name Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-6c419a1a3e` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_AES_256 CommonName Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-64c6042849` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_AES_256 CommonName Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-369c5dc132` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_EC_160 Name Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-a3389ab87d` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_EC_160 Name Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-aa045a24e2` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_EC_160 CommonName Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-94a5cf5f2f` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_EC_160 CommonName Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-1d13a445bc` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_HMAC_160 Name Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-1350e85c5a` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_HMAC_160 Name Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-e92d6704d4` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_HMAC_160 CommonName Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-0ffbb24025` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Issued C_HMAC_160 CommonName Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-46ffbf2d97` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Created C_AES row Name/CommonName remains settable: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `crypto-issued-metadata-readonly-doc-8c9b63fe11` [needs_review] crypto-issued-metadata-readonly-doc
+  - internal name: Created C_AES row Name/CommonName remains settable: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: credential, crypto-template, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued credential/hash object metadata: Name and CommonName are not host-modifiable for C_RSA, C_AES, C_EC, C_HMAC, and H_SHA objects that exist at issuance, while created rows should not be over-rejected.
+  - evidence: core/5.3.2.13.2.txt, core/5.3.2.13.3.txt, core/5.3.2.14.2.txt, core/5.3.2.14.3.txt, core/5.3.2.15.2.txt, core/5.3.2.15.3.txt, core/5.3.2.16.2.txt, core/5.3.2.16.3.txt, core/5.3.2.17.2.txt, core/5.3.2.17.3.txt, core/5.3.2.26.2.txt, core/5.3.2.26.3.txt, core/5.6.3.2.2.txt, core/5.6.3.2.3.txt
+- `cryptosuite-readonly-doc-7d122e3def` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite UID Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-48de7d3002` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite UID Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-5ee69c4574` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite CryptoCall Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-da3cbd8182` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite CryptoCall Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-1cc364a6a6` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite CryptoOp Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-a5cee12fe0` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite CryptoOp Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-eefe1c0ef6` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite Special Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-5de7fd295a` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite Special Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-72f02bc831` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite Time Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-0063746a1a` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite Time Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-f2d3b46300` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite_AES_256_Encrypt UID Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-0b250ad13c` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite_AES_256_Encrypt UID Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-686d5c5251` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite_AES_256_Encrypt CryptoCall Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-3ed20589c5` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite_AES_256_Encrypt CryptoCall Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-3d1660142f` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite_AES_256_Encrypt CryptoOp Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-da2eb9c5ea` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite_AES_256_Encrypt CryptoOp Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-76246dfced` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite_AES_256_Encrypt Special Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-83fac1975c` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite_AES_256_Encrypt Special Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-02092672d8` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite_AES_256_Encrypt Time Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `cryptosuite-readonly-doc-e466c4da0a` [needs_review] cryptosuite-readonly-doc
+  - internal name: CryptoSuite_AES_256_Encrypt Time Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: admin-sp, tper-metadata, cryptosuite, read-only-column, set
+  - repair hint: Check CryptoSuite metadata Set handling: CryptoCall, CryptoLen, CryptoOp, Special, Time, Variance, and UID describe TPer crypto capabilities and are not host-modifiable.
+  - evidence: core/5.4.2.3.txt, core/5.4.2.3.1.txt, core/5.4.2.3.2.txt, core/5.4.2.3.3.txt, core/5.4.2.3.4.txt, core/5.4.2.3.5.txt, core/5.4.2.3.6.txt, core/5.4.2.3.7.txt
+- `certificates-issued-readonly-doc-9f30664e9a` [needs_review] certificates-issued-readonly-doc
+  - internal name: Issued Certificates UID Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-2d147f8df5` [needs_review] certificates-issued-readonly-doc
+  - internal name: Issued Certificates UID Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-142383aaa5` [needs_review] certificates-issued-readonly-doc
+  - internal name: Issued Certificates Name Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-a1cc4ac7da` [needs_review] certificates-issued-readonly-doc
+  - internal name: Issued Certificates Name Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-e2ffaba79b` [needs_review] certificates-issued-readonly-doc
+  - internal name: Issued Certificates CommonName Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-dfbfa35133` [needs_review] certificates-issued-readonly-doc
+  - internal name: Issued Certificates CommonName Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-120b8b970c` [needs_review] certificates-issued-readonly-doc
+  - internal name: Issued Certificate UID Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-c87fb52a3f` [needs_review] certificates-issued-readonly-doc
+  - internal name: Issued Certificate UID Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-553c32f200` [needs_review] certificates-issued-readonly-doc
+  - internal name: Issued Certificate Name Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-11ef616112` [needs_review] certificates-issued-readonly-doc
+  - internal name: Issued Certificate Name Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-5eed4c6adb` [needs_review] certificates-issued-readonly-doc
+  - internal name: Issued Certificate CommonName Set cannot succeed: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-1185cb0c92` [needs_review] certificates-issued-readonly-doc
+  - internal name: Issued Certificate CommonName Set cannot succeed: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-5700ecaae1` [needs_review] certificates-issued-readonly-doc
+  - internal name: Created Certificates row Name/CommonName remains settable: correct success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
+- `certificates-issued-readonly-doc-a2f721ed54` [needs_review] certificates-issued-readonly-doc
+  - internal name: Created Certificates row Name/CommonName remains settable: impossible error
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: certificate, issued-row, read-only-column, name-commonname, set
+  - repair hint: Check issued Certificates object metadata: UID is never host-modifiable, and Name/CommonName are not host-modifiable for Certificates objects that exist at issuance; created certificate rows should not be over-rejected.
+  - evidence: core/5.3.2.11.txt, core/5.3.2.11.1.txt, core/5.3.2.11.2.txt, core/5.3.2.11.3.txt
 - `crsa-padding-type-enum-doc-4160d0874a` [needs_review] crsa-padding-type-enum-doc
   - internal name: C_RSA Format accepts RSAES-OAEP padding_type: correct success
   - author label: PASS
@@ -2064,114 +4481,296 @@ Generated: 2026-05-31T20:21:19
   - internal name: H_SHA_1 Proof Get accepts bytes_20 and rejects short bytes: correct return value
   - author label: PASS
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-8419affed4` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_1 Proof Get accepts bytes_20 and rejects short bytes: impossible return value
   - author label: FAIL
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-49140e5caa` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_1 Proof Set accepts bytes_20 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-f86f0f28a2` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_1 Proof Set accepts bytes_20 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-8727a1106f` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_1 Accumulator Get accepts bytes_20 and rejects short bytes: correct return value
   - author label: PASS
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-0e1e678e56` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_1 Accumulator Get accepts bytes_20 and rejects short bytes: impossible return value
   - author label: FAIL
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-d812c7aa46` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_1 Accumulator Set accepts bytes_20 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-94e2db9746` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_1 Accumulator Set accepts bytes_20 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-133782157f` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_256 Proof Get accepts bytes_32 and rejects short bytes: correct return value
   - author label: PASS
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-0d80954cfe` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_256 Proof Get accepts bytes_32 and rejects short bytes: impossible return value
   - author label: FAIL
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-15a92f8750` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_256 Proof Set accepts bytes_32 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-136d36d550` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_256 Proof Set accepts bytes_32 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-4d12e4683d` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_256 Accumulator Get accepts bytes_32 and rejects short bytes: correct return value
   - author label: PASS
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-fdd50fdfdb` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_256 Accumulator Get accepts bytes_32 and rejects short bytes: impossible return value
   - author label: FAIL
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-0f2e5dec83` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_256 Accumulator Set accepts bytes_32 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-1e3269dc13` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_256 Accumulator Set accepts bytes_32 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-72a8e7f398` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_384 Proof Get accepts bytes_48 and rejects short bytes: correct return value
   - author label: PASS
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-b9c8088dca` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_384 Proof Get accepts bytes_48 and rejects short bytes: impossible return value
   - author label: FAIL
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-b566000b8f` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_384 Proof Set accepts bytes_48 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-b3d725b1ad` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_384 Proof Set accepts bytes_48 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-7fe0deb6cc` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_384 Accumulator Get accepts bytes_48 and rejects short bytes: correct return value
   - author label: PASS
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-67d4e8db94` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_384 Accumulator Get accepts bytes_48 and rejects short bytes: impossible return value
   - author label: FAIL
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-d11e301702` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_384 Accumulator Set accepts bytes_48 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-da1b1e9568` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_384 Accumulator Set accepts bytes_48 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-dc3ef753e8` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_512 Proof Get accepts bytes_64 and rejects short bytes: correct return value
   - author label: PASS
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-e5a5876d99` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_512 Proof Get accepts bytes_64 and rejects short bytes: impossible return value
   - author label: FAIL
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-b577d4e8cc` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_512 Proof Set accepts bytes_64 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-c41daba6bf` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_512 Proof Set accepts bytes_64 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-91be6a52fc` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_512 Accumulator Get accepts bytes_64 and rejects short bytes: correct return value
   - author label: PASS
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
 - `hsha-fixed-bytes-doc-d387d21987` [needs_review] hsha-fixed-bytes-doc
   - internal name: H_SHA_512 Accumulator Get accepts bytes_64 and rejects short bytes: impossible return value
   - author label: FAIL
   - reason: 0/3 independent reviews present
-  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, get-postcondition
-  - repair hint: Check H_SHA Proof and Accumulator return-cell fixed-byte validation: H_SHA_1/256/384/512 must return exactly bytes_20/32/48/64 for columns 3 and 4 when a Get succeeds.
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
   - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-d4ab7ef122` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_512 Accumulator Set accepts bytes_64 and rejects short bytes: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `hsha-fixed-bytes-doc-db3188c3fd` [needs_review] hsha-fixed-bytes-doc
+  - internal name: H_SHA_512 Accumulator Set accepts bytes_64 and rejects short bytes: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: crypto-template, h-sha, fixed-bytes, proof, accumulator, set, get-postcondition
+  - repair hint: Check H_SHA Proof and Accumulator fixed-byte validation: H_SHA_1/256/384/512 must Set and return exactly bytes_20/32/48/64 for columns 3 and 4.
+  - evidence: core/5.1.3.18.txt, core/5.1.3.19.txt, core/5.1.3.20.txt, core/5.1.3.21.txt, core/5.6.3.1.txt, core/5.6.3.2.txt, core/5.6.3.3.txt, core/5.6.3.4.txt
+- `locking-activekey-preconfig-doc-f8c5a23cc5` [needs_review] locking-activekey-preconfig-doc
+  - internal name: Initial Locking Range1 ActiveKey belongs to Range1 key: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, activekey, nextkey, preconfiguration, mediakey-object-uidref, get-postcondition
+  - repair hint: Check initial Locking row preconfiguration: ActiveKey belongs to the same range's K_AES_128/K_AES_256 key, while NextKey is the null UID until changed by the host.
+  - evidence: core/5.7.2.2.11.txt, core/5.7.2.2.12.txt, opal/4.3.5.2.txt
+- `locking-activekey-preconfig-doc-612626f349` [needs_review] locking-activekey-preconfig-doc
+  - internal name: Initial Locking Range1 ActiveKey belongs to Range1 key: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, activekey, nextkey, preconfiguration, mediakey-object-uidref, get-postcondition
+  - repair hint: Check initial Locking row preconfiguration: ActiveKey belongs to the same range's K_AES_128/K_AES_256 key, while NextKey is the null UID until changed by the host.
+  - evidence: core/5.7.2.2.11.txt, core/5.7.2.2.12.txt, opal/4.3.5.2.txt
+- `locking-activekey-preconfig-doc-3f0f4385df` [needs_review] locking-activekey-preconfig-doc
+  - internal name: Initial Locking Range1 NextKey is null: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, activekey, nextkey, preconfiguration, mediakey-object-uidref, get-postcondition
+  - repair hint: Check initial Locking row preconfiguration: ActiveKey belongs to the same range's K_AES_128/K_AES_256 key, while NextKey is the null UID until changed by the host.
+  - evidence: core/5.7.2.2.11.txt, core/5.7.2.2.12.txt, opal/4.3.5.2.txt
+- `locking-activekey-preconfig-doc-2195e9c9f0` [needs_review] locking-activekey-preconfig-doc
+  - internal name: Initial Locking Range1 NextKey is null: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, activekey, nextkey, preconfiguration, mediakey-object-uidref, get-postcondition
+  - repair hint: Check initial Locking row preconfiguration: ActiveKey belongs to the same range's K_AES_128/K_AES_256 key, while NextKey is the null UID until changed by the host.
+  - evidence: core/5.7.2.2.11.txt, core/5.7.2.2.12.txt, opal/4.3.5.2.txt
+- `reencrypt-reset-doc-60fde33362` [needs_review] reencrypt-reset-doc
+  - internal name: null ContOnReset pauses PENDING re-encryption after reset: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, reset, cont-on-reset, general-status, get-postcondition
+  - repair hint: Check ContOnReset reset-stop behavior when the set is empty or does not contain the observed reset type, and validate Locking Get return values for ReEncryptState/GeneralStatus.
+  - evidence: core/5.7.2.2.17.txt, core/5.1.3.34.txt
+- `reencrypt-reset-doc-c9ac410667` [needs_review] reencrypt-reset-doc
+  - internal name: null ContOnReset pauses PENDING re-encryption after reset: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, reset, cont-on-reset, general-status, get-postcondition
+  - repair hint: Check ContOnReset reset-stop behavior when the set is empty or does not contain the observed reset type, and validate Locking Get return values for ReEncryptState/GeneralStatus.
+  - evidence: core/5.7.2.2.17.txt, core/5.1.3.34.txt
+- `reencrypt-reset-doc-8ae58e2c5f` [needs_review] reencrypt-reset-doc
+  - internal name: nonmatching ContOnReset pauses ACTIVE re-encryption after reset
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, reset, cont-on-reset, general-status, get-postcondition
+  - repair hint: Check ContOnReset reset-stop behavior when the set is empty or does not contain the observed reset type, and validate Locking Get return values for ReEncryptState/GeneralStatus.
+  - evidence: core/5.7.2.2.17.txt, core/5.1.3.34.txt
+- `reencrypt-reset-doc-7916280c2b` [needs_review] reencrypt-reset-doc
+  - internal name: nonmatching ContOnReset must not leave ACTIVE re-encryption after reset
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, reset, cont-on-reset, general-status, get-postcondition
+  - repair hint: Check ContOnReset reset-stop behavior when the set is empty or does not contain the observed reset type, and validate Locking Get return values for ReEncryptState/GeneralStatus.
+  - evidence: core/5.7.2.2.17.txt, core/5.1.3.34.txt
+- `reencrypt-reset-doc-5d30b908d6` [needs_review] reencrypt-reset-doc
+  - internal name: nonmatching ContOnReset pauses PENDING re-encryption after reset
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, reset, cont-on-reset, general-status, get-postcondition
+  - repair hint: Check ContOnReset reset-stop behavior when the set is empty or does not contain the observed reset type, and validate Locking Get return values for ReEncryptState/GeneralStatus.
+  - evidence: core/5.7.2.2.17.txt, core/5.1.3.34.txt
+- `reencrypt-reset-doc-51629490af` [needs_review] reencrypt-reset-doc
+  - internal name: nonmatching ContOnReset must not leave PENDING re-encryption after reset
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: locking-range, reencryption, reset, cont-on-reset, general-status, get-postcondition
+  - repair hint: Check ContOnReset reset-stop behavior when the set is empty or does not contain the observed reset type, and validate Locking Get return values for ReEncryptState/GeneralStatus.
+  - evidence: core/5.7.2.2.17.txt, core/5.1.3.34.txt
 - `opal-admin-issuesp-unsupported-doc-9c927e80fe` [quarantine_concerns] opal-admin-issuesp-unsupported-doc
   - internal name: Opal Admin SP IssueSP unsupported despite Core Admin Template method: correct status
   - author label: PASS
@@ -2531,6 +5130,69 @@ Generated: 2026-05-31T20:21:19
   - lifecycle_clean_p: FAIL conf=0.94 concerns=The packet evidence supports lifecycle compliance for SUCCESS after re-enable; it does not independently validate the returned row count.
   - lifecycle_clean_q: FAIL conf=0.93 concerns=-
   - lifecycle_clean_r: FAIL conf=0.95 concerns=-
+- `create-row-unique-columns-doc-f5cd50f884` [needs_review] create-row-unique-columns-doc
+  - internal name: CreateRow named Columns schema supplies ordered columns
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-table, create-row, unique-columns, row-data, return-values
+  - repair hint: Check host-created object table schema tracking, unique-column combination conflicts, declared-column row_data validation, and CreateRow UID-list result shape.
+  - evidence: core/3.2.5.4.txt, core/5.3.4.2.1.txt, core/5.3.4.2.3.txt, core/5.3.3.4.txt, core/5.3.3.4.2.1.txt, core/5.3.3.4.3.txt, core/5.1.5.8.txt
+- `create-row-unique-columns-doc-1e0aa8eb43` [needs_review] create-row-unique-columns-doc
+  - internal name: CreateRow named Columns schema still requires every ordered column
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-table, create-row, unique-columns, row-data, return-values
+  - repair hint: Check host-created object table schema tracking, unique-column combination conflicts, declared-column row_data validation, and CreateRow UID-list result shape.
+  - evidence: core/3.2.5.4.txt, core/5.3.4.2.1.txt, core/5.3.4.2.3.txt, core/5.3.3.4.txt, core/5.3.3.4.2.1.txt, core/5.3.3.4.3.txt, core/5.1.5.8.txt
+- `create-row-unique-columns-doc-eef6f61659` [needs_review] create-row-unique-columns-doc
+  - internal name: CreateRow named Columns schema rejects undeclared numbered column
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-table, create-row, unique-columns, row-data, return-values
+  - repair hint: Check host-created object table schema tracking, unique-column combination conflicts, declared-column row_data validation, and CreateRow UID-list result shape.
+  - evidence: core/3.2.5.4.txt, core/5.3.4.2.1.txt, core/5.3.4.2.3.txt, core/5.3.3.4.txt, core/5.3.3.4.2.1.txt, core/5.3.3.4.3.txt, core/5.1.5.8.txt
+- `byte-table-descriptor-column-doc-6cb420d6af` [needs_review] byte-table-descriptor-column-doc
+  - internal name: DataStore table descriptor LastID is null UID for byte table: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: table-metadata, table-descriptor, byte-table, column, numcolumns, get
+  - repair hint: Check byte-table descriptor Column and NumColumns invariants: byte tables have null first-column UID and exactly one unnamed bytes column.
+  - evidence: core/3.2.5.1.txt, core/5.3.2.3.txt, core/5.3.2.3.6.txt, core/5.3.2.3.7.txt, opal/4.3.1.3.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+- `byte-table-descriptor-column-doc-009395fca1` [needs_review] byte-table-descriptor-column-doc
+  - internal name: DataStore table descriptor LastID is null UID for byte table: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-metadata, table-descriptor, byte-table, column, numcolumns, get
+  - repair hint: Check byte-table descriptor Column and NumColumns invariants: byte tables have null first-column UID and exactly one unnamed bytes column.
+  - evidence: core/3.2.5.1.txt, core/5.3.2.3.txt, core/5.3.2.3.6.txt, core/5.3.2.3.7.txt, opal/4.3.1.3.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+- `byte-table-descriptor-column-doc-710c6fd011` [needs_review] byte-table-descriptor-column-doc
+  - internal name: MBR table descriptor LastID is null UID for byte table: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: table-metadata, table-descriptor, byte-table, column, numcolumns, get
+  - repair hint: Check byte-table descriptor Column and NumColumns invariants: byte tables have null first-column UID and exactly one unnamed bytes column.
+  - evidence: core/3.2.5.1.txt, core/5.3.2.3.txt, core/5.3.2.3.6.txt, core/5.3.2.3.7.txt, opal/4.3.1.3.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+- `byte-table-descriptor-column-doc-82fec5d807` [needs_review] byte-table-descriptor-column-doc
+  - internal name: MBR table descriptor LastID is null UID for byte table: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-metadata, table-descriptor, byte-table, column, numcolumns, get
+  - repair hint: Check byte-table descriptor Column and NumColumns invariants: byte tables have null first-column UID and exactly one unnamed bytes column.
+  - evidence: core/3.2.5.1.txt, core/5.3.2.3.txt, core/5.3.2.3.6.txt, core/5.3.2.3.7.txt, opal/4.3.1.3.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+- `byte-table-granularity-doc-4454e84877` [needs_review] byte-table-granularity-doc
+  - internal name: DataStore byte-table descriptor RecommendedAccessGranularity cannot be zero: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: table-metadata, table-descriptor, byte-table, mandatory-granularity, set, invalid-parameter
+  - repair hint: Check Opal Table descriptor columns 0x0D/0x0E, object-table zero granularity, byte-table mandatory<=recommended/max 8192 constraints, and DataStore Set offset/byte-length alignment after a mandatory granularity has been observed.
+  - evidence: core/5.1.3.93.txt, core/5.3.2.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.3.txt, opal/4.2.1.3.txt, opal/4.3.1.3.txt, opal/5.3.txt, opal/5.3.1.txt, opal/5.3.1.1.txt, opal/5.3.1.1.1.txt, opal/5.3.1.1.2.txt, opal/5.3.1.2.txt, opal/5.3.1.2.1.txt, opal/5.3.1.2.2.txt
+- `byte-table-granularity-doc-91a2ebccf3` [needs_review] byte-table-granularity-doc
+  - internal name: DataStore byte-table descriptor RecommendedAccessGranularity cannot be zero: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-metadata, table-descriptor, byte-table, mandatory-granularity, set, invalid-parameter
+  - repair hint: Check Opal Table descriptor columns 0x0D/0x0E, object-table zero granularity, byte-table mandatory<=recommended/max 8192 constraints, and DataStore Set offset/byte-length alignment after a mandatory granularity has been observed.
+  - evidence: core/5.1.3.93.txt, core/5.3.2.3.txt, core/5.3.3.7.1.2.txt, core/5.3.3.7.2.1.txt, core/5.3.3.7.3.txt, opal/4.2.1.3.txt, opal/4.3.1.3.txt, opal/5.3.txt, opal/5.3.1.txt, opal/5.3.1.1.txt, opal/5.3.1.1.1.txt, opal/5.3.1.1.2.txt, opal/5.3.1.2.txt, opal/5.3.1.2.1.txt, opal/5.3.1.2.2.txt
 - `type-column-metadata-table-doc-bb4c2e96e6` [needs_review] type-column-metadata-table-doc
   - internal name: Type Size Set cannot accept host modification success: correct status
   - author label: PASS
@@ -2593,6 +5255,62 @@ Generated: 2026-05-31T20:21:19
   - j: PASS conf=0.9 concerns=The snippets do not spell out state effects of a failed AddACE, but treating a failed method as not mutating the ACL is necessary for the stated AddACE failure semantics.
   - k: PASS conf=0.93 concerns=-
   - l: PASS conf=0.94 concerns=-
+- `created-row-accesscontrol-doc-5a1bb23c98` [needs_review] created-row-accesscontrol-doc
+  - internal name: Created row first GetACL cannot include extra builtin ACE
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, delete-row, access-control, getacl, created-object
+  - repair hint: Check that successful CreateRow records created row object AccessControl associations, GetACL on the created row's object method returns a non-empty ACE uidref list, and successful DeleteRow removes the row's AccessControl associations without deleting other row associations.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+- `created-row-accesscontrol-doc-5cef40d3e7` [needs_review] created-row-accesscontrol-doc
+  - internal name: Created row first GetACL cannot use builtin ACE as generated runtime ACE
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, delete-row, access-control, getacl, created-object
+  - repair hint: Check that successful CreateRow records created row object AccessControl associations, GetACL on the created row's object method returns a non-empty ACE uidref list, and successful DeleteRow removes the row's AccessControl associations without deleting other row associations.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+- `created-row-accesscontrol-doc-c8d6cfd03b` [needs_review] created-row-accesscontrol-doc
+  - internal name: Created row side-effect ACE GetACL returns its own ACE uidref
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, delete-row, access-control, getacl, created-object
+  - repair hint: Check that successful CreateRow records created row object AccessControl associations, GetACL on the created row's object method returns a non-empty ACE uidref list, and successful DeleteRow removes the row's AccessControl associations without deleting other row associations.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+- `created-row-accesscontrol-doc-927fa93fd4` [needs_review] created-row-accesscontrol-doc
+  - internal name: Created row side-effect ACE GetACL cannot return empty ACL
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, delete-row, access-control, getacl, created-object
+  - repair hint: Check that successful CreateRow records created row object AccessControl associations, GetACL on the created row's object method returns a non-empty ACE uidref list, and successful DeleteRow removes the row's AccessControl associations without deleting other row associations.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.5.2.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.2.3.txt, core/5.3.4.2.4.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+- `created-row-meta-acl-state-doc-cc8b8f6c17` [needs_review] created-row-meta-acl-state-doc
+  - internal name: Created row side-effect ACE GetACL reflects AddACE
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, access-control, getacl, addace, removeace, deletemethod, stateful-acl
+  - repair hint: Check that row-object AccessControl associations created by CreateRow support authorized meta-ACL mutations, that AddACE/RemoveACE are visible through later GetACL, and that DeleteMethod tombstones the row-object association.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.3.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+- `created-row-meta-acl-state-doc-329c88e296` [needs_review] created-row-meta-acl-state-doc
+  - internal name: Created row side-effect ACE GetACL after AddACE rejects extra ACE
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, access-control, getacl, addace, removeace, deletemethod, stateful-acl
+  - repair hint: Check that row-object AccessControl associations created by CreateRow support authorized meta-ACL mutations, that AddACE/RemoveACE are visible through later GetACL, and that DeleteMethod tombstones the row-object association.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.3.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+- `created-row-meta-acl-state-doc-9aa1c68582` [needs_review] created-row-meta-acl-state-doc
+  - internal name: Created row RemoveACE of observed runtime ACE removes it from later GetACL
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, access-control, getacl, addace, removeace, deletemethod, stateful-acl
+  - repair hint: Check that row-object AccessControl associations created by CreateRow support authorized meta-ACL mutations, that AddACE/RemoveACE are visible through later GetACL, and that DeleteMethod tombstones the row-object association.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.3.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+- `created-row-meta-acl-state-doc-63dd946c9d` [needs_review] created-row-meta-acl-state-doc
+  - internal name: Created row RemoveACE of only runtime ACE blocks later direct Get
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, access-control, getacl, addace, removeace, deletemethod, stateful-acl
+  - repair hint: Check that row-object AccessControl associations created by CreateRow support authorized meta-ACL mutations, that AddACE/RemoveACE are visible through later GetACL, and that DeleteMethod tombstones the row-object association.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.3.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
 - `created-row-accesscontrol-doc-8bd83cb85b` [quarantine_concerns] created-row-accesscontrol-doc
   - internal name: Deleting second created row preserves first row direct Get
   - author label: PASS
@@ -2681,6 +5399,48 @@ Generated: 2026-05-31T20:21:19
   - created_row_delete_object_direct_a: FAIL conf=0.9 concerns=This relies on the raw table definition and case setup identifying column 1 as the unique value being tested.
   - created_row_delete_object_direct_b: FAIL conf=0.92 concerns=-
   - created_row_delete_object_direct_c: FAIL conf=0.93 concerns=-
+- `created-row-meta-acl-state-doc-2c00e157e6` [needs_review] created-row-meta-acl-state-doc
+  - internal name: Created row GetACL after AddACE cannot omit generated runtime ACE
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, access-control, getacl, addace, removeace, deletemethod, stateful-acl
+  - repair hint: Check that row-object AccessControl associations created by CreateRow support authorized meta-ACL mutations, that AddACE/RemoveACE are visible through later GetACL, and that DeleteMethod tombstones the row-object association.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.3.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+- `created-row-meta-acl-state-doc-882695713a` [needs_review] created-row-meta-acl-state-doc
+  - internal name: Created row GetACL after observed runtime ACE and AddACE rejects extra ACE
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, access-control, getacl, addace, removeace, deletemethod, stateful-acl
+  - repair hint: Check that row-object AccessControl associations created by CreateRow support authorized meta-ACL mutations, that AddACE/RemoveACE are visible through later GetACL, and that DeleteMethod tombstones the row-object association.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.3.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+- `created-row-meta-acl-state-doc-93a0943e91` [needs_review] created-row-meta-acl-state-doc
+  - internal name: Created row SetACL empty on row Get blocks direct Get success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, access-control, getacl, addace, removeace, deletemethod, stateful-acl
+  - repair hint: Check that row-object AccessControl associations created by CreateRow support authorized meta-ACL mutations, that AddACE/RemoveACE are visible through later GetACL, and that DeleteMethod tombstones the row-object association.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.3.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+- `created-row-meta-acl-state-doc-377ad5123f` [needs_review] created-row-meta-acl-state-doc
+  - internal name: Created row SetACL empty on row Get remains visible through GetACL
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, access-control, getacl, addace, removeace, deletemethod, stateful-acl
+  - repair hint: Check that row-object AccessControl associations created by CreateRow support authorized meta-ACL mutations, that AddACE/RemoveACE are visible through later GetACL, and that DeleteMethod tombstones the row-object association.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.3.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+- `created-row-failed-meta-nonmutation-doc-2420147df7` [needs_review] created-row-failed-meta-nonmutation-doc
+  - internal name: Created row cannot RemoveACE preconfigured Anybody before generated runtime ACE is observed
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, access-control, failed-mutation, addace, removeace, deletemethod, stateful-acl
+  - repair hint: Check that failed created-row AccessControl meta-method attempts do not mutate ACL additions/removals or tombstone state; only successful AddACE/RemoveACE/DeleteMethod may change later behavior.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.3.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
+- `created-row-failed-meta-nonmutation-doc-ad1269b4ac` [needs_review] created-row-failed-meta-nonmutation-doc
+  - internal name: Created row failed RemoveACE of preconfigured Anybody does not poison later dynamic AddACE RemoveACE
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: table-methods, create-row, access-control, failed-mutation, addace, removeace, deletemethod, stateful-acl
+  - repair hint: Check that failed created-row AccessControl meta-method attempts do not mutate ACL additions/removals or tombstone state; only successful AddACE/RemoveACE/DeleteMethod may change later behavior.
+  - evidence: core/5.3.3.4.2.1.txt, core/5.3.3.11.txt, core/5.3.3.11.3.1.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.14.txt, core/5.3.3.14.4.1.txt, core/5.3.3.14.5.txt, core/5.3.3.15.txt, core/5.3.3.15.4.1.txt, core/5.3.3.15.5.txt, core/5.3.4.2.3.txt, core/5.3.4.3.txt, core/5.3.4.3.1.txt
 - `created-table-removeace-failure-doc-830f9bade3` [quarantine_disagreement] created-table-removeace-failure-doc
   - internal name: Created table RemoveACE rejects nonexistent ACE success
   - author label: FAIL
@@ -2764,6 +5524,237 @@ Generated: 2026-05-31T20:21:19
   - range_cleanup_a: PASS conf=0.78 concerns=The provided snippets do not include the detailed Locking-range host-read enforcement rules, so the lock-effect conclusion is inferred from successful deletion of the row.
   - range_cleanup_b: PASS conf=0.82 concerns=The packet does not include a direct host-I/O locking semantics snippet, so this relies on the object deletion evidence rather than an explicit Read rule.
   - range_cleanup_c: PASS conf=0.76 concerns=The provided snippets cover row deletion and AccessControl cleanup, but they do not directly specify host I/O behavior or Locking read-lock enforcement after a range row is deleted.
+- `accesscontrol-sp-method-scope-doc-67eb6203c5` [needs_review] accesscontrol-sp-method-scope-doc
+  - internal name: ThisSP Get GetACL missing association returns NOT_AUTHORIZED: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, thissp, authenticate, random, getfreespace, createtable, deletesp, byte-table
+  - repair hint: Check that AccessControl associations are concrete InvokingID/MethodID rows: ThisSP SP-method rows do not imply associations on DataStore, MBR, AdminSP, LockingSP, or other parseable display aliases.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.1.txt, core/5.3.3.2.txt, core/5.3.3.9.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, core/5.3.4.1.14.txt, opal/4.3.1.6.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+- `accesscontrol-sp-method-scope-doc-e6b4c501e2` [needs_review] accesscontrol-sp-method-scope-doc
+  - internal name: ThisSP Get GetACL missing association returns NOT_AUTHORIZED: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, thissp, authenticate, random, getfreespace, createtable, deletesp, byte-table
+  - repair hint: Check that AccessControl associations are concrete InvokingID/MethodID rows: ThisSP SP-method rows do not imply associations on DataStore, MBR, AdminSP, LockingSP, or other parseable display aliases.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.1.txt, core/5.3.3.2.txt, core/5.3.3.9.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, core/5.3.4.1.14.txt, opal/4.3.1.6.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+- `accesscontrol-sp-method-scope-doc-78ab7b758c` [needs_review] accesscontrol-sp-method-scope-doc
+  - internal name: ThisSP Set GetACL missing association returns NOT_AUTHORIZED: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, thissp, authenticate, random, getfreespace, createtable, deletesp, byte-table
+  - repair hint: Check that AccessControl associations are concrete InvokingID/MethodID rows: ThisSP SP-method rows do not imply associations on DataStore, MBR, AdminSP, LockingSP, or other parseable display aliases.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.1.txt, core/5.3.3.2.txt, core/5.3.3.9.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, core/5.3.4.1.14.txt, opal/4.3.1.6.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+- `accesscontrol-sp-method-scope-doc-6d844da55d` [needs_review] accesscontrol-sp-method-scope-doc
+  - internal name: ThisSP Set GetACL missing association returns NOT_AUTHORIZED: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, thissp, authenticate, random, getfreespace, createtable, deletesp, byte-table
+  - repair hint: Check that AccessControl associations are concrete InvokingID/MethodID rows: ThisSP SP-method rows do not imply associations on DataStore, MBR, AdminSP, LockingSP, or other parseable display aliases.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.1.txt, core/5.3.3.2.txt, core/5.3.3.9.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, core/5.3.4.1.14.txt, opal/4.3.1.6.txt, opal/4.3.5.4.txt, opal/4.3.8.1.txt
+- `accesscontrol-metadata-table-method-univ-5b395605b4` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Admin SP metadata table MethodIDTable Get GetACL association is not preconfigured: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-ac9c916001` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Admin SP metadata table MethodIDTable Get GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-3ecb43fead` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Admin SP metadata table ACETable Get GetACL association is not preconfigured: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-b9eaeeaf9f` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Admin SP metadata table ACETable Get GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-4072b5d268` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Admin SP metadata table AuthorityTable Get GetACL association is not preconfigured: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-aeb48d820b` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Admin SP metadata table AuthorityTable Get GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-334008993b` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Admin SP metadata table C_PINTable Get GetACL association is not preconfigured: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-acd08d9bbc` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Admin SP metadata table C_PINTable Get GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-90df081aee` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Locking SP metadata table SPTemplatesTable Get GetACL association is not preconfigured: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-2a7fe84731` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Locking SP metadata table SPTemplatesTable Get GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-18ced05f10` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Locking SP metadata table MethodIDTable Get GetACL association is not preconfigured: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-fe732a0b42` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Locking SP metadata table MethodIDTable Get GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-7e12630541` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Locking SP metadata table ACETable Get GetACL association is not preconfigured: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-95a43250a4` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Locking SP metadata table ACETable Get GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-2dc21e81fb` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Locking SP metadata table AuthorityTable Get GetACL association is not preconfigured: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-61aa78068b` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Locking SP metadata table AuthorityTable Get GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-98273c7faa` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Locking SP metadata table C_PINTable Get GetACL association is not preconfigured: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-metadata-table-method-univ-a627d42ce1` [needs_review] accesscontrol-metadata-table-method-universe-doc
+  - internal name: Locking SP metadata table C_PINTable Get GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, metadata-table, row-vs-table, preconfiguration
+  - repair hint: Check Opal AccessControl preconfiguration at table-vs-row granularity: MethodID/ACE/Authority/C_PIN/AccessControl tables have concrete table-level Next rows and row-level Get/Set rows, but no blanket table-level Set/CreateRow/DeleteRow/GetFreeRows association.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.3.1.6.txt
+- `accesscontrol-template-table-method-univ-b31c508a14` [needs_review] accesscontrol-template-table-method-universe-doc
+  - internal name: Admin SP object row SPTemplates_Base Set GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, template-table, row-vs-table, preconfiguration
+  - repair hint: Check table-vs-row AccessControl rows for Admin SP SP, Locking SP SecretProtect, and K_AES tables: Opal preconfigures selected table-level Next rows and row-level Get/Set/GenKey rows, but not blanket table-level Set/CreateRow/DeleteRow/GetFreeRows rows.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.2.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.10.txt, opal/4.3.5.5.txt
+- `accesscontrol-template-table-method-univ-4e3d09c83a` [needs_review] accesscontrol-template-table-method-universe-doc
+  - internal name: Admin SP object row SPTemplates_Admin Set GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, template-table, row-vs-table, preconfiguration
+  - repair hint: Check table-vs-row AccessControl rows for Admin SP SP, Locking SP SecretProtect, and K_AES tables: Opal preconfigures selected table-level Next rows and row-level Get/Set/GenKey rows, but not blanket table-level Set/CreateRow/DeleteRow/GetFreeRows rows.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.2.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.10.txt, opal/4.3.5.5.txt
+- `accesscontrol-template-table-method-univ-48ffe9aebc` [needs_review] accesscontrol-template-table-method-universe-doc
+  - internal name: Admin SP object row Template_1 Set GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, template-table, row-vs-table, preconfiguration
+  - repair hint: Check table-vs-row AccessControl rows for Admin SP SP, Locking SP SecretProtect, and K_AES tables: Opal preconfigures selected table-level Next rows and row-level Get/Set/GenKey rows, but not blanket table-level Set/CreateRow/DeleteRow/GetFreeRows rows.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.2.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.10.txt, opal/4.3.5.5.txt
+- `accesscontrol-template-table-method-univ-44e6f0e436` [needs_review] accesscontrol-template-table-method-universe-doc
+  - internal name: Admin SP object row AdminSP Set GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, template-table, row-vs-table, preconfiguration
+  - repair hint: Check table-vs-row AccessControl rows for Admin SP SP, Locking SP SecretProtect, and K_AES tables: Opal preconfigures selected table-level Next rows and row-level Get/Set/GenKey rows, but not blanket table-level Set/CreateRow/DeleteRow/GetFreeRows rows.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.2.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.10.txt, opal/4.3.5.5.txt
+- `accesscontrol-template-table-method-univ-cccbffea1e` [needs_review] accesscontrol-template-table-method-universe-doc
+  - internal name: Admin SP object row LockingSP Set GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, template-table, row-vs-table, preconfiguration
+  - repair hint: Check table-vs-row AccessControl rows for Admin SP SP, Locking SP SecretProtect, and K_AES tables: Opal preconfigures selected table-level Next rows and row-level Get/Set/GenKey rows, but not blanket table-level Set/CreateRow/DeleteRow/GetFreeRows rows.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.2.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.10.txt, opal/4.3.5.5.txt
+- `accesscontrol-template-table-method-univ-de3bbb3690` [needs_review] accesscontrol-template-table-method-universe-doc
+  - internal name: Locking SP object row SecretProtect_1 Set GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, template-table, row-vs-table, preconfiguration
+  - repair hint: Check table-vs-row AccessControl rows for Admin SP SP, Locking SP SecretProtect, and K_AES tables: Opal preconfigures selected table-level Next rows and row-level Get/Set/GenKey rows, but not blanket table-level Set/CreateRow/DeleteRow/GetFreeRows rows.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.2.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.10.txt, opal/4.3.5.5.txt
+- `accesscontrol-template-table-method-univ-8914d78973` [needs_review] accesscontrol-template-table-method-universe-doc
+  - internal name: Locking SP object row SecretProtect_2 Set GetACL association is not preconfigured: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, method-association, template-table, row-vs-table, preconfiguration
+  - repair hint: Check table-vs-row AccessControl rows for Admin SP SP, Locking SP SecretProtect, and K_AES tables: Opal preconfigures selected table-level Next rows and row-level Get/Set/GenKey rows, but not blanket table-level Set/CreateRow/DeleteRow/GetFreeRows rows.
+  - evidence: core/5.3.2.7.txt, core/5.3.3.4.txt, core/5.3.3.5.txt, core/5.3.3.10.txt, core/5.3.3.13.txt, core/5.3.3.13.4.txt, opal/4.2.1.5.txt, opal/4.2.3.3.txt, opal/4.3.1.6.txt, opal/4.3.1.10.txt, opal/4.3.5.5.txt
+- `accesscontrol-meta-self-association-doc-0969f9c905` [needs_review] accesscontrol-meta-self-association-doc
+  - internal name: Admin SP AccessControl SetACL self-association can return NOT_AUTHORIZED
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, meta-acl, meta-method, association-existence, self-association
+  - repair hint: Check that the AccessControl table has no AccessControl rows representing the meta-ACL methods themselves, so GetACL/AddACE/RemoveACE/DeleteMethod with InvokingID=AccessControl and MethodID in the meta-method set fails as an unknown association.
+  - evidence: core/5.3.4.3.1.txt, core/5.3.3.11.4.txt, core/5.3.3.13.4.txt, core/5.3.3.14.5.txt, core/5.3.3.15.5.txt
+- `accesscontrol-meta-self-association-doc-155582bd37` [needs_review] accesscontrol-meta-self-association-doc
+  - internal name: Admin SP AccessControl SetACL self-association does not exist: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, meta-acl, meta-method, association-existence, self-association
+  - repair hint: Check that the AccessControl table has no AccessControl rows representing the meta-ACL methods themselves, so GetACL/AddACE/RemoveACE/DeleteMethod with InvokingID=AccessControl and MethodID in the meta-method set fails as an unknown association.
+  - evidence: core/5.3.4.3.1.txt, core/5.3.3.11.4.txt, core/5.3.3.13.4.txt, core/5.3.3.14.5.txt, core/5.3.3.15.5.txt
+- `accesscontrol-meta-self-association-doc-6515d0e304` [needs_review] accesscontrol-meta-self-association-doc
+  - internal name: Locking SP AccessControl SetACL self-association can return NOT_AUTHORIZED
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, meta-acl, meta-method, association-existence, self-association
+  - repair hint: Check that the AccessControl table has no AccessControl rows representing the meta-ACL methods themselves, so GetACL/AddACE/RemoveACE/DeleteMethod with InvokingID=AccessControl and MethodID in the meta-method set fails as an unknown association.
+  - evidence: core/5.3.4.3.1.txt, core/5.3.3.11.4.txt, core/5.3.3.13.4.txt, core/5.3.3.14.5.txt, core/5.3.3.15.5.txt
+- `accesscontrol-meta-self-association-doc-9f78a997ec` [needs_review] accesscontrol-meta-self-association-doc
+  - internal name: Locking SP AccessControl SetACL self-association does not exist: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, meta-acl, meta-method, association-existence, self-association
+  - repair hint: Check that the AccessControl table has no AccessControl rows representing the meta-ACL methods themselves, so GetACL/AddACE/RemoveACE/DeleteMethod with InvokingID=AccessControl and MethodID in the meta-method set fails as an unknown association.
+  - evidence: core/5.3.4.3.1.txt, core/5.3.3.11.4.txt, core/5.3.3.13.4.txt, core/5.3.3.14.5.txt, core/5.3.3.15.5.txt
 - `accesscontrol-logto-default-doc-5943dc1308` [quarantine_low_confidence] accesscontrol-logto-default-doc
   - internal name: Direct AccessControl Get reports empty issued DataStore Get LogTo: correct return value
   - author label: PASS
@@ -3010,6 +6001,342 @@ Generated: 2026-05-31T20:21:19
   - concepts: access-control, direct-get, log-template, log-select, locking-range, set, default-logging
   - repair hint: Check Locking Template default logging for concrete Locking object Set associations: AccessControl Log column should be LogAlways for Locking range Set rows, while unrelated issued rows keep their documented empty/default logging.
   - evidence: core/5.3.2.7.txt, core/5.3.2.7.6.txt, core/5.1.3.49.txt, core/5.7.3.8.txt, opal/4.3.1.6.txt, opal/4.3.5.2.txt
+- `lockinginfo-maxranges-consistency-doc-a2526d035e` [needs_review] lockinginfo-maxranges-consistency-doc
+  - internal name: Observed K AES Range9 Get conflicts with later MaxRanges eight
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: lockinginfo, maxranges, locking-range, k-aes, state-observation, range-support, consistency
+  - repair hint: Check that later LockingInfo.MaxRanges observations remain consistent with previously successful Locking RangeNNNN and K_AES RangeNNNN operations: observing Range9 or a Range9 key conflicts with MaxRanges=8, while Range8 remains in range.
+  - evidence: core/5.7.2.1.txt, core/5.7.2.1.5.txt, core/5.7.3.3.txt, opal/4.3.5.1.txt, opal/4.3.5.2.txt, opal/4.3.5.5.txt
+- `user-mmmm-accesscontrol-exact-doc-fb0c6bba0b` [needs_review] user-mmmm-accesscontrol-exact-doc
+  - internal name: Locking SP C_PIN Admin2 Get GetACL returns Admins Get NOPIN ACE: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, ace, authority, c-pin, user-mmmm, admin-mmmm, exact-acl
+  - repair hint: Check exact ACL returns for Opal AdminMMMM/UserMMMM-pattern rows: AdminN/UserN Get rows use the class/common Get ACEs, while UserN Set rows are indexed by the target user number.
+  - evidence: core/5.1.4.2.1.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-accesscontrol-exact-doc-29a9029007` [needs_review] user-mmmm-accesscontrol-exact-doc
+  - internal name: Locking SP C_PIN Admin2 Get GetACL returns Admins Get NOPIN ACE: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, ace, authority, c-pin, user-mmmm, admin-mmmm, exact-acl
+  - repair hint: Check exact ACL returns for Opal AdminMMMM/UserMMMM-pattern rows: AdminN/UserN Get rows use the class/common Get ACEs, while UserN Set rows are indexed by the target user number.
+  - evidence: core/5.1.4.2.1.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-accesscontrol-exact-doc-4c8d2de273` [needs_review] user-mmmm-accesscontrol-exact-doc
+  - internal name: Locking SP Authority Admin2 Get GetACL returns Get All plus CommonName ACEs: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, ace, authority, c-pin, user-mmmm, admin-mmmm, exact-acl
+  - repair hint: Check exact ACL returns for Opal AdminMMMM/UserMMMM-pattern rows: AdminN/UserN Get rows use the class/common Get ACEs, while UserN Set rows are indexed by the target user number.
+  - evidence: core/5.1.4.2.1.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-accesscontrol-exact-doc-53b54707e1` [needs_review] user-mmmm-accesscontrol-exact-doc
+  - internal name: Locking SP Authority Admin2 Get GetACL returns Get All plus CommonName ACEs: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, ace, authority, c-pin, user-mmmm, admin-mmmm, exact-acl
+  - repair hint: Check exact ACL returns for Opal AdminMMMM/UserMMMM-pattern rows: AdminN/UserN Get rows use the class/common Get ACEs, while UserN Set rows are indexed by the target user number.
+  - evidence: core/5.1.4.2.1.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-accesscontrol-exact-doc-456451ce7a` [needs_review] user-mmmm-accesscontrol-exact-doc
+  - internal name: Locking SP Authority Admin3 Get GetACL rejects Set Enabled ACL: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, ace, authority, c-pin, user-mmmm, admin-mmmm, exact-acl
+  - repair hint: Check exact ACL returns for Opal AdminMMMM/UserMMMM-pattern rows: AdminN/UserN Get rows use the class/common Get ACEs, while UserN Set rows are indexed by the target user number.
+  - evidence: core/5.1.4.2.1.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-accesscontrol-exact-doc-9d9952ce6b` [needs_review] user-mmmm-accesscontrol-exact-doc
+  - internal name: Locking SP Authority Admin3 Get GetACL rejects Set Enabled ACL: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, ace, authority, c-pin, user-mmmm, admin-mmmm, exact-acl
+  - repair hint: Check exact ACL returns for Opal AdminMMMM/UserMMMM-pattern rows: AdminN/UserN Get rows use the class/common Get ACEs, while UserN Set rows are indexed by the target user number.
+  - evidence: core/5.1.4.2.1.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.2.9.txt, core/5.3.2.9.4.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-count-boundary-doc-eec2f41090` [needs_review] user-mmmm-count-boundary-doc
+  - internal name: Level0 user count eight still permits Authority User8 Enable success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: level0, authority, c-pin, user-mmmm, object-existence, count-boundary
+  - repair hint: Check that UserMMMM pattern expansion is bounded by the implemented Locking SP user-authority count: Opal mandates User1 through User8, Level0 can report the implemented count, and User9-derived Authority/C_PIN/ACE rows must not be treated as issued when the observed count is eight.
+  - evidence: opal/3.1.1.5.txt, opal/3.1.1.5.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-count-boundary-doc-0f8a85f5e0` [needs_review] user-mmmm-count-boundary-doc
+  - internal name: Level0 user count eight still permits C PIN User8 PIN success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: level0, authority, c-pin, user-mmmm, object-existence, count-boundary
+  - repair hint: Check that UserMMMM pattern expansion is bounded by the implemented Locking SP user-authority count: Opal mandates User1 through User8, Level0 can report the implemented count, and User9-derived Authority/C_PIN/ACE rows must not be treated as issued when the observed count is eight.
+  - evidence: opal/3.1.1.5.txt, opal/3.1.1.5.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-count-boundary-doc-c5516ac70b` [needs_review] user-mmmm-count-boundary-doc
+  - internal name: Level0 user count eight still permits ACE C PIN User8 Set PIN Get success
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: level0, authority, c-pin, user-mmmm, object-existence, count-boundary
+  - repair hint: Check that UserMMMM pattern expansion is bounded by the implemented Locking SP user-authority count: Opal mandates User1 through User8, Level0 can report the implemented count, and User9-derived Authority/C_PIN/ACE rows must not be treated as issued when the observed count is eight.
+  - evidence: opal/3.1.1.5.txt, opal/3.1.1.5.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-count-boundary-doc-ea96390ad8` [needs_review] user-mmmm-count-boundary-doc
+  - internal name: Level0 user count eight excludes Authority User9 Enable success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0, authority, c-pin, user-mmmm, object-existence, count-boundary
+  - repair hint: Check that UserMMMM pattern expansion is bounded by the implemented Locking SP user-authority count: Opal mandates User1 through User8, Level0 can report the implemented count, and User9-derived Authority/C_PIN/ACE rows must not be treated as issued when the observed count is eight.
+  - evidence: opal/3.1.1.5.txt, opal/3.1.1.5.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-count-boundary-doc-138d5667c1` [needs_review] user-mmmm-count-boundary-doc
+  - internal name: Level0 user count eight excludes C PIN User9 PIN success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0, authority, c-pin, user-mmmm, object-existence, count-boundary
+  - repair hint: Check that UserMMMM pattern expansion is bounded by the implemented Locking SP user-authority count: Opal mandates User1 through User8, Level0 can report the implemented count, and User9-derived Authority/C_PIN/ACE rows must not be treated as issued when the observed count is eight.
+  - evidence: opal/3.1.1.5.txt, opal/3.1.1.5.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-count-boundary-doc-6fee463201` [needs_review] user-mmmm-count-boundary-doc
+  - internal name: Level0 user count eight excludes C PIN User9 Set GetACL success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0, authority, c-pin, user-mmmm, object-existence, count-boundary
+  - repair hint: Check that UserMMMM pattern expansion is bounded by the implemented Locking SP user-authority count: Opal mandates User1 through User8, Level0 can report the implemented count, and User9-derived Authority/C_PIN/ACE rows must not be treated as issued when the observed count is eight.
+  - evidence: opal/3.1.1.5.txt, opal/3.1.1.5.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-count-boundary-doc-e02617a6d6` [needs_review] user-mmmm-count-boundary-doc
+  - internal name: Level0 user count eight excludes Authority User9 Set GetACL success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0, authority, c-pin, user-mmmm, object-existence, count-boundary
+  - repair hint: Check that UserMMMM pattern expansion is bounded by the implemented Locking SP user-authority count: Opal mandates User1 through User8, Level0 can report the implemented count, and User9-derived Authority/C_PIN/ACE rows must not be treated as issued when the observed count is eight.
+  - evidence: opal/3.1.1.5.txt, opal/3.1.1.5.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-count-boundary-doc-60c3c4562f` [needs_review] user-mmmm-count-boundary-doc
+  - internal name: Level0 user count eight excludes ACE C PIN User9 Set PIN Get success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0, authority, c-pin, user-mmmm, object-existence, count-boundary
+  - repair hint: Check that UserMMMM pattern expansion is bounded by the implemented Locking SP user-authority count: Opal mandates User1 through User8, Level0 can report the implemented count, and User9-derived Authority/C_PIN/ACE rows must not be treated as issued when the observed count is eight.
+  - evidence: opal/3.1.1.5.txt, opal/3.1.1.5.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-count-boundary-doc-14fce35957` [needs_review] user-mmmm-count-boundary-doc
+  - internal name: Level0 user count eight excludes User9 StartSession success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0, authority, c-pin, user-mmmm, object-existence, count-boundary
+  - repair hint: Check that UserMMMM pattern expansion is bounded by the implemented Locking SP user-authority count: Opal mandates User1 through User8, Level0 can report the implemented count, and User9-derived Authority/C_PIN/ACE rows must not be treated as issued when the observed count is eight.
+  - evidence: opal/3.1.1.5.txt, opal/3.1.1.5.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-count-boundary-doc-44023b851a` [needs_review] user-mmmm-count-boundary-doc
+  - internal name: Observed Authority User9 Get conflicts with later Level0 user count eight
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0, authority, c-pin, user-mmmm, object-existence, count-boundary
+  - repair hint: Check that UserMMMM pattern expansion is bounded by the implemented Locking SP user-authority count: Opal mandates User1 through User8, Level0 can report the implemented count, and User9-derived Authority/C_PIN/ACE rows must not be treated as issued when the observed count is eight.
+  - evidence: opal/3.1.1.5.txt, opal/3.1.1.5.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-count-boundary-doc-3f65670a0a` [needs_review] user-mmmm-count-boundary-doc
+  - internal name: Observed C PIN User9 Get conflicts with later Level0 user count eight
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: level0, authority, c-pin, user-mmmm, object-existence, count-boundary
+  - repair hint: Check that UserMMMM pattern expansion is bounded by the implemented Locking SP user-authority count: Opal mandates User1 through User8, Level0 can report the implemented count, and User9-derived Authority/C_PIN/ACE rows must not be treated as issued when the observed count is eight.
+  - evidence: opal/3.1.1.5.txt, opal/3.1.1.5.2.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-disabled-sideeffects-doc-5e6cc8e8dc` [needs_review] user-mmmm-disabled-sideeffects-doc
+  - internal name: Disabled User8 explicit Authenticate returns false: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: authenticate, disabled-authority, trylimit, tries, authority-uses, c-pin, user-mmmm, long-trajectory
+  - repair hint: Check disabled UserMMMM side effects: a disabled authority is not authenticatable, disabled StartSession fails, explicit Authenticate returns false, and these disabled attempts must not consume C_PIN.Tries or Authority.Uses before the authority is enabled.
+  - evidence: core/5.1.5.15.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.12.txt, core/5.3.3.12.3.1.txt, core/5.3.4.1.1.2.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-disabled-sideeffects-doc-164b35c00b` [needs_review] user-mmmm-disabled-sideeffects-doc
+  - internal name: Disabled User8 explicit Authenticate returns false: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: authenticate, disabled-authority, trylimit, tries, authority-uses, c-pin, user-mmmm, long-trajectory
+  - repair hint: Check disabled UserMMMM side effects: a disabled authority is not authenticatable, disabled StartSession fails, explicit Authenticate returns false, and these disabled attempts must not consume C_PIN.Tries or Authority.Uses before the authority is enabled.
+  - evidence: core/5.1.5.15.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.12.txt, core/5.3.3.12.3.1.txt, core/5.3.4.1.1.2.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-disabled-sideeffects-doc-6ab6377f69` [needs_review] user-mmmm-disabled-sideeffects-doc
+  - internal name: Disabled User8 explicit Authenticate does not consume Tries: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: authenticate, disabled-authority, trylimit, tries, authority-uses, c-pin, user-mmmm, long-trajectory
+  - repair hint: Check disabled UserMMMM side effects: a disabled authority is not authenticatable, disabled StartSession fails, explicit Authenticate returns false, and these disabled attempts must not consume C_PIN.Tries or Authority.Uses before the authority is enabled.
+  - evidence: core/5.1.5.15.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.12.txt, core/5.3.3.12.3.1.txt, core/5.3.4.1.1.2.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-disabled-sideeffects-doc-2eb9fc722c` [needs_review] user-mmmm-disabled-sideeffects-doc
+  - internal name: Disabled User8 explicit Authenticate does not consume Tries: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: authenticate, disabled-authority, trylimit, tries, authority-uses, c-pin, user-mmmm, long-trajectory
+  - repair hint: Check disabled UserMMMM side effects: a disabled authority is not authenticatable, disabled StartSession fails, explicit Authenticate returns false, and these disabled attempts must not consume C_PIN.Tries or Authority.Uses before the authority is enabled.
+  - evidence: core/5.1.5.15.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.12.txt, core/5.3.3.12.3.1.txt, core/5.3.4.1.1.2.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-disabled-sideeffects-doc-06907b8b17` [needs_review] user-mmmm-disabled-sideeffects-doc
+  - internal name: Disabled User8 explicit Authenticate does not consume Uses: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: authenticate, disabled-authority, trylimit, tries, authority-uses, c-pin, user-mmmm, long-trajectory
+  - repair hint: Check disabled UserMMMM side effects: a disabled authority is not authenticatable, disabled StartSession fails, explicit Authenticate returns false, and these disabled attempts must not consume C_PIN.Tries or Authority.Uses before the authority is enabled.
+  - evidence: core/5.1.5.15.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.12.txt, core/5.3.3.12.3.1.txt, core/5.3.4.1.1.2.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-disabled-sideeffects-doc-69668a09c9` [needs_review] user-mmmm-disabled-sideeffects-doc
+  - internal name: Disabled User8 explicit Authenticate does not consume Uses: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: authenticate, disabled-authority, trylimit, tries, authority-uses, c-pin, user-mmmm, long-trajectory
+  - repair hint: Check disabled UserMMMM side effects: a disabled authority is not authenticatable, disabled StartSession fails, explicit Authenticate returns false, and these disabled attempts must not consume C_PIN.Tries or Authority.Uses before the authority is enabled.
+  - evidence: core/5.1.5.15.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.12.txt, core/5.3.3.12.3.1.txt, core/5.3.4.1.1.2.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-disabled-sideeffects-doc-54b7ac14a7` [needs_review] user-mmmm-disabled-sideeffects-doc
+  - internal name: Disabled User8 StartSession is rejected before enablement: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: authenticate, disabled-authority, trylimit, tries, authority-uses, c-pin, user-mmmm, long-trajectory
+  - repair hint: Check disabled UserMMMM side effects: a disabled authority is not authenticatable, disabled StartSession fails, explicit Authenticate returns false, and these disabled attempts must not consume C_PIN.Tries or Authority.Uses before the authority is enabled.
+  - evidence: core/5.1.5.15.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.12.txt, core/5.3.3.12.3.1.txt, core/5.3.4.1.1.2.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-disabled-sideeffects-doc-16a16aa2a7` [needs_review] user-mmmm-disabled-sideeffects-doc
+  - internal name: Disabled User8 StartSession is rejected before enablement: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: authenticate, disabled-authority, trylimit, tries, authority-uses, c-pin, user-mmmm, long-trajectory
+  - repair hint: Check disabled UserMMMM side effects: a disabled authority is not authenticatable, disabled StartSession fails, explicit Authenticate returns false, and these disabled attempts must not consume C_PIN.Tries or Authority.Uses before the authority is enabled.
+  - evidence: core/5.1.5.15.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.12.txt, core/5.3.3.12.3.1.txt, core/5.3.4.1.1.2.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-disabled-sideeffects-doc-a2c2a08ecd` [needs_review] user-mmmm-disabled-sideeffects-doc
+  - internal name: Disabled User8 failed StartSession does not consume Tries: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: authenticate, disabled-authority, trylimit, tries, authority-uses, c-pin, user-mmmm, long-trajectory
+  - repair hint: Check disabled UserMMMM side effects: a disabled authority is not authenticatable, disabled StartSession fails, explicit Authenticate returns false, and these disabled attempts must not consume C_PIN.Tries or Authority.Uses before the authority is enabled.
+  - evidence: core/5.1.5.15.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.12.txt, core/5.3.3.12.3.1.txt, core/5.3.4.1.1.2.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-disabled-sideeffects-doc-d625283174` [needs_review] user-mmmm-disabled-sideeffects-doc
+  - internal name: Disabled User8 failed StartSession does not consume Tries: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: authenticate, disabled-authority, trylimit, tries, authority-uses, c-pin, user-mmmm, long-trajectory
+  - repair hint: Check disabled UserMMMM side effects: a disabled authority is not authenticatable, disabled StartSession fails, explicit Authenticate returns false, and these disabled attempts must not consume C_PIN.Tries or Authority.Uses before the authority is enabled.
+  - evidence: core/5.1.5.15.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.12.txt, core/5.3.3.12.3.1.txt, core/5.3.4.1.1.2.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-disabled-sideeffects-doc-3f96da1085` [needs_review] user-mmmm-disabled-sideeffects-doc
+  - internal name: First bad User8 StartSession after enablement consumes one Try: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: authenticate, disabled-authority, trylimit, tries, authority-uses, c-pin, user-mmmm, long-trajectory
+  - repair hint: Check disabled UserMMMM side effects: a disabled authority is not authenticatable, disabled StartSession fails, explicit Authenticate returns false, and these disabled attempts must not consume C_PIN.Tries or Authority.Uses before the authority is enabled.
+  - evidence: core/5.1.5.15.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.12.txt, core/5.3.3.12.3.1.txt, core/5.3.4.1.1.2.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `user-mmmm-disabled-sideeffects-doc-9166449fa3` [needs_review] user-mmmm-disabled-sideeffects-doc
+  - internal name: First bad User8 StartSession after enablement consumes one Try: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: authenticate, disabled-authority, trylimit, tries, authority-uses, c-pin, user-mmmm, long-trajectory
+  - repair hint: Check disabled UserMMMM side effects: a disabled authority is not authenticatable, disabled StartSession fails, explicit Authenticate returns false, and these disabled attempts must not consume C_PIN.Tries or Authority.Uses before the authority is enabled.
+  - evidence: core/5.1.5.15.txt, core/5.3.2.10.txt, core/5.3.2.12.txt, core/5.3.3.12.txt, core/5.3.3.12.3.1.txt, core/5.3.4.1.1.2.txt, opal/4.3.1.8.txt, opal/4.3.1.9.txt
+- `getacl-locking-special-object-expanded-d-26dcfebee8` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP SPTemplates Admin object ordinary Set association does not exist: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-6c4cfec6d5` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP SPTemplates Admin object ordinary Set association does not exist: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-3cd31eab77` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID GetACL object ordinary Set association does not exist: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-4ca1022a16` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID GetACL object ordinary Set association does not exist: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-f74da1628a` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID GenKey object ordinary Set association does not exist: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-3f704e2332` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID GenKey object ordinary Set association does not exist: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-a1effc4514` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID RevertSP object ordinary Set association does not exist: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-9214769e12` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID RevertSP object ordinary Set association does not exist: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-d5e3c51ef4` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID Get object ordinary Set association does not exist: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-4cafba450b` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID Get object ordinary Set association does not exist: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-4465f32610` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID Set object ordinary Set association does not exist: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-93b3d9febd` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID Set object ordinary Set association does not exist: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-d1bd77a9e6` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID Authenticate object ordinary Set association does not exist: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-5f5540dd73` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID Authenticate object ordinary Set association does not exist: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-eaaf8d91bf` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID Random object ordinary Set association does not exist: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-locking-special-object-expanded-d-2ac407ae59` [needs_review] getacl-locking-special-object-expanded-doc
+  - internal name: Locking SP MethodID Random object ordinary Set association does not exist: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, locking-sp, special-method, methodid-object, sptemplates-object, association-universe, exact-status, long-trajectory
+  - repair hint: Check expanded Locking SP special object associations across SPTemplates rows and MethodID rows: SPTemplatesObj/MethodIDObj GetACL returns ACE_Anybody, while the same InvokingID paired with ordinary Get has no AccessControl row and must return NOT_AUTHORIZED.
+  - evidence: core/3.2.4.1.txt, core/5.1.5.2.txt, core/5.3.2.7.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.3.13.4.txt, core/5.3.4.3.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt
+- `getacl-admin-locking-remaining-exact-acl-b2cbe542ef` [needs_review] getacl-admin-locking-remaining-exact-acl-long-doc
+  - internal name: Admin SP MethodID GetACL row ordinary Set association does not exist: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, acl-column, ace-uidrefs, admin-sp, locking-sp, opal-preconfiguration, exact-return-list, long-trajectory
+  - repair hint: Check remaining exact GetACL mappings for issued Admin/Locking AccessControl rows, especially descriptor-object Get rows, MethodID object rows, ACE object Set rows, and Admin authority rows; do not accept syntactic but wrong ACE uidref lists.
+  - evidence: core/5.1.3.4.txt, core/5.1.3.54.txt, core/5.1.3.61.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.4.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-admin-locking-remaining-exact-acl-1048712cce` [needs_review] getacl-admin-locking-remaining-exact-acl-long-doc
+  - internal name: Admin SP MethodID GetACL row ordinary Set association does not exist: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, acl-column, ace-uidrefs, admin-sp, locking-sp, opal-preconfiguration, exact-return-list, long-trajectory
+  - repair hint: Check remaining exact GetACL mappings for issued Admin/Locking AccessControl rows, especially descriptor-object Get rows, MethodID object rows, ACE object Set rows, and Admin authority rows; do not accept syntactic but wrong ACE uidref lists.
+  - evidence: core/5.1.3.4.txt, core/5.1.3.54.txt, core/5.1.3.61.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.4.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
 - `getacl-representation-equivalence-doc-e2e545456c` [needs_review] getacl-representation-equivalence-doc
   - internal name: Admin SP C_PIN SID GetACL normalizes object/method UID dictionaries: correct return value
   - author label: PASS
@@ -3128,6 +6455,41 @@ Generated: 2026-05-31T20:21:19
   - D: FAIL conf=0.9 concerns=The Opal source snippet is truncated before the specific Locking table row, so this relies on the included rule summary plus the target association identifying a table row.
   - E: FAIL conf=0.94 concerns=The displayed AccessControl snippet is truncated before the Locking table row, so this relies on the included rule summary and case evidence for that exact preconfiguration.
   - F: FAIL conf=0.9 concerns=The provided opal/4.3.1.6 snippet is truncated before the specific Locking table row, so this relies on the included rule summary for that exact row.
+- `getacl-admin-locking-remaining-exact-acl-0dc2e556df` [needs_review] getacl-admin-locking-remaining-exact-acl-long-doc
+  - internal name: Admin SP LockingSP Revert GetACL returns SP SID and Admin ACEs: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, acl-column, ace-uidrefs, admin-sp, locking-sp, opal-preconfiguration, exact-return-list, long-trajectory
+  - repair hint: Check remaining exact GetACL mappings for issued Admin/Locking AccessControl rows, especially descriptor-object Get rows, MethodID object rows, ACE object Set rows, and Admin authority rows; do not accept syntactic but wrong ACE uidref lists.
+  - evidence: core/5.1.3.4.txt, core/5.1.3.54.txt, core/5.1.3.61.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.4.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-admin-locking-remaining-exact-acl-8ebfb70fed` [needs_review] getacl-admin-locking-remaining-exact-acl-long-doc
+  - internal name: Admin SP LockingSP Revert GetACL returns SP SID and Admin ACEs: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, acl-column, ace-uidrefs, admin-sp, locking-sp, opal-preconfiguration, exact-return-list, long-trajectory
+  - repair hint: Check remaining exact GetACL mappings for issued Admin/Locking AccessControl rows, especially descriptor-object Get rows, MethodID object rows, ACE object Set rows, and Admin authority rows; do not accept syntactic but wrong ACE uidref lists.
+  - evidence: core/5.1.3.4.txt, core/5.1.3.54.txt, core/5.1.3.61.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.4.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-admin-locking-remaining-exact-acl-6312ef2fde` [needs_review] getacl-admin-locking-remaining-exact-acl-long-doc
+  - internal name: Admin SP ThisSP RevertSP association does not exist: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, acl-column, ace-uidrefs, admin-sp, locking-sp, opal-preconfiguration, exact-return-list, long-trajectory
+  - repair hint: Check remaining exact GetACL mappings for issued Admin/Locking AccessControl rows, especially descriptor-object Get rows, MethodID object rows, ACE object Set rows, and Admin authority rows; do not accept syntactic but wrong ACE uidref lists.
+  - evidence: core/5.1.3.4.txt, core/5.1.3.54.txt, core/5.1.3.61.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.4.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-admin-locking-remaining-exact-acl-cf51617899` [needs_review] getacl-admin-locking-remaining-exact-acl-long-doc
+  - internal name: Locking SP Authority Admin3 Set GetACL returns Enabled and CommonName ACEs: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, acl-column, ace-uidrefs, admin-sp, locking-sp, opal-preconfiguration, exact-return-list, long-trajectory
+  - repair hint: Check remaining exact GetACL mappings for issued Admin/Locking AccessControl rows, especially descriptor-object Get rows, MethodID object rows, ACE object Set rows, and Admin authority rows; do not accept syntactic but wrong ACE uidref lists.
+  - evidence: core/5.1.3.4.txt, core/5.1.3.54.txt, core/5.1.3.61.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.4.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
+- `getacl-admin-locking-remaining-exact-acl-a27b7be1f4` [needs_review] getacl-admin-locking-remaining-exact-acl-long-doc
+  - internal name: Locking SP Authority Admin3 Set GetACL returns Enabled and CommonName ACEs: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: access-control, getacl, acl-column, ace-uidrefs, admin-sp, locking-sp, opal-preconfiguration, exact-return-list, long-trajectory
+  - repair hint: Check remaining exact GetACL mappings for issued Admin/Locking AccessControl rows, especially descriptor-object Get rows, MethodID object rows, ACE object Set rows, and Admin authority rows; do not accept syntactic but wrong ACE uidref lists.
+  - evidence: core/5.1.3.4.txt, core/5.1.3.54.txt, core/5.1.3.61.txt, core/5.3.2.7.txt, core/5.3.2.7.5.txt, core/5.3.2.7.9.txt, core/5.3.3.13.txt, core/5.3.3.13.3.1.txt, core/5.3.4.3.1.txt, opal/4.2.1.4.txt, opal/4.2.1.5.txt, opal/4.2.1.6.txt, opal/4.3.1.5.txt, opal/4.3.1.6.txt, opal/4.3.1.7.txt
 - `ace-kaes-set-crosscheck-long-doc-a8ff40fadc` [quarantine_low_confidence] ace-kaes-set-crosscheck-long-doc
   - internal name: Locking SP ACE K AES 256 Range1 GenKey Set GetACL returns BooleanExpression Set ACE: correct return value
   - author label: PASS
@@ -3236,6 +6598,117 @@ Generated: 2026-05-31T20:21:19
   - agent_kappa2: FAIL conf=0.86 concerns=The packet does not explicitly decode the Locking column value or show the ReEncryptState name in the trajectory, so the association is inferred from the provided NextKey snippet and target object.
   - agent_lambda2: FAIL conf=0.78 concerns=The snippet does not explicitly define Locking column 12 or value 2, so the connection to non-IDLE ReEncryptState is inferred from the packet trajectory context.
   - agent_mu2: FAIL conf=0.78 concerns=The trajectory does not show ReEncryptState directly, so this treats the prior NextKey update as the packet evidence that the non-IDLE re-encryption restriction applies.
+- `genkey-reencrypt-state-doc-552edcf221` [needs_review] genkey-reencrypt-state-doc
+  - internal name: Busy GlobalRange NextKey blocks GenKey on referenced Range1 key: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: genkey, media-key, locking-range, reencryption, impossible-success
+  - repair hint: Check that K_AES range-key GenKey is rejected whenever the associated Locking range ReEncryptState is not IDLE, without depending on one concrete error status.
+  - evidence: core/5.7.2.2.12.txt, core/5.7.2.2.13.txt, core/5.7.3.7.1.txt, opal/4.3.5.5.txt
+- `genkey-result-shape-doc-c81b4f048b` [needs_review] genkey-result-shape-doc
+  - internal name: C RSA 2048 GenKey with PublicExponent returns empty list: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: genkey, method-result, empty-list, c-pin, k-aes, media-key, exact-return-shape
+  - repair hint: Check that every successful GenKey invocation reports success through status and returns an empty list; generated credential/key material is not returned as a method result.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.3.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt, core/5.7.2.3.txt, core/5.7.2.4.txt, opal/4.3.5.5.txt
+- `genkey-result-shape-doc-511be8f07c` [needs_review] genkey-result-shape-doc
+  - internal name: C RSA 2048 GenKey with PublicExponent returns empty list: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: genkey, method-result, empty-list, c-pin, k-aes, media-key, exact-return-shape
+  - repair hint: Check that every successful GenKey invocation reports success through status and returns an empty list; generated credential/key material is not returned as a method result.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.3.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt, core/5.7.2.3.txt, core/5.7.2.4.txt, opal/4.3.5.5.txt
+- `genkey-result-shape-doc-2226039283` [needs_review] genkey-result-shape-doc
+  - internal name: C AES 128 GenKey returns empty list: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: genkey, method-result, empty-list, c-pin, k-aes, media-key, exact-return-shape
+  - repair hint: Check that every successful GenKey invocation reports success through status and returns an empty list; generated credential/key material is not returned as a method result.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.3.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt, core/5.7.2.3.txt, core/5.7.2.4.txt, opal/4.3.5.5.txt
+- `genkey-result-shape-doc-946d8ce7db` [needs_review] genkey-result-shape-doc
+  - internal name: C AES 128 GenKey returns empty list: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: genkey, method-result, empty-list, c-pin, k-aes, media-key, exact-return-shape
+  - repair hint: Check that every successful GenKey invocation reports success through status and returns an empty list; generated credential/key material is not returned as a method result.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.3.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt, core/5.7.2.3.txt, core/5.7.2.4.txt, opal/4.3.5.5.txt
+- `genkey-result-shape-doc-abb349fc39` [needs_review] genkey-result-shape-doc
+  - internal name: C HMAC 160 GenKey returns empty list: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: genkey, method-result, empty-list, c-pin, k-aes, media-key, exact-return-shape
+  - repair hint: Check that every successful GenKey invocation reports success through status and returns an empty list; generated credential/key material is not returned as a method result.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.3.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt, core/5.7.2.3.txt, core/5.7.2.4.txt, opal/4.3.5.5.txt
+- `genkey-result-shape-doc-50e7db3161` [needs_review] genkey-result-shape-doc
+  - internal name: C HMAC 160 GenKey returns empty list: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: genkey, method-result, empty-list, c-pin, k-aes, media-key, exact-return-shape
+  - repair hint: Check that every successful GenKey invocation reports success through status and returns an empty list; generated credential/key material is not returned as a method result.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.3.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt, core/5.7.2.3.txt, core/5.7.2.4.txt, opal/4.3.5.5.txt
+- `genkey-result-shape-doc-0d5babbf1c` [needs_review] genkey-result-shape-doc
+  - internal name: C EC 256 GenKey returns empty list: correct return value
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: genkey, method-result, empty-list, c-pin, k-aes, media-key, exact-return-shape
+  - repair hint: Check that every successful GenKey invocation reports success through status and returns an empty list; generated credential/key material is not returned as a method result.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.3.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt, core/5.7.2.3.txt, core/5.7.2.4.txt, opal/4.3.5.5.txt
+- `genkey-result-shape-doc-04e969bdde` [needs_review] genkey-result-shape-doc
+  - internal name: C EC 256 GenKey returns empty list: impossible return value
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: genkey, method-result, empty-list, c-pin, k-aes, media-key, exact-return-shape
+  - repair hint: Check that every successful GenKey invocation reports success through status and returns an empty list; generated credential/key material is not returned as a method result.
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.3.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt, core/5.7.2.3.txt, core/5.7.2.4.txt, opal/4.3.5.5.txt
+- `genkey-credential-family-doc-c01016059c` [needs_review] genkey-credential-family-doc
+  - internal name: C RSA 2048 GenKey rejects boolean PublicExponent: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: genkey-credential-family-doc
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.1.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt
+- `genkey-credential-family-doc-bee9e2973e` [needs_review] genkey-credential-family-doc
+  - internal name: C RSA 2048 GenKey rejects boolean PublicExponent: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: genkey-credential-family-doc
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.1.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt
+- `genkey-credential-family-doc-e71d447865` [needs_review] genkey-credential-family-doc
+  - internal name: C AES 128 GenKey rejects PublicExponent: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: genkey-credential-family-doc
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.1.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt
+- `genkey-credential-family-doc-b4bf2a959d` [needs_review] genkey-credential-family-doc
+  - internal name: C AES 128 GenKey rejects PublicExponent: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: genkey-credential-family-doc
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.1.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt
+- `genkey-credential-family-doc-25aafa2173` [needs_review] genkey-credential-family-doc
+  - internal name: C HMAC 160 GenKey rejects PinLength: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: genkey-credential-family-doc
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.1.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt
+- `genkey-credential-family-doc-a058b6284a` [needs_review] genkey-credential-family-doc
+  - internal name: C HMAC 160 GenKey rejects PinLength: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: genkey-credential-family-doc
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.1.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt
+- `genkey-credential-family-doc-fa65a362a8` [needs_review] genkey-credential-family-doc
+  - internal name: H SHA 256 is not a GenKey credential target: correct status
+  - author label: PASS
+  - reason: 0/3 independent reviews present
+  - concepts: genkey-credential-family-doc
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.1.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt
+- `genkey-credential-family-doc-de24c41a3f` [needs_review] genkey-credential-family-doc
+  - internal name: H SHA 256 is not a GenKey credential target: impossible success
+  - author label: FAIL
+  - reason: 0/3 independent reviews present
+  - concepts: genkey-credential-family-doc
+  - evidence: core/5.3.3.16.txt, core/5.3.3.16.1.txt, core/5.3.3.16.3.1.txt, core/5.3.3.16.4.txt
 
 ## How To Add Reviews
 

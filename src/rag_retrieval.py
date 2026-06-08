@@ -33,6 +33,14 @@ TOKEN_RE = re.compile(r"[A-Za-z0-9_./:-]+")
 SYMBOL_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9_]{2,}\b|[0-9A-Fa-f]{8,}")
 
 
+def json_default(value: Any) -> Any:
+    if isinstance(value, (bytes, bytearray)):
+        return {"type": "bytes", "hex": bytes(value).hex(), "length": len(value)}
+    if isinstance(value, set):
+        return sorted(value)
+    return str(value)
+
+
 def optional_int_env(name: str) -> int | None:
     value = os.environ.get(name)
     if value is None or not value.strip():
@@ -347,11 +355,11 @@ def build_query_from_trajectory(steps: list[dict[str, Any]]) -> str:
     if target.authority:
         pieces.append(f"target authority: {target.authority}")
     if target.values:
-        pieces.append("target columns/values: " + json.dumps(target.values, sort_keys=True, ensure_ascii=False)[:800])
+        pieces.append("target columns/values: " + json.dumps(target.values, sort_keys=True, ensure_ascii=False, default=json_default)[:800])
     if target.required:
-        pieces.append("target required args: " + json.dumps(target.required, sort_keys=True, ensure_ascii=False)[:800])
+        pieces.append("target required args: " + json.dumps(target.required, sort_keys=True, ensure_ascii=False, default=json_default)[:800])
     if target.optional:
-        pieces.append("target optional args: " + json.dumps(target.optional, sort_keys=True, ensure_ascii=False)[:800])
+        pieces.append("target optional args: " + json.dumps(target.optional, sort_keys=True, ensure_ascii=False, default=json_default)[:800])
     if previous:
         context = []
         for event in previous[-5:]:
@@ -369,7 +377,7 @@ def build_query_from_trajectory(steps: list[dict[str, Any]]) -> str:
                 )
             )
         pieces.append("recent context: " + " ; ".join(context))
-    pieces.append(json.dumps(steps[-1], sort_keys=True, ensure_ascii=False)[:1600])
+    pieces.append(json.dumps(steps[-1], sort_keys=True, ensure_ascii=False, default=json_default)[:1600])
     return "\n".join(pieces)
 
 

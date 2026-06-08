@@ -1,8 +1,4 @@
 .venv
 __pycache__/
 *.pyc
-.uv-cache/
-artifacts/models/
-artifacts/rag_index/
-predictions.jsonl
-scores.json
+/artifacts/models/*
