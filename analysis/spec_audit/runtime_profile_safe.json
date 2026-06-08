@@ -1,0 +1,40 @@
+{
+  "chunks": 1551,
+  "cwd": "/Users/daeyu/dl-seungmin/sm",
+  "dense_embeddings": {
+    "exists": true,
+    "path": "/Users/daeyu/dl-seungmin/sm/artifacts/rag_index/dense_embeddings.npy"
+  },
+  "embedding_model": {
+    "exists": true,
+    "path": "/Users/daeyu/dl-seungmin/sm/artifacts/models/Qwen3-Embedding-0.6B"
+  },
+  "env": {
+    "CUDA_VISIBLE_DEVICES": null,
+    "PYTORCH_ENABLE_MPS_FALLBACK": null,
+    "RAG_EMBEDDING_BATCH_SIZE": null,
+    "RAG_RERANKER_BATCH_SIZE": null
+  },
+  "recommendation": "local_safe_for_lexical; run model benchmark only on GPU server or with --run-models intentionally",
+  "reranker_model": {
+    "exists": true,
+    "path": "/Users/daeyu/dl-seungmin/sm/artifacts/models/Qwen3-Reranker-0.6B"
+  },
+  "schema": 1,
+  "timings": {
+    "dense": {
+      "skipped": "pass --run-models to benchmark; default avoids accidental embedding rebuilds"
+    },
+    "lexical": {
+      "hits": [
+        "_pdf_enrichment/testcases/details/SPF-19.md",
+        "_pdf_enrichment/testcases/details/SPF-03.md",
+        "_pdf_enrichment/testcases/details/ETC-21.md"
+      ],
+      "seconds": 0.098
+    },
+    "reranker": {
+      "skipped": "pass --run-models to benchmark"
+    }
+  }
+}

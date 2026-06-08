@@ -1,0 +1,40 @@
+{
+  "chunks": 1551,
+  "cwd": "/Users/daeyu/dl-seungmin/sm",
+  "dense_embeddings": {
+    "exists": true,
+    "path": "/Users/daeyu/dl-seungmin/sm/artifacts/rag_index/dense_embeddings.npy"
+  },
+  "embedding_model": {
+    "exists": true,
+    "path": "/Users/daeyu/dl-seungmin/sm/artifacts/models/Qwen3-Embedding-0.6B"
+  },
+  "env": {
+    "CUDA_VISIBLE_DEVICES": null,
+    "PYTORCH_ENABLE_MPS_FALLBACK": null,
+    "RAG_EMBEDDING_BATCH_SIZE": null,
+    "RAG_RERANKER_BATCH_SIZE": null
+  },
+  "recommendation": "use_gpu_server_for_dense_or_reranker; local only without --dense/--reranker",
+  "reranker_model": {
+    "exists": true,
+    "path": "/Users/daeyu/dl-seungmin/sm/artifacts/models/Qwen3-Reranker-0.6B"
+  },
+  "schema": 1,
+  "timings": {
+    "dense": {
+      "error": "ModuleNotFoundError: No module named 'sentence_transformers'"
+    },
+    "lexical": {
+      "hits": [
+        "_pdf_enrichment/testcases/details/SPF-19.md",
+        "_pdf_enrichment/testcases/details/SPF-03.md",
+        "_pdf_enrichment/testcases/details/ETC-21.md"
+      ],
+      "seconds": 0.038
+    },
+    "reranker": {
+      "error": "ModuleNotFoundError: No module named 'sentence_transformers'"
+    }
+  }
+}
