@@ -1985,6 +1985,9 @@ def apply_transition(state: State, event: Event) -> None:
         state.session.write = True
         state.locking_sp_activated = True
         state.sp_failed.discard("LockingSP")
+        datastore_sizes = _datastore_table_sizes_from_activate(event)
+        if datastore_sizes:
+            state.expected_datastore_rows = datastore_sizes[0]
         if "SID" in state.pins:
             state.pins["Admin1"] = state.pins["SID"]
         elif "MSID" in state.pins and "Admin1" not in state.pins:

@@ -348,6 +348,27 @@ class SolverRuleTests(unittest.TestCase):
                 ]
                 self.assertEqual(predict_trajectory(trajectory), "PASS")
 
+    def test_tper_properties_enforce_opal_size_minimums(self):
+        valid = method_record(
+            "Properties",
+            "00000000000000FF",
+            "Session Manager UID",
+            "SUCCESS",
+            return_values={"Properties": {"MaxComPacketSize": 2048, "MaxPacketSize": 2028, "MaxIndTokenSize": 1992}},
+        )
+        self.assertEqual(predict_trajectory([valid]), "PASS")
+
+        for name, value in (("MaxComPacketSize", 1024), ("MaxPacketSize", 1004), ("MaxIndTokenSize", 968)):
+            with self.subTest(name=name):
+                invalid = method_record(
+                    "Properties",
+                    "00000000000000FF",
+                    "Session Manager UID",
+                    "SUCCESS",
+                    return_values={"Properties": {name: value}},
+                )
+                self.assertEqual(predict_trajectory([invalid]), "FAIL")
+
     def test_protocol_stack_reset_resets_only_target_comid_host_properties(self):
         comid1_high = host_props_with(MaxComPacketSize=4096)
         comid2_high = host_props_with(MaxPacketSize=4096, MaxComPacketSize=8192)
@@ -3284,6 +3305,44 @@ class SolverRuleTests(unittest.TestCase):
                     "FAIL",
                 )
 
+    def test_initial_mbr_bytes_are_vendor_unique_until_written(self):
+        for returned in ("0000", "AABB"):
+            with self.subTest(returned=returned):
+                self.assertEqual(
+                    predict_trajectory(
+                        activated_locking_context()
+                        + [
+                            {"input": {"function": "readMBR", "kwargs": {"offset": 10, "length": 2, "authAs": ("Admin1", "new")}}, "output": {"return": returned}},
+                        ]
+                    ),
+                    "PASS",
+                )
+
+    def test_mbr_set_obeys_observed_mandatory_write_granularity(self):
+        context = activated_locking_context() + [
+            start_session(LOCKING_SP, ADMIN1, "new"),
+            method_record(
+                "Get",
+                "0000000100000804",
+                "Table",
+                "SUCCESS",
+                required={"Cellblock": [{"startColumn": 13}, {"endColumn": 14}]},
+                return_values={"MandatoryWriteGranularity": 4, "RecommendedAccessGranularity": 8},
+            ),
+        ]
+        self.assertEqual(
+            predict_trajectory(context + [method_record("Set", "0000080400000000", "MBR", "SUCCESS", optional={"Where": {"Row": 4}, "Bytes": "AABBCCDD"})]),
+            "PASS",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [method_record("Set", "0000080400000000", "MBR", "SUCCESS", optional={"Where": {"Row": 1}, "Bytes": "AABBCCDD"})]),
+            "FAIL",
+        )
+        self.assertEqual(
+            predict_trajectory(context + [method_record("Set", "0000080400000000", "MBR", "INVALID_PARAMETER", optional={"Where": {"Row": 4}, "Bytes": "AABB"})]),
+            "PASS",
+        )
+
     def test_tcgstorageapi_mbr_payload_aliases_update_and_read_mbr_table(self):
         trajectory = activated_locking_context() + [
             {"input": {"function": "writeMBRPayload", "kwargs": {"offset": 18, "payload": "AABB", "authAs": ("Admin1", "new")}}, "output": {"return": True}},
@@ -5012,6 +5071,43 @@ class SolverRuleTests(unittest.TestCase):
             },
         ]
         self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_level0_tper_feature_accepts_required_descriptor_bits(self):
+        trajectory = [
+            {
+                "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0001", "Feature": "TPer"}},
+                "output": {
+                    "status": "SUCCESS",
+                    "return_values": {
+                        "FeatureCode": "0x0001",
+                        "Version": 1,
+                        "Length": 0x0C,
+                        "StreamingSupported": 1,
+                        "SyncSupported": 1,
+                    },
+                },
+            },
+        ]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+
+    def test_level0_tper_feature_rejects_missing_mandatory_support_bits(self):
+        for missing_bit in ("StreamingSupported", "SyncSupported"):
+            with self.subTest(missing_bit=missing_bit):
+                values = {
+                    "FeatureCode": "0x0001",
+                    "Version": 1,
+                    "Length": 0x0C,
+                    "StreamingSupported": 1,
+                    "SyncSupported": 1,
+                }
+                values[missing_bit] = 0
+                trajectory = [
+                    {
+                        "input": {"command": "Level0Discovery", "args": {"FeatureCode": "0x0001", "Feature": "TPer"}},
+                        "output": {"status": "SUCCESS", "return_values": values},
+                    },
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "FAIL")
 
     def test_level0_data_removal_feature_accepts_required_descriptor_bits(self):
         trajectory = [
@@ -8087,6 +8183,44 @@ class SolverRuleTests(unittest.TestCase):
             method_record("GetFreeRows", "0000100100000000", "DataStore", "SUCCESS"),
         ]
         self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_activate_datastore_table_size_sets_descriptor_rows_expectation(self):
+        context = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "new"),
+            method_record("Activate", LOCKING_SP, "SP", optional={"DataStoreTableSize": 0x00A01000}),
+            end_session(),
+            start_session(LOCKING_SP, ADMIN1, "new"),
+        ]
+        correct = method_record(
+            "Get",
+            "0000000100001001",
+            "Table",
+            "SUCCESS",
+            required={"Cellblock": [{"startColumn": 7}, {"endColumn": 7}]},
+            return_values={"Rows": 0x00A01000},
+        )
+        wrong = method_record(
+            "Get",
+            "0000000100001001",
+            "Table",
+            "SUCCESS",
+            required={"Cellblock": [{"startColumn": 7}, {"endColumn": 7}]},
+            return_values={"Rows": 0x00A01001},
+        )
+        self.assertEqual(predict_trajectory(context + [correct]), "PASS")
+        self.assertEqual(predict_trajectory(context + [wrong]), "FAIL")
+
+    def test_kaes_table_descriptors_do_not_require_both_aes_tables(self):
+        for uid, name in (
+            ("0000000100000805", "K_AES_128"),
+            ("0000000100000806", "K_AES_256"),
+        ):
+            with self.subTest(name=name):
+                trajectory = activated_locking_context() + [
+                    start_session(LOCKING_SP, ADMIN1, "new"),
+                    method_record("Get", uid, "Table", "SUCCESS", return_values={"Kind": "Object", "Rows": 0}),
+                ]
+                self.assertEqual(predict_trajectory(trajectory), "PASS")
 
     def test_genkey_invalidates_old_plaintext_pattern(self):
         trajectory = activated_locking_context() + [

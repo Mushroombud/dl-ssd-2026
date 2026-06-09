@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.rag_retrieval import build_query_from_trajectory, hit_to_json, json_default, load_chunks, retrieve
+from src.rag_retrieval import HybridRetriever, build_query_from_trajectory, hit_to_json, json_default, load_chunks, retrieve
 from src.solver import parse_event, predict_trajectory
 
 
@@ -106,15 +106,22 @@ def hit_json(hit: Any, text_chars: int) -> dict[str, Any]:
     return data
 
 
-def evidence_hits(query: str, chunks: list[Any], args: argparse.Namespace) -> list[dict[str, Any]]:
-    hits = retrieve(
-        query,
-        chunks=chunks,
-        candidate_top_k=args.candidate_top_k,
-        final_top_k=args.final_top_k,
-        use_dense=args.dense,
-        use_reranker=args.reranker,
-    )
+def evidence_hits(query: str, chunks: list[Any], args: argparse.Namespace, retriever: HybridRetriever | None = None) -> list[dict[str, Any]]:
+    if retriever is not None:
+        hits = retriever.retrieve(
+            query,
+            candidate_top_k=args.candidate_top_k,
+            final_top_k=args.final_top_k,
+        )
+    else:
+        hits = retrieve(
+            query,
+            chunks=chunks,
+            candidate_top_k=args.candidate_top_k,
+            final_top_k=args.final_top_k,
+            use_dense=args.dense,
+            use_reranker=args.reranker,
+        )
     text_chars = args.hit_text_chars if args.include_text else 0
     return [hit_json(hit, text_chars) for hit in hits]
 
@@ -122,6 +129,7 @@ def evidence_hits(query: str, chunks: list[Any], args: argparse.Namespace) -> li
 def iter_probe_packets(args: argparse.Namespace) -> Iterable[dict[str, Any]]:
     module = load_score_probe_module()
     chunks = load_chunks()
+    retriever = HybridRetriever(chunks=chunks, use_dense=args.dense, use_reranker=args.reranker) if args.dense or args.reranker else None
     probes = module.all_probes()
     if args.family:
         probes = [probe for probe in probes if probe.family == args.family]
@@ -151,7 +159,7 @@ def iter_probe_packets(args: argparse.Namespace) -> Iterable[dict[str, Any]]:
                 "reranker": args.reranker,
                 "candidate_top_k": args.candidate_top_k,
                 "final_top_k": args.final_top_k,
-                "hits": evidence_hits(query, chunks, args),
+                "hits": evidence_hits(query, chunks, args, retriever),
             },
             "review_task": (
                 "Blindly decide whether the final target event is protocol-compliant using only "
@@ -249,6 +257,7 @@ def obligation_query(relative_path: str, candidate: str) -> str:
 
 def iter_obligation_packets(args: argparse.Namespace) -> Iterable[dict[str, Any]]:
     chunks = load_chunks()
+    retriever = HybridRetriever(chunks=chunks, use_dense=args.dense, use_reranker=args.reranker) if args.dense or args.reranker else None
     family_terms = coverage_terms()
     emitted = 0
     for path in iter_doc_files():
@@ -277,7 +286,7 @@ def iter_obligation_packets(args: argparse.Namespace) -> Iterable[dict[str, Any]
                     "reranker": args.reranker,
                     "candidate_top_k": args.candidate_top_k,
                     "final_top_k": args.final_top_k,
-                    "hits": evidence_hits(query, chunks, args),
+                    "hits": evidence_hits(query, chunks, args, retriever),
                 },
                 "review_task": (
                     "Normalize this spec text into a testable obligation, then decide whether existing "

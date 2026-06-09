@@ -2875,7 +2875,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
             confidence="high" if state.datastore_pattern is not None or state.datastore_bytes else "medium",
         )
     if symbol in {"Table_MBR", "Table_DataStore"}:
-        expected_cells, optional_cells, min_cells, max_cells, cell_lte = _table_descriptor_expected_cells(event)
+        expected_cells, optional_cells, min_cells, max_cells, cell_lte = _table_descriptor_expected_cells(state, event)
         return ExpectedResponse(
             {SUCCESS},
             expected_return_cells=expected_cells,
@@ -2887,7 +2887,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
             confidence="high" if expected_cells or optional_cells or min_cells or max_cells or cell_lte else "medium",
         )
     if symbol.startswith("Table_"):
-        expected_cells, optional_cells, min_cells, max_cells, cell_lte = _table_descriptor_expected_cells(event)
+        expected_cells, optional_cells, min_cells, max_cells, cell_lte = _table_descriptor_expected_cells(state, event)
         if expected_cells or optional_cells or min_cells or max_cells or cell_lte:
             return ExpectedResponse(
                 {SUCCESS},
@@ -3281,6 +3281,7 @@ def _known_ace_row(sp: str | None, symbol: str) -> dict[str, Any] | None:
 
 
 def _table_descriptor_expected_cells(
+    state: State,
     event: Event,
 ) -> tuple[dict[int, Any], dict[int, Any], dict[int, int], dict[int, int], tuple[tuple[int, int], ...]]:
     requested = event.columns
@@ -3301,6 +3302,8 @@ def _table_descriptor_expected_cells(
         minimum[7] = 0x08000000
     if event.invoking_symbol == "Table_DataStore" and 7 in requested:
         minimum[7] = 0x00A00000
+        if state.expected_datastore_rows is not None:
+            expected[7] = state.expected_datastore_rows
     if event.invoking_symbol.startswith("Table_") and _byte_table_symbol_from_descriptor(event.invoking_symbol) is None:
         for column in (TABLE_MANDATORY_WRITE_GRANULARITY_COLUMN, TABLE_RECOMMENDED_ACCESS_GRANULARITY_COLUMN):
             if column in requested:
@@ -5553,6 +5556,10 @@ def _expected_host_io(state: State, event: Event) -> ExpectedResponse:
             confidence="high",
         )
 
+    tper_feature = _expected_level0_tper_feature(state, event)
+    if tper_feature is not None:
+        return tper_feature
+
     locking_feature = _expected_level0_locking_feature(state, event)
     if locking_feature is not None:
         return locking_feature
@@ -5678,6 +5685,15 @@ def _is_locking_feature_discovery(event: Event) -> bool:
     return feature_code == 0x0002 or feature_name in {"locking", "lockingfeature"}
 
 
+def _is_tper_feature_discovery(event: Event) -> bool:
+    method = re.sub(r"[^A-Za-z0-9]", "", _as_text(event.method or "")).lower()
+    if method not in {"level0discovery", "discovery", "featuredescriptor", "getfeaturedescriptor"}:
+        return False
+    feature_code = _parse_int(_level0_arg(event, "FeatureCode", "featureCode", "feature_code", "code", "Code"))
+    feature_name = re.sub(r"[^A-Za-z0-9]", "", _as_text(_level0_arg(event, "Feature", "feature", "Name", "name") or "")).lower()
+    return feature_code == 0x0001 or feature_name in {"tper", "tperfeature"}
+
+
 def _is_data_removal_feature_discovery(event: Event) -> bool:
     method = re.sub(r"[^A-Za-z0-9]", "", _as_text(event.method or "")).lower()
     if method not in {"level0discovery", "discovery", "featuredescriptor", "getfeaturedescriptor"}:
@@ -5716,6 +5732,28 @@ def _is_opal_ssc_v2_feature_discovery(event: Event) -> bool:
         "opalv2",
         "opalsscv2feature",
     }
+
+
+def _expected_level0_tper_feature(state: State, event: Event) -> ExpectedResponse | None:
+    if not _is_tper_feature_discovery(event):
+        return None
+
+    exact_values: dict[Any, int] = {
+        ("FeatureCode", "Feature Code", "feature_code", "Code"): 0x0001,
+        ("Length", "DescriptorLength", "length"): 0x0C,
+        ("StreamingSupported", "Streaming Supported", "Streaming"): 1,
+        ("SyncSupported", "Sync Supported", "Synchronous", "SynchronousSupported"): 1,
+    }
+    minimum_values: dict[Any, int] = {
+        ("FeatureDescriptorVersion", "DescriptorVersion", "Version", "Feature Descriptor Version Number"): 0x01,
+    }
+    return ExpectedResponse(
+        {SUCCESS, None, "PASS"},
+        expected_return_min_values={**exact_values, **minimum_values},
+        expected_return_max_values=exact_values,
+        reason="Opal TPer Level 0 descriptor has fixed feature code/length and mandatory Streaming and Sync support",
+        confidence="high",
+    )
 
 
 def _expected_level0_locking_feature(state: State, event: Event) -> ExpectedResponse | None:

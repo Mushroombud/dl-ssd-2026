@@ -340,6 +340,63 @@ def dense_search(chunks: list[Chunk], vectors: Any, query_vector: Any, top_k: in
     return ranked
 
 
+class HybridRetriever:
+    def __init__(self, chunks: list[Chunk] | None = None, use_dense: bool = True, use_reranker: bool = True) -> None:
+        self.chunks = chunks or load_chunks()
+        self.use_dense = use_dense
+        self.use_reranker = use_reranker
+        self.bm25 = BM25Index(self.chunks)
+        self.embedder = DenseEmbedder() if use_dense else None
+        self.vectors = load_or_build_embeddings(self.chunks, self.embedder) if self.embedder is not None else None
+        self.reranker = CrossEncoderReranker() if use_reranker else None
+
+    def retrieve(
+        self,
+        query: str,
+        bm25_top_k: int = 80,
+        dense_top_k: int = 80,
+        keyword_top_k: int = 40,
+        candidate_top_k: int = 80,
+        final_top_k: int = 10,
+    ) -> list[RetrievalHit]:
+        bm25_hits = self.bm25.search(query, bm25_top_k)
+        keyword_hits = keyword_boost(self.chunks, query, keyword_top_k)
+
+        dense_hits: list[tuple[int, float]] = []
+        if self.embedder is not None and self.vectors is not None:
+            query_vector = self.embedder.encode_query(query)
+            dense_hits = dense_search(self.chunks, self.vectors, query_vector, dense_top_k)
+
+        fused_scores = rrf_merge([bm25_hits, dense_hits, keyword_hits])
+        bm25_by_index = dict(bm25_hits)
+        dense_by_index = dict(dense_hits)
+        keyword_by_index = dict(keyword_hits)
+        ranked_indices = sorted(fused_scores, key=lambda index: fused_scores[index], reverse=True)[:candidate_top_k]
+
+        hits: list[RetrievalHit] = []
+        for index in ranked_indices:
+            chunk = self.chunks[index]
+            hit = RetrievalHit(
+                chunk_id=chunk.chunk_id,
+                path=chunk.path,
+                title=chunk.title,
+                family=chunk.family,
+                section=chunk.section,
+                source_kind=chunk.source_kind,
+                score=fused_scores[index],
+                bm25_score=bm25_by_index.get(index, 0.0),
+                dense_score=dense_by_index.get(index, 0.0),
+                keyword_score=keyword_by_index.get(index, 0.0),
+                rrf_score=fused_scores[index],
+                text=chunk.text,
+            )
+            hits.append(hit)
+
+        if self.reranker is not None:
+            return self.reranker.rerank(query, hits, final_top_k)
+        return hits[:final_top_k]
+
+
 def build_query_from_trajectory(steps: list[dict[str, Any]]) -> str:
     target = parse_event(steps[-1])
     previous = [parse_event(raw) for raw in steps[:-1]]
@@ -393,46 +450,15 @@ def retrieve(
     use_reranker: bool = True,
 ) -> list[RetrievalHit]:
     chunks = chunks or load_chunks()
-    bm25 = BM25Index(chunks)
-    bm25_hits = bm25.search(query, bm25_top_k)
-    keyword_hits = keyword_boost(chunks, query, keyword_top_k)
-
-    dense_hits: list[tuple[int, float]] = []
-    if use_dense:
-        embedder = DenseEmbedder()
-        vectors = load_or_build_embeddings(chunks, embedder)
-        query_vector = embedder.encode_query(query)
-        dense_hits = dense_search(chunks, vectors, query_vector, dense_top_k)
-
-    fused_scores = rrf_merge([bm25_hits, dense_hits, keyword_hits])
-    bm25_by_index = dict(bm25_hits)
-    dense_by_index = dict(dense_hits)
-    keyword_by_index = dict(keyword_hits)
-    ranked_indices = sorted(fused_scores, key=lambda index: fused_scores[index], reverse=True)[:candidate_top_k]
-
-    hits: list[RetrievalHit] = []
-    for index in ranked_indices:
-        chunk = chunks[index]
-        hit = RetrievalHit(
-            chunk_id=chunk.chunk_id,
-            path=chunk.path,
-            title=chunk.title,
-            family=chunk.family,
-            section=chunk.section,
-            source_kind=chunk.source_kind,
-            score=fused_scores[index],
-            bm25_score=bm25_by_index.get(index, 0.0),
-            dense_score=dense_by_index.get(index, 0.0),
-            keyword_score=keyword_by_index.get(index, 0.0),
-            rrf_score=fused_scores[index],
-            text=chunk.text,
-        )
-        hits.append(hit)
-
-    if use_reranker:
-        reranker = CrossEncoderReranker()
-        return reranker.rerank(query, hits, final_top_k)
-    return hits[:final_top_k]
+    engine = HybridRetriever(chunks=chunks, use_dense=use_dense, use_reranker=use_reranker)
+    return engine.retrieve(
+        query,
+        bm25_top_k=bm25_top_k,
+        dense_top_k=dense_top_k,
+        keyword_top_k=keyword_top_k,
+        candidate_top_k=candidate_top_k,
+        final_top_k=final_top_k,
+    )
 
 
 def hit_to_json(hit: RetrievalHit, include_text: bool = False) -> dict[str, Any]:

@@ -1,0 +1,50 @@
+{
+  "chunks": 1551,
+  "cwd": "/workspace/daeyu/dl-ssd-2026",
+  "dense_embeddings": {
+    "exists": true,
+    "path": "/workspace/daeyu/dl-ssd-2026/artifacts/rag_index/dense_embeddings.npy"
+  },
+  "embedding_model": {
+    "exists": true,
+    "path": "/workspace/daeyu/dl-ssd-2026/artifacts/models/Qwen3-Embedding-0.6B"
+  },
+  "env": {
+    "CUDA_VISIBLE_DEVICES": null,
+    "PYTORCH_ENABLE_MPS_FALLBACK": null,
+    "RAG_EMBEDDING_BATCH_SIZE": "4",
+    "RAG_RERANKER_BATCH_SIZE": "1"
+  },
+  "recommendation": "local_ok_for_small_batches; use GPU server for full probe+obligation sweep",
+  "reranker_model": {
+    "exists": true,
+    "path": "/workspace/daeyu/dl-ssd-2026/artifacts/models/Qwen3-Reranker-0.6B"
+  },
+  "schema": 1,
+  "timings": {
+    "dense": {
+      "hits": [
+        "_pdf_enrichment/testcases/details/ETC-21.md",
+        "_pdf_enrichment/testcases/details/SPF-03.md",
+        "_pdf_enrichment/testcases/details/SPF-04.md"
+      ],
+      "seconds": 4.669
+    },
+    "lexical": {
+      "hits": [
+        "_pdf_enrichment/testcases/details/SPF-19.md",
+        "_pdf_enrichment/testcases/details/SPF-03.md",
+        "_pdf_enrichment/testcases/details/ETC-21.md"
+      ],
+      "seconds": 0.096
+    },
+    "reranker": {
+      "hits": [
+        "_pdf_enrichment/testcases/details/ETC-21.md",
+        "core/5.2.3.1.4.txt",
+        "_pdf_enrichment/testcases/details/SPF-07.md"
+      ],
+      "seconds": 1.864
+    }
+  }
+}

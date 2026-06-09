@@ -166,6 +166,15 @@ TAG_METADATA: dict[str, dict[str, Any]] = {
         ),
         "repair_hint": "Check the Supported Data Removal Mechanism descriptor Interrupted bit: absent an interrupted Revert/RevertSP/GenKey, and after a successful data-removal operation completes, the bit must be zero.",
     },
+    "level0-tper-feature-doc": {
+        "concepts": ("level0-discovery", "tper-feature", "feature-descriptor", "sync", "streaming"),
+        "repair_paths": (
+            "src/solver_components/expectations.py::_expected_level0_tper_feature",
+            "src/solver_components/engine.py::_return_value_at_least",
+            "src/solver_components/engine.py::_return_value_at_most",
+        ),
+        "repair_hint": "Check the Opal TPer Level 0 descriptor fields: FeatureCode=0x0001, Length=0x0C, Version at least 1, and mandatory Streaming/Sync support bits set.",
+    },
     "level0-geometry-feature-doc": {
         "concepts": ("level0-discovery", "geometry-reporting", "lockinginfo", "alignment", "descriptor"),
         "repair_paths": (
@@ -1182,7 +1191,7 @@ TAG_METADATA: dict[str, dict[str, Any]] = {
             "src/solver_components/engine.py::_tper_properties_valid",
             "src/solver_components/parsing.py::_returned_tper_properties",
         ),
-        "repair_hint": "Check TPer Properties response validation: returned known TPer properties must respect Table 167/168 type and minimum rules, AckNak TRUE requires SequenceNumbers TRUE, and Asynchronous TRUE requires MaxMethods=0.",
+        "repair_hint": "Check TPer Properties response validation: returned known TPer properties must respect Opal SSC Properties minimums and Core type rules, AckNak TRUE requires SequenceNumbers TRUE, and Asynchronous TRUE requires MaxMethods=0.",
     },
     "spinfo-readonly-doc": {
         "concepts": ("spinfo", "preconfiguration", "read-only-column", "set", "admin-sp", "locking-sp"),
@@ -3598,6 +3607,16 @@ TAG_METADATA: dict[str, dict[str, Any]] = {
         ),
         "repair_hint": "Check that Opal byte-table descriptor Get responses preserve Kind=Byte and reject Rows values below the MBR/DataStore minimum row counts.",
     },
+    "datastore-activate-size-doc": {
+        "concepts": ("datastore", "additional-datastore-tables", "activate", "table-descriptor", "rows", "testcase"),
+        "repair_paths": (
+            "src/solver_components/models.py::State.expected_datastore_rows",
+            "src/solver_components/parsing.py::_datastore_table_sizes_from_activate",
+            "src/solver_components/transitions.py::apply_transition",
+            "src/solver_components/expectations.py::_table_descriptor_expected_cells",
+        ),
+        "repair_hint": "Check SPF-17 traces: after Locking SP Activate is invoked with DataStoreTableSize, the DataStore Table descriptor Rows Get must return that DataStoreTableSize value while still satisfying Opal byte-table minimum Rows.",
+    },
     "byte-table-descriptor-column-doc": {
         "concepts": ("table-metadata", "table-descriptor", "byte-table", "column", "numcolumns", "get"),
         "repair_paths": (
@@ -5774,7 +5793,7 @@ def build_cases() -> list[Case]:
         "core/5.2.2.4.1.7.txt",
         "core/5.2.2.4.2.txt",
         "opal/3.1.1.2.txt",
-        rule="The Properties method retrieves the TPer's communication properties, and the mandatory Level 0 TPer Feature descriptor reports whether sync, async, ACK/NAK, buffer management, streaming, and ComID management are supported. For returned known properties, the TPer must use the Table 167 types and values: MaxPacketSize is either 0 or at least 1004, MaxComPacketSize is either 0 or at least 1024, uinteger properties are nonnegative, and boolean properties are boolean. ContinuedTokens, SequenceNumbers, and AckNak further constrain raw communication behavior; at method-response level, AckNak TRUE requires SequenceNumbers TRUE. If the TPer supports Asynchronous communication, its MaxMethods property is 0 for no limit.",
+        rule="The Properties method retrieves the TPer's communication properties, and the mandatory Level 0 TPer Feature descriptor reports whether sync, async, ACK/NAK, buffer management, streaming, and ComID management are supported. Core defines property types and general size minimums, while Opal SSC Properties raises reported TPer minimums to MaxComPacketSize 2048, MaxPacketSize 2028, and MaxIndTokenSize 1992. Therefore returned known properties must use valid uinteger/boolean types and Opal size floors, except that size value 0 still means no limit. ContinuedTokens, SequenceNumbers, and AckNak further constrain raw communication behavior; at method-response level, AckNak TRUE requires SequenceNumbers TRUE. If the TPer supports Asynchronous communication, its MaxMethods property is 0 for no limit.",
     )
     spinfo_readonly_docs = source(
         "core/5.3.2.1.txt",
@@ -5934,6 +5953,12 @@ def build_cases() -> list[Case]:
         "opal/4.3.1.7.txt",
         "opal/5.1.1.2.txt",
         rule="DataStore is a Locking SP byte table whose initial retrieval and modification ACL requires Admins. Byte-table row references use byte_row_ref, a general row reference for byte tables. Set on a byte table uses the Bytes parameter and modifies the byte table beginning at the Where row or at the beginning if Where is omitted. Get on a byte table returns Bytes, ordered from lowest row to highest. Therefore after a successful authenticated DataStore Set writes known bytes at the beginning, a later successful DataStore Get of that row must return the most recent written bytes.",
+    )
+    datastore_activate_size_docs = source(
+        "_pdf_enrichment/testcases/details/SPF-17.md",
+        "opal/2.10.txt",
+        "opal/4.3.1.8.txt",
+        rule="SPF-17 tests Additional DataStore Tables by activating the manufactured-inactive Locking SP with a DataStoreTableSize parameter equal to the Level 0 DataStore Table Size Alignment value, then retrieving the DataStore Table descriptor Rows column and requiring it to equal that DataStoreTableSize parameter. Opal also preconfigures the Locking SP DataStore table as a byte table with minimum Rows 0x00A00000.",
     )
     datastore_offset_payload_docs = source(
         "core/5.3.3.6.txt",
@@ -7207,6 +7232,11 @@ def build_cases() -> list[Case]:
         "opal/5.1.2.3.txt",
         "opal/5.1.3.4.txt",
         rule="The Supported Data Removal Mechanism descriptor's Data Removal Operation Interrupted bit is one only when a previously issued Revert, RevertSP, or GenKey operation was interrupted by power loss, reset, or similar causes. The bit is zero after successful completion of a data-removal operation; therefore a fresh descriptor or a descriptor observed after successful GenKey completion must not report Interrupted=1.",
+    )
+    level0_tper_feature_docs = source(
+        "opal/3.1.1.txt",
+        "opal/3.1.1.2.txt",
+        rule="An Opal SSC compliant Storage Device returns the TPer Level 0 descriptor with FeatureCode 0x0001, Version 0x1 or later compatible version, Length 0x0C, Streaming Supported set to one, and Sync Supported set to one. ComID management, buffer management, ACK/NAK, and async support are vendor-unique and are not required bits.",
     )
     level0_geometry_feature_docs = source(
         "core/3.3.5.txt",
@@ -16228,8 +16258,8 @@ def build_cases() -> list[Case]:
         cases,
         name="TPer Properties MaxPacketSize below minimum is invalid",
         context=[],
-        correct_target=tper_props_response({"MaxPacketSize": 1004}),
-        wrong_target=tper_props_response({"MaxPacketSize": 512}),
+        correct_target=tper_props_response({"MaxPacketSize": 2028}),
+        wrong_target=tper_props_response({"MaxPacketSize": 1004}),
         evidence=tper_properties_response_constraints_docs,
         tag="tper-properties-response-constraints-doc",
     )
@@ -16237,8 +16267,17 @@ def build_cases() -> list[Case]:
         cases,
         name="TPer Properties MaxComPacketSize below minimum is invalid",
         context=[],
-        correct_target=tper_props_response({"MaxComPacketSize": 1024}),
-        wrong_target=tper_props_response({"MaxComPacketSize": 512}),
+        correct_target=tper_props_response({"MaxComPacketSize": 2048}),
+        wrong_target=tper_props_response({"MaxComPacketSize": 1024}),
+        evidence=tper_properties_response_constraints_docs,
+        tag="tper-properties-response-constraints-doc",
+    )
+    append_return_value_pair(
+        cases,
+        name="TPer Properties MaxIndTokenSize below minimum is invalid",
+        context=[],
+        correct_target=tper_props_response({"MaxIndTokenSize": 1992}),
+        wrong_target=tper_props_response({"MaxIndTokenSize": 968}),
         evidence=tper_properties_response_constraints_docs,
         tag="tper-properties-response-constraints-doc",
     )
@@ -22879,6 +22918,18 @@ def build_cases() -> list[Case]:
             "output": output,
         }
 
+    def level0_tper_feature(values: dict[str, Any], *, status: str | None = SUCCESS) -> dict[str, Any]:
+        output: dict[str, Any] = {"return_values": values}
+        if status is not None:
+            output["status"] = status
+        return {
+            "input": {
+                "command": "Level0Discovery",
+                "args": {"FeatureCode": "0x0001", "Feature": "TPer"},
+            },
+            "output": output,
+        }
+
     def level0_geometry_feature(values: dict[str, Any], *, status: str | None = SUCCESS) -> dict[str, Any]:
         output: dict[str, Any] = {"return_values": values}
         if status is not None:
@@ -24798,6 +24849,32 @@ def build_cases() -> list[Case]:
         evidence=locking_feature_mbr_reset_docs,
         tag="locking-feature-mbr-reset-doc",
     )
+    tper_feature_base = {
+        "FeatureCode": "0x0001",
+        "Version": 1,
+        "Length": 0x0C,
+        "StreamingSupported": 1,
+        "SyncSupported": 1,
+    }
+    append_return_value_pair(
+        cases,
+        name="TPer Feature descriptor reports mandatory Streaming and Sync support",
+        context=[],
+        correct_target=level0_tper_feature(tper_feature_base, status=None),
+        wrong_target=level0_tper_feature({**tper_feature_base, "SyncSupported": 0}, status=None),
+        evidence=level0_tper_feature_docs,
+        tag="level0-tper-feature-doc",
+    )
+    append_return_value_pair(
+        cases,
+        name="TPer Feature descriptor rejects stale length",
+        context=[],
+        correct_target=level0_tper_feature({**tper_feature_base, "Version": 2}),
+        wrong_target=level0_tper_feature({**tper_feature_base, "Version": 2, "Length": 0x08}),
+        evidence=level0_tper_feature_docs,
+        tag="level0-tper-feature-doc",
+    )
+
     data_removal_base = {
         "FeatureCode": "0x0404",
         "Version": 2,
@@ -31237,6 +31314,21 @@ def build_cases() -> list[Case]:
         wrong_target=table_descriptor_get("0000000100001001", 7, 7, {"Rows": "0x00000001"}),
         evidence=byte_table_descriptor_rows_docs,
         tag="byte-table-descriptor-rows-doc",
+    )
+    datastore_sized_context = h("owned_admin_context")() + [
+        h("start_session")(h("ADMIN_SP"), h("SID"), "new"),
+        h("method_record")("Activate", h("LOCKING_SP"), "SP", optional={"DataStoreTableSize": 0x00A01000}),
+        h("end_session")(),
+        h("start_session")(h("LOCKING_SP"), h("ADMIN1"), "new"),
+    ]
+    append_return_value_pair(
+        cases,
+        name="DataStore table descriptor Rows follows Activate DataStoreTableSize",
+        context=datastore_sized_context,
+        correct_target=table_descriptor_get("0000000100001001", 7, 7, {"Rows": 0x00A01000}),
+        wrong_target=table_descriptor_get("0000000100001001", 7, 7, {"Rows": 0x00A01001}),
+        evidence=datastore_activate_size_docs,
+        tag="datastore-activate-size-doc",
     )
     append_return_value_pair(
         cases,

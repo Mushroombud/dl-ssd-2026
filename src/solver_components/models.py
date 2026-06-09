@@ -217,6 +217,7 @@ class State:
     data_removal_mechanism: Any = None
     datastore_pattern: str | None = None
     datastore_bytes: dict[int, str] = field(default_factory=dict)
+    expected_datastore_rows: int | None = None
     caes_modes: dict[str, int] = field(default_factory=dict)
     port_values: dict[str, dict[int, Any]] = field(default_factory=dict)
     psk_values: dict[str, dict[int, Any]] = field(default_factory=dict)

@@ -9304,10 +9304,25 @@ def _high_level_event(raw: dict[str, Any], inp: dict[str, Any], out: dict[str, A
                 if nested_activate_credential is not None and not isinstance(nested_activate_credential, dict):
                     activate_credential = nested_activate_credential
             auth_as = _mapping_value(activate_payload, "authAs", "AuthAs", "auth_as", "authAS") or auth_as or auth
+            datastore_table_size = _mapping_value(
+                activate_payload,
+                "DataStoreTableSize",
+                "DataStoreTableSizes",
+                "DataStoreTablesSize",
+                "dataStoreTableSize",
+                "datastoreTableSize",
+                "datastore_table_size",
+                "data_store_table_size",
+            )
+            if datastore_table_size is not None:
+                activate_payload["DataStoreTableSize"] = datastore_table_size
         if activate_credential is not None and auth is not None and not isinstance(auth_as, (list, tuple, dict)):
             auth_as = (auth, activate_credential)
         challenge = activate_credential if activate_credential is not None else _authas_credential_arg({}, {"authAs": auth_as}, None)
-        return build("Activate", "LockingSP", optional={"authAs": auth_as}, sp_value="AdminSP", auth_value=auth_as, challenge=challenge)
+        optional = {"authAs": auth_as}
+        if isinstance(activate_payload, dict) and "DataStoreTableSize" in activate_payload:
+            optional["DataStoreTableSize"] = activate_payload["DataStoreTableSize"]
+        return build("Activate", "LockingSP", optional=optional, sp_value="AdminSP", auth_value=auth_as, challenge=challenge)
 
     if function_alias in {"erase", "eraserange"}:
         range_no = range_arg(0)
@@ -14169,6 +14184,67 @@ def _raw_arg_value(required: dict[str, Any], optional: dict[str, Any], raw_args:
     if found:
         return value
     return None
+
+
+def _datastore_table_sizes_from_activate(event: Any) -> tuple[int, ...]:
+    raw = _method_raw_args(event)
+    value = _raw_arg_value(
+        event.required,
+        event.optional,
+        raw,
+        "DataStoreTableSize",
+        "DataStoreTableSizes",
+        "DataStoreTablesSize",
+        "dataStoreTableSize",
+        "datastoreTableSize",
+        "datastore_table_size",
+        "data_store_table_size",
+    )
+    if value is None:
+        return ()
+
+    sizes: list[int] = []
+    wanted = {
+        "datastoretablesize",
+        "datastoretablesizes",
+        "datastoretablessize",
+    }
+
+    def collect(item: Any) -> None:
+        if isinstance(item, bool):
+            return
+        if isinstance(item, dict):
+            nested = _recursive_named_value(
+                item,
+                "DataStoreTableSize",
+                "DataStoreTableSizes",
+                "DataStoreTablesSize",
+                "dataStoreTableSize",
+                "datastoreTableSize",
+                "datastore_table_size",
+                "data_store_table_size",
+            )
+            if nested is not None and nested is not item:
+                collect(nested)
+                return
+            for nested_item in item.values():
+                collect(nested_item)
+            return
+        if isinstance(item, (list, tuple, set)):
+            if isinstance(item, (list, tuple)) and len(item) == 2 and not isinstance(item[0], (dict, list, tuple, set)):
+                key = re.sub(r"[^A-Za-z0-9]", "", _as_text(item[0])).lower()
+                if key in wanted:
+                    collect(item[1])
+                    return
+            for nested_item in item:
+                collect(nested_item)
+            return
+        parsed = _parse_int(item)
+        if parsed is not None and parsed >= 0:
+            sizes.append(parsed)
+
+    collect(value)
+    return tuple(sizes)
 
 
 def _recursive_named_value(value: Any, *names: str) -> Any:

@@ -1425,9 +1425,11 @@ def _tper_properties_valid(properties: dict[str, Any]) -> bool:
             "MaxComIDTime",
         } and not _nonnegative_integer_property(value):
             return False
-        if name == "MaxPacketSize" and not _zero_or_at_least(value, 1004):
+        if name == "MaxPacketSize" and not _zero_or_at_least(value, 2028):
             return False
-        if name == "MaxComPacketSize" and not _zero_or_at_least(value, 1024):
+        if name == "MaxComPacketSize" and not _zero_or_at_least(value, 2048):
+            return False
+        if name == "MaxIndTokenSize" and not _zero_or_at_least(value, 1992):
             return False
         if name in {"ContinuedTokens", "SequenceNumbers", "AckNak", "Asynchronous"} and _property_bool(value) is None:
             return False
