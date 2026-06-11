@@ -1334,7 +1334,7 @@ def _expected_start_session(state: State, event: Event) -> ExpectedResponse:
             confidence="high",
         )
     if state.sp_frozen.get(event.sp, False):
-        return ExpectedResponse({SP_FROZEN, FAIL}, forbidden_statuses={SUCCESS}, reason=f"{event.sp} is frozen and cannot accept new sessions", confidence="high")
+        return ExpectedResponse({FAIL}, forbidden_statuses={SUCCESS}, reason=f"{event.sp} is frozen and cannot accept new sessions", confidence="high")
     spid_uid = _clean_uid(_raw_arg_value(event.required, event.optional, _method_raw_args(event), "SPID", "SP", "sp"))
     enterprise_locking_sp = spid_uid == "0000020500010001"
     if event.sp == "LockingSP" and not state.locking_sp_activated and not enterprise_locking_sp:
@@ -1348,6 +1348,8 @@ def _expected_start_session(state: State, event: Event) -> ExpectedResponse:
     startup_role_error = _startup_role_error(event)
     if startup_role_error is not None:
         return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason=startup_role_error, confidence="high")
+    if authority in {"Admins", "Users", "Makers"}:
+        return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="StartSession HostSigningAuthority must be an individual authority", confidence="high")
     host_control = _startup_host_control_authority(event)
     if host_control is not None and not _authority_is_enabled(state, event.sp, host_control):
         return ExpectedResponse(
@@ -1379,8 +1381,6 @@ def _expected_start_session(state: State, event: Event) -> ExpectedResponse:
             reason="Unauthenticated session is permitted",
             confidence="high",
         )
-    if authority in {"Admins", "Users", "Makers"}:
-        return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="StartSession HostSigningAuthority must be an individual authority", confidence="high")
     if authority == "TPerSign":
         return ExpectedResponse(
             {INVALID_PARAMETER, FAIL},
@@ -1394,7 +1394,7 @@ def _expected_start_session(state: State, event: Event) -> ExpectedResponse:
         return ExpectedResponse({NOT_AUTHORIZED}, reason=f"{authority} is not enabled", confidence="high")
     if _authority_limit_reached(state, authority):
         return ExpectedResponse(
-            {NOT_AUTHORIZED, FAIL, INVALID_PARAMETER},
+            {NOT_AUTHORIZED},
             forbidden_statuses={SUCCESS},
             reason=f"{authority} has reached its nonzero Authority.Limit",
             confidence="high",
@@ -1443,7 +1443,7 @@ def _expected_start_trusted_session(state: State, event: Event) -> ExpectedRespo
     if not _is_session_manager_target(event):
         return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason=f"{event.method} must target the Session Manager", confidence="high")
     if not state.session.open:
-        return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason=f"{event.method} requires an existing session startup exchange", confidence="high")
+        return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, raw_tcg_exact_status=FAIL, reason=f"{event.method} requires an existing session startup exchange", confidence="high")
     session_id_error = _session_id_uinteger_error(event, *HOST_SESSION_ID_NAMES) or _session_id_uinteger_error(event, *SP_SESSION_ID_NAMES)
     if session_id_error is not None:
         return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason=session_id_error, confidence="high")
@@ -2090,7 +2090,7 @@ def _expected_authenticate(state: State, event: Event) -> ExpectedResponse:
     )
     if _credential_was_invalidated(state, authority, challenge):
         return ExpectedResponse(
-            {NOT_AUTHORIZED, SUCCESS},
+            {SUCCESS},
             expected_return_bool=False,
             forbidden_return_bool=True,
             forbid_return_status_bool_payload=True,
@@ -2101,7 +2101,7 @@ def _expected_authenticate(state: State, event: Event) -> ExpectedResponse:
     if known_pin is None:
         return ExpectedResponse({SUCCESS, NOT_AUTHORIZED}, reason=f"{authority} credential is unknown from history", confidence="low")
     if _credential_text(challenge) != known_pin:
-        return ExpectedResponse({NOT_AUTHORIZED, SUCCESS}, expected_return_bool=False, forbidden_return_bool=True, forbid_return_status_bool_payload=True, reason=f"{authority} authentication challenge does not match tracked PIN", confidence="high")
+        return ExpectedResponse({SUCCESS}, expected_return_bool=False, forbidden_return_bool=True, forbid_return_status_bool_payload=True, reason=f"{authority} authentication challenge does not match tracked PIN", confidence="high")
     return ExpectedResponse({SUCCESS}, expected_return_bool=True, forbidden_return_bool=False, forbid_return_status_bool_payload=True, reason=f"{authority} authentication challenge matches tracked PIN", confidence="high")
 
 
@@ -2494,6 +2494,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
             expected_return_cells=expected_cells,
             expected_return_column_types=column_types,
             require_typed_return_columns=bool(column_types),
+            allow_status_alternatives=True,
             reason="If a concrete Opal SecretProtect row is returned successfully, its Table and ColumnNumber cells identify the protected K_AES Key column",
             confidence="high" if expected_cells or column_types else "medium",
         )
@@ -2591,6 +2592,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
                     allowed_statuses,
                     expected_return_bool=range_state.read_lock_enabled,
                     forbidden_return_bool=not range_state.read_lock_enabled,
+                    allow_status_alternatives=range_support is None,
                     reason="TCGstorageAPI locking boolean getter returns the tracked ReadLockEnabled value",
                     confidence="high" if range_support is not None else "medium",
                 )
@@ -2599,6 +2601,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
                     allowed_statuses,
                     expected_return_bool=range_state.write_lock_enabled,
                     forbidden_return_bool=not range_state.write_lock_enabled,
+                    allow_status_alternatives=range_support is None,
                     reason="TCGstorageAPI locking boolean getter returns the tracked WriteLockEnabled value",
                     confidence="high" if range_support is not None else "medium",
                 )
@@ -2607,6 +2610,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
                     allowed_statuses,
                     expected_return_bool=range_state.read_locked,
                     forbidden_return_bool=not range_state.read_locked,
+                    allow_status_alternatives=range_support is None,
                     reason="TCGstorageAPI locking boolean getter returns the tracked ReadLocked value",
                     confidence="high" if range_support is not None else "medium",
                 )
@@ -2615,6 +2619,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
                     allowed_statuses,
                     expected_return_bool=range_state.write_locked,
                     forbidden_return_bool=not range_state.write_locked,
+                    allow_status_alternatives=range_support is None,
                     reason="TCGstorageAPI locking boolean getter returns the tracked WriteLocked value",
                     confidence="high" if range_support is not None else "medium",
                 )
@@ -2624,6 +2629,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
                     allowed_statuses,
                     expected_return_bool=enabled,
                     forbidden_return_bool=not enabled,
+                    allow_status_alternatives=range_support is None,
                     reason="TCGstorageAPI locking boolean getter returns whether LockOnReset is configured",
                     confidence="high" if range_support is not None else "medium",
                 )
@@ -2634,6 +2640,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
                     allowed_statuses,
                     expected_return_bool=active,
                     forbidden_return_bool=not active,
+                    allow_status_alternatives=range_support is None,
                     reason="TCGstorageAPI ReEncrypt boolean getter returns whether ReEncryptState is pending, active, or paused",
                     confidence="high" if range_support is not None else "medium",
                 )
@@ -2723,6 +2730,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
             ),
             forbidden_return_columns=forbidden_columns,
             expected_return_column_types=column_types if range_id is not None else {},
+            allow_status_alternatives=range_support is None,
             forbid_return_bool_literal=(
                 _is_tcgstorageapi_getrange(event)
                 or _is_tcgstorageapi_lockonreset_value_getter(event)
@@ -2832,6 +2840,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
             return ExpectedResponse(
                 {SUCCESS} | optional_absence_statuses,
                 forbidden_return_columns={K_AES_KEY_COLUMN},
+                allow_status_alternatives=range_support is None,
                 reason="K_AES metadata Get does not include the protected Key column when the optional key row exists",
                 confidence="medium",
             )
@@ -2841,6 +2850,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
             forbidden_return_columns={K_AES_KEY_COLUMN},
             expected_return_column_types={K_AES_MODE_COLUMN: "symmetric_mode_media"},
             require_typed_return_columns=True,
+            allow_status_alternatives=range_support is None,
             reason="K_AES Mode Get is permitted by ACE_K_AES_Mode when the optional key row exists",
             confidence="high" if range_support is not None else "medium",
         )
@@ -2904,14 +2914,14 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
         if event.columns and ACCESS_CONTROL_ACL_COLUMN in event.columns:
             if expected_cells:
                 return ExpectedResponse(
-                    {SUCCESS, NOT_AUTHORIZED, INVALID_PARAMETER, FAIL},
+                    {SUCCESS},
                     expected_return_cells=expected_cells,
                     forbidden_return_columns={ACCESS_CONTROL_ACL_COLUMN},
                     reason="Direct AccessControl.Get may omit or reject the unreadable ACL cell, but successful metadata cells in the requested range must match",
                     confidence="high",
                 )
             return ExpectedResponse(
-                {SUCCESS, NOT_AUTHORIZED, INVALID_PARAMETER, FAIL},
+                {SUCCESS},
                 forbidden_return_columns={ACCESS_CONTROL_ACL_COLUMN},
                 reason="AccessControl ACL column is readable only through GetACL; direct non-byte Get may omit the unreadable cell",
                 confidence="high",
@@ -2919,14 +2929,14 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
         if not event.columns:
             if expected_cells:
                 return ExpectedResponse(
-                    {SUCCESS, NOT_AUTHORIZED, INVALID_PARAMETER, FAIL},
+                    {SUCCESS},
                     expected_return_cells=expected_cells,
                     forbidden_return_columns={ACCESS_CONTROL_ACL_COLUMN},
                     reason="AccessControl ACL column is readable only through GetACL; full direct Get may omit ACL but known issued metadata cells must still match",
                     confidence="high",
                 )
             return ExpectedResponse(
-                {SUCCESS, NOT_AUTHORIZED, INVALID_PARAMETER, FAIL},
+                {SUCCESS},
                 forbidden_return_columns={ACCESS_CONTROL_ACL_COLUMN},
                 reason="AccessControl ACL column is readable only through GetACL; direct non-byte Get may omit the unreadable cell",
                 confidence="high",
@@ -3573,7 +3583,7 @@ def _expected_create_row(state: State, event: Event) -> ExpectedResponse:
         if state.session.sp != "LockingSP":
             return ExpectedResponse({NOT_AUTHORIZED, INVALID_PARAMETER}, reason="Locking rows belong to LockingSP", confidence="high")
         if _global_reencrypt_busy(state):
-            return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="Global Range re-encryption blocks Locking CreateRow", confidence="high")
+            return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, raw_tcg_exact_status=FAIL, reason="Global Range re-encryption blocks Locking CreateRow", confidence="high")
         if not {3, 4}.issubset(event.values):
             return ExpectedResponse({INVALID_PARAMETER}, reason="Locking CreateRow requires RangeStart and RangeLength", confidence="high")
         if _range_values_invalid_for_geometry(state, None, event.values, creating=True):
@@ -3644,7 +3654,7 @@ def _expected_delete_row(state: State, event: Event) -> ExpectedResponse:
         return ExpectedResponse({NOT_AUTHORIZED}, reason="DeleteRow requires Admins authority", confidence="high")
     if event.invoking_symbol in {"LockingTable", "Table_Locking"}:
         if _global_reencrypt_busy(state):
-            return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="Global Range re-encryption blocks Locking DeleteRow", confidence="high")
+            return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, raw_tcg_exact_status=FAIL, reason="Global Range re-encryption blocks Locking DeleteRow", confidence="high")
         refs = row_refs or [(_object_by_uid(uid), uid) for uid in _row_uids(event)]
         for symbol, uid in refs:
             range_id = _range_id_from_symbol(symbol) if symbol else _range_id_from_delete_uid(uid)
@@ -3661,12 +3671,13 @@ def _expected_delete_row(state: State, event: Event) -> ExpectedResponse:
                     confidence="high",
                 )
             if range_id is not None and _range_reencrypt_active(_range(state, range_id)):
-                return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="ACTIVE re-encryption blocks deleting this Locking object", confidence="high")
+                return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, raw_tcg_exact_status=FAIL, reason="ACTIVE re-encryption blocks deleting this Locking object", confidence="high")
             if range_support is None:
                 return ExpectedResponse(
                     {SUCCESS, INVALID_PARAMETER, FAIL},
                     expected_return_length=0,
                     forbid_return_bool_literal=_raw_tcg_method_event(event),
+                    allow_status_alternatives=True,
                     reason="Authorized DeleteRow succeeds if the optional range exists, but unobserved Range9+ may also be absent",
                     confidence="medium",
                 )
@@ -3732,14 +3743,15 @@ def _expected_delete(state: State, event: Event) -> ExpectedResponse:
             confidence="high",
         )
     if _global_reencrypt_busy(state):
-        return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="Global Range re-encryption blocks deleting any Locking object", confidence="high")
+        return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, raw_tcg_exact_status=FAIL, reason="Global Range re-encryption blocks deleting any Locking object", confidence="high")
     if _range_reencrypt_active(_range(state, range_id)):
-        return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="ACTIVE re-encryption blocks deleting this Locking object", confidence="high")
+        return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, raw_tcg_exact_status=FAIL, reason="ACTIVE re-encryption blocks deleting this Locking object", confidence="high")
     if range_support is None:
         return ExpectedResponse(
             {SUCCESS, INVALID_PARAMETER, FAIL},
             expected_return_length=0,
             forbid_return_bool_literal=_raw_tcg_method_event(event),
+            allow_status_alternatives=True,
             reason="Authorized Delete succeeds if the optional range exists, but unobserved Range9+ may also be absent",
             confidence="medium",
         )
@@ -3856,7 +3868,7 @@ def _expected_create_table(state: State, event: Event) -> ExpectedResponse:
         return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="CreateTable Name/CommonName combination already exists", confidence="high")
 
     return ExpectedResponse(
-        {SUCCESS, INSUFFICIENT_SPACE, INSUFFICIENT_ROWS},
+        {SUCCESS},
         forbidden_statuses={FAIL},
         expected_return_length=2,
         expected_return_min_values={("Rows", 1): min_size},
@@ -4116,7 +4128,7 @@ def _expected_set(state: State, event: Event) -> ExpectedResponse:
         optional_absence_statuses = {INVALID_PARAMETER, FAIL} if range_support is None else set()
     reencrypt_block = _reencrypt_blocks_set(state, event)
     if reencrypt_block is not None:
-        return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason=reencrypt_block, confidence="high")
+        return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, raw_tcg_exact_status=FAIL, reason=reencrypt_block, confidence="high")
     table_size_expectation = _expected_table_descriptor_size_set(state, event)
     if table_size_expectation is not None:
         return table_size_expectation
@@ -4134,6 +4146,7 @@ def _expected_set(state: State, event: Event) -> ExpectedResponse:
             {SUCCESS, INVALID_PARAMETER},
             expected_return_length=0,
             forbid_return_bool_literal=_raw_tcg_method_event(event),
+            allow_status_alternatives=True,
             reason="Opal requires reset-type lists {0} and {0,3}, while Hardware-containing {0,1} and {0,1,3} are optional TPer support",
             confidence="high",
         )
@@ -4141,6 +4154,7 @@ def _expected_set(state: State, event: Event) -> ExpectedResponse:
         {SUCCESS} | optional_absence_statuses,
         expected_return_length=0,
         forbid_return_bool_literal=_raw_tcg_method_event(event),
+        allow_status_alternatives=range_support is None,
         reason="Authorized Set returns an empty list when the target row exists; unobserved Range9+ may also be absent",
         confidence="high" if range_support is not None else "medium",
     )
@@ -4179,6 +4193,7 @@ def _expected_table_descriptor_size_set(state: State, event: Event) -> ExpectedR
         {SUCCESS, INVALID_PARAMETER, FAIL},
         expected_return_length=0,
         forbid_return_bool_literal=_raw_tcg_method_event(event),
+        allow_status_alternatives=True,
         reason="Table descriptor MinSize and MaxSize are user-settable, but the TPer may reject changes",
         confidence="medium",
     )
@@ -4190,7 +4205,7 @@ def _expected_activate(state: State, event: Event) -> ExpectedResponse:
     if state.session.sp != "AdminSP":
         return ExpectedResponse({NOT_AUTHORIZED}, reason="Activate operates through AdminSP", confidence="high")
     if event.invoking_symbol != "LockingSP":
-        return ExpectedResponse({INVALID_PARAMETER, FAIL}, reason="Activate must target a manufactured SP object such as LockingSP", confidence="high")
+        return ExpectedResponse({INVALID_PARAMETER}, reason="Activate must target a manufactured SP object such as LockingSP", confidence="high")
     if not _has_authority(state, "SID"):
         return ExpectedResponse({NOT_AUTHORIZED}, reason="Activate requires SID authority", confidence="high")
     return ExpectedResponse(
@@ -4322,6 +4337,7 @@ def _expected_genkey(state: State, event: Event) -> ExpectedResponse:
         {SUCCESS} | optional_absence_statuses,
         expected_return_length=0,
         forbid_return_bool_literal=_raw_tcg_method_event(event),
+        allow_status_alternatives=range_support is None,
         reason="Authorized GenKey returns an empty list when the optional key row exists; unobserved Range9+ may also be absent",
         confidence="high" if range_support is not None else "medium",
     )
@@ -4746,7 +4762,7 @@ def _expected_create_log(state: State, event: Event) -> ExpectedResponse:
     if (state.session.sp or "", name, common_name) in state.created_table_names:
         return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="CreateLog cannot create a duplicate Log table name/CommonName", confidence="high")
     return ExpectedResponse(
-        {SUCCESS, INSUFFICIENT_SPACE, INSUFFICIENT_ROWS},
+        {SUCCESS},
         forbidden_statuses={FAIL},
         expected_return_length=3,
         forbid_return_bool_literal=True,
@@ -4907,6 +4923,7 @@ def _expected_get_acl(state: State, event: Event) -> ExpectedResponse:
         expected_return_uid_refs=expected_acl_refs or set(),
         required_return_uid_refs=required_uid_refs,
         forbidden_return_uid_refs=forbidden_uid_refs,
+        allow_status_alternatives=range_support is None,
         reason="GetACL is permitted by Opal GetACLACL preconfiguration for known associations and returns a list of ACE uidrefs; unobserved Range9+ associations may also be absent before MaxRanges is known",
         confidence="medium" if range_support is None else "high",
     )
@@ -5580,9 +5597,9 @@ def _expected_host_io(state: State, event: Event) -> ExpectedResponse:
     mbr_relation = _mbr_shadow_relation(state, event.lba)
     if event.method == "Write":
         if mbr_relation in {"within", "partial"}:
-            return ExpectedResponse({FAIL, NOT_AUTHORIZED, INVALID_PARAMETER}, forbidden_statuses={SUCCESS, None, "PASS"}, reason="MBR shadowing blocks host writes to the MBR address range", confidence="high")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS, None, "PASS"}, reason="MBR shadowing blocks host writes to the MBR address range", confidence="high")
         if _any_write_locked(state, event.lba):
-            return ExpectedResponse({FAIL, NOT_AUTHORIZED, INVALID_PARAMETER}, forbidden_statuses={SUCCESS, None, "PASS"}, reason="Write targets a write-locked range", confidence="high")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS, None, "PASS"}, reason="Write targets a write-locked range", confidence="high")
         if crossing_error_allowed:
             if state.range_crossing_behavior == 1:
                 return ExpectedResponse({FAIL, INVALID_PARAMETER}, forbidden_statuses={SUCCESS, None, "PASS"}, reason="Opal Range Crossing Behavior 1 terminates unlocked writes spanning multiple Locking ranges", confidence="high")
@@ -5593,7 +5610,7 @@ def _expected_host_io(state: State, event: Event) -> ExpectedResponse:
 
     if event.method == "Read":
         if mbr_relation == "partial":
-            return ExpectedResponse({FAIL, NOT_AUTHORIZED, INVALID_PARAMETER, None}, forbidden_statuses={SUCCESS, "PASS"}, forbid_read_result_presence=True, reason="A host read spanning the MBR shadow boundary is a data-protection error", confidence="high")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS, None, "PASS"}, forbid_read_result_presence=True, reason="A host read spanning the MBR shadow boundary is a data-protection error", confidence="high")
         if mbr_relation == "within":
             expected_mbr_positions = _mbr_shadow_read_expected_byte_positions(state, event)
             if expected_mbr_positions:
@@ -5615,15 +5632,15 @@ def _expected_host_io(state: State, event: Event) -> ExpectedResponse:
             return ExpectedResponse({SUCCESS, None, "PASS"}, forbidden_read_result=old_pattern, reason="MBR shadowing returns MBR table data instead of user media data", confidence="high")
         if _any_read_locked(state, event.lba):
             if mbr_relation == "outside" and crossing_error_allowed:
-                return ExpectedResponse({FAIL, NOT_AUTHORIZED, INVALID_PARAMETER, None}, forbidden_statuses={SUCCESS, "PASS"}, forbid_read_result_presence=True, reason="Read crosses mixed locking ranges while MBR shadowing is active", confidence="high")
+                return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS, None, "PASS"}, forbid_read_result_presence=True, reason="Read crosses mixed locking ranges while MBR shadowing is active", confidence="high")
             if mbr_relation == "outside":
                 return ExpectedResponse({SUCCESS, None, "PASS"}, expected_zero_read_result=True, reason="MBR shadowing active with outside read-locked range returns zeroes", confidence="high")
-            return ExpectedResponse({FAIL, NOT_AUTHORIZED, INVALID_PARAMETER, None}, forbidden_statuses={SUCCESS, "PASS"}, forbid_read_result_presence=True, reason="Read targets a read-locked range", confidence="high")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS, None, "PASS"}, forbid_read_result_presence=True, reason="Read targets a read-locked range", confidence="high")
         if crossing_error_allowed:
             if state.range_crossing_behavior == 1:
                 return ExpectedResponse(
-                    {FAIL, INVALID_PARAMETER, NOT_AUTHORIZED, None},
-                    forbidden_statuses={SUCCESS, "PASS"},
+                    {INVALID_PARAMETER},
+                    forbidden_statuses={SUCCESS, None, "PASS"},
                     forbid_read_result_presence=True,
                     reason="Opal Range Crossing Behavior 1 terminates unlocked reads spanning multiple Locking ranges",
                     confidence="high",

@@ -409,7 +409,7 @@ def _disabled_sp_response(state: State, event: Event) -> ExpectedResponse | None
         if _is_bool_literal(event.values[6]) and _as_bool(event.values[6]):
             return None
     return ExpectedResponse(
-        {SP_DISABLED, FAIL},
+        {FAIL},
         forbidden_statuses={SUCCESS},
         reason="Issued-Disabled SP permits only Authenticate, control-session methods, and Set SPInfo.Enabled to re-enable",
         confidence="high",

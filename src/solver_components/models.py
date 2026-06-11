@@ -42,6 +42,9 @@ class Event:
 class ExpectedResponse:
     allowed_statuses: set[str | None] = field(default_factory=set)
     forbidden_statuses: set[str | None] = field(default_factory=set)
+    allow_generic_failure_status: bool = False
+    raw_tcg_exact_status: str | None = None
+    allow_status_alternatives: bool = False
     expected_read_result: str | None = None
     forbidden_read_result: str | None = None
     expected_return_length: int | None = None

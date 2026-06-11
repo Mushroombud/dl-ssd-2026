@@ -1,6 +1,0 @@
-{
-  "signature": "019b00427aa94480cf4e7e0b883a5e017577dacce21f58820f13fcbf57369ef7",
-  "model": "Qwen3-Embedding-0.6B",
-  "max_seq_length": 1024,
-  "chunks": 1551
-}

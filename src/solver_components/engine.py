@@ -310,9 +310,13 @@ def compare_expected_actual(expected: ExpectedResponse, target: Event) -> str:
         SP_DISABLED,
         SP_FROZEN,
     }
-    if actual in failure_statuses and expected.allowed_statuses & failure_statuses:
+    if (
+        expected.allow_generic_failure_status
+        and actual in failure_statuses
+        and expected.allowed_statuses & failure_statuses
+    ):
         return "PASS"
-    if actual in failure_statuses and SUCCESS in expected.forbidden_statuses:
+    if expected.allow_generic_failure_status and actual in failure_statuses and SUCCESS in expected.forbidden_statuses:
         return "PASS"
     return "FAIL"
 
@@ -2016,6 +2020,26 @@ def _explicit_authas_known_wrong(state: State, event: Event) -> bool:
     return False
 
 
+def _tighten_raw_tcg_final_expectation(expected: ExpectedResponse, event: Event) -> ExpectedResponse:
+    if not _raw_tcg_method_event(event):
+        return expected
+    if expected.confidence != "high":
+        return expected
+    if SUCCESS in expected.allowed_statuses:
+        return expected
+    if expected.allow_generic_failure_status:
+        return expected
+
+    if expected.raw_tcg_exact_status is not None:
+        expected.allowed_statuses = {expected.raw_tcg_exact_status}
+        return expected
+
+    statuses = set(expected.allowed_statuses)
+    if statuses == {INVALID_PARAMETER, FAIL}:
+        expected.allowed_statuses = {INVALID_PARAMETER}
+    return expected
+
+
 def judge_target(state: State, event: Event) -> str:
     working_state = state
     if event.implicit_session and not state.session.open and event.kind == "tcg_method":
@@ -2025,10 +2049,11 @@ def judge_target(state: State, event: Event) -> str:
     try:
         expected = expected_status(working_state, event)
         if _explicit_authas_known_wrong(working_state, event):
-            expected.allowed_statuses = {NOT_AUTHORIZED, FAIL}
+            expected.allowed_statuses = {NOT_AUTHORIZED} if _raw_tcg_method_event(event) else {NOT_AUTHORIZED, FAIL}
             expected.forbidden_statuses = set(expected.forbidden_statuses) | {SUCCESS}
         if added_authority is not None and credential_unknown:
             expected.allowed_statuses = set(expected.allowed_statuses) | {NOT_AUTHORIZED}
+        expected = _tighten_raw_tcg_final_expectation(expected, event)
         return compare_expected_actual(expected, event)
     finally:
         if added_authority is not None:

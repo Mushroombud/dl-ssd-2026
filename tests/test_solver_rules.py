@@ -1,4 +1,7 @@
+import copy
+import json
 import unittest
+from pathlib import Path
 
 from src.solver import _return_bool, parse_event, predict_trajectory
 
@@ -187,6 +190,29 @@ def host_read_top_level(result, start_lba="0x80", num_blocks=8):
         "input": {"start_lba": start_lba, "num_blocks": num_blocks},
         "output": {"data": result},
     }
+
+
+def dataset_case(filename):
+    return json.loads((Path(__file__).resolve().parents[1] / "dataset" / "testcases" / filename).read_text())
+
+
+def with_final_status(trajectory, status):
+    mutated = copy.deepcopy(trajectory)
+    output = mutated[-1].setdefault("output", {})
+    if "status_codes" in output:
+        output["status_codes"] = status
+    elif "status" in output:
+        output["status"] = status
+    else:
+        output["status_codes"] = status
+    return mutated
+
+
+def with_final_read_result(trajectory, result):
+    mutated = copy.deepcopy(trajectory)
+    output = mutated[-1].setdefault("output", {})
+    output.setdefault("args", {})["result"] = result
+    return mutated
 
 
 def owned_admin_context():
@@ -534,6 +560,14 @@ class SolverRuleTests(unittest.TestCase):
     def test_start_trusted_session_requires_open_session(self):
         trajectory = [method_record("StartTrustedSession", "00000000000000FF", "Session Manager UID", "SUCCESS")]
         self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_start_trusted_session_without_startup_exchange_fails_exactly(self):
+        trajectory = [method_record("StartTrustedSession", "00000000000000FF", "Session Manager UID", "FAIL")]
+        self.assertEqual(predict_trajectory(trajectory), "PASS")
+        self.assertEqual(
+            predict_trajectory([method_record("StartTrustedSession", "00000000000000FF", "Session Manager UID", "INVALID_PARAMETER")]),
+            "FAIL",
+        )
 
     def test_start_trusted_session_rejects_non_session_manager_target_success(self):
         trajectory = owned_admin_context() + [
@@ -1819,7 +1853,7 @@ class SolverRuleTests(unittest.TestCase):
                     },
                     {"input": {"function": alias}, "output": {"return": True}},
                 ]
-                self.assertEqual(predict_trajectory(power_context + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "PASS")
+                self.assertEqual(predict_trajectory(power_context + [host_write_status("INVALID_PARAMETER", pattern="CC", lba="80 ~ 87")]), "PASS")
         hardware_context = activated_locking_context() + [
             {
                 "input": {"function": "setRange", "args": [1], "kwargs": {"authAs": ("Admin1", "new"), "RangeStart": 80, "RangeLength": 8, "WriteLockEnabled": 1, "WriteLocked": 0, "LockOnReset": [1]}},
@@ -1829,7 +1863,7 @@ class SolverRuleTests(unittest.TestCase):
         for alias in ("doHardwareReset", "hardwareResetDevice", "resetHardware"):
             with self.subTest(alias=alias):
                 self.assertEqual(
-                    predict_trajectory(hardware_context + [{"input": {"function": alias}, "output": {"return": True}}] + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]),
+                    predict_trajectory(hardware_context + [{"input": {"function": alias}, "output": {"return": True}}] + [host_write_status("INVALID_PARAMETER", pattern="CC", lba="80 ~ 87")]),
                     "PASS",
                 )
 
@@ -1861,7 +1895,7 @@ class SolverRuleTests(unittest.TestCase):
             with self.subTest(label=label):
                 reset_event = {"input": {"function": "reset", "kwargs": kwargs}, "output": {"return": True}}
                 self.assertEqual(
-                    predict_trajectory(base + [reset_event, host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]),
+                    predict_trajectory(base + [reset_event, host_write_status("INVALID_PARAMETER", pattern="CC", lba="80 ~ 87")]),
                     "PASS",
                 )
                 self.assertEqual(
@@ -3089,7 +3123,7 @@ class SolverRuleTests(unittest.TestCase):
                 host_reset("PowerCycle"),
             ]
             with self.subTest(set_alias=alias):
-                self.assertEqual(predict_trajectory(context + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "PASS")
+                self.assertEqual(predict_trajectory(context + [host_write_status("INVALID_PARAMETER", pattern="CC", lba="80 ~ 87")]), "PASS")
                 self.assertEqual(predict_trajectory(context + [host_write_status("SUCCESS", pattern="CC", lba="80 ~ 87")]), "FAIL")
         for reset_key in ("types", "resetEvents", "reset_on", "resetList"):
             context = base + [
@@ -3097,7 +3131,7 @@ class SolverRuleTests(unittest.TestCase):
                 host_reset("PowerCycle"),
             ]
             with self.subTest(reset_key=reset_key):
-                self.assertEqual(predict_trajectory(context + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "PASS")
+                self.assertEqual(predict_trajectory(context + [host_write_status("INVALID_PARAMETER", pattern="CC", lba="80 ~ 87")]), "PASS")
                 self.assertEqual(predict_trajectory(context + [host_write_status("SUCCESS", pattern="CC", lba="80 ~ 87")]), "FAIL")
         for label, kwargs in (
             ("policy resetTypes", {"rangeId": 1, "policy": {"resetTypes": [0]}, "authAs": ("Admin1", "new")}),
@@ -3109,7 +3143,7 @@ class SolverRuleTests(unittest.TestCase):
                 host_reset("PowerCycle"),
             ]
             with self.subTest(envelope=label):
-                self.assertEqual(predict_trajectory(context + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "PASS")
+                self.assertEqual(predict_trajectory(context + [host_write_status("INVALID_PARAMETER", pattern="CC", lba="80 ~ 87")]), "PASS")
                 self.assertEqual(predict_trajectory(context + [host_write_status("SUCCESS", pattern="CC", lba="80 ~ 87")]), "FAIL")
         for label, kwargs in (
             ("request values", {"request": {"values": {"rangeId": 1, "LockOnReset": [0, 3], "authAs": ("Admin1", "new")}}}),
@@ -3133,7 +3167,7 @@ class SolverRuleTests(unittest.TestCase):
                     predict_trajectory(context + [{"input": {"function": "getLockOnReset", "kwargs": {"rangeId": 1, "authAs": ("Admin1", "new")}}, "output": {"return": {"LockOnReset": [0]}}}]),
                     "FAIL",
                 )
-                self.assertEqual(predict_trajectory(context + [host_reset("PowerCycle"), host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "PASS")
+                self.assertEqual(predict_trajectory(context + [host_reset("PowerCycle"), host_write_status("INVALID_PARAMETER", pattern="CC", lba="80 ~ 87")]), "PASS")
                 self.assertEqual(predict_trajectory(context + [host_reset("PowerCycle"), host_write_status("SUCCESS", pattern="CC", lba="80 ~ 87")]), "FAIL")
         getter_context = base + [
             {"input": {"function": "setLockOnReset", "kwargs": {"rangeId": 1, "LockOnReset": [0, 3], "authAs": ("Admin1", "new")}}, "output": {"return": True}},
@@ -3196,7 +3230,7 @@ class SolverRuleTests(unittest.TestCase):
                 host_reset("PowerCycle"),
             ]
             with self.subTest(enable_alias=alias):
-                self.assertEqual(predict_trajectory(context + [host_write_status("NOT_AUTHORIZED", pattern="CC", lba="80 ~ 87")]), "PASS")
+                self.assertEqual(predict_trajectory(context + [host_write_status("INVALID_PARAMETER", pattern="CC", lba="80 ~ 87")]), "PASS")
                 self.assertEqual(predict_trajectory(context + [host_write_status("SUCCESS", pattern="CC", lba="80 ~ 87")]), "FAIL")
         for alias in ("disableLockOnReset", "disableRangeLockOnReset", "disableLOR", "disableRangeLOR"):
             context = base + [
@@ -5548,10 +5582,73 @@ class SolverRuleTests(unittest.TestCase):
         trajectory = [start_session(ADMIN_SP, SID, "new"), record]
         self.assertEqual(predict_trajectory(trajectory), "PASS")
 
-    def test_obsolete_status_is_treated_as_failure_status(self):
+    def test_failure_statuses_are_not_interchangeable_in_exact_target_mode(self):
         record = method_record("CreateTable", "0000000000000001", "ThisSP", "StatusCode.Obsolete")
         trajectory = [start_session(ADMIN_SP), record]
-        self.assertEqual(predict_trajectory(trajectory), "PASS")
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+
+    def test_known_wrong_start_session_pin_requires_not_authorized(self):
+        bad_success = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "wrong", status="SUCCESS"),
+        ]
+        correct_failure = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "wrong", status="NOT_AUTHORIZED"),
+        ]
+        wrong_failure = owned_admin_context() + [
+            start_session(ADMIN_SP, SID, "wrong", status="INVALID_PARAMETER"),
+        ]
+        self.assertEqual(predict_trajectory(bad_success), "FAIL")
+        self.assertEqual(predict_trajectory(correct_failure), "PASS")
+        self.assertEqual(predict_trajectory(wrong_failure), "FAIL")
+
+    def test_unauthorized_set_requires_not_authorized_status(self):
+        correct_failure = [
+            start_session(ADMIN_SP),
+            method_record("Set", C_PIN_SID, "C_PIN", "NOT_AUTHORIZED", optional={"Values": [{"3": "new"}]}),
+        ]
+        wrong_failure = [
+            start_session(ADMIN_SP),
+            method_record("Set", C_PIN_SID, "C_PIN", "INVALID_PARAMETER", optional={"Values": [{"3": "new"}]}),
+        ]
+        self.assertEqual(predict_trajectory(correct_failure), "PASS")
+        self.assertEqual(predict_trajectory(wrong_failure), "FAIL")
+
+    def test_hidden_style_pass_targets_reject_wrong_final_failure_statuses(self):
+        for filename in ("tc1.json", "tc2.json", "tc3.json", "tc6.json", "tc8.json", "tc9.json"):
+            trajectory = dataset_case(filename)
+            self.assertEqual(predict_trajectory(trajectory), "PASS")
+            for status in ("NOT_AUTHORIZED", "INVALID_PARAMETER", "FAIL"):
+                with self.subTest(filename=filename, status=status):
+                    self.assertEqual(predict_trajectory(with_final_status(trajectory, status)), "FAIL")
+
+    def test_hidden_style_wrong_pin_final_status_is_exact(self):
+        trajectory = dataset_case("tc14.json")
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+        self.assertEqual(predict_trajectory(with_final_status(trajectory, "NOT_AUTHORIZED")), "PASS")
+        self.assertEqual(predict_trajectory(with_final_status(trajectory, "INVALID_PARAMETER")), "FAIL")
+        self.assertEqual(predict_trajectory(with_final_status(trajectory, "FAIL")), "FAIL")
+
+    def test_hidden_style_invalid_activate_target_is_invalid_parameter(self):
+        trajectory = dataset_case("tc15.json")
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+        self.assertEqual(predict_trajectory(with_final_status(trajectory, "INVALID_PARAMETER")), "PASS")
+        self.assertEqual(predict_trajectory(with_final_status(trajectory, "FAIL")), "FAIL")
+        self.assertEqual(predict_trajectory(with_final_status(trajectory, "NOT_AUTHORIZED")), "FAIL")
+
+    def test_hidden_style_valid_set_final_status_is_exact(self):
+        trajectory = dataset_case("tc16.json")
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+        self.assertEqual(predict_trajectory(with_final_status(trajectory, "SUCCESS")), "PASS")
+        self.assertEqual(predict_trajectory(with_final_status(trajectory, "NOT_AUTHORIZED")), "FAIL")
+        self.assertEqual(predict_trajectory(with_final_status(trajectory, "INVALID_PARAMETER")), "FAIL")
+        self.assertEqual(predict_trajectory(with_final_status(trajectory, "FAIL")), "FAIL")
+
+    def test_hidden_style_genkey_read_forbids_stale_final_payload(self):
+        trajectory = dataset_case("tc20.json")
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
+        self.assertEqual(predict_trajectory(with_final_read_result(trajectory, "Pattern 8E")), "FAIL")
+        self.assertEqual(predict_trajectory(with_final_read_result(trajectory, "8E")), "FAIL")
+        self.assertEqual(predict_trajectory(with_final_read_result(trajectory, "Random Data")), "PASS")
 
     def test_create_table_object_accepts_required_args(self):
         trajectory = owned_admin_context() + [
@@ -15871,7 +15968,7 @@ class SolverRuleTests(unittest.TestCase):
         ]
         self.assertEqual(predict_trajectory(trajectory), "FAIL")
 
-    def test_direct_accesscontrol_get_mixed_acl_column_may_be_rejected(self):
+    def test_direct_accesscontrol_get_mixed_acl_column_requires_successful_acl_omission(self):
         trajectory = activated_locking_context() + [
             start_session(LOCKING_SP, ADMIN1, "new"),
             method_record(
@@ -15882,7 +15979,7 @@ class SolverRuleTests(unittest.TestCase):
                 required={"Cellblock": [{"startColumn": 1}, {"endColumn": 4}]},
             ),
         ]
-        self.assertEqual(predict_trajectory(trajectory), "PASS")
+        self.assertEqual(predict_trajectory(trajectory), "FAIL")
 
     def test_direct_accesscontrol_get_cpin_user2_identity_is_validated(self):
         context = activated_locking_context() + [start_session(LOCKING_SP, ADMIN1, "new")]
