@@ -1338,7 +1338,7 @@ def _expected_start_session(state: State, event: Event) -> ExpectedResponse:
     spid_uid = _clean_uid(_raw_arg_value(event.required, event.optional, _method_raw_args(event), "SPID", "SP", "sp"))
     enterprise_locking_sp = spid_uid == "0000020500010001"
     if event.sp == "LockingSP" and not state.locking_sp_activated and not enterprise_locking_sp:
-        return ExpectedResponse({NOT_AUTHORIZED, INVALID_PARAMETER, FAIL}, reason="LockingSP is not activated in reconstructed state", confidence="medium")
+        return ExpectedResponse({NOT_AUTHORIZED}, reason="LockingSP is not activated in reconstructed state", confidence="medium")
 
     session_id_error = _session_id_uinteger_error(event, *HOST_SESSION_ID_NAMES)
     if session_id_error is not None:
@@ -2241,7 +2241,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
         return ExpectedResponse({NOT_AUTHORIZED, INVALID_PARAMETER}, reason="Get object does not belong to current SP", confidence="medium")
     if _created_object_outside_session(state, event.invoking_uid):
         return ExpectedResponse(
-            {NOT_AUTHORIZED, INVALID_PARAMETER},
+            {NOT_AUTHORIZED},
             forbidden_statuses={SUCCESS},
             reason="Get target is a dynamically created object in a different SP security domain",
             confidence="high",
@@ -2829,7 +2829,7 @@ def _expected_get(state: State, event: Event) -> ExpectedResponse:
             )
         if K_AES_KEY_COLUMN in columns:
             return ExpectedResponse(
-                {NOT_AUTHORIZED, INVALID_PARAMETER, FAIL},
+                {NOT_AUTHORIZED},
                 forbidden_statuses={SUCCESS},
                 reason="K_AES Key is SecretProtect-protected from Get",
                 confidence="high",
@@ -3536,14 +3536,14 @@ def _expected_create_row(state: State, event: Event) -> ExpectedResponse:
         declared_columns = state.created_table_columns.get(event.invoking_uid, set())
         if declared_columns and set(event.values) != declared_columns:
             return ExpectedResponse(
-                {INVALID_PARAMETER, FAIL, INSUFFICIENT_ROWS},
+                {INVALID_PARAMETER},
                 forbidden_statuses={SUCCESS},
                 reason="CreateRow row_data must supply exactly the columns declared for the created object table",
                 confidence="high",
             )
         if _created_table_unique_conflict(state, event.invoking_uid, event.values):
             return ExpectedResponse(
-                {INVALID_PARAMETER, FAIL, INSUFFICIENT_ROWS},
+                {INVALID_PARAMETER},
                 forbidden_statuses={SUCCESS},
                 reason="CreateRow unique column value combination already exists in the created object table",
                 confidence="high",
@@ -3603,13 +3603,13 @@ def _expected_create_row(state: State, event: Event) -> ExpectedResponse:
             )
         if max_ranges is not None and returned_range_id is not None and returned_range_id > max_ranges:
             return ExpectedResponse(
-                {INSUFFICIENT_ROWS, INSUFFICIENT_SPACE, INVALID_PARAMETER, FAIL},
+                {INVALID_PARAMETER},
                 forbidden_statuses={SUCCESS},
                 reason="Locking CreateRow cannot return a range id above observed LockingInfo.MaxRanges",
                 confidence="high",
             )
         if max_ranges is not None and len([range_id for range_id in state.ranges if range_id != 0]) >= max_ranges:
-            return ExpectedResponse({INSUFFICIENT_ROWS, INSUFFICIENT_SPACE, INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="Locking CreateRow exceeds MaxRanges", confidence="medium")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="Locking CreateRow exceeds MaxRanges", confidence="medium")
         return ExpectedResponse(
             {SUCCESS},
             expected_return_uid_list=True,
@@ -3780,7 +3780,7 @@ def _expected_delete_sp(state: State, event: Event) -> ExpectedResponse:
         )
     if state.session.sp == "AdminSP":
         return ExpectedResponse(
-            {INVALID_PARAMETER, NOT_AUTHORIZED, FAIL},
+            {INVALID_PARAMETER},
             forbidden_statuses={SUCCESS},
             reason="AdminSP deletion through DeleteSP is not modeled as an Opal owner operation",
             confidence="medium",
@@ -3848,16 +3848,16 @@ def _expected_create_table(state: State, event: Event) -> ExpectedResponse:
     max_size: int | None = None
     if found_max:
         if _uinteger_arg_invalid(max_size_value):
-            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="CreateTable MaxSize must be an unsigned integer", confidence="high")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="CreateTable MaxSize must be an unsigned integer", confidence="high")
         max_size = _parse_int(max_size_value)
         if max_size is None or max_size < min_size:
-            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="CreateTable MaxSize must be at least MinSize", confidence="high")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="CreateTable MaxSize must be at least MinSize", confidence="high")
     if found_hint:
         if _uinteger_arg_invalid(hint_size_value):
-            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="CreateTable HintSize must be an unsigned integer", confidence="medium")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="CreateTable HintSize must be an unsigned integer", confidence="medium")
         hint_size = _parse_int(hint_size_value)
         if hint_size is None or hint_size < 0:
-            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="CreateTable HintSize must be an unsigned integer", confidence="medium")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="CreateTable HintSize must be an unsigned integer", confidence="medium")
 
     found_common, common_value = _create_table_arg(event, 7, "CommonName")
     common_name = _create_table_name_text(common_value) if found_common else ""
@@ -3972,7 +3972,7 @@ def _expected_set(state: State, event: Event) -> ExpectedResponse:
         return ExpectedResponse({NOT_AUTHORIZED, INVALID_PARAMETER}, reason="Set object does not belong to current SP", confidence="medium")
     if _created_object_outside_session(state, event.invoking_uid):
         return ExpectedResponse(
-            {NOT_AUTHORIZED, INVALID_PARAMETER},
+            {NOT_AUTHORIZED},
             forbidden_statuses={SUCCESS},
             reason="Set target is a dynamically created object in a different SP security domain",
             confidence="high",
@@ -4062,7 +4062,7 @@ def _expected_set(state: State, event: Event) -> ExpectedResponse:
         return ExpectedResponse({NOT_AUTHORIZED, INVALID_PARAMETER}, reason="Set target row does not belong to current SP", confidence="high")
     if _created_object_outside_session(state, event.invoking_uid):
         return ExpectedResponse(
-            {NOT_AUTHORIZED, INVALID_PARAMETER},
+            {NOT_AUTHORIZED},
             forbidden_statuses={SUCCESS},
             reason="Set target row is a dynamically created object in a different SP security domain",
             confidence="high",
@@ -4415,7 +4415,7 @@ def _expected_set_package(state: State, event: Event) -> ExpectedResponse:
     if not state.session.write:
         return ExpectedResponse({NOT_AUTHORIZED}, reason="SetPackage requires a read-write session", confidence="high")
     if not _session_allows_object(state, event):
-        return ExpectedResponse({NOT_AUTHORIZED, INVALID_PARAMETER}, reason="SetPackage object does not belong to current SP", confidence="high")
+        return ExpectedResponse({NOT_AUTHORIZED}, reason="SetPackage object does not belong to current SP", confidence="high")
     if not _is_credential_symbol(event.invoking_symbol):
         return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="SetPackage must target a credential object", confidence="high")
     found_value, value = _named_method_arg_value(event, "Value", "Package")
@@ -4745,17 +4745,17 @@ def _expected_create_log(state: State, event: Event) -> ExpectedResponse:
     found_max, max_size_value = _create_table_arg(event, 3, "MaxSize", "MaximumSize")
     if found_max:
         if _uinteger_arg_invalid(max_size_value):
-            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="CreateLog MaxSize must be an unsigned integer", confidence="medium")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="CreateLog MaxSize must be an unsigned integer", confidence="medium")
         max_size = _parse_int(max_size_value)
         if max_size is None or max_size < min_size:
-            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="CreateLog MaxSize must be at least MinSize", confidence="medium")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="CreateLog MaxSize must be at least MinSize", confidence="medium")
     found_hint, hint_size_value = _create_table_arg(event, 4, "HintSize")
     if found_hint:
         if _uinteger_arg_invalid(hint_size_value):
-            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="CreateLog HintSize must be an unsigned integer", confidence="medium")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="CreateLog HintSize must be an unsigned integer", confidence="medium")
         hint_size = _parse_int(hint_size_value)
         if hint_size is None or hint_size < 0:
-            return ExpectedResponse({INVALID_PARAMETER, FAIL}, forbidden_statuses={SUCCESS}, reason="CreateLog HintSize must be an unsigned integer", confidence="medium")
+            return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="CreateLog HintSize must be an unsigned integer", confidence="medium")
 
     found_common, common_value = _create_table_arg(event, 5, "CommonName")
     common_name = _create_table_name_text(common_value) if found_common else ""
@@ -4873,7 +4873,7 @@ def _expected_get_acl(state: State, event: Event) -> ExpectedResponse:
     if not state.session.open:
         return ExpectedResponse({NOT_AUTHORIZED}, reason="GetACL requires an open session", confidence="high")
     if event.invoking_symbol not in {"AccessControlTable", "Table_AccessControl", "AccessControl"}:
-        return ExpectedResponse({INVALID_PARAMETER, NOT_AUTHORIZED}, reason="GetACL is invoked on the AccessControl table", confidence="medium")
+        return ExpectedResponse({INVALID_PARAMETER}, reason="GetACL is invoked on the AccessControl table", confidence="medium")
     (found_invoking, _), (found_method, _) = _access_control_arg_values(event)
     if not found_invoking or not found_method:
         return ExpectedResponse(
@@ -5234,7 +5234,7 @@ def _expected_acl_mutation(state: State, event: Event) -> ExpectedResponse:
     if not state.session.write:
         return ExpectedResponse({NOT_AUTHORIZED}, reason=f"{event.method} requires a read-write session", confidence="high")
     if event.invoking_symbol not in {"AccessControlTable", "Table_AccessControl", "AccessControl"}:
-        return ExpectedResponse({INVALID_PARAMETER, NOT_AUTHORIZED}, forbidden_statuses={SUCCESS}, reason=f"{event.method} must be invoked on the AccessControl table", confidence="high")
+        return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason=f"{event.method} must be invoked on the AccessControl table", confidence="high")
     (found_invoking, _), (found_method, _) = _access_control_arg_values(event)
     if not found_invoking or not found_method:
         return ExpectedResponse(
@@ -5339,7 +5339,7 @@ def _expected_delete_method(state: State, event: Event) -> ExpectedResponse:
     if not state.session.write:
         return ExpectedResponse({NOT_AUTHORIZED}, reason="DeleteMethod requires a read-write session", confidence="high")
     if event.invoking_symbol not in {"AccessControlTable", "Table_AccessControl", "AccessControl"}:
-        return ExpectedResponse({INVALID_PARAMETER, NOT_AUTHORIZED}, forbidden_statuses={SUCCESS}, reason="DeleteMethod must be invoked on the AccessControl table", confidence="high")
+        return ExpectedResponse({INVALID_PARAMETER}, forbidden_statuses={SUCCESS}, reason="DeleteMethod must be invoked on the AccessControl table", confidence="high")
     (found_invoking, _), (found_method, _) = _access_control_arg_values(event)
     if not found_invoking or not found_method:
         return ExpectedResponse(
@@ -5438,7 +5438,7 @@ def expected_status(state: State, event: Event) -> ExpectedResponse:
         return _expected_host_io(state, event)
     if _explicit_session_manager_target(event) and event.method not in CONTROL_SESSION_METHODS:
         return ExpectedResponse(
-            {INVALID_PARAMETER, FAIL, NOT_AUTHORIZED},
+            {FAIL},
             forbidden_statuses={SUCCESS},
             reason="The Session Manager control session ignores or discards methods whose MethodID is not a supported control-session method",
             confidence="high",
@@ -5548,7 +5548,7 @@ def _expected_host_io(state: State, event: Event) -> ExpectedResponse:
     if reset_type is not None:
         if reset_type == 3 and not state.programmatic_reset_enabled:
             return ExpectedResponse(
-                {FAIL, INVALID_PARAMETER, NOT_AUTHORIZED},
+                {FAIL},
                 forbidden_statuses={SUCCESS, None, "PASS"},
                 reason="TPER_RESET is disabled unless TPerInfo.ProgrammaticResetEnable is true",
                 confidence="high",
